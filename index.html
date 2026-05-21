@@ -1281,11 +1281,10 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
-// Catch ALL errors and show them visibly
 window.onerror=function(msg,src,line,col,err){
   var d=document.getElementById('error-bar');
-  if(!d){d=document.createElement('div');d.id='error-bar';d.style='position:fixed;top:0;left:0;right:0;background:#c0392b;color:#fff;padding:.75rem 1rem;font-size:.82rem;z-index:99999;font-family:monospace';document.body.appendChild(d);}
-  d.textContent='JS-Fehler: '+msg+' (Zeile '+line+')';
+  if(!d){d=document.createElement('div');d.id='error-bar';d.style='position:fixed;top:0;left:0;right:0;background:#c0392b;color:#fff;padding:.75rem 1rem;font-size:.82rem;z-index:99999;font-family:monospace;word-break:break-all';document.body.appendChild(d);}
+  d.innerHTML='<strong>Fehler:</strong> '+msg+' (Zeile '+line+') – Bitte Screenshot an Entwickler schicken.';
   return false;
 };
 </script>

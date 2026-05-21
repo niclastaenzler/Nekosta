@@ -300,15 +300,24 @@ body.theme-grey{--p:#4a5568;--p-mid:#718096;--p-light:#edf2f7;--p-accent:#a0aec0
 body.theme-dark{--p:#8b5cf6;--p-mid:#7c3aed;--p-light:#1e1b2e;--p-accent:#a78bfa;--bg:#0f0e17;--white:#1a1825;--text:#e8e6f0;--muted:#8b87a0;--border:#2d2a3e;--danger:#ef4444;--danger-bg:#2d1515;--success:#22c55e;--success-bg:#0f2d1a;--warn:#f59e0b;--warn-bg:#2d2008}
 body.theme-dark .header{background:#1a1825;border-bottom:1px solid #2d2a3e}
 body.theme-dark .sidebar{background:#1a1825;border-right:1px solid #2d2a3e}
-body.theme-dark .login-card,.theme-dark .modal-box,.theme-dark .pdf-preview-box{background:#1a1825}
+body.theme-dark .login-card,body.theme-dark .modal-box,body.theme-dark .pdf-preview-box{background:#1a1825}
 body.theme-dark .card{background:#1a1825;border-color:#2d2a3e}
-body.theme-dark input,.theme-dark select,.theme-dark textarea{background:#0f0e17;color:#e8e6f0;border-color:#2d2a3e}
-body.theme-dark .archiv-card,.theme-dark .wohn-card,.theme-dark .wohn-erg-card{background:#1a1825;border-color:#2d2a3e}
+body.theme-dark input,body.theme-dark select,body.theme-dark textarea{background:#0f0e17;color:#e8e6f0;border-color:#2d2a3e}
+body.theme-dark .archiv-card,body.theme-dark .wohn-card,body.theme-dark .wohn-erg-card{background:#1a1825;border-color:#2d2a3e}
 body.theme-dark .wohn-card-header{background:#1e1b2e}
 body.theme-dark .token-pkg{background:#1a1825;border-color:#2d2a3e}
 body.theme-dark .kosten-table th{background:#0f0e17}
-body.theme-dark .wizard-bar,.theme-dark .wizard-footer{background:#1a1825;border-color:#2d2a3e}
+body.theme-dark .wizard-bar,body.theme-dark .wizard-footer{background:#1a1825;border-color:#2d2a3e}
 body.theme-dark .nav-item:hover{background:#1e1b2e}
+body.theme-dark table{color:var(--text)}
+body.theme-dark .lfield input,body.theme-dark .lfield label{background:#0f0e17;color:var(--text);border-color:#2d2a3e}
+body.theme-dark .kosten-table td{border-color:#2d2a3e;background:#1a1825}
+body.theme-dark .ergebnis-header{background:linear-gradient(135deg,#1e1b2e,#2d1b4e)}
+body.theme-dark .pdf-actions-bar{background:#1a1825;border-color:#2d2a3e}
+body.theme-dark .voraus-card,.theme-dark .kunden-abr-card{background:#1a1825;border-color:#2d2a3e}
+body.theme-dark .nav-item.active{background:#1e1b2e}
+body.theme-dark .tab-btn{background:#1a1825;color:var(--text);border-color:#2d2a3e}
+body.theme-dark .discount-row input{background:#0f0e17;color:var(--text)}
 body.theme-lila{--p:#6a2d9f;--p-mid:#8e44c0;--p-light:#f0e6f8;--p-accent:#c084e8;--bg:#f8f5fc;--border:#ddd8e8}
 .omenu-item{padding:.55rem 1rem;cursor:pointer;font-size:.82rem;color:var(--text)}
 .omenu-item:hover{background:var(--p-light)}
@@ -455,11 +464,6 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
             <div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem">Aktive Mieter</div>
             <div style="font-size:2rem;font-weight:700;color:#1a7a4a" id="dash-mieter">–</div>
             <div style="font-size:.78rem;color:var(--muted);margin-top:.25rem">aktuell eingezogen</div>
-          </div>
-          <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:1.25rem;border-left:4px solid #e67e22">
-            <div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem">Abrechnungen</div>
-            <div style="font-size:2rem;font-weight:700;color:#e67e22" id="dash-abr">–</div>
-            <div style="font-size:.78rem;color:var(--muted);margin-top:.25rem">gesamt erstellt</div>
           </div>
           <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:1.25rem;border-left:4px solid #ffd700">
             <div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem">Token Guthaben</div>
@@ -614,7 +618,116 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
       </div>
     </div>
 
-    <!-- OBJEKT MODAL -->
+    <!-- OBJEKT DASHBOARD -->
+    <div id="page-objekt-detail" style="display:none">
+      <div style="padding:2rem;max-width:1100px">
+        <!-- BACK + HEADER -->
+        <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap">
+          <button onclick="showPage('objekte')" style="background:none;border:1px solid var(--border);border-radius:8px;padding:.45rem .9rem;cursor:pointer;font-size:.82rem;color:var(--muted);font-family:Arial,sans-serif">← Zurück</button>
+          <div style="flex:1">
+            <h1 style="font-size:1.4rem;font-weight:700" id="obj-detail-name">Objekt</h1>
+            <div style="font-size:.82rem;color:var(--muted)" id="obj-detail-adresse"></div>
+          </div>
+          <button class="btn-primary" onclick="startAbrechnungFuerAktivesObjekt()">📄 Abrechnung erstellen</button>
+          <button class="btn-secondary" onclick="editAktivesObjekt()">✏️ Bearbeiten</button>
+        </div>
+
+        <!-- STATS KACHELN -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:1rem;margin-bottom:1.5rem">
+          <div class="card" style="margin:0;text-align:center;padding:1.1rem">
+            <div style="font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.35rem">Einheiten</div>
+            <div style="font-size:1.8rem;font-weight:700;color:var(--p)" id="od-stat-einh">–</div>
+          </div>
+          <div class="card" style="margin:0;text-align:center;padding:1.1rem">
+            <div style="font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.35rem">Aktive Mieter</div>
+            <div style="font-size:1.8rem;font-weight:700;color:#1a7a4a" id="od-stat-mieter">–</div>
+          </div>
+          <div class="card" style="margin:0;text-align:center;padding:1.1rem">
+            <div style="font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.35rem">Gesamtfläche</div>
+            <div style="font-size:1.8rem;font-weight:700;color:var(--p)" id="od-stat-flaeche">–</div>
+          </div>
+          <div class="card" style="margin:0;text-align:center;padding:1.1rem">
+            <div style="font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.35rem">Kaltmiete/Mon.</div>
+            <div style="font-size:1.8rem;font-weight:700;color:#e67e22" id="od-stat-miete">–</div>
+          </div>
+          <div class="card" style="margin:0;text-align:center;padding:1.1rem">
+            <div style="font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.35rem">BK-Vorausz./Mon.</div>
+            <div style="font-size:1.8rem;font-weight:700;color:var(--p)" id="od-stat-bk">–</div>
+          </div>
+          <div class="card" style="margin:0;text-align:center;padding:1.1rem">
+            <div style="font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.35rem">Leerstand</div>
+            <div style="font-size:1.8rem;font-weight:700;color:#c0392b" id="od-stat-leer">–</div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem">
+          <!-- EINHEITEN -->
+          <div class="card" style="grid-column:1/-1">
+            <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+              <span>🏠 Einheiten</span>
+              <button class="btn-small" onclick="openEinheitModal()">+ Einheit hinzufügen</button>
+            </div>
+            <div id="od-einheiten-list"><div style="color:var(--muted);font-size:.85rem;text-align:center;padding:1rem">Wird geladen...</div></div>
+          </div>
+
+          <!-- MIETER TABELLE -->
+          <div class="card" style="grid-column:1/-1">
+            <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+              <span>👥 Mieter</span>
+              <button class="btn-small" onclick="openMieterFuerAktivesObjekt()">+ Mieter hinzufügen</button>
+            </div>
+            <div id="od-mieter-list"><div style="color:var(--muted);font-size:.85rem;text-align:center;padding:1rem">Wird geladen...</div></div>
+          </div>
+
+          <!-- ABRECHNUNGEN -->
+          <div class="card">
+            <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+              <span>📄 Abrechnungen</span>
+            </div>
+            <div id="od-abr-list"><div style="color:var(--muted);font-size:.85rem;text-align:center;padding:1rem">Wird geladen...</div></div>
+          </div>
+
+          <!-- NOTIZEN -->
+          <div class="card">
+            <div class="card-title">📝 Notizen</div>
+            <div class="field" style="margin-bottom:.5rem"><textarea id="od-notiz-input" placeholder="Notiz zum Objekt..." style="border:1px solid var(--border);border-radius:var(--r);padding:.5rem .7rem;font-size:.85rem;font-family:Arial,sans-serif;width:100%;min-height:70px;resize:vertical;outline:none;background:var(--bg)"></textarea></div>
+            <button class="btn-small" onclick="saveObjektNotiz()">💾 Speichern</button>
+            <div id="od-notiz-saved" style="display:none;font-size:.75rem;color:var(--success);margin-top:.4rem">✅ Gespeichert</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EINHEIT MODAL -->
+    <div id="einheit-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:650;align-items:center;justify-content:center;padding:1rem">
+      <div style="background:var(--white);border-radius:14px;padding:1.75rem;width:100%;max-width:480px">
+        <h3 style="font-size:.95rem;font-weight:700;margin-bottom:1rem" id="einheit-modal-title">Einheit anlegen</h3>
+        <input type="hidden" id="einheit-edit-id">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-bottom:.7rem">
+          <div class="field" style="grid-column:1/-1"><label>Bezeichnung *</label><input type="text" id="ein-bez" placeholder="z. B. Whg. EG links, Büro 1. OG"></div>
+          <div class="field"><label>Typ</label>
+            <select id="ein-typ" style="border:1px solid var(--border);border-radius:var(--r);padding:.48rem .72rem;font-size:.86rem;font-family:Arial,sans-serif;background:var(--bg);outline:none;width:100%">
+              <option value="Wohnung">Wohnung</option>
+              <option value="Gewerbe">Gewerbe</option>
+              <option value="Garage">Garage/Stellplatz</option>
+              <option value="Lager">Lager</option>
+              <option value="Sonstiges">Sonstiges</option>
+            </select>
+          </div>
+          <div class="field"><label>Fläche (m²)</label><input type="number" id="ein-flaeche" placeholder="65" step="0.01"></div>
+          <div class="field"><label>Stockwerk</label><input type="text" id="ein-stockwerk" placeholder="EG, 1.OG, 2.OG..."></div>
+          <div class="field"><label>Kaltmiete (€/Mon.)</label><input type="number" id="ein-kaltmiete" placeholder="750.00" step="0.01"></div>
+          <div class="field"><label>Sollmiete inkl. NK (€/Mon.)</label><input type="number" id="ein-sollmiete" placeholder="950.00" step="0.01"></div>
+        </div>
+        <div style="display:flex;gap:.65rem">
+          <button class="btn-primary" onclick="saveEinheit()" style="flex:1">💾 Speichern</button>
+          <button class="btn-secondary" onclick="closeEinheitModal()" style="flex:1">Abbrechen</button>
+        </div>
+        <div id="einheit-msg" style="display:none;margin-top:.6rem;font-size:.78rem;padding:.4rem .7rem;border-radius:6px"></div>
+      </div>
+    </div>
+
+
     <div id="objekt-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:600;align-items:center;justify-content:center;padding:1rem;overflow-y:auto">
       <div style="background:#fff;border-radius:14px;padding:1.75rem;width:100%;max-width:560px;margin:auto">
         <h3 style="font-size:.95rem;font-weight:700;margin-bottom:1rem" id="objekt-modal-title">Objekt anlegen</h3>
@@ -625,6 +738,14 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
           <div class="field"><label>PLZ</label><input type="text" id="obj-plz" placeholder="53881"></div>
           <div class="field"><label>Ort</label><input type="text" id="obj-ort" placeholder="Euskirchen"></div>
           <div class="field"><label>Gesamtwohnfläche (m²)</label><input type="number" id="obj-flaeche" placeholder="215" step="0.01"></div>
+          <div class="field"><label>Kategorie</label>
+            <select id="obj-kategorie" style="border:1px solid var(--border);border-radius:var(--r);padding:.48rem .72rem;font-size:.86rem;font-family:Arial,sans-serif;background:var(--bg);outline:none;width:100%">
+              <option value="Wohnhaus">Gesamtes Wohnhaus</option>
+              <option value="Einfamilienhaus">Einfamilienhaus</option>
+              <option value="Wohn- & Geschäftshaus">Wohn- &amp; Geschäftshaus</option>
+              <option value="Gewerbe">Gewerbe</option>
+            </select>
+          </div>
           <div class="field"><label>Anzahl Einheiten</label><input type="number" id="obj-einheiten" placeholder="4" step="1" min="1"></div>
           <div class="field" style="grid-column:1/-1"><label>Notiz (optional)</label><textarea id="obj-notiz" style="border:1px solid var(--border);border-radius:var(--r);padding:.5rem .75rem;font-size:.88rem;font-family:Arial,sans-serif;width:100%;min-height:55px;resize:vertical;outline:none;background:var(--bg)" placeholder="Interne Anmerkungen..."></textarea></div>
         </div>
@@ -663,6 +784,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
           <div class="field"><label>Auszugsdatum (leer = aktiv)</label><input type="date" id="m-auszug"></div>
           <div class="field"><label>BK-Vorauszahlung €/Mon.</label><input type="number" id="m-vbk" placeholder="120.00" step="0.01"></div>
           <div class="field"><label>HK-Vorauszahlung €/Mon.</label><input type="number" id="m-vhk" placeholder="80.00" step="0.01"></div>
+          <div class="field"><label>Kaltmiete €/Mon.</label><input type="number" id="m-kaltmiete" placeholder="750.00" step="0.01"></div>
           <div class="field" style="grid-column:1/-1"><label>IBAN (optional)</label><input type="text" id="m-iban" placeholder="DE12 3456 ..."></div>
         </div>
         <div style="display:flex;gap:.65rem;margin-top:.25rem">
@@ -832,12 +954,73 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
     <!-- ARCHIV -->
     <div id="page-archiv" style="display:none">
       <div style="padding:2rem">
-        <div class="page-header"><div class="page-title">🗂 Meine Abrechnungen</div><div class="page-sub">Alle gespeicherten und archivierten Abrechnungen</div></div>
-        <div class="card"><div id="archiv-content"><div class="empty-state"><div class="empty-icon">🗂</div>Noch keine Abrechnungen gespeichert.</div></div></div>
+        <!-- HEADER -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:.75rem">
+          <h1 style="font-size:1.5rem;font-weight:700">Betriebskostenabrechnungen</h1>
+          <div style="display:flex;gap:.65rem">
+            <button class="btn-secondary" onclick="showPage('archiv')" style="font-size:.82rem;padding:.5rem 1rem">📋 BKA aus Vorjahr</button>
+            <button class="btn-primary" onclick="startNeueAbrechnung()" style="display:flex;align-items:center;gap:.35rem"><span>+</span> Neue Abrechnung erstellen</button>
+          </div>
+        </div>
+        <!-- FILTER -->
+        <div style="display:flex;gap:.65rem;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap">
+          <div style="position:relative;flex:1;min-width:180px">
+            <span style="position:absolute;left:.75rem;top:50%;transform:translateY(-50%);color:var(--muted);font-size:.85rem">🔍</span>
+            <input type="text" id="archiv-search" placeholder="Nebenkostenabrechnungen durchsuchen..." oninput="renderArchivTabelle()"
+              style="width:100%;border:1px solid var(--border);border-radius:8px;padding:.5rem .75rem .5rem 2.2rem;font-size:.85rem;font-family:Arial,sans-serif;outline:none;background:var(--white)">
+          </div>
+          <select id="archiv-filter-objekt" onchange="renderArchivTabelle()"
+            style="border:1px solid var(--border);border-radius:8px;padding:.5rem .9rem;font-size:.85rem;font-family:Arial,sans-serif;background:var(--white);outline:none;cursor:pointer">
+            <option value="">Alle Objekte</option>
+          </select>
+          <select id="archiv-filter-status" onchange="renderArchivTabelle()"
+            style="border:1px solid var(--border);border-radius:8px;padding:.5rem .9rem;font-size:.85rem;font-family:Arial,sans-serif;background:var(--white);outline:none;cursor:pointer">
+            <option value="">Alle Status</option>
+            <option value="entwurf">In Arbeit</option>
+            <option value="abgerechnet">Fertiggestellt</option>
+          </select>
+          <button onclick="resetArchivFilter()" style="font-size:.82rem;color:var(--p);background:none;border:none;cursor:pointer">Filter zurücksetzen</button>
+        </div>
+        <!-- TABELLE -->
+        <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+          <table style="width:100%;border-collapse:collapse">
+            <thead>
+              <tr style="border-bottom:2px solid var(--border)">
+                <th style="width:32px;padding:.75rem 1rem"><input type="checkbox" style="cursor:pointer"></th>
+                <th style="text-align:left;padding:.75rem .65rem;font-size:.78rem;font-weight:700;color:var(--text);cursor:pointer" onclick="sortArchiv('titel')">Titel <span style="opacity:.4">↕</span></th>
+                <th style="text-align:left;padding:.75rem .65rem;font-size:.78rem;font-weight:700;color:var(--text);cursor:pointer" onclick="sortArchiv('objekt')">Objekt <span style="opacity:.4">↕</span></th>
+                <th style="text-align:left;padding:.75rem .65rem;font-size:.78rem;font-weight:700;color:var(--text);cursor:pointer" onclick="sortArchiv('jahr')">Zeitraum <span style="opacity:.4">↕</span></th>
+                <th style="text-align:left;padding:.75rem .65rem;font-size:.78rem;font-weight:700;color:var(--text);cursor:pointer" onclick="sortArchiv('created')">Erstellt am <span style="opacity:.4">↕</span></th>
+                <th style="text-align:left;padding:.75rem .65rem;font-size:.78rem;font-weight:700;color:var(--text);cursor:pointer" onclick="sortArchiv('updated')">Geändert am <span style="opacity:.4">↕</span></th>
+                <th style="width:40px"></th>
+              </tr>
+            </thead>
+            <tbody id="archiv-tbody">
+              <tr><td colspan="7" style="text-align:center;padding:3rem;color:var(--muted)">Wird geladen...</td></tr>
+            </tbody>
+          </table>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:.75rem 1.25rem;border-top:1px solid var(--border);font-size:.82rem;color:var(--muted)">
+            <span id="archiv-count">0 Einträge</span>
+            <select id="archiv-per-page" onchange="renderArchivTabelle()" style="border:1px solid var(--border);border-radius:6px;padding:.25rem .5rem;font-size:.82rem;font-family:Arial,sans-serif;background:var(--white)">
+              <option value="10">10</option>
+              <option value="20" selected>20</option>
+              <option value="50">50</option>
+            </select>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- STAMMDATEN -->
+    <!-- KUNDEN ARCHIV (same style) -->
+    <div id="page-kunden" style="display:none">
+      <div style="padding:2rem">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:.75rem">
+          <h1 style="font-size:1.5rem;font-weight:700">Meine Abrechnungen</h1>
+          <button class="btn-primary" onclick="startNeueAbrechnung()" style="display:flex;align-items:center;gap:.35rem"><span>+</span> Neue Abrechnung</button>
+        </div>
+        <div id="kunden-content"><div class="empty-state"><div class="empty-icon">📄</div>Noch keine Abrechnungen vorhanden.</div></div>
+      </div>
+    </div>
     <div id="page-stammdaten" style="display:none">
       <div style="padding:2rem">
         <div class="page-header"><div class="page-title">🏠 Stammdaten</div><div class="page-sub">Vermieter- und Objektdaten einmalig hinterlegen</div></div>
@@ -1152,7 +1335,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
     </div>
 
     <!-- HEIZKOSTENERSTELLEN -->
-        <div id="page-heizkostenerstellen" style="display:none">
+    <div id="page-heizkostenerstellen" style="display:none">
       <div style="padding:2rem;max-width:900px">
         <div class="page-header"><div class="page-title">🔥 Heizkostenabrechnung</div><div class="page-sub">Abrechnung nach Heizkostenverordnung (HeizkV) – 30/70-Regelung</div></div>
 
@@ -1439,7 +1622,7 @@ async function doRegister(){
     const {error}=await sb.auth.signUp({email,password:pw,options:{data:{full_name:name}}});
     if(error){showAuthError(err,'Fehler: '+error.message);return;}
     suc.textContent='✅ Konto erstellt! Bitte E-Mail bestätigen.';suc.className='auth-msg auth-success';suc.style.display='block';
-    ['reg-name','reg-email','reg-pw','reg-pw2'].forEach(id=>document.getElementById(id).value='');newCaptcha();
+    ['reg-name','reg-email','reg-pw','reg-pw2'].forEach(function(id){document.getElementById(id)}.value='');newCaptcha();
   }catch(e){showAuthError(err,'Fehler: '+e.message);}
 }
 function showAuthError(el,msg){el.textContent=msg;el.className='auth-msg show';el.style.display='block';}
@@ -1474,71 +1657,87 @@ sb.auth.onAuthStateChange(function(_,session){if(session&&session.user)initApp(s
 
 // ── NAVIGATION ──
 function showPage(name){
-  ['tool','archiv','stammdaten','anschreiben','kunden','tokens','einstellungen',
-   'heizkostenerstellen','impressum','welcome','bearbeitungsnotizen','adminpanel',
-   'dashboard','objekte','mieter'].forEach(function(p){
-    var el=document.getElementById('page-'+p);if(el)el.style.display=p===name?'block':'none';
-  });
-  document.querySelectorAll('.nav-item').forEach(function(el){el.classList.remove('active');});
-  [name,name+'-k'].forEach(function(id){
-    var el=document.getElementById('nav-'+id);if(el)el.classList.add('active');
-  });
+  var allPages=['tool','archiv','stammdaten','anschreiben','kunden','tokens',
+    'einstellungen','heizkostenerstellen','impressum','welcome','bearbeitungsnotizen',
+    'adminpanel','dashboard','objekte','mieter','objekt-detail'];
+
   var adminVisible=document.getElementById('admin-menu').style.display!=='none';
-  // Block customers from accessing locked pages
-  var lockedForCustomers=['anschreiben','heizkostenerstellen','objekte','mieter'];
+
+  // Block customers from locked pages - redirect to dashboard
+  var lockedForCustomers=['anschreiben','heizkostenerstellen','objekte','mieter','adminpanel','archiv'];
   if(!adminVisible&&lockedForCustomers.indexOf(name)>=0){
     showToast('🔒 Diese Funktion ist für Verwalter vorbehalten.');
-    return;
+    name='dashboard';
   }
+
+  allPages.forEach(function(p){
+    var el=document.getElementById('page-'+p);
+    if(el)el.style.display=p===name?'block':'none';
+  });
+
+  // Nav active state
+  document.querySelectorAll('.nav-item').forEach(function(el){el.classList.remove('active');});
+  [name, name+'-k'].forEach(function(id){
+    var el=document.getElementById('nav-'+id);if(el)el.classList.add('active');
+  });
+
+  // Load data for page
   if(name==='archiv')loadArchiv();
-  if(name==='tool')goStep(currentStep||1);
+  if(name==='kunden')loadKundenAbrechnungen();
+  if(name==='tool'){goStep(currentStep||1);checkStammdatenWarn();fillObjektDropdown();}
   if(name==='bearbeitungsnotizen')loadNotizen();
-  if(name==='dashboard')loadDashboard();
+  if(name==='dashboard'){loadDashboard();fillObjektDropdown();}
   if(name==='objekte')loadObjekte();
   if(name==='mieter'){loadObjekteFilter();loadMieter();}
+  if(name==='einstellungen'){loadThemeUI();updateBackupInfo();loadProfile();}
+  if(name==='adminpanel'&&isAdmin){loadTokenPreise();loadAdminStats();}
   if(name==='tokens'){
     loadTokenBalance();loadTokenHistory();
     var dc=document.getElementById('admin-discount-card');
     var dtc=document.getElementById('admin-token-send-card');
-    var adminVisible2=document.getElementById('admin-menu').style.display!=='none';
-    if(dc)dc.style.display=(isAdmin&&adminVisible2)?'block':'none';
-    if(dtc)dtc.style.display=(isAdmin&&adminVisible2)?'block':'none';
-    if(isAdmin&&adminVisible2)loadDiscountCodes();
+    if(dc)dc.style.display=(isAdmin&&adminVisible)?'block':'none';
+    if(dtc)dtc.style.display=(isAdmin&&adminVisible)?'block':'none';
+    if(isAdmin&&adminVisible)loadDiscountCodes();
   }
-  if(name==='einstellungen'){loadThemeUI();updateBackupInfo();}
-  if(name==='adminpanel'&&isAdmin){loadTokenPreise();loadAdminStats();}
-  if(name==='tool')checkStammdatenWarn();
-  if(name==='tool'||name==='dashboard')fillObjektDropdown();
 }
 
 
 // ── WIZARD ──
 // ── ANSICHT WECHSEL ──
 function switchAnsicht(val){
-  const adminMenu=document.getElementById('admin-menu');
-  const kundenMenu=document.getElementById('kunden-menu');
-  const dc=document.getElementById('admin-discount-card');
+  var adminMenu=document.getElementById('admin-menu');
+  var kundenMenu=document.getElementById('kunden-menu');
+  var dc=document.getElementById('admin-discount-card');
+  var dtc=document.getElementById('admin-token-send-card');
+  var pb=document.getElementById('btn-probe');
+  var allPages=['tool','archiv','stammdaten','anschreiben','kunden','tokens',
+    'einstellungen','heizkostenerstellen','impressum','bearbeitungsnotizen',
+    'adminpanel','dashboard','objekte','mieter','objekt-detail','welcome'];
   if(val==='kunden'){
     adminMenu.style.display='none';
     kundenMenu.style.display='block';
     if(dc)dc.style.display='none';
-    var pb=document.getElementById('btn-probe');if(pb)pb.style.display='none';
-    document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
-    const nk=document.getElementById('nav-kunden');if(nk)nk.classList.add('active');
-    ['tool','archiv','stammdaten','anschreiben','kunden','tokens'].forEach(p=>{
-      const el=document.getElementById('page-'+p);if(el)el.style.display=p==='kunden'?'block':'none';
+    if(dtc)dtc.style.display='none';
+    if(pb)pb.style.display='none';
+    document.querySelectorAll('.nav-item').forEach(function(el){el.classList.remove('active');});
+    var ndk=document.getElementById('nav-dashboard-k');if(ndk)ndk.classList.add('active');
+    allPages.forEach(function(p){
+      var el=document.getElementById('page-'+p);
+      if(el)el.style.display=p==='dashboard'?'block':'none';
     });
+    loadDashboard();
     loadKundenAbrechnungen();
   }else{
     adminMenu.style.display='block';
     kundenMenu.style.display='none';
-    document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
-    const nt=document.getElementById('nav-tool');if(nt)nt.classList.add('active');
-    ['tool','archiv','stammdaten','anschreiben','kunden','tokens'].forEach(p=>{
-      const el=document.getElementById('page-'+p);if(el)el.style.display=p==='tool'?'block':'none';
+    if(pb)pb.style.display='block';
+    document.querySelectorAll('.nav-item').forEach(function(el){el.classList.remove('active');});
+    var nd=document.getElementById('nav-dashboard');if(nd)nd.classList.add('active');
+    allPages.forEach(function(p){
+      var el=document.getElementById('page-'+p);
+      if(el)el.style.display=p==='dashboard'?'block':'none';
     });
-    goStep(1);
-  loadDashboard();
+    loadDashboard();
   }
 }
 
@@ -2394,14 +2593,14 @@ function buildPeriodContent(doc,we,pe,withWatermark,isFirstPage){
     hLine(L+C*0.5,W-R,y,160,140,210,0.5);y+=4;
 
     // ERGEBNIS
-    npi(13);y+=2;
+    npi(10);y+=2;
     var gr=gesamtDiff>=0;
-    fillR(L,y,C,11,gr?218:255,gr?240:228,gr?228:220);
-    hLine(L,W-R,y,gr?70:190,gr?160:50,gr?90:15,0.7);
-    hLine(L,W-R,y+11,gr?70:190,gr?160:50,gr?90:15,0.7);
-    setFont(10,'bold',gr?15:170,gr?120:35,gr?55:15);
-    doc.text(gr?'GESAMTGUTHABEN':'GESAMTNACHZAHLUNG',L+3,y+7.5);
-    doc.text(fmt(Math.abs(gesamtDiff)),W-R-1,y+7.5,{align:'right'});y+=16;
+    fillR(L,y,C,9,gr?232:255,gr?246:238,gr?238:232);
+    hLine(L,W-R,y,gr?80:200,gr?160:60,gr?100:20,0.5);
+    hLine(L,W-R,y+9,gr?80:200,gr?160:60,gr?100:20,0.5);
+    setFont(8.5,'bold',gr?20:160,gr?120:40,gr?60:20);
+    doc.text(gr?'Gesamtguthaben':'Gesamtnachzahlung',L+3,y+6);
+    doc.text(fmt(Math.abs(gesamtDiff)),W-R-1,y+6,{align:'right'});y+=13;
 
     if(!gr&&sm.iban){
       npi(12);setFont(8.5,'normal',80,80,80);
@@ -2577,31 +2776,130 @@ async function saveAbrechnung(){
 }
 
 // ── ARCHIV ──
+// ── ARCHIV (ImmoCloud-Stil) ──
+var alleAbrechnungen=[];
+var archiv_sort_field='updated';
+var archiv_sort_dir=-1;
+
 async function loadArchiv(){
-  var {data,error}=await sb.from('abrechnungen').select('*').order('created_at',{ascending:false});
-  var container=document.getElementById('archiv-content');
-  if(error||!data||!data.length){container.innerHTML='<div class="empty-state"><div class="empty-icon">🗂</div>Noch keine gespeichert.</div>';return;}
-  container.innerHTML='<div class="archiv-grid">'+data.map(function(a){
-    var isAbg=a.titel&&a.titel.indexOf('[Abgerechnet]')>=0;
-    var isEntwurf=a.titel&&a.titel.indexOf('[Entwurf]')>=0;
-    var badge=isAbg?'<span style="background:#d4edda;color:#155724;font-size:.62rem;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:.4rem">Abgerechnet</span>':
-              isEntwurf?'<span class="entwurf-badge">Entwurf</span>':'';
-    var cleanTitle=(a.titel||'Ohne Titel').replace('[Abgerechnet]','').replace('[Entwurf]','').trim();
-    var aJson=JSON.stringify(a).replace(/"/g,'&quot;');
-    return '<div class="archiv-card" style="'+(isAbg?'':'cursor:pointer')+'" '+(isAbg?'':'onclick="loadAbrechnung('+aJson+')"')+'>'
-      +(isAdmin?'<button class="ac-del" onclick="event.stopPropagation();deleteAbrechnung(\''+a.id+'\')" title="Löschen">🗑</button>':'')
-      +'<div class="ac-jahr">'+(a.jahr||'--')+'</div>'
-      +'<div class="ac-titel">'+cleanTitle+badge+'</div>'
-      +'<div class="ac-meta">'+(a.objekt||'')+'<br>'+(a.kunden_email?'👤 '+a.kunden_email:'')+'<br>'+new Date(a.created_at).toLocaleDateString('de-DE')+'</div>'
-      +'<div style="display:flex;gap:.4rem;margin-top:.5rem;flex-wrap:wrap">'
-      +'<button class="btn-small" style="font-size:.68rem;background:var(--muted)" onclick="event.stopPropagation();renameAbrechnung(\''+a.id+'\',\''+cleanTitle+(isAbg?' [Abgerechnet]':isEntwurf?' [Entwurf]':'')+'\')" title="Umbenennen">✏️</button>'
-      +(isAbg?'<button class="btn-small gruen" style="font-size:.68rem" onclick="event.stopPropagation();viewAbgerechnet(\''+a.id+'\')">📄 Anzeigen</button>'
-              +'<button class="btn-small" style="font-size:.68rem;background:#e67e22" onclick="event.stopPropagation();ladeKorrektur(\''+a.id+'\')">✏️ Korrektur</button>'
-        :'')
-      +'</div>'
-      +'</div>';
-  }).join('')+'</div>';
+  var tbody=document.getElementById('archiv-tbody');
+  if(tbody)tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:3rem;color:var(--muted)">Wird geladen...</td></tr>';
+
+  var {data,error}=await sb.from('abrechnungen').select('*').eq('created_by',currentUser.id).order('updated_at',{ascending:false});
+  if(error){if(tbody)tbody.innerHTML='<tr><td colspan="7" style="color:var(--danger);text-align:center;padding:2rem">'+error.message+'</td></tr>';return;}
+  alleAbrechnungen=data||[];
+
+  // Fill objekt filter
+  var objekte=[...new Set(alleAbrechnungen.map(function(a){return a.objekt;}).filter(Boolean))].sort();
+  var sel=document.getElementById('archiv-filter-objekt');
+  if(sel)sel.innerHTML='<option value="">Alle Objekte</option>'+objekte.map(function(o){return '<option value="'+o+'">'+o+'</option>';}).join('');
+
+  renderArchivTabelle();
 }
+
+function resetArchivFilter(){
+  var s=document.getElementById('archiv-search');if(s)s.value='';
+  var fo=document.getElementById('archiv-filter-objekt');if(fo)fo.value='';
+  var fs=document.getElementById('archiv-filter-status');if(fs)fs.value='';
+  renderArchivTabelle();
+}
+
+function sortArchiv(field){
+  if(archiv_sort_field===field)archiv_sort_dir*=-1;
+  else{archiv_sort_field=field;archiv_sort_dir=-1;}
+  renderArchivTabelle();
+}
+
+function renderArchivTabelle(){
+  var tbody=document.getElementById('archiv-tbody');
+  var cEl=document.getElementById('archiv-count');
+  if(!tbody)return;
+
+  var search=(document.getElementById('archiv-search')||{value:''}).value.toLowerCase();
+  var filterObj=(document.getElementById('archiv-filter-objekt')||{value:''}).value;
+  var filterStatus=(document.getElementById('archiv-filter-status')||{value:''}).value;
+  var perPage=parseInt((document.getElementById('archiv-per-page')||{value:'20'}).value)||20;
+
+  var filtered=alleAbrechnungen.filter(function(a){
+    var titel=(a.titel||'').toLowerCase();
+    var ms=!search||titel.includes(search)||(a.objekt||'').toLowerCase().includes(search);
+    var mo=!filterObj||a.objekt===filterObj;
+    var isAbg=a.titel&&a.titel.includes('[Abgerechnet]');
+    var stat=isAbg?'abgerechnet':'entwurf';
+    var mst=!filterStatus||stat===filterStatus;
+    return ms&&mo&&mst;
+  }).sort(function(a,b){
+    var va,vb;
+    if(archiv_sort_field==='titel'){va=a.titel||'';vb=b.titel||'';}
+    else if(archiv_sort_field==='objekt'){va=a.objekt||'';vb=b.objekt||'';}
+    else if(archiv_sort_field==='jahr'){va=a.jahr||0;vb=b.jahr||0;}
+    else if(archiv_sort_field==='created'){va=a.created_at||'';vb=b.created_at||'';}
+    else{va=a.updated_at||a.created_at||'';vb=b.updated_at||b.created_at||'';}
+    if(typeof va==='string')return va.localeCompare(vb)*archiv_sort_dir;
+    return (va-vb)*archiv_sort_dir;
+  });
+
+  if(cEl)cEl.textContent='Zeige 1 bis '+Math.min(filtered.length,perPage)+' von '+filtered.length+' Einträgen';
+
+  var page=filtered.slice(0,perPage);
+  if(!page.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:3rem;color:var(--muted)">Keine Abrechnungen gefunden.</td></tr>';return;}
+
+  tbody.innerHTML=page.map(function(a,ri){
+    var isAbg=a.titel&&a.titel.includes('[Abgerechnet]');
+    var clean=(a.titel||'').replace('[Abgerechnet]','').replace('[Entwurf]','').trim();
+    var statusBadge=isAbg
+      ?'<span style="background:#d1fae5;color:#065f46;font-size:.75rem;font-weight:700;padding:3px 10px;border-radius:6px">Fertiggestellt</span>'
+      :'<span style="background:#fef3c7;color:#92400e;font-size:.75rem;font-weight:700;padding:3px 10px;border-radius:6px">In Arbeit</span>';
+    var bg=ri%2===0?'':'background:#fafafa';
+    var created=a.created_at?new Date(a.created_at).toLocaleDateString('de-DE')+' '+new Date(a.created_at).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}):'–';
+    var updated=a.updated_at?new Date(a.updated_at).toLocaleDateString('de-DE')+' '+new Date(a.updated_at).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}):created;
+    var zeitraum=a.jahr?'01.01.'+a.jahr+' – 31.12.'+a.jahr:'–';
+
+    return '<tr style="border-bottom:1px solid var(--border);cursor:pointer;'+bg+'" '
+      +'onclick="'+( isAbg ? "viewAbgerechnet('"+a.id+"')" : "loadAbrechnung("+JSON.stringify(a).replace(/"/g,'&quot;')+")" )+'" '
+      +'onmouseover="this.style.background=\'var(--p-light)\'" onmouseout="this.style.background=\''+(ri%2===0?'':'#fafafa')+'\'">'
+      +'<td style="padding:.75rem 1rem" onclick="event.stopPropagation()"><input type="checkbox" style="cursor:pointer"></td>'
+      +'<td style="padding:.75rem .65rem">'
+        +'<div style="font-weight:600;font-size:.88rem">'+clean+'</div>'
+        +'<div style="font-size:.72rem;color:var(--muted);margin-top:1px">'+statusBadge+'</div>'
+        // removed "Umfassende Abrechnung" subtitle - using status badge instead
+      +'</td>'
+      +'<td style="padding:.75rem .65rem">'
+        +'<div style="font-size:.85rem;font-weight:500">'+(a.objekt||'–')+'</div>'
+        +(a.objekt?'<div style="font-size:.72rem;color:var(--muted)">'+(a.einheiten||'')+'</div>':'')
+      +'</td>'
+      +'<td style="padding:.75rem .65rem;font-size:.85rem;color:var(--text)">'+zeitraum+'</td>'
+      +'<td style="padding:.75rem .65rem;font-size:.82rem;color:var(--muted)">'+created+'</td>'
+      +'<td style="padding:.75rem .65rem;font-size:.82rem;color:var(--muted)">'+updated+'</td>'
+      +'<td style="padding:.75rem .5rem;text-align:center" onclick="event.stopPropagation()">'
+        +'<div style="position:relative;display:inline-block">'
+          +'<button onclick="toggleArchivMenu(\'amenu_'+a.id+'\')" style="background:none;border:1px solid var(--border);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:.9rem;color:var(--muted)">&hellip;</button>'
+          +'<div id="amenu_'+a.id+'" style="display:none;position:absolute;right:0;top:100%;background:var(--white);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.12);z-index:200;min-width:155px;overflow:hidden">'
+            +(isAbg
+              ?'<div onclick="viewAbgerechnet(\''+a.id+'\')" class="omenu-item">📄 Anzeigen</div>'
+               +'<div onclick="ladeKorrektur(\''+a.id+'\')" class="omenu-item">✏️ Korrektur</div>'
+              :'<div onclick="loadAbrechnung('+JSON.stringify(a).replace(/"/g,'&quot;')+')" class="omenu-item">✏️ Bearbeiten</div>'
+            )
+            +'<div onclick="renameAbrechnung(\''+a.id+'\',\''+clean+(isAbg?' [Abgerechnet]':' [Entwurf]')+'\')" class="omenu-item">✏️ Umbenennen</div>'
+            +(isAdmin?'<div style="height:1px;background:var(--border)"></div><div onclick="deleteAbrechnung(\''+a.id+'\')" class="omenu-item omenu-danger">🗑 Löschen</div>':'')
+          +'</div>'
+        +'</div>'
+      +'</td>'
+      +'</tr>';
+  }).join('');
+
+  document.onclick=function(e){
+    if(!e.target.closest('[id^="amenu_"]')&&e.target.textContent!=='…'){
+      document.querySelectorAll('[id^="amenu_"]').forEach(function(el){el.style.display='none';});
+    }
+  };
+}
+
+function toggleArchivMenu(id){
+  document.querySelectorAll('[id^="amenu_"]').forEach(function(el){if(el.id!==id)el.style.display='none';});
+  var el=document.getElementById(id);if(el)el.style.display=el.style.display==='none'?'block':'none';
+}
+
 
 async function viewAbgerechnet(id){
   var {data}=await sb.from('abrechnungen').select('*').eq('id',id).single();
@@ -2616,7 +2914,7 @@ async function viewAbgerechnet(id){
     renderErgebnis();goStep(4);
     document.getElementById('abrechnen-bar').style.display='none';
     // Hide Weiter/Berechnen buttons - read only
-    ['btn-weiter','btn-zurueck','btn-speichern'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.visibility='hidden';});
+    ['btn-weiter','btn-zurueck'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.visibility='hidden';});
   },150);
   showToast('📄 Abgerechnete Abrechnung wird angezeigt (nur Lesemodus)');
 }
@@ -2985,6 +3283,8 @@ async function importiereObjektInStep2(){
 function startNeueAbrechnung(){
   currentDraftId=null;clearUnsaved();
   importiertesObjekt=null;
+  var bwEl=document.getElementById('btn-weiter');if(bwEl){bwEl.style.display='block';bwEl.style.visibility='visible';}
+  
   var info=document.getElementById('objekt-import-info');
   if(info)info.style.display='none';
   var sel=document.getElementById('objekt-select');
@@ -3525,12 +3825,16 @@ function checkStammdatenWarn(){
 
 // ── ADMIN PANEL ──
 async function saveTokenPreise(){
-  var preise={p1:parseFloat(document.getElementById('preis-1').value)||1.99,
+  var preise={
+    p1:parseFloat(document.getElementById('preis-1').value)||1.99,
     p5:parseFloat(document.getElementById('preis-5').value)||8.99,
     p10:parseFloat(document.getElementById('preis-10').value)||15.99,
-    p50:parseFloat(document.getElementById('preis-50').value)||59.99};
-  var {error}=await sb.from('admin_settings').upsert({key:'token_preise',value:JSON.stringify(preise)},{onConflict:'key'});
+    p50:parseFloat(document.getElementById('preis-50').value)||59.99
+  };
   var msg=document.getElementById('preis-msg');
+  // Delete then insert to avoid upsert issues
+  await sb.from('admin_settings').delete().eq('key','token_preise');
+  var {error}=await sb.from('admin_settings').insert({key:'token_preise',value:JSON.stringify(preise)});
   msg.style.display='block';
   if(error){msg.style.background='#fdf0ef';msg.style.color='#c0392b';msg.textContent='Fehler: '+error.message;}
   else{msg.style.background='#eaf7ef';msg.style.color='#1a7a4a';msg.textContent='✅ Preise gespeichert!';}
@@ -3593,24 +3897,22 @@ async function loadDashboard(){
     var results=await Promise.all([
       sb.from('objekte').select('*',{count:'exact',head:true}).eq('user_id',currentUser.id),
       sb.from('mieter').select('*',{count:'exact',head:true}).eq('user_id',currentUser.id).eq('aktiv',true),
-      sb.from('abrechnungen').select('*',{count:'exact',head:true}).eq('created_by',currentUser.id),
       sb.from('nekosta_tokens').select('balance').eq('user_id',currentUser.id).single(),
-      sb.from('abrechnungen').select('titel,created_at').eq('created_by',currentUser.id).order('created_at',{ascending:false}).limit(5),
+      sb.from('abrechnungen').select('titel,created_at,objekt').eq('created_by',currentUser.id).order('created_at',{ascending:false}).limit(5),
       sb.from('objekte').select('name,ort,einheiten_anzahl').eq('user_id',currentUser.id).limit(5),
     ]);
     var objCount=results[0].count||0;
     var mietCount=results[1].count||0;
-    var abrCount=results[2].count||0;
-    var tokens=(results[3].data&&results[3].data.balance?results[3].data.balance:0)||0;
-    var letzteAbr=results[4].data||[];
-    var objekte=results[5].data||[];
+    var tokens=(results[2].data&&results[2].data.balance)?results[2].data.balance:0;
+    var letzteAbr=results[3].data||[];
+    var objekte=results[4].data||[];
 
     document.getElementById('dash-objekte').textContent=objCount;
     document.getElementById('dash-mieter').textContent=mietCount;
-    document.getElementById('dash-abr').textContent=abrCount;
-    document.getElementById('dash-tokens').textContent=isAdmin?'∞':tokens;
+    // Tokens: admin shows actual balance (not infinite in dashboard)
+    document.getElementById('dash-tokens').textContent=tokens;
 
-    // Entwürfe & Abgerechnet
+    // Entwürfe & Abgerechnet - only user's own
     var {data:alle}=await sb.from('abrechnungen').select('titel').eq('created_by',currentUser.id);
     var entwuerfe=(alle||[]).filter(function(a){return a.titel&&a.titel.includes('[Entwurf]');}).length;
     var abgerechnet=(alle||[]).filter(function(a){return a.titel&&a.titel.includes('[Abgerechnet]');}).length;
@@ -3622,9 +3924,9 @@ async function loadDashboard(){
     if(!letzteAbr.length){laEl.innerHTML='<div style="color:var(--muted);font-size:.85rem;text-align:center;padding:.75rem">Noch keine Abrechnungen.</div>';}
     else{laEl.innerHTML=letzteAbr.map(function(a){
       var isAbg=a.titel&&a.titel.includes('[Abgerechnet]');
-      var isEntwurf=a.titel&&a.titel.includes('[Entwurf]');
       return '<div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem 0;border-bottom:1px solid var(--border);font-size:.82rem">'
-        +'<span>'+a.titel.replace('[Abgerechnet]','').replace('[Entwurf]','').trim()+'</span>'
+        +'<div><span style="font-weight:600">'+(a.titel||'').replace('[Abgerechnet]','').replace('[Entwurf]','').trim()+'</span>'
+        +'<div style="font-size:.7rem;color:var(--muted)">'+(a.objekt||'')+'</div></div>'
         +'<span style="font-size:.68rem;padding:2px 7px;border-radius:10px;font-weight:700;background:'+(isAbg?'#d4edda':'#fff3cd')+';color:'+(isAbg?'#155724':'#856404')+'">'+(isAbg?'Abgerechnet':'Entwurf')+'</span>'
         +'</div>';
     }).join('');}
@@ -3633,7 +3935,7 @@ async function loadDashboard(){
     var olEl=document.getElementById('dash-objekte-list');
     if(!objekte.length){olEl.innerHTML='<div style="color:var(--muted);font-size:.85rem;text-align:center;padding:.75rem">Noch keine Objekte.</div>';}
     else{olEl.innerHTML=objekte.map(function(o){
-      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem 0;border-bottom:1px solid var(--border);font-size:.82rem;cursor:pointer" onclick="showPage(\'objekte\')">'
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem 0;border-bottom:1px solid var(--border);font-size:.82rem;cursor:pointer" onclick="openObjektDetail(\''+o.id+'\')">'
         +'<div><div style="font-weight:700">'+o.name+'</div><div style="font-size:.72rem;color:var(--muted)">'+o.ort+'</div></div>'
         +'<span style="font-size:.72rem;color:var(--muted)">'+(o.einheiten_anzahl||'–')+' Einh.</span>'
         +'</div>';
@@ -3642,20 +3944,20 @@ async function loadDashboard(){
     // Status Checks
     var sm=stammdaten;
     var checks=[
-      {label:'Stammdaten ausgefüllt',ok:!!(sm.vname||sm.firma)},
-      {label:'IBAN hinterlegt',ok:!!sm.iban},
-      {label:'Mindestens 1 Objekt',ok:objCount>0},
-      {label:'Mindestens 1 Mieter',ok:mietCount>0},
-      {label:'Token verfügbar',ok:isAdmin||(tokens>0)},
+      {label:'Stammdaten ausgefüllt',ok:!!(sm.vname||sm.firma),link:'stammdaten'},
+      {label:'IBAN hinterlegt',ok:!!sm.iban,link:'stammdaten'},
+      {label:'Mindestens 1 Objekt',ok:objCount>0,link:'objekte'},
+      {label:'Token verfügbar',ok:isAdmin||(tokens>0),link:'tokens'},
     ];
     document.getElementById('dash-status-list').innerHTML=checks.map(function(c){
       return '<div style="display:flex;align-items:center;gap:.6rem;padding:.4rem 0;font-size:.85rem;border-bottom:1px solid var(--border)">'
         +'<span style="font-size:.9rem">'+(c.ok?'✅':'⚪')+'</span>'
-        +'<span style="color:'+(c.ok?'var(--text)':'var(--muted)')+'">'+(c.ok?c.label:'<a href="#" onclick="event.preventDefault();showPage(\'stammdaten\')" style="color:var(--p)">'+c.label+' fehlt</a>')+'</span>'
+        +'<span>'+(c.ok?c.label:'<a href="#" onclick="showPage(\''+c.link+'\');return false" style="color:var(--p)">'+c.label+' fehlt →</a>')+'</span>'
         +'</div>';
     }).join('');
   }catch(e){console.error('Dashboard error:',e);}
 }
+
 
 async function legeTestobjektAn(){
   if(!confirm('Testobjekt mit Beispieldaten anlegen?\n\nEs wird ein Objekt „Musterstraße 10, Euskirchen" mit 3 Wohneinheiten und Mustermietern erstellt.'))return;
@@ -3878,10 +4180,13 @@ async function saveObjekt(){
   var msg=document.getElementById('objekt-modal-msg');
   msg.style.display='none';
   if(!name){msg.textContent='Bitte Name eingeben.';msg.style.background='#fdf0ef';msg.style.color='#c0392b';msg.style.display='block';return;}
-  var d={user_id:currentUser.id,name:name,strasse:document.getElementById('obj-strasse').value.trim(),
-    plz:document.getElementById('obj-plz').value.trim(),ort:document.getElementById('obj-ort').value.trim(),
+  var d={user_id:currentUser.id,name:name,
+    strasse:document.getElementById('obj-strasse').value.trim(),
+    plz:document.getElementById('obj-plz').value.trim(),
+    ort:document.getElementById('obj-ort').value.trim(),
     gesamtflaeche:parseFloat(document.getElementById('obj-flaeche').value)||null,
     einheiten_anzahl:parseInt(document.getElementById('obj-einheiten').value)||null,
+    kategorie:document.getElementById('obj-kategorie').value||'Wohnhaus',
     notiz:document.getElementById('obj-notiz').value.trim()};
   var r=id?await sb.from('objekte').update(d).eq('id',id):await sb.from('objekte').insert(d);
   if(r.error){msg.textContent='Fehler: '+r.error.message;msg.style.background='#fdf0ef';msg.style.color='#c0392b';msg.style.display='block';}
@@ -3901,7 +4206,196 @@ function startAbrechnungFuerObjekt(name,flaeche){
   },200);
 }
 
-// ── MIETER ──
+// ── OBJEKT DASHBOARD ──
+var aktivesObjekt=null;
+
+async function openObjektDetail(objId){
+  var {data,error}=await sb.from('objekte').select('*').eq('id',objId).single();
+  if(error||!data){showToast('Fehler beim Laden des Objekts');return;}
+  aktivesObjekt=data;
+
+  // Header
+  document.getElementById('obj-detail-name').textContent=data.name;
+  document.getElementById('obj-detail-adresse').textContent=
+    [data.strasse,data.plz&&data.ort?data.plz+' '+data.ort:data.ort].filter(Boolean).join(', ');
+  if(document.getElementById('od-notiz-input'))
+    document.getElementById('od-notiz-input').value=data.notiz||'';
+
+  // Seite anzeigen
+  ['tool','archiv','stammdaten','anschreiben','kunden','tokens','einstellungen',
+   'heizkostenerstellen','impressum','welcome','bearbeitungsnotizen','adminpanel',
+   'dashboard','objekte','mieter','objekt-detail'].forEach(function(p){
+    var el=document.getElementById('page-'+p);
+    if(el)el.style.display=p==='objekt-detail'?'block':'none';
+  });
+
+  await Promise.all([loadObjektStats(objId),loadObjektEinheiten(objId),loadObjektMieter(objId),loadObjektAbrechnungen(objId)]);
+}
+
+async function loadObjektStats(objId){
+  var {data:mieterData}=await sb.from('mieter').select('*').eq('user_id',currentUser.id).eq('objekt_id',objId);
+  var {data:einheitenData}=await sb.from('einheiten').select('*').eq('user_id',currentUser.id).eq('objekt_id',objId);
+  var aktive=(mieterData||[]).filter(function(m){return m.aktiv&&!m.auszug;});
+  var totalKaltmiete=aktive.reduce(function(s,m){return s+(m.kaltmiete||0);},0);
+  var totalBK=aktive.reduce(function(s,m){return s+(m.vorausz_bk||0);},0);
+  var einh=einheitenData||[];
+  var leerstand=einh.length-aktive.length;
+
+  document.getElementById('od-stat-einh').textContent=einh.length||aktivesObjekt.einheiten_anzahl||'–';
+  document.getElementById('od-stat-mieter').textContent=aktive.length;
+  document.getElementById('od-stat-flaeche').textContent=aktivesObjekt.gesamtflaeche?aktivesObjekt.gesamtflaeche.toLocaleString('de-DE')+' m²':'–';
+  document.getElementById('od-stat-miete').textContent=totalKaltmiete>0?totalKaltmiete.toLocaleString('de-DE',{minimumFractionDigits:2})+' €':'–';
+  document.getElementById('od-stat-bk').textContent=totalBK>0?totalBK.toLocaleString('de-DE',{minimumFractionDigits:2})+' €':'–';
+  document.getElementById('od-stat-leer').textContent=Math.max(0,leerstand)+' Einh.';
+}
+
+async function loadObjektEinheiten(objId){
+  var container=document.getElementById('od-einheiten-list');
+  if(!container)return;
+  var {data}=await sb.from('einheiten').select('*').eq('user_id',currentUser.id).eq('objekt_id',objId).order('bezeichnung');
+  if(!data||!data.length){
+    container.innerHTML='<div style="color:var(--muted);font-size:.85rem;text-align:center;padding:1rem">Noch keine Einheiten angelegt.</div>';
+    return;
+  }
+  container.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:.85rem">'
+    +'<thead><tr style="background:var(--p-light)">'
+    +'<th style="text-align:left;padding:.5rem .7rem;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--p)">Bezeichnung</th>'
+    +'<th style="padding:.5rem .7rem;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--p)">Typ</th>'
+    +'<th style="padding:.5rem .7rem;text-align:right;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--p)">Fläche</th>'
+    +'<th style="padding:.5rem .7rem;text-align:right;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--p)">Kaltmiete</th>'
+    +'<th style="padding:.5rem .7rem;text-align:right;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--p)">Sollmiete</th>'
+    +'<th style="padding:.5rem .7rem;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--p)">Status</th>'
+    +'<th style="width:60px"></th>'
+    +'</tr></thead><tbody>'
+    +data.map(function(e,ri){
+      var bg=ri%2===0?'#fff':'#faf8ff';
+      var typColors={'Wohnung':'#e8f5e9,#2e7d32','Gewerbe':'#fff3e0,#e65100','Garage':'#f3f3f3,#666','Lager':'#fce4ec,#880e4f'};
+      var tc=(typColors[e.typ]||'#f0e6f8,#6a2d9f').split(',');
+      return '<tr style="background:'+bg+';border-bottom:1px solid #f0eef5">'
+        +'<td style="padding:.55rem .7rem;font-weight:700">'+e.bezeichnung+'<br><span style="font-size:.7rem;color:var(--muted);font-weight:400">'+(e.stockwerk||'')+'</span></td>'
+        +'<td style="padding:.55rem .7rem"><span style="background:'+tc[0]+';color:'+tc[1]+';font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:10px">'+e.typ+'</span></td>'
+        +'<td style="padding:.55rem .7rem;text-align:right;color:var(--muted)">'+(e.flaeche?e.flaeche+' m²':'–')+'</td>'
+        +'<td style="padding:.55rem .7rem;text-align:right;font-weight:700">'+(e.kaltmiete?e.kaltmiete.toLocaleString('de-DE',{minimumFractionDigits:2})+' €':'–')+'</td>'
+        +'<td style="padding:.55rem .7rem;text-align:right;color:var(--muted)">'+(e.sollmiete?e.sollmiete.toLocaleString('de-DE',{minimumFractionDigits:2})+' €':'–')+'</td>'
+        +'<td style="padding:.55rem .7rem"><span style="font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:10px;background:#d4edda;color:#155724">Aktiv</span></td>'
+        +'<td style="padding:.55rem .7rem;text-align:center;display:flex;gap:.3rem">'
+        +'<button onclick="editEinheit(\''+e.id+'\')" class="btn-small" style="font-size:.65rem;padding:2px 7px">✏️</button>'
+        +'<button onclick="deleteEinheit(\''+e.id+'\')" class="btn-small" style="font-size:.65rem;padding:2px 7px;background:#888">🗑</button>'
+        +'</td></tr>';
+    }).join('')+'</tbody></table>';
+}
+
+async function loadObjektMieter(objId){
+  var container=document.getElementById('od-mieter-list');
+  if(!container)return;
+  var {data}=await sb.from('mieter').select('*').eq('user_id',currentUser.id).eq('objekt_id',objId).order('nachname');
+  if(!data||!data.length){container.innerHTML='<div style="color:var(--muted);font-size:.85rem;text-align:center;padding:1rem">Noch keine Mieter.</div>';return;}
+  container.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:.85rem">'
+    +'<thead><tr style="background:var(--p-light)">'
+    +'<th style="text-align:left;padding:.5rem .7rem;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--p)">Mieter</th>'
+    +'<th style="padding:.5rem .7rem;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--p)">Einheit</th>'
+    +'<th style="padding:.5rem .7rem;text-align:right;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--p)">Kaltmiete/Mon.</th>'
+    +'<th style="padding:.5rem .7rem;text-align:right;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--p)">BK-VZ/Mon.</th>'
+    +'<th style="padding:.5rem .7rem;text-align:right;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--p)">Einzug</th>'
+    +'<th style="padding:.5rem .7rem;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--p)">Status</th>'
+    +'<th style="width:60px"></th>'
+    +'</tr></thead><tbody>'
+    +data.map(function(m,ri){
+      var aktiv=m.aktiv&&!m.auszug;
+      var bg=ri%2===0?'#fff':'#faf8ff';
+      var einzug=m.einzug?new Date(m.einzug).toLocaleDateString('de-DE'):'–';
+      return '<tr style="background:'+bg+';border-bottom:1px solid #f0eef5">'
+        +'<td style="padding:.55rem .7rem"><div style="font-weight:700">'+m.anrede+' '+m.vorname+' '+m.nachname+'</div>'
+        +'<div style="font-size:.72rem;color:var(--muted)">'+(m.email||'')+'</div></td>'
+        +'<td style="padding:.55rem .7rem;font-size:.82rem">'+(m.wohneinheit||'–')+'</td>'
+        +'<td style="padding:.55rem .7rem;text-align:right;font-weight:700">'+(m.kaltmiete?m.kaltmiete.toLocaleString('de-DE',{minimumFractionDigits:2})+' €':'–')+'</td>'
+        +'<td style="padding:.55rem .7rem;text-align:right;color:var(--muted)">'+(m.vorausz_bk?m.vorausz_bk.toLocaleString('de-DE',{minimumFractionDigits:2})+' €':'–')+'</td>'
+        +'<td style="padding:.55rem .7rem;text-align:right;color:var(--muted)">'+einzug+'</td>'
+        +'<td style="padding:.55rem .7rem"><span style="font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:10px;background:'+(aktiv?'#d4edda':'#f5f5f5')+';color:'+(aktiv?'#155724':'#888')+'">'+(aktiv?'Aktiv':'Ausgezogen')+'</span></td>'
+        +'<td style="padding:.55rem .7rem;display:flex;gap:.3rem">'
+        +'<button onclick="editMieter(\''+m.id+'\')" class="btn-small" style="font-size:.65rem;padding:2px 7px">✏️</button>'
+        +'<button onclick="deleteMieter(\''+m.id+'\').then(function(){loadObjektMieter(\''+objId+'\')})" class="btn-small" style="font-size:.65rem;padding:2px 7px;background:#888">🗑</button>'
+        +'</td></tr>';
+    }).join('')+'</tbody></table>';
+}
+
+async function loadObjektAbrechnungen(objId){
+  var container=document.getElementById('od-abr-list');
+  if(!container)return;
+  var {data}=await sb.from('abrechnungen').select('titel,jahr,created_at').eq('created_by',currentUser.id).order('created_at',{ascending:false}).limit(5);
+  if(!data||!data.length){container.innerHTML='<div style="color:var(--muted);font-size:.85rem;text-align:center;padding:1rem">Noch keine Abrechnungen.</div>';return;}
+  container.innerHTML=data.map(function(a){
+    var isAbg=a.titel&&a.titel.includes('[Abgerechnet]');
+    var clean=(a.titel||'').replace('[Abgerechnet]','').replace('[Entwurf]','').trim();
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem 0;border-bottom:1px solid var(--border);font-size:.82rem">'
+      +'<span style="font-weight:600">'+clean+'</span>'
+      +'<span style="font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:10px;background:'+(isAbg?'#d4edda':'#fff3cd')+';color:'+(isAbg?'#155724':'#856404')+'">'+(isAbg?'Abgerechnet':'Entwurf')+'</span>'
+      +'</div>';
+  }).join('');
+}
+
+async function saveObjektNotiz(){
+  if(!aktivesObjekt)return;
+  var notiz=document.getElementById('od-notiz-input').value;
+  await sb.from('objekte').update({notiz:notiz}).eq('id',aktivesObjekt.id);
+  var msg=document.getElementById('od-notiz-saved');
+  if(msg){msg.style.display='block';setTimeout(function(){msg.style.display='none';},2000);}
+}
+
+function startAbrechnungFuerAktivesObjekt(){
+  if(!aktivesObjekt)return;
+  startAbrechnungFuerObjekt(aktivesObjekt.name,aktivesObjekt.gesamtflaeche);
+}
+function editAktivesObjekt(){
+  if(!aktivesObjekt)return;
+  editObjekt(aktivesObjekt.id);
+}
+function openMieterFuerAktivesObjekt(){
+  if(!aktivesObjekt)return;
+  openMieterModalFuerObjekt(aktivesObjekt.id,aktivesObjekt.name);
+}
+
+// ── EINHEITEN ──
+async function openEinheitModal(data){
+  document.getElementById('einheit-modal-title').textContent=data?'Einheit bearbeiten':'Einheit anlegen';
+  document.getElementById('einheit-edit-id').value=data?data.id:'';
+  document.getElementById('ein-bez').value=data?data.bezeichnung||'':'';
+  document.getElementById('ein-typ').value=data?data.typ||'Wohnung':'Wohnung';
+  document.getElementById('ein-flaeche').value=data?data.flaeche||'':'';
+  document.getElementById('ein-stockwerk').value=data?data.stockwerk||'':'';
+  document.getElementById('ein-kaltmiete').value=data?data.kaltmiete||'':'';
+  document.getElementById('ein-sollmiete').value=data?data.sollmiete||'':'';
+  document.getElementById('einheit-msg').style.display='none';
+  document.getElementById('einheit-modal').style.display='flex';
+}
+function closeEinheitModal(){document.getElementById('einheit-modal').style.display='none';}
+
+async function editEinheit(id){
+  var {data}=await sb.from('einheiten').select('*').eq('id',id).single();
+  if(data)openEinheitModal(data);
+}
+async function deleteEinheit(id){
+  if(!confirm('Einheit wirklich löschen?'))return;
+  await sb.from('einheiten').delete().eq('id',id);
+  showToast('🗑 Einheit gelöscht');
+  if(aktivesObjekt)loadObjektEinheiten(aktivesObjekt.id);
+}
+async function saveEinheit(){
+  var id=document.getElementById('einheit-edit-id').value;
+  var bez=document.getElementById('ein-bez').value.trim();
+  var msg=document.getElementById('einheit-msg');
+  msg.style.display='none';
+  if(!bez||!aktivesObjekt){msg.textContent='Bitte Bezeichnung eingeben.';msg.style.background='#fdf0ef';msg.style.color='#c0392b';msg.style.display='block';return;}
+  var d={user_id:currentUser.id,objekt_id:aktivesObjekt.id,
+    bezeichnung:bez,typ:document.getElementById('ein-typ').value,
+    flaeche:parseFloat(document.getElementById('ein-flaeche').value)||null,
+    stockwerk:document.getElementById('ein-stockwerk').value.trim()||null,
+    kaltmiete:parseFloat(document.getElementById('ein-kaltmiete').value)||null,
+    sollmiete:parseFloat(document.getElementById('ein-sollmiete').value)||null};
+  var r=id?await sb.from('einheiten').update(d).eq('id',id):await sb.from('einheiten').insert(d);
+  if(r.error){msg.textContent='Fehler: '+r.error.message;msg.style.background='#fdf0ef';msg.style.color='#c0392b';msg.style.display='block';}
+  else{closeEinheitModal();showToast('✅ Einheit gespeichert!');if(aktivesObjekt){loadObjektEinheiten(aktivesObjekt.id);loadObjektStats(aktivesObjekt.id);}}
+}
 async function loadMieter(){
   var container=document.getElementById('mieter-list');
   var filter=(document.getElementById('mieter-filter-objekt')||{value:''}).value;
@@ -3988,6 +4482,7 @@ async function saveMieter(){
     auszug:auszug,aktiv:!auszug,
     vorausz_bk:parseFloat(document.getElementById('m-vbk').value)||0,
     vorausz_hk:parseFloat(document.getElementById('m-vhk').value)||0,
+    kaltmiete:parseFloat(document.getElementById('m-kaltmiete').value)||null,
     iban:document.getElementById('m-iban').value.trim()||null};
   var r=id?await sb.from('mieter').update(d).eq('id',id):await sb.from('mieter').insert(d);
   if(r.error){msg.textContent='Fehler: '+r.error.message;msg.style.background='#fdf0ef';msg.style.color='#c0392b';msg.style.display='block';}

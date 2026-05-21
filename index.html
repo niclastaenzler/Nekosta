@@ -376,7 +376,6 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
       <div class="sidebar-section">Stammdaten</div>
       <div class="nav-item" onclick="showPage('stammdaten')" id="nav-stammdaten"><span class="ni-icon">👤</span>Meine Stammdaten</div>
       <div class="nav-item" onclick="showPage('objekte')" id="nav-objekte"><span class="ni-icon">🏢</span>Objekte</div>
-      <div class="nav-item" onclick="showPage('mieter')" id="nav-mieter"><span class="ni-icon">👥</span>Mieter</div>
       <div class="sidebar-divider"></div>
       <div class="sidebar-section">Erstellen</div>
       <div class="nav-item" onclick="startNeueAbrechnung()" id="nav-tool"><span class="ni-icon">📄</span>Abrechnung erstellen</div>
@@ -399,6 +398,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
       <div class="sidebar-divider"></div>
       <div class="sidebar-section">Stammdaten</div>
       <div class="nav-item" onclick="showPage('stammdaten')" id="nav-stammdaten-k"><span class="ni-icon">👤</span>Meine Stammdaten</div>
+      <div class="nav-item" style="opacity:.45;cursor:not-allowed;pointer-events:none" title="Demnächst verfügbar"><span class="ni-icon">🏢</span>Objekte<span class="nav-badge" style="background:#eee;color:#aaa">Bald</span></div>
       <div class="sidebar-divider"></div>
       <div class="sidebar-section">Erstellen</div>
       <div class="nav-item" onclick="startNeueAbrechnung()" id="nav-tool-k"><span class="ni-icon">📄</span>Abrechnung erstellen</div>
@@ -515,7 +515,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
           <div><div class="page-title">🏢 Objekte</div><div class="page-sub">Ihre Immobilien und Mietobjekte verwalten</div></div>
           <button class="btn-primary" onclick="openObjektModal()">+ Objekt hinzufügen</button>
         </div>
-        <div id="objekte-list"><div class="empty-state"><div class="empty-icon">🏢</div>Noch keine Objekte angelegt. Legen Sie Ihr erstes Objekt an!</div></div>
+        <div id="objekte-list"><div class="empty-state"><div class="empty-icon">🏢</div><p>Noch keine Objekte angelegt.</p><div class="btn-row" style="justify-content:center;margin-top:.75rem"><button class="btn-primary" onclick="openObjektModal()">+ Objekt hinzufügen</button><button class="btn-secondary" onclick="legeTestobjektAn()">🧪 Testobjekt anlegen</button></div></div></div>
       </div>
     </div>
 
@@ -3415,7 +3415,38 @@ async function loadDashboard(){
   }catch(e){console.error('Dashboard error:',e);}
 }
 
-// ── OBJEKTE ──
+async function legeTestobjektAn(){
+  if(!confirm('Testobjekt mit Beispieldaten anlegen?\n\nEs wird ein Objekt „Musterstraße 10, Euskirchen" mit 3 Wohneinheiten und Mustermietern erstellt.'))return;
+  // Objekt anlegen
+  var {data:obj,error:e1}=await sb.from('objekte').insert({
+    user_id:currentUser.id,
+    name:'Musterstraße 10',
+    strasse:'Musterstraße 10',
+    plz:'53881',
+    ort:'Euskirchen',
+    gesamtflaeche:215,
+    einheiten_anzahl:3,
+    notiz:'Testobjekt – bitte anpassen'
+  }).select().single();
+  if(e1){showToast('❌ Fehler: '+e1.message);return;}
+
+  // Mieter anlegen
+  var mieter=[
+    {anrede:'Herr',vorname:'Max',nachname:'Mustermann',email:'max@example.de',telefon:'0151 12345678',
+     wohneinheit:'Whg. EG links',flaeche:65,einzug:'2022-01-01',vorausz_bk:120,vorausz_hk:80,aktiv:true},
+    {anrede:'Frau',vorname:'Anna',nachname:'Schmidt',email:'anna@example.de',telefon:'0152 98765432',
+     wohneinheit:'Whg. EG rechts',flaeche:70,einzug:'2021-03-01',vorausz_bk:130,vorausz_hk:85,aktiv:true},
+    {anrede:'Eheleute',vorname:'Klaus & Maria',nachname:'Weber',email:'weber@example.de',telefon:'0153 11223344',
+     wohneinheit:'Whg. OG',flaeche:80,einzug:'2020-06-01',vorausz_bk:150,vorausz_hk:100,aktiv:true},
+  ].map(function(m){return Object.assign({},m,{user_id:currentUser.id,objekt_id:obj.id});});
+
+  var {error:e2}=await sb.from('mieter').insert(mieter);
+  if(e2){showToast('❌ Mieter-Fehler: '+e2.message);return;}
+
+  showToast('✅ Testobjekt mit 3 Mietern angelegt!');
+  loadObjekte();
+  fillObjektDropdown();
+}
 async function loadObjekte(){
   var container=document.getElementById('objekte-list');
   var {data,error}=await sb.from('objekte').select('*').eq('user_id',currentUser.id).order('name');

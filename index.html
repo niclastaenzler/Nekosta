@@ -568,7 +568,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
         </div>
 
         <!-- TABELLE -->
-        <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+        <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:visible">
           <table style="width:100%;border-collapse:collapse" id="objekte-table">
             <thead>
               <tr style="border-bottom:1px solid var(--border)">
@@ -1056,7 +1056,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
           <button onclick="resetArchivFilter()" style="font-size:.82rem;color:var(--p);background:none;border:none;cursor:pointer">Filter zurücksetzen</button>
         </div>
         <!-- TABELLE -->
-        <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+        <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:visible">
           <table style="width:100%;border-collapse:collapse">
             <thead>
               <tr style="border-bottom:2px solid var(--border)">
@@ -1436,34 +1436,55 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
 
     <!-- KONTAKTE -->
     <div id="page-kontakte" style="display:none">
-      <div style="padding:2rem;max-width:1000px">
+      <div style="padding:2rem;max-width:1100px">
+        <!-- HEADER -->
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:.75rem">
-          <h1 style="font-size:1.5rem;font-weight:700">👤 Kontakte</h1>
-          <button class="btn-primary" onclick="openKontaktModal()">+ Kontakt hinzufügen</button>
+          <div>
+            <h1 style="font-size:1.5rem;font-weight:700">👤 Kontakte</h1>
+            <div style="font-size:.82rem;color:var(--muted);margin-top:2px">Verwalten Sie Ihre Mieter und Ansprechpartner</div>
+          </div>
+          <button class="btn-primary" onclick="openKontaktModal()" style="display:flex;align-items:center;gap:.4rem"><span>+</span> Kontakt hinzufügen</button>
         </div>
-        <!-- Suche -->
-        <div style="position:relative;margin-bottom:1.25rem">
-          <span style="position:absolute;left:.75rem;top:50%;transform:translateY(-50%);color:var(--muted)">🔍</span>
-          <input type="text" id="kontakte-search" placeholder="Kontakte durchsuchen..." oninput="renderKontakte()"
-            style="width:100%;border:1px solid var(--border);border-radius:8px;padding:.55rem .75rem .55rem 2.2rem;font-size:.88rem;font-family:Arial,sans-serif;outline:none;background:var(--white);box-sizing:border-box">
+
+        <!-- SUCHE + FILTER -->
+        <div style="display:flex;gap:.75rem;margin-bottom:1.5rem;flex-wrap:wrap">
+          <div style="position:relative;flex:1;min-width:220px">
+            <span style="position:absolute;left:.75rem;top:50%;transform:translateY(-50%);color:var(--muted);font-size:.9rem">🔍</span>
+            <input type="text" id="kontakte-search" placeholder="Kontakte durchsuchen..." oninput="renderKontakte()"
+              style="width:100%;border:1px solid var(--border);border-radius:8px;padding:.55rem .75rem .55rem 2.2rem;font-size:.88rem;font-family:Arial,sans-serif;outline:none;background:var(--white);box-sizing:border-box">
+          </div>
+          <div style="display:flex;gap:.5rem;align-items:center">
+            <button id="kontakt-view-grid" onclick="setKontakteView('grid')" style="background:var(--p);color:#fff;border:none;border-radius:6px;padding:.5rem .75rem;cursor:pointer;font-size:.8rem">⊞</button>
+            <button id="kontakt-view-list" onclick="setKontakteView('list')" style="background:var(--white);color:var(--muted);border:1px solid var(--border);border-radius:6px;padding:.5rem .75rem;cursor:pointer;font-size:.8rem">☰</button>
+          </div>
+          <div style="font-size:.82rem;color:var(--muted);align-self:center" id="kontakte-count">Wird geladen...</div>
         </div>
-        <!-- Tabelle -->
-        <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden">
-          <table style="width:100%;border-collapse:collapse">
-            <thead>
-              <tr style="border-bottom:2px solid var(--border)">
-                <th style="text-align:left;padding:.75rem 1rem;font-size:.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Name</th>
-                <th style="text-align:left;padding:.75rem .5rem;font-size:.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Kontakt</th>
-                <th style="text-align:left;padding:.75rem .5rem;font-size:.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Adresse</th>
-                <th style="text-align:left;padding:.75rem .5rem;font-size:.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Zugeordnete Einheit</th>
-                <th style="width:60px"></th>
-              </tr>
-            </thead>
-            <tbody id="kontakte-tbody">
-              <tr><td colspan="5" style="text-align:center;padding:3rem;color:var(--muted)">Wird geladen...</td></tr>
-            </tbody>
-          </table>
-          <div style="padding:.65rem 1rem;border-top:1px solid var(--border);font-size:.78rem;color:var(--muted)" id="kontakte-count">0 Kontakte</div>
+
+        <!-- KARTEN-ANSICHT -->
+        <div id="kontakte-grid-view">
+          <div id="kontakte-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem">
+            <div style="text-align:center;padding:3rem;color:var(--muted);grid-column:1/-1">Wird geladen...</div>
+          </div>
+        </div>
+
+        <!-- LISTEN-ANSICHT -->
+        <div id="kontakte-list-view" style="display:none">
+          <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:visible">
+            <table style="width:100%;border-collapse:collapse">
+              <thead>
+                <tr style="border-bottom:2px solid var(--border)">
+                  <th style="text-align:left;padding:.75rem 1rem;font-size:.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Name</th>
+                  <th style="text-align:left;padding:.75rem .5rem;font-size:.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Kontakt</th>
+                  <th style="text-align:left;padding:.75rem .5rem;font-size:.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Adresse</th>
+                  <th style="text-align:left;padding:.75rem .5rem;font-size:.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Einheit</th>
+                  <th style="width:60px"></th>
+                </tr>
+              </thead>
+              <tbody id="kontakte-tbody">
+                <tr><td colspan="5" style="text-align:center;padding:3rem;color:var(--muted)">Wird geladen...</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -1876,6 +1897,7 @@ async function initApp(user){
   loadBanner();
   checkStammdatenWarn();
   fillObjektDropdown();
+  loadTokenBalance();
   if(isAdmin){
     document.getElementById('admin-menu').style.display='block';
     document.getElementById('btn-speichern').style.display='block';
@@ -2071,7 +2093,11 @@ function goStep(n){
   var s4=document.getElementById('step4');if(s4)s4.style.display=n===4?'block':'none';
   var bz=document.getElementById('btn-zurueck');if(bz)bz.style.visibility=n>1?'visible':'hidden';
   var bw=document.getElementById('btn-weiter');
-  if(bw){bw.textContent=n===3?'🔢 Berechnen →':'Weiter →';bw.style.display=n===4?'none':'block';}
+  if(bw){
+    bw.style.display=n===4?'none':'block';
+    bw.style.visibility=n===4?'hidden':'visible';
+    bw.textContent=n===3?'🔢 Berechnen →':'Weiter →';
+  }
   var sl=document.getElementById('wizard-step-label');if(sl)sl.textContent='Schritt '+n+' von 4';
 }
 function wizardWeiter(){
@@ -3118,7 +3144,7 @@ function renderArchivTabelle(){
       +'<td style="padding:.75rem .5rem;text-align:center" onclick="event.stopPropagation()">'
         +'<div style="position:relative;display:inline-block">'
           +'<button onclick="toggleArchivMenu(\'amenu_'+a.id+'\')" style="background:none;border:1px solid var(--border);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:.9rem;color:var(--muted)">&hellip;</button>'
-          +'<div id="amenu_'+a.id+'" style="display:none;position:absolute;right:0;top:100%;background:var(--white);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.12);z-index:200;min-width:155px;overflow:hidden">'
+          +'<div id="amenu_'+a.id+'" style="display:none;position:absolute;right:0;top:100%;background:var(--white);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.15);z-index:9999;min-width:165px;overflow:hidden">'
             +(isAbg
               ?'<div onclick="viewAbgerechnet(\''+a.id+'\')" class="omenu-item">📄 Anzeigen</div>'
                +'<div onclick="ladeKorrektur(\''+a.id+'\')" class="omenu-item">✏️ Korrektur erstellen</div>'
@@ -3508,24 +3534,67 @@ async function ladeObjektInWizard(){
   var adresse=opt.getAttribute('data-adresse');
   var flaeche=opt.getAttribute('data-flaeche');
 
-  // Grunddaten befüllen
-  var ob=document.getElementById('objekt');
-  if(ob)ob.value=name+(adresse?', '+adresse:'');
-  var fl=document.getElementById('objekt-flaeche');
-  if(fl&&flaeche)fl.value=flaeche;
+  // Fill Grunddaten
+  var ob=document.getElementById('objekt');if(ob)ob.value=name+(adresse?', '+adresse:'');
+  var fl=document.getElementById('objekt-flaeche');if(fl&&flaeche)fl.value=flaeche;
 
-  // Mieter laden
-  var {data:mieterData}=await sb.from('mieter').select('*').eq('user_id',currentUser.id).eq('objekt_id',objId).eq('aktiv',true).order('wohneinheit');
+  // Load via Einheiten → Mietverhältnisse → Kontakte
+  var {data:einheiten}=await sb.from('einheiten').select('*').eq('user_id',currentUser.id).eq('objekt_id',objId).order('bezeichnung');
+  var {data:mvData}=await sb.from('mietverhaeltnisse').select('*,kontakte(anrede,vorname,nachname)').eq('user_id',currentUser.id).eq('objekt_id',objId).eq('aktiv',true);
 
-  importiertesObjekt={id:objId,name:name,mieter:mieterData||[]};
+  // Group Mietverhältnisse by Einheit
+  var mvByEinheit={};
+  (mvData||[]).forEach(function(mv){
+    if(!mvByEinheit[mv.einheit_id])mvByEinheit[mv.einheit_id]=[];
+    mvByEinheit[mv.einheit_id].push(mv);
+  });
 
-  var mCount=mieterData?mieterData.length:0;
+  // Build mieter-compatible structure
+  var mieterFuerWizard=[];
+  (einheiten||[]).forEach(function(e){
+    var mvs=mvByEinheit[e.id]||[];
+    if(mvs.length===0){
+      // Leerstand – still add the unit
+      mieterFuerWizard.push({
+        wohneinheit:e.bezeichnung, flaeche:e.flaeche||0,
+        mea:null, anrede:'', vorname:'Leerstand', nachname:'',
+        vorausz_bk:0, vorausz_hk:0, aktiv:true, isLeerstand:true,
+        einzug:null, auszug:null
+      });
+    } else {
+      mvs.forEach(function(mv){
+        var k=mv.kontakte||{};
+        mieterFuerWizard.push({
+          wohneinheit:e.bezeichnung, flaeche:e.flaeche||0,
+          mea:mv.mea||null,
+          anrede:k.anrede||'',vorname:k.vorname||'',nachname:k.nachname||'',
+          vorausz_bk:mv.vorausz_bk||0, vorausz_hk:mv.vorausz_hk||0,
+          aktiv:mv.aktiv, einzug:mv.einzug, auszug:mv.auszug
+        });
+      });
+    }
+  });
+
+  // Also fallback: load from old mieter table if no einheiten/mietverhaeltnisse
+  if(mieterFuerWizard.length===0){
+    var {data:altMieter}=await sb.from('mieter').select('*').eq('user_id',currentUser.id).eq('objekt_id',objId).eq('aktiv',true).order('wohneinheit');
+    mieterFuerWizard=(altMieter||[]).map(function(m){return{
+      wohneinheit:m.wohneinheit,flaeche:m.flaeche||0,mea:m.mea||null,
+      anrede:m.anrede||'',vorname:m.vorname||'',nachname:m.nachname||'',
+      vorausz_bk:m.vorausz_bk||0,vorausz_hk:m.vorausz_hk||0,
+      aktiv:m.aktiv,einzug:m.einzug,auszug:m.auszug
+    };});
+  }
+
+  importiertesObjekt={id:objId,name:name,mieter:mieterFuerWizard};
+
+  var mCount=mieterFuerWizard.filter(function(m){return !m.isLeerstand;}).length;
   if(info){
     document.getElementById('objekt-import-text').textContent=
-      name+': '+mCount+' aktive Mieter werden in Schritt 2 geladen'+(flaeche?' · '+flaeche+' m²':'');
+      name+': '+mCount+' aktive Mietverhältnisse werden in Schritt 2 geladen'+(flaeche?' · '+flaeche+' m²':'');
     info.style.display='block';
   }
-  showToast('✅ Objekt ausgewählt – Mieter werden in Schritt 2 geladen!');
+  showToast('✅ Objekt geladen – Mietverhältnisse werden in Schritt 2 übernommen!');
 }
 
 async function importiereObjektInStep2(){
@@ -3939,13 +4008,6 @@ async function loadProfile(){
 }
 
 // ── TOKEN SYSTEM FIXES ──
-async function checkIsFree(){
-  if(isAdmin)return true; // Admin = unlimited
-  try{
-    var {data}=await sb.from('nekosta_tokens').select('balance').eq('user_id',currentUser.id).single();
-    return ((data&&data.balance?data.balance:0)||0)>0; // Has tokens = can unlock
-  }catch(e){return false;}
-}
 
 async function hasToken(){
   if(isAdmin)return true;
@@ -4500,7 +4562,7 @@ function renderObjekteTabelle(){
             'style="background:none;border:1px solid var(--border);border-radius:6px;padding:3px 10px;cursor:pointer;font-size:.9rem;color:var(--muted)">'+
             '&hellip;</button>'+
           '<div id="menu_'+o.id+'" '+
-            'style="display:none;position:absolute;right:0;top:100%;background:var(--white);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.12);z-index:200;min-width:165px;overflow:hidden">'+
+            'style="display:none;position:absolute;right:0;top:100%;background:var(--white);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.15);z-index:9999;min-width:165px;overflow:hidden">'+
             '<div onclick="openObjektDetail(\''+o.id+'\')" class="omenu-item">&#x1F4CA; Dashboard öffnen</div>'+
             '<div onclick="editObjekt(\''+o.id+'\')" class="omenu-item">&#x270F; Bearbeiten</div>'+
             '<div onclick="startAbrechnungFuerObjekt(\''+o.name+'\',\''+o.gesamtflaeche+'\')" class="omenu-item">&#x1F4C4; Abrechnen</div>'+
@@ -4624,10 +4686,20 @@ async function loadKontakte(){
   renderKontakte();
 }
 
+var kontakteView='grid';
+function setKontakteView(v){
+  kontakteView=v;
+  document.getElementById('kontakte-grid-view').style.display=v==='grid'?'block':'none';
+  document.getElementById('kontakte-list-view').style.display=v==='list'?'block':'none';
+  var gb=document.getElementById('kontakt-view-grid');
+  var lb=document.getElementById('kontakt-view-list');
+  if(gb){gb.style.background=v==='grid'?'var(--p)':'var(--white)';gb.style.color=v==='grid'?'#fff':'var(--muted)';}
+  if(lb){lb.style.background=v==='list'?'var(--p)':'var(--white)';lb.style.color=v==='list'?'#fff':'var(--muted)';}
+  renderKontakte();
+}
+
 function renderKontakte(){
-  var tbody=document.getElementById('kontakte-tbody');
   var countEl=document.getElementById('kontakte-count');
-  if(!tbody)return;
   var search=(document.getElementById('kontakte-search')||{value:''}).value.toLowerCase();
   var filtered=alleKontakte.filter(function(k){
     return !search||
@@ -4637,28 +4709,71 @@ function renderKontakte(){
       (k.ort||'').toLowerCase().includes(search);
   });
   if(countEl)countEl.textContent=filtered.length+' Kontakt'+(filtered.length===1?'':'e');
-  if(!filtered.length){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:3rem;color:var(--muted)">Keine Kontakte gefunden.</td></tr>';return;}
-  tbody.innerHTML=filtered.map(function(k,ri){
-    var adresse=[k.strasse,(k.plz||'')+(k.ort?' '+k.ort:'')].filter(Boolean).join(', ');
-    var einheiten=k._einheiten.length?k._einheiten.join('; '):'–';
-    var bg=ri%2===0?'':'background:#faf8ff';
-    return '<tr style="border-bottom:1px solid var(--border);cursor:pointer;'+bg+'" '
-      +'onclick="editKontakt(\''+k.id+'\')" '
-      +'onmouseover="this.style.background=\'var(--p-light)\'" onmouseout="this.style.background=\''+(ri%2===0?'':'#faf8ff')+'\'">'
-      +'<td style="padding:.7rem 1rem">'
-        +'<div style="display:flex;align-items:center;gap:.65rem">'
-          +'<div style="width:34px;height:34px;border-radius:50%;background:var(--p);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:700;flex-shrink:0">'+(k.vorname?k.vorname[0]:k.nachname[0]).toUpperCase()+'</div>'
+
+  // Farb-Palette für Avatare
+  var colors=['#6a2d9f','#1a7a4a','#e67e22','#c0392b','#2980b9','#8e44ad','#16a085','#d35400'];
+
+  if(kontakteView==='grid'){
+    var grid=document.getElementById('kontakte-grid');
+    if(!grid)return;
+    if(!filtered.length){grid.innerHTML='<div style="text-align:center;padding:3rem;color:var(--muted);grid-column:1/-1"><div style="font-size:2.5rem;margin-bottom:.5rem">👥</div>Keine Kontakte gefunden.<br><button class="btn-primary" onclick="openKontaktModal()" style="margin-top:.75rem">+ Ersten Kontakt anlegen</button></div>';return;}
+    grid.innerHTML=filtered.map(function(k,i){
+      var color=colors[i%colors.length];
+      var initials=((k.vorname?k.vorname[0]:'')+k.nachname[0]).toUpperCase();
+      var adresse=[k.strasse,(k.plz||'')+(k.ort?' '+k.ort:'')].filter(Boolean).join(', ');
+      var einheiten=k._einheiten&&k._einheiten.length?k._einheiten.slice(0,2).join(', ')+(k._einheiten.length>2?' +mehr':''):'';
+      return '<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:box-shadow .15s;cursor:pointer" '
+        +'onmouseover="this.style.boxShadow=\'0 4px 16px rgba(0,0,0,.1)\'" onmouseout="this.style.boxShadow=\'none\'" onclick="editKontakt(\''+k.id+'\')">'
+        // Farbiger Header
+        +'<div style="background:'+color+';padding:1.5rem 1rem 1rem;position:relative">'
+          +'<div style="display:flex;justify-content:flex-end;margin-bottom:.75rem">'
+            +'<button onclick="event.stopPropagation();deleteKontakt(\''+k.id+'\')" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:6px;padding:3px 8px;cursor:pointer;font-size:.75rem">🗑</button>'
+          +'</div>'
+          +'<div style="width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.25);border:3px solid rgba(255,255,255,.5);display:flex;align-items:center;justify-content:center;font-size:1.35rem;font-weight:700;color:#fff;margin:0 auto">'+initials+'</div>'
+        +'</div>'
+        // Info
+        +'<div style="padding:1rem">'
+          +'<div style="text-align:center;margin-bottom:.75rem">'
+            +'<div style="font-weight:700;font-size:.95rem">'+k.anrede+' '+k.vorname+' '+k.nachname+'</div>'
+            +(einheiten?'<div style="font-size:.72rem;color:var(--p);margin-top:2px;font-weight:600">'+einheiten+'</div>':'<div style="font-size:.72rem;color:var(--muted);margin-top:2px">Kein Mietverhältnis</div>')
+          +'</div>'
+          +'<div style="border-top:1px solid var(--border);padding-top:.65rem;display:flex;flex-direction:column;gap:.3rem">'
+            +(k.email?'<div style="display:flex;align-items:center;gap:.5rem;font-size:.78rem"><span style="color:var(--muted)">✉</span><span>'+k.email+'</span></div>':'')
+            +(k.telefon?'<div style="display:flex;align-items:center;gap:.5rem;font-size:.78rem"><span style="color:var(--muted)">📞</span><span>'+k.telefon+'</span></div>':'')
+            +(k.mobil?'<div style="display:flex;align-items:center;gap:.5rem;font-size:.78rem"><span style="color:var(--muted)">📱</span><span>'+k.mobil+'</span></div>':'')
+            +(adresse?'<div style="display:flex;align-items:center;gap:.5rem;font-size:.78rem"><span style="color:var(--muted)">📍</span><span style="color:var(--muted)">'+adresse+'</span></div>':'')
+            +(!k.email&&!k.telefon&&!adresse?'<div style="font-size:.75rem;color:var(--muted);font-style:italic">Keine Kontaktdaten hinterlegt</div>':'')
+          +'</div>'
+        +'</div>'
+        +'</div>';
+    }).join('');
+  } else {
+    // List view
+    var tbody=document.getElementById('kontakte-tbody');
+    if(!tbody)return;
+    if(!filtered.length){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:3rem;color:var(--muted)">Keine Kontakte gefunden.</td></tr>';return;}
+    tbody.innerHTML=filtered.map(function(k,ri){
+      var adresse=[k.strasse,(k.plz||'')+(k.ort?' '+k.ort:'')].filter(Boolean).join(', ');
+      var einheiten=k._einheiten&&k._einheiten.length?k._einheiten.join('; '):'–';
+      var color=colors[ri%colors.length];
+      var initials=((k.vorname?k.vorname[0]:'')+k.nachname[0]).toUpperCase();
+      var bg=ri%2===0?'':'background:#faf8ff';
+      return '<tr style="border-bottom:1px solid var(--border);cursor:pointer;'+bg+'" '
+        +'onclick="editKontakt(\''+k.id+'\')" '
+        +'onmouseover="this.style.background=\'var(--p-light)\'" onmouseout="this.style.background=\''+(ri%2===0?'':'#faf8ff')+'\'">'
+        +'<td style="padding:.7rem 1rem"><div style="display:flex;align-items:center;gap:.65rem">'
+          +'<div style="width:36px;height:36px;border-radius:50%;background:'+color+';color:#fff;display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:700;flex-shrink:0">'+initials+'</div>'
           +'<div><div style="font-weight:700;font-size:.88rem">'+k.anrede+' '+k.vorname+' '+k.nachname+'</div>'
           +(k.notiz?'<div style="font-size:.7rem;color:var(--muted)">'+k.notiz+'</div>':'')+'</div>'
-        +'</div>'
-      +'</td>'
-      +'<td style="padding:.7rem .5rem;font-size:.82rem">'+(k.email?'<div>✉ '+k.email+'</div>':'')+(k.telefon?'<div style="color:var(--muted)">📞 '+k.telefon+'</div>':'')+'</td>'
-      +'<td style="padding:.7rem .5rem;font-size:.82rem;color:var(--muted)">'+adresse+'</td>'
-      +'<td style="padding:.7rem .5rem;font-size:.78rem;color:var(--p)">'+einheiten+'</td>'
-      +'<td style="padding:.7rem .5rem;text-align:center" onclick="event.stopPropagation()">'
-        +'<button onclick="deleteKontakt(\''+k.id+'\')" class="btn-small" style="font-size:.68rem;background:#888">🗑</button>'
-      +'</td></tr>';
-  }).join('');
+        +'</div></td>'
+        +'<td style="padding:.7rem .5rem;font-size:.82rem">'+(k.email?'<div>✉ '+k.email+'</div>':'')+(k.telefon?'<div style="color:var(--muted)">📞 '+k.telefon+'</div>':'')+(k.mobil?'<div style="color:var(--muted)">📱 '+k.mobil+'</div>':'')+'</td>'
+        +'<td style="padding:.7rem .5rem;font-size:.82rem;color:var(--muted)">'+adresse+'</td>'
+        +'<td style="padding:.7rem .5rem;font-size:.78rem;color:var(--p)">'+einheiten+'</td>'
+        +'<td style="padding:.7rem .5rem;text-align:center" onclick="event.stopPropagation()">'
+          +'<button onclick="deleteKontakt(\''+k.id+'\')" class="btn-small" style="font-size:.68rem;background:#888">🗑</button>'
+        +'</td></tr>';
+    }).join('');
+  }
 }
 
 function openKontaktModal(data){

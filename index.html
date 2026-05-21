@@ -1281,6 +1281,15 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
+// Catch ALL errors and show them visibly
+window.onerror=function(msg,src,line,col,err){
+  var d=document.getElementById('error-bar');
+  if(!d){d=document.createElement('div');d.id='error-bar';d.style='position:fixed;top:0;left:0;right:0;background:#c0392b;color:#fff;padding:.75rem 1rem;font-size:.82rem;z-index:99999;font-family:monospace';document.body.appendChild(d);}
+  d.textContent='JS-Fehler: '+msg+' (Zeile '+line+')';
+  return false;
+};
+</script>
+<script>
 const SUPABASE_URL='https://oppuwlccmtlshoqiotlj.supabase.co';
 const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9wcHV3bGNjbXRsc2hvcWlvdGxqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxODM4MjEsImV4cCI6MjA5NDc1OTgyMX0.jzgtaheRGaD4-tNCei2nV-ZjJjmRGsqsMBqVXZ7rYD8';
 const ADMIN_DOMAIN='p-t-hausverwaltung.de';
@@ -1363,7 +1372,7 @@ async function initApp(user){
     await loadKundenAbrechnungen();
   }
 }
-sb.auth.onAuthStateChange((_,session)=>{if(session?.user)initApp(session.user);});
+sb.auth.onAuthStateChange(function(_,session){if(session&&session.user)initApp(session.user);});
 
 // ── NAVIGATION ──
 function showPage(name){
@@ -1434,7 +1443,7 @@ function validateWohnungen(){
   const msgs=[];
   document.querySelectorAll('.wohn-card').forEach((card,ci)=>{
     const fl=card.querySelector('.w-flaeche');
-    if(!parseFloat(fl?.value)){
+    if(!parseFloat(fl&&fl.value)){
       fl.classList.add('error');
       msgs.push(`Wohnung ${ci+1}: m² fehlt`);
       ok=false;
@@ -1443,12 +1452,12 @@ function validateWohnungen(){
     card.querySelectorAll('.mieter-row').forEach((row,mi)=>{
       const nn=row.querySelector('.m-nname');
       const vn=row.querySelector('.m-vname');
-      if(!nn?.value.trim()){
+      if(!nn&&nn.value.trim()){
         nn.classList.add('error');
         msgs.push(`Wohnung ${ci+1}, Mieter ${mi+1}: Nachname fehlt`);
         ok=false;
       }else nn.classList.remove('error');
-      if(!vn?.value.trim()){
+      if(!vn&&vn.value.trim()){
         vn.classList.add('error');
         msgs.push(`Wohnung ${ci+1}, Mieter ${mi+1}: Vorname fehlt`);
         ok=false;
@@ -1651,12 +1660,12 @@ function getWohnungen(){
   return Array.from(document.querySelectorAll('.wohn-card')).map(card=>({
     bez:card.querySelector('.w-bez').value.trim()||'Wohnung',
     flaeche:parseFloat(card.querySelector('.w-flaeche').value)||0,
-    mea:card.querySelector('.w-mea')?.value.trim()||'',
-    meaNum:parseMEA(card.querySelector('.w-mea')?.value.trim()||''),
+    mea:(card.querySelector('.w-mea')||{}).value&&card.querySelector('.w-mea').value.trim()||'',
+    meaNum:parseMEA((card.querySelector('.w-mea')||{}).value&&card.querySelector('.w-mea').value.trim()||''),
     mieter:Array.from(card.querySelectorAll('.mieter-row')).map(row=>{
-      const anrede=row.querySelector('.m-anrede')?.value||'';
-      const vname=row.querySelector('.m-vname')?.value.trim()||'';
-      const nname=row.querySelector('.m-nname')?.value.trim()||'';
+      const anrede=(row.querySelector('.m-anrede')||{}).value||'';
+      const vname=(row.querySelector('.m-vname')||{value:''}).value||'';
+      const nname=(row.querySelector('.m-nname')||{value:''}).value||'';
       const name=[anrede,vname,nname].filter(Boolean).join(' ');
       return{
         anrede,vname,nname,name,
@@ -1732,10 +1741,10 @@ function moveKosten(btn,dir){
 }
 function getKosten(id){
   return Array.from(document.querySelectorAll('#'+id+' tr')).map(tr=>({
-    name:tr.querySelector('.k-name')?.value.trim()||'',
-    betrag:parseFloat(tr.querySelector('.k-betrag')?.value)||0,
-    schluessel:tr.querySelector('.k-schluessel')?.value||'flaeche',
-    notiz:tr.querySelector('.k-notiz')?.value.trim()||'',
+    name:(tr.querySelector('.k-name')||{value:''}).value.trim()||'',
+    betrag:parseFloat((tr.querySelector('.k-betrag')||{value:'0'}).value)||0,
+    schluessel:(tr.querySelector('.k-schluessel')||{value:'flaeche'}).value||'flaeche',
+    notiz:(tr.querySelector('.k-notiz')||{value:''}).value.trim()||'',
     direktWerte:tr.dataset.direkt?JSON.parse(tr.dataset.direkt):{},
   })).filter(k=>k.betrag>0&&k.name);
 }
@@ -1865,7 +1874,7 @@ function berechnen(){
     return kosten.map(k=>{
       let anteil=0;
       if(k.schluessel==='direkt'){
-        const dv=k.direktWerte?.[wohnung.bez]||0;
+        const dv=(k.direktWerte&&k.direktWerte[wohnung.bez])||0;
         anteil=(parseFloat(dv)||0)*(periode.days/365);
       } else if(k.schluessel==='mea'){
         const mea=wohnung.meaNum||wohnung.flaeche;
@@ -1898,7 +1907,7 @@ function berechnen(){
   lastErgebnis={wohnungen,bkKosten,hkKosten,ergebnisse,jahr,hasHK,
     objekt:document.getElementById('objekt').value,
     datum:document.getElementById('datum').value,
-    objektFlaeche:parseFloat(document.getElementById('objekt-flaeche')?.value)||0};
+    objektFlaeche:parseFloat((document.getElementById('objekt-flaeche')||{}).value)||0};
 
   renderErgebnis();
   goStep(4);
@@ -2430,7 +2439,7 @@ function closePaymentModal(){document.getElementById('payment-modal').style.disp
 function openSaveDialog(){
   if(!lastErgebnis){alert('Bitte zuerst berechnen.');return;}
   document.getElementById('save-titel').value=`${lastErgebnis.objekt?lastErgebnis.objekt+' – ':''}NK ${lastErgebnis.jahr}`.trim();
-  document.getElementById('save-kunde').value=document.getElementById('kunde-email')?.value||'';
+  document.getElementById('save-kunde').value=(document.getElementById('kunde-email')||{}).value||'';
   document.getElementById('save-msg').style.display='none';
   document.getElementById('save-dialog').style.display='flex';
 }
@@ -2491,7 +2500,7 @@ async function viewAbgerechnet(id){
 async function deleteAbrechnung(id){if(!confirm('Wirklich löschen?'))return;await sb.from('abrechnungen').delete().eq('id',id);showToast('🗑 Gelöscht');loadArchiv();}
 function loadAbrechnung(a){
   if(!a.data)return;
-  const isAbgerechnet=a.titel?.includes('[Abgerechnet]');
+  const isAbgerechnet=(a.titel&&a.titel.includes)('[Abgerechnet]');
   showPage('tool');
   setTimeout(()=>{
     // Grunddaten befüllen
@@ -2517,7 +2526,7 @@ function loadAbrechnung(a){
 async function loadKundenAbrechnungen(){
   const {data,error}=await sb.from('abrechnungen').select('*').eq('kunden_email',currentUser.email).order('created_at',{ascending:false});
   const container=document.getElementById('kunden-content');
-  if(error||!data?.length){container.innerHTML='<div class="empty-state"><div class="empty-icon">📄</div>Keine Abrechnungen vorhanden.<br><span style="font-size:.78rem">Fragen: info@nekosta.de</span></div>';return;}
+  if(error||!data&&data.length){container.innerHTML='<div class="empty-state"><div class="empty-icon">📄</div>Keine Abrechnungen vorhanden.<br><span style="font-size:.78rem">Fragen: info@nekosta.de</span></div>';return;}
   container.innerHTML=data.map(a=>`
     <div class="kunden-abr-card">
       <div class="kunden-abr-head"><div><div class="kah-title">${a.titel||'NK '+a.jahr}</div><div class="kah-meta">${a.objekt||''} · ${new Date(a.created_at).toLocaleDateString('de-DE')}</div></div><div style="font-size:1.4rem;font-weight:700;color:var(--p-accent)">${a.jahr}</div></div>
@@ -2579,7 +2588,7 @@ async function sendTokensToUser(){
 
 // ── FLÄCHE WARNUNG ──
 function checkFlaecheWarning(){
-  const objektFlaeche=parseFloat(document.getElementById('objekt-flaeche')?.value)||0;
+  const objektFlaeche=parseFloat((document.getElementById('objekt-flaeche')||{}).value)||0;
   if(!objektFlaeche)return;
   const summe=Array.from(document.querySelectorAll('.w-flaeche')).reduce((s,i)=>s+(parseFloat(i.value)||0),0);
   const warn=document.getElementById('flaeche-warning');
@@ -2604,7 +2613,7 @@ async function abrechnungAbschliessen(){
     datum:lastErgebnis.datum||null,
     data:{...lastErgebnis,status:'abgerechnet'},
     created_by:currentUser.id,
-    kunden_email:document.getElementById('kunde-email')?.value||null,
+    kunden_email:(document.getElementById('kunde-email')||{}).value||null,
   });
   if(error){showToast('❌ Fehler: '+error.message);return;}
   showToast('✅ Abrechnung gespeichert unter Meine Abrechnungen!');
@@ -2746,7 +2755,7 @@ let activeDiscount={code:'',percent:0};
 async function loadTokenBalance(){
   try{
     const {data}=await sb.from('nekosta_tokens').select('balance').eq('user_id',currentUser.id).single();
-    tokenBalance=data?.balance||0;
+    tokenBalance=(data&&data.balance?data.balance:0)||0;
   }catch(e){tokenBalance=0;}
   updateTokenUI();
 }
@@ -2764,7 +2773,7 @@ async function loadTokenHistory(){
   if(!container)return;
   try{
     const {data}=await sb.from('token_transactions').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}).limit(20);
-    if(!data?.length){container.innerHTML='<div style="color:var(--muted);font-size:.85rem;text-align:center;padding:1rem">Noch keine Transaktionen.</div>';return;}
+    if(!data&&data.length){container.innerHTML='<div style="color:var(--muted);font-size:.85rem;text-align:center;padding:1rem">Noch keine Transaktionen.</div>';return;}
     container.innerHTML=data.map(t=>`
       <div class="token-history-row">
         <div><div style="font-weight:700;font-size:.85rem">${t.description||t.type}</div><div class="th-desc">${new Date(t.created_at).toLocaleDateString('de-DE')}</div></div>
@@ -2823,7 +2832,7 @@ async function loadDiscountCodes(){
   try{
     const {data}=await sb.from('discount_codes').select('*').order('created_at',{ascending:false});
     (data||[]).forEach(c=>addDiscountCodeRow(c));
-    if(!data?.length)addDiscountCodeRow({code:'HAUSVERWALTUNG10',discount_percent:10,description:'Neukundenrabatt',active:true,valid_to:''});
+    if(!data&&data.length)addDiscountCodeRow({code:'HAUSVERWALTUNG10',discount_percent:10,description:'Neukundenrabatt',active:true,valid_to:''});
   }catch(e){addDiscountCodeRow({code:'HAUSVERWALTUNG10',discount_percent:10,description:'Neukundenrabatt',active:true,valid_to:''});}
 }
 
@@ -2848,11 +2857,11 @@ function toggleCode(btn){
 async function saveDiscountCodes(){
   const rows=Array.from(document.querySelectorAll('#discount-codes-tbody tr'));
   const codes=rows.map(tr=>({
-    code:tr.querySelector('.dc-code')?.value.trim().toUpperCase(),
-    discount_percent:parseInt(tr.querySelector('.dc-pct')?.value)||10,
-    description:tr.querySelector('.dc-desc')?.value.trim(),
-    valid_to:tr.querySelector('.dc-bis')?.value||null,
-    active:tr.querySelector('.toggle-btn')?.classList.contains('active'),
+    code:(tr.querySelector('.dc-code')||{value:''}).value.trim().toUpperCase(),
+    discount_percent:parseInt((tr.querySelector('.dc-pct')||{value:'10'}).value)||10,
+    description:(tr.querySelector('.dc-desc')||{value:''}).value.trim(),
+    valid_to:(tr.querySelector('.dc-bis')||{value:''}).value||null,
+    active:tr.querySelector('.toggle-btn')&&tr.querySelector('.toggle-btn').classList.contains('active'),
     created_by:currentUser.id,
   })).filter(c=>c.code);
 
@@ -2872,8 +2881,8 @@ async function saveDiscountCodes(){
 let pendingUnlockIdx=null;
 function openUnlock(wi){
   pendingUnlockIdx=wi;
-  const we=lastErgebnis?.ergebnisse?.[wi];
-  document.getElementById('unlock-desc').textContent=`Abrechnung für „${we?.wohnung?.bez||'Wohnung'}" vollständig freischalten?`;
+  const we=lastErgebnis&&lastErgebnis.ergebnisse?.[wi];
+  document.getElementById('unlock-desc').textContent=`Abrechnung für „${we&&we.(wohnung&&wohnung.bez)||'Wohnung'}" vollständig freischalten?`;
   document.getElementById('unlock-bal').textContent=tokenBalance;
   document.getElementById('unlock-checkbox').checked=false;
   document.getElementById('unlock-error').style.display='none';
@@ -2921,7 +2930,7 @@ async function saveProfile(){
 
   if(error||e2){
     msg.style.background='#fdf0ef';msg.style.color='#c0392b';
-    msg.textContent='Fehler: '+(error?.message||e2?.message);
+    msg.textContent='Fehler: '+(error&&error.message||e2&&e2.message);
   } else {
     msg.style.background='#eaf7ef';msg.style.color='#1a7a4a';
     msg.textContent=email&&email!==currentUser.email?
@@ -2963,7 +2972,7 @@ async function checkIsFree(){
   if(isAdmin)return true; // Admin = unlimited
   try{
     var {data}=await sb.from('nekosta_tokens').select('balance').eq('user_id',currentUser.id).single();
-    return (data?.balance||0)>0; // Has tokens = can unlock
+    return ((data&&data.balance?data.balance:0)||0)>0; // Has tokens = can unlock
   }catch(e){return false;}
 }
 
@@ -2971,7 +2980,7 @@ async function hasToken(){
   if(isAdmin)return true;
   try{
     var {data}=await sb.from('nekosta_tokens').select('balance').eq('user_id',currentUser.id).single();
-    return (data?.balance||0)>0;
+    return ((data&&data.balance?data.balance:0)||0)>0;
   }catch(e){return false;}
 }
 
@@ -3224,7 +3233,7 @@ async function loadDashboard(){
     var objCount=results[0].count||0;
     var mietCount=results[1].count||0;
     var abrCount=results[2].count||0;
-    var tokens=results[3].data?.balance||0;
+    var tokens=results[3].(data&&data.balance?data.balance:0)||0;
     var letzteAbr=results[4].data||[];
     var objekte=results[5].data||[];
 
@@ -3398,7 +3407,7 @@ async function loadMieter(){
         +'<td style="padding:.6rem .85rem"><div style="font-weight:700">'+m.anrede+' '+m.vorname+' '+m.nachname+'</div>'
         +'<div style="font-size:.72rem;color:var(--muted)">'+(m.email||'')+(m.telefon?' · '+m.telefon:'')+'</div>'
         +'<div style="font-size:.7rem;color:var(--muted)">Einzug: '+einzug+'</div></td>'
-        +'<td style="padding:.6rem .85rem;font-size:.82rem">'+(m.objekte?.name||'–')+'</td>'
+        +'<td style="padding:.6rem .85rem;font-size:.82rem">'+((m.objekte&&m.objekte.name?m.objekte.name:'–')||'–')+'</td>'
         +'<td style="padding:.6rem .85rem;font-size:.82rem">'+(m.wohneinheit||'–')+'</td>'
         +'<td style="padding:.6rem .85rem;text-align:right;font-size:.82rem">'+(m.flaeche?m.flaeche+' m²':'–')+'</td>'
         +'<td style="padding:.6rem .85rem;text-align:right;font-size:.82rem">'+(m.vorausz_bk?m.vorausz_bk.toLocaleString('de-DE',{minimumFractionDigits:2})+' €':'–')+'</td>'

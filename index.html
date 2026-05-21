@@ -3103,7 +3103,8 @@ function kopierenAnschreiben(){
   navigator.clipboard.writeText(txt).then(function(){showToast('📋 Anschreiben kopiert!');});
 }
 
-// ── ADMIN PANEL ──
+// ── ANSCHREIBEN GENERIEREN ──
+function generiereAnschreiben(){
   var sm=stammdaten;
   var mieter=document.getElementById('anschr-mieter').value.trim()||'Sehr geehrte Damen und Herren';
   var wohnung=document.getElementById('anschr-wohnung').value.trim();

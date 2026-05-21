@@ -1311,7 +1311,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
         </div>
         <div id="einhalt-layout" style="display:none">
           <div class="card">
-            <div class="card-title">📐 Layout-Einstellungen</div>
+            <div class="card-title">📐 Allgemeines Layout</div>
             <label style="display:flex;align-items:center;justify-content:space-between;padding:.75rem;background:var(--bg);border-radius:8px;cursor:pointer;margin-bottom:.5rem">
               <div><div style="font-size:.88rem;font-weight:600">Kompakte Sidebar</div><div style="font-size:.72rem;color:var(--muted)">Schmalere Navigation, mehr Platz für Inhalt</div></div>
               <input type="checkbox" id="layout-compact-sidebar" onchange="applyLayoutSettings()" style="width:18px;height:18px;cursor:pointer;accent-color:var(--p)">
@@ -1324,7 +1324,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
               <div><div style="font-size:.88rem;font-weight:600">Große Schrift</div><div style="font-size:.72rem;color:var(--muted)">Erhöhte Schriftgröße für bessere Lesbarkeit</div></div>
               <input type="checkbox" id="layout-large-font" onchange="applyLayoutSettings()" style="width:18px;height:18px;cursor:pointer;accent-color:var(--p)">
             </label>
-            <div class="field" style="margin-bottom:.85rem">
+            <div class="field" style="margin-bottom:.5rem">
               <label>Seitenbreite</label>
               <select id="layout-width" onchange="applyLayoutSettings()" style="border:1px solid var(--border);border-radius:var(--r);padding:.5rem .75rem;font-size:.85rem;font-family:Arial,sans-serif;background:var(--bg);outline:none;width:100%">
                 <option value="900">Schmal (900px)</option>
@@ -1334,6 +1334,68 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
               </select>
             </div>
             <button class="btn-secondary" onclick="resetLayoutSettings()">↺ Layout zurücksetzen</button>
+          </div>
+
+          <!-- NK-ABRECHNUNG LAYOUTS -->
+          <div class="card">
+            <div class="card-title">📄 Nebenkostenabrechnung – Layout</div>
+            <div style="font-size:.82rem;color:var(--muted);margin-bottom:1rem">Wählen Sie das Erscheinungsbild Ihrer PDF-Abrechnungen.</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.85rem;margin-bottom:1rem">
+              <!-- Layout 1: Standard -->
+              <div id="pdf-layout-standard" onclick="setPdfLayout('standard')"
+                style="border:2px solid var(--p);border-radius:10px;padding:.85rem;cursor:pointer;background:var(--p-light)">
+                <div style="background:#fff;border-radius:6px;padding:.6rem;margin-bottom:.5rem;border:1px solid var(--border)">
+                  <div style="height:6px;background:var(--p);border-radius:3px;margin-bottom:4px"></div>
+                  <div style="height:3px;background:#eee;border-radius:2px;margin-bottom:2px;width:80%"></div>
+                  <div style="height:3px;background:#eee;border-radius:2px;margin-bottom:2px;width:60%"></div>
+                  <div style="height:3px;background:var(--p);border-radius:2px;margin-bottom:2px;opacity:.3"></div>
+                  <div style="height:3px;background:#eee;border-radius:2px;width:70%"></div>
+                </div>
+                <div style="font-size:.8rem;font-weight:700;color:var(--p)">Standard</div>
+                <div style="font-size:.68rem;color:var(--muted)">Lila Akzente, klassisch</div>
+              </div>
+              <!-- Layout 2: Minimal -->
+              <div id="pdf-layout-minimal" onclick="setPdfLayout('minimal')"
+                style="border:2px solid var(--border);border-radius:10px;padding:.85rem;cursor:pointer">
+                <div style="background:#fff;border-radius:6px;padding:.6rem;margin-bottom:.5rem;border:1px solid var(--border)">
+                  <div style="height:6px;background:#1a1a1a;border-radius:3px;margin-bottom:4px"></div>
+                  <div style="height:3px;background:#eee;border-radius:2px;margin-bottom:2px;width:80%"></div>
+                  <div style="height:3px;background:#eee;border-radius:2px;margin-bottom:2px;width:60%"></div>
+                  <div style="height:3px;background:#ddd;border-radius:2px;margin-bottom:2px"></div>
+                  <div style="height:3px;background:#eee;border-radius:2px;width:70%"></div>
+                </div>
+                <div style="font-size:.8rem;font-weight:700">Minimal</div>
+                <div style="font-size:.68rem;color:var(--muted)">Schwarz-weiß, sachlich</div>
+              </div>
+              <!-- Layout 3: Modern -->
+              <div id="pdf-layout-modern" onclick="setPdfLayout('modern')"
+                style="border:2px solid var(--border);border-radius:10px;padding:.85rem;cursor:pointer">
+                <div style="background:#fff;border-radius:6px;padding:.6rem;margin-bottom:.5rem;border:1px solid var(--border)">
+                  <div style="height:6px;background:linear-gradient(90deg,#6a2d9f,#8b5cf6);border-radius:3px;margin-bottom:4px"></div>
+                  <div style="height:3px;background:#e8f5e9;border-radius:2px;margin-bottom:2px;width:80%"></div>
+                  <div style="height:3px;background:#eee;border-radius:2px;margin-bottom:2px;width:60%"></div>
+                  <div style="height:3px;background:#fce4ec;border-radius:2px;margin-bottom:2px"></div>
+                  <div style="height:5px;background:#e8f5e9;border-radius:2px;width:50%"></div>
+                </div>
+                <div style="font-size:.8rem;font-weight:700">Modern</div>
+                <div style="font-size:.68rem;color:var(--muted)">Farbig, übersichtlich</div>
+              </div>
+              <!-- Layout 4: Kompakt -->
+              <div id="pdf-layout-compact" onclick="setPdfLayout('compact')"
+                style="border:2px solid var(--border);border-radius:10px;padding:.85rem;cursor:pointer">
+                <div style="background:#fff;border-radius:6px;padding:.6rem;margin-bottom:.5rem;border:1px solid var(--border)">
+                  <div style="height:4px;background:#2c3e50;border-radius:2px;margin-bottom:3px"></div>
+                  <div style="height:2px;background:#eee;border-radius:1px;margin-bottom:1px;width:80%"></div>
+                  <div style="height:2px;background:#eee;border-radius:1px;margin-bottom:1px;width:60%"></div>
+                  <div style="height:2px;background:#eee;border-radius:1px;margin-bottom:1px"></div>
+                  <div style="height:2px;background:#eee;border-radius:1px;margin-bottom:1px;width:70%"></div>
+                  <div style="height:4px;background:#2c3e50;border-radius:2px;opacity:.2"></div>
+                </div>
+                <div style="font-size:.8rem;font-weight:700">Kompakt</div>
+                <div style="font-size:.68rem;color:var(--muted)">Mehr Infos auf weniger Platz</div>
+              </div>
+            </div>
+            <div style="font-size:.75rem;color:var(--p);font-style:italic" id="pdf-layout-active-label">Aktiv: Standard</div>
           </div>
         </div>
         <div id="einhalt-backup" style="display:none">
@@ -1521,41 +1583,84 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
     </div>
 
     <!-- MIETVERHÄLTNIS MODAL -->
-    <div id="mietverh-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:650;align-items:flex-start;justify-content:center;padding:1rem;overflow-y:auto">
-      <div style="background:var(--white);border-radius:14px;padding:1.75rem;width:100%;max-width:600px;margin:auto">
-        <h3 style="font-size:.95rem;font-weight:700;margin-bottom:.25rem" id="mietverh-modal-title">Mietverhältnis anlegen</h3>
-        <div style="font-size:.78rem;color:var(--muted);margin-bottom:1rem" id="mietverh-einheit-label"></div>
-        <input type="hidden" id="mv-edit-id">
-        <input type="hidden" id="mv-einheit-id">
-        <input type="hidden" id="mv-objekt-id">
+    <div id="mietverh-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:650;align-items:flex-start;justify-content:center;padding:1.5rem;overflow-y:auto">
+      <div style="background:var(--white);border-radius:16px;width:100%;max-width:580px;margin:auto;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.2)">
 
-        <!-- Kontakt auswählen oder neu -->
-        <div class="card" style="margin-bottom:.85rem;padding:.85rem">
-          <div class="card-title" style="font-size:.8rem;margin-bottom:.6rem">👤 Mieter / Kontakt</div>
-          <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.5rem">
-            <select id="mv-kontakt-select" style="flex:1;border:1px solid var(--border);border-radius:var(--r);padding:.5rem .7rem;font-size:.86rem;font-family:Arial,sans-serif;background:var(--bg);outline:none">
-              <option value="">– Kontakt auswählen –</option>
-            </select>
-            <button class="btn-small" onclick="schnellKontaktAnlegen()" style="white-space:nowrap">+ Neu</button>
+        <!-- Modal Header -->
+        <div style="background:var(--p);color:#fff;padding:1.25rem 1.5rem;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:1rem;font-weight:700" id="mietverh-modal-title">Neues Mietverhältnis</div>
+            <div style="font-size:.78rem;opacity:.75;margin-top:2px" id="mietverh-einheit-label"></div>
           </div>
-          <div id="mv-kontakt-info" style="font-size:.75rem;color:var(--muted);display:none;background:var(--bg);border-radius:6px;padding:.4rem .6rem"></div>
+          <button onclick="closeMietverhModal()" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:.9rem">✕</button>
         </div>
 
-        <!-- Zeitraum + Finanzen -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.75rem">
-          <div class="field"><label>Einzug *</label><input type="date" id="mv-einzug"></div>
-          <div class="field"><label>Auszug (leer = aktiv)</label><input type="date" id="mv-auszug"></div>
-          <div class="field"><label>Kaltmiete €/Mon.</label><input type="number" id="mv-kaltmiete" placeholder="750.00" step="0.01"></div>
-          <div class="field"><label>BK-Vorauszahlung €/Mon.</label><input type="number" id="mv-bk" placeholder="120.00" step="0.01"></div>
-          <div class="field"><label>HK-Vorauszahlung €/Mon.</label><input type="number" id="mv-hk" placeholder="80.00" step="0.01"></div>
-          <div class="field"><label>MEA (z.B. 123/1000)</label><input type="text" id="mv-mea" placeholder="123/1000"></div>
+        <div style="padding:1.5rem">
+          <input type="hidden" id="mv-edit-id">
+          <input type="hidden" id="mv-einheit-id">
+          <input type="hidden" id="mv-objekt-id">
+
+          <!-- KONTAKT SECTION -->
+          <div style="background:var(--bg);border-radius:10px;padding:1rem;margin-bottom:1.25rem">
+            <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.65rem">👤 Mieter auswählen</div>
+            <div style="display:flex;gap:.5rem;align-items:center">
+              <select id="mv-kontakt-select" onchange="showKontaktInfo(this.value)"
+                style="flex:1;border:1px solid var(--border);border-radius:8px;padding:.55rem .8rem;font-size:.88rem;font-family:Arial,sans-serif;background:var(--white);outline:none">
+                <option value="">– Bestehenden Kontakt wählen –</option>
+              </select>
+              <button onclick="schnellKontaktAnlegen()" style="background:var(--p);color:#fff;border:none;border-radius:8px;padding:.55rem .9rem;cursor:pointer;font-size:.82rem;font-family:Arial,sans-serif;white-space:nowrap;font-weight:600">+ Neu</button>
+            </div>
+            <div id="mv-kontakt-info" style="display:none;margin-top:.5rem;font-size:.78rem;color:var(--p);background:var(--p-light);border-radius:6px;padding:.35rem .6rem"></div>
+
+            <!-- Quick-Kontakt Panel -->
+            <div id="mv-quick-kontakt" style="display:none;margin-top:.85rem;padding:.85rem;background:var(--white);border-radius:8px;border:1px solid var(--border)">
+              <div style="font-size:.78rem;font-weight:700;color:var(--p);margin-bottom:.65rem">Neuen Kontakt schnell anlegen</div>
+              <div style="display:grid;grid-template-columns:90px 1fr 1fr;gap:.5rem;margin-bottom:.5rem">
+                <div class="field"><label style="font-size:.7rem">Anrede</label>
+                  <select id="qk-anrede" style="border:1px solid var(--border);border-radius:6px;padding:.42rem .5rem;font-size:.82rem;font-family:Arial,sans-serif;background:var(--bg);outline:none;width:100%">
+                    <option>Herr</option><option>Frau</option><option>Eheleute</option><option>Firma</option>
+                  </select>
+                </div>
+                <div class="field"><label style="font-size:.7rem">Vorname</label><input type="text" id="qk-vorname" placeholder="Max" style="border:1px solid var(--border);border-radius:6px;padding:.42rem .65rem;font-size:.82rem;font-family:Arial,sans-serif;outline:none;width:100%;box-sizing:border-box"></div>
+                <div class="field"><label style="font-size:.7rem">Nachname *</label><input type="text" id="qk-nachname" placeholder="Mustermann" style="border:1px solid var(--border);border-radius:6px;padding:.42rem .65rem;font-size:.82rem;font-family:Arial,sans-serif;outline:none;width:100%;box-sizing:border-box"></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.65rem">
+                <div class="field"><label style="font-size:.7rem">E-Mail</label><input type="email" id="qk-email" placeholder="max@email.de" style="border:1px solid var(--border);border-radius:6px;padding:.42rem .65rem;font-size:.82rem;font-family:Arial,sans-serif;outline:none;width:100%;box-sizing:border-box"></div>
+                <div class="field"><label style="font-size:.7rem">Telefon</label><input type="text" id="qk-telefon" placeholder="+49 ..." style="border:1px solid var(--border);border-radius:6px;padding:.42rem .65rem;font-size:.82rem;font-family:Arial,sans-serif;outline:none;width:100%;box-sizing:border-box"></div>
+              </div>
+              <div style="display:flex;gap:.5rem">
+                <button onclick="saveQuickKontakt()" style="background:var(--p);color:#fff;border:none;border-radius:6px;padding:.42rem .9rem;cursor:pointer;font-size:.78rem;font-family:Arial,sans-serif;font-weight:600">✅ Anlegen</button>
+                <button onclick="document.getElementById('mv-quick-kontakt').style.display='none'" style="background:none;border:1px solid var(--border);border-radius:6px;padding:.42rem .9rem;cursor:pointer;font-size:.78rem;color:var(--muted);font-family:Arial,sans-serif">Abbrechen</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ZEITRAUM + FINANZEN -->
+          <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.65rem">📅 Zeitraum &amp; Konditionen</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1rem">
+            <div class="field"><label>Einzug *</label><input type="date" id="mv-einzug"></div>
+            <div class="field"><label>Auszug <span style="font-size:.7rem;font-weight:400;color:var(--muted)">(leer = aktiv)</span></label><input type="date" id="mv-auszug"></div>
+          </div>
+
+          <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.65rem">💰 Miete &amp; Vorauszahlungen</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem">
+            <div class="field"><label>Kaltmiete €/Mon.</label><input type="number" id="mv-kaltmiete" placeholder="750,00" step="0.01"></div>
+            <div class="field"><label>BK-Vorauszahlung €/Mon.</label><input type="number" id="mv-bk" placeholder="120,00" step="0.01"></div>
+            <div class="field"><label>HK-Vorauszahlung €/Mon.</label><input type="number" id="mv-hk" placeholder="80,00" step="0.01"></div>
+            <div class="field"><label>MEA <span style="font-size:.7rem;font-weight:400;color:var(--muted)">(z.B. 123/1000)</span></label><input type="text" id="mv-mea" placeholder="123/1000"></div>
+          </div>
+
+          <div class="field" style="margin-bottom:1.25rem"><label>Notiz <span style="font-size:.7rem;font-weight:400;color:var(--muted)">(optional)</span></label>
+            <textarea id="mv-notiz" rows="2" style="border:1px solid var(--border);border-radius:8px;padding:.5rem .75rem;font-size:.85rem;font-family:Arial,sans-serif;width:100%;resize:vertical;outline:none;background:var(--bg);box-sizing:border-box"></textarea>
+          </div>
+
+          <div id="mietverh-msg" style="display:none;margin-bottom:.75rem;font-size:.8rem;padding:.5rem .75rem;border-radius:8px"></div>
+
+          <div style="display:flex;gap:.75rem">
+            <button onclick="saveMietverhaeltnis()" style="flex:1;background:var(--p);color:#fff;border:none;border-radius:8px;padding:.75rem;cursor:pointer;font-size:.9rem;font-family:Arial,sans-serif;font-weight:600">💾 Speichern</button>
+            <button onclick="closeMietverhModal()" style="flex:1;background:none;border:1px solid var(--border);border-radius:8px;padding:.75rem;cursor:pointer;font-size:.9rem;color:var(--muted);font-family:Arial,sans-serif">Abbrechen</button>
+          </div>
         </div>
-        <div class="field" style="margin-bottom:.75rem"><label>Notiz</label><textarea id="mv-notiz" style="border:1px solid var(--border);border-radius:var(--r);padding:.5rem .7rem;font-size:.86rem;font-family:Arial,sans-serif;width:100%;min-height:45px;resize:vertical;outline:none;background:var(--bg)" placeholder="Optional..."></textarea></div>
-        <div style="display:flex;gap:.65rem">
-          <button class="btn-primary" onclick="saveMietverhaeltnis()" style="flex:1">💾 Speichern</button>
-          <button class="btn-secondary" onclick="closeMietverhModal()" style="flex:1">Abbrechen</button>
-        </div>
-        <div id="mietverh-msg" style="display:none;margin-top:.6rem;font-size:.78rem;padding:.4rem .7rem;border-radius:6px"></div>
       </div>
     </div>
 
@@ -3250,6 +3355,7 @@ function showEinstellTab(tab){
   });
   if(tab==='design')loadThemeUI();
   if(tab==='backup')updateBackupInfo();
+  if(tab==='layout')loadPdfLayoutUI();
 }
 
 // ── LAYOUT SETTINGS ──
@@ -3264,6 +3370,27 @@ function applyLayoutSettings(){
   // Store
   localStorage.setItem('nekosta-layout',JSON.stringify({compact:compact,largeFont:largeFont,width:width}));
 }
+var currentPdfLayout=localStorage.getItem('nekosta-pdf-layout')||'standard';
+
+function setPdfLayout(layout){
+  currentPdfLayout=layout;
+  localStorage.setItem('nekosta-pdf-layout',layout);
+  var names={standard:'Standard',minimal:'Minimal',modern:'Modern',compact:'Kompakt'};
+  var lbl=document.getElementById('pdf-layout-active-label');
+  if(lbl)lbl.textContent='Aktiv: '+names[layout];
+  ['standard','minimal','modern','compact'].forEach(function(l){
+    var el=document.getElementById('pdf-layout-'+l);
+    if(!el)return;
+    if(l===layout){el.style.borderColor='var(--p)';el.style.background='var(--p-light)';}
+    else{el.style.borderColor='var(--border)';el.style.background='var(--white)';}
+  });
+  showToast('✅ PDF-Layout: '+names[layout]);
+}
+
+function loadPdfLayoutUI(){
+  setPdfLayout(currentPdfLayout);
+}
+
 function resetLayoutSettings(){
   localStorage.removeItem('nekosta-layout');
   var cb1=document.getElementById('layout-compact-sidebar');if(cb1)cb1.checked=false;
@@ -3459,7 +3586,7 @@ async function sendTokensToUser(){
   var {data:existing}=await sb.from('nekosta_tokens').select('user_id,balance').eq('user_id',(await sb.from('auth').select()).data).limit(1);
   // Direct approach: look up auth user by email via admin function - use metadata approach
   // We store tokens by email as fallback key
-  var {data,error}=await sb.from('nekosta_tokens').select('id,balance,user_email').eq('user_email',email).single();
+  var {data,error}=await sb.from('nekosta_tokens').select('id,balance,user_email').eq('user_email',email).maybeSingle();
   if(data){
     var newBal=(data.balance||0)+amount;
     await sb.from('nekosta_tokens').update({balance:newBal}).eq('user_email',email);
@@ -3793,7 +3920,7 @@ let activeDiscount={code:'',percent:0};
 
 async function loadTokenBalance(){
   try{
-    const {data}=await sb.from('nekosta_tokens').select('balance').eq('user_id',currentUser.id).single();
+    const {data}=await sb.from('nekosta_tokens').select('balance').eq('user_id',currentUser.id).maybeSingle();
     tokenBalance=(data&&data.balance?data.balance:0)||0;
   }catch(e){tokenBalance=0;}
   updateTokenUI();
@@ -3998,7 +4125,7 @@ async function changePassword(){
 
 async function loadProfile(){
   try{
-    var {data}=await sb.from('user_profiles').select('*').eq('user_id',currentUser.id).single();
+    var {data}=await sb.from('user_profiles').select('*').eq('user_id',currentUser.id).maybeSingle();
     if(data){
       if(document.getElementById('prof-username'))document.getElementById('prof-username').value=data.username||'';
       if(document.getElementById('prof-phone'))document.getElementById('prof-phone').value=data.phone||'';
@@ -4012,7 +4139,7 @@ async function loadProfile(){
 async function hasToken(){
   if(isAdmin)return true;
   try{
-    var {data}=await sb.from('nekosta_tokens').select('balance').eq('user_id',currentUser.id).single();
+    var {data}=await sb.from('nekosta_tokens').select('balance').eq('user_id',currentUser.id).maybeSingle();
     return ((data&&data.balance?data.balance:0)||0)>0;
   }catch(e){return false;}
 }
@@ -4314,7 +4441,7 @@ async function saveBanner(){
 
 async function loadBanner(){
   try{
-    var {data}=await sb.from('admin_settings').select('value').eq('key','banner').single();
+    var {data}=await sb.from('admin_settings').select('value').eq('key','banner').maybeSingle();
     if(!data)return;
     var banner=JSON.parse(data.value);
     var bar=document.getElementById('portal-banner');
@@ -4328,7 +4455,7 @@ async function loadBanner(){
 
 async function loadTokenPreise(){
   try{
-    var {data}=await sb.from('admin_settings').select('value').eq('key','token_preise').single();
+    var {data}=await sb.from('admin_settings').select('value').eq('key','token_preise').maybeSingle();
     if(!data)return;
     var p=JSON.parse(data.value);
     if(document.getElementById('preis-1'))document.getElementById('preis-1').value=p.p1||1.99;
@@ -4360,7 +4487,7 @@ async function loadDashboard(){
     var results=await Promise.all([
       sb.from('objekte').select('*',{count:'exact',head:true}).eq('user_id',currentUser.id),
       sb.from('mieter').select('*',{count:'exact',head:true}).eq('user_id',currentUser.id).eq('aktiv',true),
-      sb.from('nekosta_tokens').select('balance').eq('user_id',currentUser.id).single(),
+      sb.from('nekosta_tokens').select('balance').eq('user_id',currentUser.id).maybeSingle(),
       sb.from('abrechnungen').select('titel,created_at,objekt').eq('created_by',currentUser.id).order('created_at',{ascending:false}).limit(5),
       sb.from('objekte').select('name,ort,einheiten_anzahl').eq('user_id',currentUser.id).limit(5),
     ]);
@@ -4810,18 +4937,28 @@ async function saveKontakt(){
   else{closeKontaktModal();showToast('✅ Kontakt gespeichert!');loadKontakte();}
 }
 async function schnellKontaktAnlegen(){
-  // Quick-create: prompt for name
-  var name=prompt('Name des Mieters (Vorname Nachname):');
-  if(!name)return;
-  var parts=name.trim().split(' ');
-  var nachname=parts.pop();var vorname=parts.join(' ');
-  var {data,error}=await sb.from('kontakte').insert({user_id:currentUser.id,anrede:'Herr',vorname:vorname,nachname:nachname}).select().single();
-  if(error){showToast('Fehler: '+error.message);return;}
+  // Show inline quick-create panel instead of prompt
+  var panel=document.getElementById('mv-quick-kontakt');
+  if(panel)panel.style.display=panel.style.display==='none'?'block':'none';
+}
+
+async function saveQuickKontakt(){
+  var anrede=document.getElementById('qk-anrede').value;
+  var vorname=document.getElementById('qk-vorname').value.trim();
+  var nachname=document.getElementById('qk-nachname').value.trim();
+  var email=document.getElementById('qk-email').value.trim();
+  var telefon=document.getElementById('qk-telefon').value.trim();
+  if(!nachname){showToast('❌ Bitte Nachname eingeben.');return;}
+  var {data,error}=await sb.from('kontakte').insert({
+    user_id:currentUser.id,anrede:anrede,vorname:vorname,nachname:nachname,
+    email:email||null,telefon:telefon||null
+  }).select().single();
+  if(error){showToast('❌ '+error.message);return;}
   alleKontakte.push(data);
-  // Reload dropdown
   await loadKontakteDropdown();
   var sel=document.getElementById('mv-kontakt-select');if(sel)sel.value=data.id;
   showKontaktInfo(data.id);
+  var panel=document.getElementById('mv-quick-kontakt');if(panel)panel.style.display='none';
   showToast('✅ Kontakt angelegt!');
 }
 async function loadKontakteDropdown(){
@@ -5163,35 +5300,69 @@ async function loadObjektEinheiten(objId){
 async function loadObjektMieter(objId){
   var container=document.getElementById('od-mieter-list');
   if(!container)return;
-  var {data}=await sb.from('mieter').select('*').eq('user_id',currentUser.id).eq('objekt_id',objId).order('nachname');
-  if(!data||!data.length){container.innerHTML='<div style="color:var(--muted);font-size:.85rem;text-align:center;padding:1rem">Noch keine Mieter.</div>';return;}
-  container.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:.85rem">'
+
+  // Only show people with actual Mietverhältnisse - NOT all contacts
+  var {data:mvData}=await sb.from('mietverhaeltnisse')
+    .select('*,kontakte(anrede,vorname,nachname,email,telefon,mobil)')
+    .eq('user_id',currentUser.id)
+    .eq('objekt_id',objId)
+    .order('einzug',{ascending:false});
+
+  if(!mvData||!mvData.length){
+    container.innerHTML='<div style="text-align:center;padding:2rem;color:var(--muted)">'
+      +'<div style="font-size:2rem;margin-bottom:.5rem">👥</div>'
+      +'<div>Noch keine Mietverhältnisse angelegt.</div>'
+      +'<div style="font-size:.78rem;margin-top:.4rem">Gehen Sie zu „Einheiten" um Mietverhältnisse zuzuweisen.</div>'
+      +'</div>';
+    return;
+  }
+
+  // Group by active/inactive
+  var aktive=mvData.filter(function(m){return m.aktiv;});
+  var ehemalige=mvData.filter(function(m){return !m.aktiv;});
+
+  function renderMVRow(m,ri){
+    var k=m.kontakte||{};
+    var name=k.anrede?(k.anrede+' '+k.vorname+' '+k.nachname).trim():'Unbekannt';
+    var einzug=m.einzug?new Date(m.einzug).toLocaleDateString('de-DE'):'–';
+    var auszug=m.auszug?new Date(m.auszug).toLocaleDateString('de-DE'):'–';
+    var einheit=m.einheit_id?'<span style="font-size:.7rem;color:var(--p);background:var(--p-light);padding:1px 6px;border-radius:8px">'+m.einheit_id+'</span>':'';
+    var bg=ri%2===0?'#fff':'#faf8ff';
+    return '<tr style="background:'+bg+';border-bottom:1px solid #f0eef5">'
+      +'<td style="padding:.6rem .85rem"><div style="font-weight:700;font-size:.88rem">'+name+'</div>'
+        +(k.email?'<div style="font-size:.72rem;color:var(--muted)">✉ '+k.email+'</div>':'')
+        +(k.telefon?'<div style="font-size:.72rem;color:var(--muted)">📞 '+k.telefon+'</div>':'')
+      +'</td>'
+      +'<td style="padding:.6rem .85rem;font-size:.82rem;color:var(--muted)">'+einzug+' – '+auszug+'</td>'
+      +'<td style="padding:.6rem .85rem;text-align:right;font-weight:700;font-size:.85rem">'+(m.kaltmiete?m.kaltmiete.toLocaleString('de-DE',{minimumFractionDigits:2})+' €':'–')+'</td>'
+      +'<td style="padding:.6rem .85rem;text-align:right;font-size:.82rem;color:var(--muted)">'+(m.vorausz_bk?m.vorausz_bk.toLocaleString('de-DE',{minimumFractionDigits:2})+' €':'–')+'</td>'
+      +'<td style="padding:.6rem .85rem"><span style="font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:10px;background:'+(m.aktiv?'#d4edda':'#f5f5f5')+';color:'+(m.aktiv?'#155724':'#888')+'">'+(m.aktiv?'Aktiv':'Beendet')+'</span></td>'
+      +'<td style="padding:.6rem .65rem;display:flex;gap:.3rem">'
+        +'<button onclick="editMietverhaeltnis(\''+m.id+'\',\''+m.einheit_id+'\',\''+objId+'\',\'Einheit\')" class="btn-small" style="font-size:.65rem;padding:2px 7px">✏️</button>'
+        +(m.aktiv?'<button onclick="deleteMietverhaeltnis(\''+m.id+'\')" class="btn-small" style="font-size:.65rem;padding:2px 7px;background:#888">✕ Ende</button>':'')
+      +'</td></tr>';
+  }
+
+  var html='<table style="width:100%;border-collapse:collapse;font-size:.85rem">'
     +'<thead><tr style="background:var(--p-light)">'
-    +'<th style="text-align:left;padding:.5rem .7rem;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--p)">Mieter</th>'
-    +'<th style="padding:.5rem .7rem;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--p)">Einheit</th>'
-    +'<th style="padding:.5rem .7rem;text-align:right;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--p)">Kaltmiete/Mon.</th>'
-    +'<th style="padding:.5rem .7rem;text-align:right;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--p)">BK-VZ/Mon.</th>'
-    +'<th style="padding:.5rem .7rem;text-align:right;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--p)">Einzug</th>'
-    +'<th style="padding:.5rem .7rem;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--p)">Status</th>'
-    +'<th style="width:60px"></th>'
-    +'</tr></thead><tbody>'
-    +data.map(function(m,ri){
-      var aktiv=m.aktiv&&!m.auszug;
-      var bg=ri%2===0?'#fff':'#faf8ff';
-      var einzug=m.einzug?new Date(m.einzug).toLocaleDateString('de-DE'):'–';
-      return '<tr style="background:'+bg+';border-bottom:1px solid #f0eef5">'
-        +'<td style="padding:.55rem .7rem"><div style="font-weight:700">'+m.anrede+' '+m.vorname+' '+m.nachname+'</div>'
-        +'<div style="font-size:.72rem;color:var(--muted)">'+(m.email||'')+'</div></td>'
-        +'<td style="padding:.55rem .7rem;font-size:.82rem">'+(m.wohneinheit||'–')+'</td>'
-        +'<td style="padding:.55rem .7rem;text-align:right;font-weight:700">'+(m.kaltmiete?m.kaltmiete.toLocaleString('de-DE',{minimumFractionDigits:2})+' €':'–')+'</td>'
-        +'<td style="padding:.55rem .7rem;text-align:right;color:var(--muted)">'+(m.vorausz_bk?m.vorausz_bk.toLocaleString('de-DE',{minimumFractionDigits:2})+' €':'–')+'</td>'
-        +'<td style="padding:.55rem .7rem;text-align:right;color:var(--muted)">'+einzug+'</td>'
-        +'<td style="padding:.55rem .7rem"><span style="font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:10px;background:'+(aktiv?'#d4edda':'#f5f5f5')+';color:'+(aktiv?'#155724':'#888')+'">'+(aktiv?'Aktiv':'Ausgezogen')+'</span></td>'
-        +'<td style="padding:.55rem .7rem;display:flex;gap:.3rem">'
-        +'<button onclick="editMieter(\''+m.id+'\')" class="btn-small" style="font-size:.65rem;padding:2px 7px">✏️</button>'
-        +'<button onclick="deleteMieter(\''+m.id+'\').then(function(){loadObjektMieter(\''+objId+'\')})" class="btn-small" style="font-size:.65rem;padding:2px 7px;background:#888">🗑</button>'
-        +'</td></tr>';
-    }).join('')+'</tbody></table>';
+    +'<th style="text-align:left;padding:.55rem .85rem;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--p)">Mieter</th>'
+    +'<th style="padding:.55rem .85rem;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--p)">Zeitraum</th>'
+    +'<th style="padding:.55rem .85rem;text-align:right;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--p)">Kaltmiete</th>'
+    +'<th style="padding:.55rem .85rem;text-align:right;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--p)">BK-VZ</th>'
+    +'<th style="padding:.55rem .85rem;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--p)">Status</th>'
+    +'<th style="width:100px"></th>'
+    +'</tr></thead><tbody>';
+
+  if(aktive.length){
+    html+='<tr><td colspan="6" style="padding:.4rem .85rem;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--p);background:var(--p-light);border-bottom:1px solid var(--border)">Aktive Mieter ('+aktive.length+')</td></tr>';
+    aktive.forEach(function(m,i){html+=renderMVRow(m,i);});
+  }
+  if(ehemalige.length){
+    html+='<tr><td colspan="6" style="padding:.4rem .85rem;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);background:var(--bg);border-bottom:1px solid var(--border)">Ehemalige Mieter ('+ehemalige.length+')</td></tr>';
+    ehemalige.forEach(function(m,i){html+=renderMVRow(m,i);});
+  }
+  html+='</tbody></table>';
+  container.innerHTML=html;
 }
 
 async function loadObjektAbrechnungen(objId){

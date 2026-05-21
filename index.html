@@ -310,6 +310,10 @@ body.theme-dark .kosten-table th{background:#0f0e17}
 body.theme-dark .wizard-bar,.theme-dark .wizard-footer{background:#1a1825;border-color:#2d2a3e}
 body.theme-dark .nav-item:hover{background:#1e1b2e}
 body.theme-lila{--p:#6a2d9f;--p-mid:#8e44c0;--p-light:#f0e6f8;--p-accent:#c084e8;--bg:#f8f5fc;--border:#ddd8e8}
+.omenu-item{padding:.55rem 1rem;cursor:pointer;font-size:.82rem;color:var(--text)}
+.omenu-item:hover{background:var(--p-light)}
+.omenu-danger{color:var(--danger)!important}
+.omenu-danger:hover{background:#fdf0ef!important}
 /* ANSICHT DROPDOWN */
 .ansicht-select{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:6px;padding:.3rem .65rem;font-size:.78rem;font-family:Arial,sans-serif;cursor:pointer;outline:none}
 .ansicht-select option{background:#6a2d9f;color:#fff}
@@ -3750,51 +3754,77 @@ function renderObjekteTabelle(){
   objektePage_current=Math.min(objektePage_current,pages);
   var start=(objektePage_current-1)*objekte_per_page;
   var page=filtered.slice(start,start+objekte_per_page);
-  if(cEl)cEl.textContent='Zeige '+(filtered.length?start+1:0)+' bis '+Math.min(start+page.length,filtered.length)+' von '+filtered.length+' Eintr\u00e4gen';
+  if(cEl)cEl.textContent='Zeige '+(filtered.length?start+1:0)+' bis '+Math.min(start+page.length,filtered.length)+' von '+filtered.length+' Eintraegen';
   if(pEl)pEl.textContent='Seite '+objektePage_current+' von '+pages;
   if(eh)eh.style.display=alleObjekte.length===0?'block':'none';
   if(tbl)tbl.style.display=alleObjekte.length===0?'none':'table';
   if(!page.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:3rem;color:var(--muted)">Keine Objekte gefunden.</td></tr>';return;}
   var catColors={'Wohnhaus':'#e8f5e9,#2e7d32','Einfamilienhaus':'#e3f2fd,#1565c0','Wohn- & Geschäftshaus':'#fff3e0,#e65100','Gewerbe':'#f3e5f5,#7b1fa2'};
-  tbody.innerHTML=page.map(function(o){
+  var html='';
+  page.forEach(function(o){
     var adr=[o.strasse,o.plz&&o.ort?o.plz+' '+o.ort:o.ort].filter(Boolean).join(', ');
     var kat=o._kategorie||'Wohnhaus';
     var cs=(catColors[kat]||catColors['Wohnhaus']).split(',');
     var vz=o._vorausz||0;
-    return '<tr style="border-bottom:1px solid var(--border)" onmouseover="this.style.background='var(--p-light)'" onmouseout="this.style.background=''">'+
+    var vzHtml=vz>0
+      ?'<span style="color:#e65100;font-size:.82rem;font-weight:700">'+String.fromCharCode(9888)+' '+vz.toLocaleString('de-DE',{minimumFractionDigits:2})+' &euro;</span>'
+      :'<span style="color:var(--muted);font-size:.82rem">&ndash;</span>';
+    var einh=(o.einheiten_anzahl||'&ndash;')+' Einheit'+(o.einheiten_anzahl===1?'':'en');
+    var fl=o.gesamtflaeche?o.gesamtflaeche.toLocaleString('de-DE')+' m&sup2;':'&ndash;';
+    html+='<tr style="border-bottom:1px solid var(--border)" '
+      +'onmouseover="this.style.background=\'var(--p-light)\'" '
+      +'onmouseout="this.style.background=\'\'">'+
       '<td style="padding:.75rem 1rem"><input type="checkbox" class="obj-check" style="cursor:pointer"></td>'+
-      '<td style="padding:.75rem .5rem"><div style="display:flex;align-items:center;gap:.65rem">'+
-        '<div style="width:36px;height:36px;border-radius:8px;background:var(--p-light);display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0">\uD83C\uDFE2</div>'+
-        '<div><div style="font-weight:700;font-size:.9rem">'+o.name+'</div><div style="font-size:.75rem;color:var(--muted)">'+adr+'</div></div>'+
-      '</div></td>'+
-      '<td style="padding:.75rem .5rem;text-align:center;font-size:.88rem;font-weight:600">'+(o.einheiten_anzahl||'\u2013')+' Einheit'+(o.einheiten_anzahl===1?'':'en')+'</td>'+
-      '<td style="padding:.75rem .5rem;text-align:right;font-size:.88rem;color:var(--muted)">'+(o.gesamtflaeche?o.gesamtflaeche.toLocaleString('de-DE')+' m\u00b2':'\u2013')+'</td>'+
-      '<td style="padding:.75rem .5rem"><span style="background:'+cs[0]+';color:'+cs[1]+';font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:12px">'+kat+'</span></td>'+
-      '<td style="padding:.75rem 1rem;text-align:right">'+(vz>0?'<span style="color:#e65100;font-size:.82rem;font-weight:700">\u26a0 '+vz.toLocaleString('de-DE',{minimumFractionDigits:2})+' \u20ac</span>':'<span style="color:var(--muted);font-size:.82rem">\u2013</span>')+'</td>'+
-      '<td style="padding:.75rem .5rem;text-align:center">'+
-        '<div style="position:relative;display:inline-block">'+
-          '<button onclick="toggleObjektMenu(\'menu_'+o.id+'\')" style="background:none;border:1px solid var(--border);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:.9rem;color:var(--muted)">\u22ef</button>'+
-          '<div id="menu_'+o.id+'" style="display:none;position:absolute;right:0;top:100%;background:var(--white);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.12);z-index:200;min-width:160px;overflow:hidden">'+
-            '<div onclick="editObjekt(\''+o.id+'\')" style="padding:.55rem 1rem;cursor:pointer;font-size:.82rem" onmouseover="this.style.background=\'var(--p-light)\'" onmouseout="this.style.background=\'\'">\u270f\ufe0f Bearbeiten</div>'+
-            '<div onclick="startAbrechnungFuerObjekt(\''+o.name+'\',\''+o.gesamtflaeche+'\')" style="padding:.55rem 1rem;cursor:pointer;font-size:.82rem" onmouseover="this.style.background=\'var(--p-light)\'" onmouseout="this.style.background=\'\'">\uD83D\uDCC4 Abrechnen</div>'+
-            '<div onclick="toggleMieterRow(\'mrow_'+o.id+'\',\''+o.id+'\')" style="padding:.55rem 1rem;cursor:pointer;font-size:.82rem" onmouseover="this.style.background=\'var(--p-light)\'" onmouseout="this.style.background=\'\'">\uD83D\uDC65 Mieter anzeigen</div>'+
-            '<div onclick="openMieterModalFuerObjekt(\''+o.id+'\',\''+o.name+'\')" style="padding:.55rem 1rem;cursor:pointer;font-size:.82rem" onmouseover="this.style.background=\'var(--p-light)\'" onmouseout="this.style.background=\'\'">+ Mieter hinzuf\u00fcgen</div>'+
-            '<div style="height:1px;background:var(--border)"></div>'+
-            '<div onclick="deleteObjekt(\''+o.id+'\')" style="padding:.55rem 1rem;cursor:pointer;font-size:.82rem;color:var(--danger)" onmouseover="this.style.background=\'#fdf0ef\'" onmouseout="this.style.background=\'\'">\uD83D\uDDD1 L\u00f6schen</div>'+
+      '<td style="padding:.75rem .5rem">'+
+        '<div style="display:flex;align-items:center;gap:.65rem">'+
+          '<div style="width:36px;height:36px;border-radius:8px;background:var(--p-light);display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0">&#x1F3E2;</div>'+
+          '<div>'+
+            '<div style="font-weight:700;font-size:.9rem">'+o.name+'</div>'+
+            '<div style="font-size:.75rem;color:var(--muted)">'+adr+'</div>'+
           '</div>'+
         '</div>'+
-      '</td></tr>'+
-      '<tr id="mrow_'+o.id+'" style="display:none"><td colspan="7" style="padding:0 1rem 1rem 5rem;background:var(--bg)">'+
+      '</td>'+
+      '<td style="padding:.75rem .5rem;text-align:center;font-size:.88rem;font-weight:600">'+einh+'</td>'+
+      '<td style="padding:.75rem .5rem;text-align:right;font-size:.88rem;color:var(--muted)">'+fl+'</td>'+
+      '<td style="padding:.75rem .5rem">'+
+        '<span style="background:'+cs[0]+';color:'+cs[1]+';font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:12px">'+kat+'</span>'+
+      '</td>'+
+      '<td style="padding:.75rem 1rem;text-align:right">'+vzHtml+'</td>'+
+      '<td style="padding:.75rem .5rem;text-align:center">'+
+        '<div style="position:relative;display:inline-block">'+
+          '<button onclick="toggleObjektMenu(\'menu_'+o.id+'\')" '+
+            'style="background:none;border:1px solid var(--border);border-radius:6px;padding:3px 10px;cursor:pointer;font-size:.9rem;color:var(--muted)">'+
+            '&hellip;</button>'+
+          '<div id="menu_'+o.id+'" '+
+            'style="display:none;position:absolute;right:0;top:100%;background:var(--white);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.12);z-index:200;min-width:165px;overflow:hidden">'+
+            '<div onclick="editObjekt(\''+o.id+'\')" class="omenu-item">&#x270F; Bearbeiten</div>'+
+            '<div onclick="startAbrechnungFuerObjekt(\''+o.name+'\',\''+o.gesamtflaeche+'\')" class="omenu-item">&#x1F4C4; Abrechnen</div>'+
+            '<div onclick="toggleMieterRow(\'mrow_'+o.id+'\',\''+o.id+'\')" class="omenu-item">&#x1F465; Mieter anzeigen</div>'+
+            '<div onclick="openMieterModalFuerObjekt(\''+o.id+'\',\''+o.name+'\')" class="omenu-item">+ Mieter hinzuf&uuml;gen</div>'+
+            '<div style="height:1px;background:var(--border)"></div>'+
+            '<div onclick="deleteObjekt(\''+o.id+'\')" class="omenu-item omenu-danger">&#x1F5D1; L&ouml;schen</div>'+
+          '</div>'+
+        '</div>'+
+      '</td>'+
+    '</tr>'+
+    '<tr id="mrow_'+o.id+'" style="display:none">'+
+      '<td colspan="7" style="padding:0 1rem 1rem 5rem;background:var(--bg)">'+
         '<div class="obj-mieter-section" data-objid="'+o.id+'">'+
           '<div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem 0 .3rem;border-bottom:1px solid var(--border);margin-bottom:.4rem">'+
             '<span style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Mieter</span>'+
-            '<button class="btn-small" style="font-size:.65rem" onclick="openMieterModalFuerObjekt(\''+o.id+'\',\''+o.name+'\')">+ Mieter hinzuf\u00fcgen</button>'+
+            '<button class="btn-small" style="font-size:.65rem" onclick="openMieterModalFuerObjekt(\''+o.id+'\',\''+o.name+'\')">+ Mieter hinzuf&uuml;gen</button>'+
           '</div>'+
           '<div class="obj-mieter-list" id="obj-mieter-'+o.id+'"><div style="color:var(--muted);font-size:.78rem;padding:.35rem">Wird geladen...</div></div>'+
         '</div>'+
-      '</td></tr>';
-  }).join('');
-  document.onclick=function(e){if(!e.target.closest('[id^="menu_"]')&&!(e.target.textContent||'').includes('\u22ef')){document.querySelectorAll('[id^="menu_"]').forEach(function(el){el.style.display='none';});}};
+      '</td>'+
+    '</tr>';
+  });
+  tbody.innerHTML=html;
+  document.onclick=function(e){
+    if(!e.target.closest('[id^=\"menu_\"]')&&e.target.textContent!=='...'){
+      document.querySelectorAll('[id^=\"menu_\"]').forEach(function(el){el.style.display='none';});
+    }
+  };
 }
 function toggleObjektMenu(id){
   document.querySelectorAll('[id^="menu_"]').forEach(function(el){if(el.id!==id)el.style.display='none';});

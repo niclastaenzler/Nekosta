@@ -2909,9 +2909,9 @@ async function confirmUnlock(){
 
 // ── PROFIL ÄNDERN ──
 async function saveProfile(){
-  var username=document.getElementById('prof-username')?.value.trim();
-  var phone=document.getElementById('prof-phone')?.value.trim();
-  var email=document.getElementById('prof-email')?.value.trim();
+  var username=(document.getElementById('prof-username')||{value:''}).value.trim();
+  var phone=(document.getElementById('prof-phone')||{value:''}).value.trim();
+  var email=(document.getElementById('prof-email')||{value:''}).value.trim();
   var msg=document.getElementById('prof-msg');
   msg.style.display='none';
 
@@ -2942,8 +2942,8 @@ async function saveProfile(){
 }
 
 async function changePassword(){
-  var pw=document.getElementById('new-pw')?.value;
-  var pw2=document.getElementById('new-pw2')?.value;
+  var pw=(document.getElementById('new-pw')||{value:''}).value;
+  var pw2=(document.getElementById('new-pw2')||{value:''}).value;
   var msg=document.getElementById('pw-change-msg');
   msg.style.display='none';
   if(!pw||pw.length<7){msg.textContent='Passwort mind. 7 Zeichen.';msg.style.background='#fdf0ef';msg.style.color='#c0392b';msg.style.display='block';return;}
@@ -3234,7 +3234,7 @@ async function loadDashboard(){
     var objCount=results[0].count||0;
     var mietCount=results[1].count||0;
     var abrCount=results[2].count||0;
-    var tokens=results[3].(data&&data.balance?data.balance:0)||0;
+    var tokens=(results[3].data&&results[3].data.balance?results[3].data.balance:0)||0;
     var letzteAbr=results[4].data||[];
     var objekte=results[5].data||[];
 
@@ -3383,7 +3383,7 @@ function startAbrechnungFuerObjekt(name,flaeche){
 // ── MIETER ──
 async function loadMieter(){
   var container=document.getElementById('mieter-list');
-  var filter=document.getElementById('mieter-filter-objekt')?.value;
+  var filter=(document.getElementById('mieter-filter-objekt')||{value:''}).value;
   var q=sb.from('mieter').select('*,objekte(name)').eq('user_id',currentUser.id).order('nachname');
   if(filter)q=q.eq('objekt_id',filter);
   var {data,error}=await q;

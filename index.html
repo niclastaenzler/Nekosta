@@ -62,7 +62,8 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--tex
 .nav-item .ni-icon{font-size:1rem;width:20px;text-align:center}
 .nav-badge{margin-left:auto;background:var(--p-light);color:var(--p);font-size:.62rem;font-weight:700;padding:1px 6px;border-radius:10px}
 .sidebar-divider{height:1px;background:var(--border);margin:.5rem 1.25rem}
-.main-content{flex:1;overflow-x:hidden;min-width:0;width:0}
+.main-content{flex:1;overflow-x:hidden;overflow-y:auto;min-width:0;width:0}
+#page-objekt-detail{position:absolute;top:0;left:0;right:0;bottom:0;z-index:10;background:var(--bg)}
 .page-wrap{padding:2rem;max-width:900px;box-sizing:border-box;width:100%}
 
 /* ── WIZARD ── */
@@ -624,8 +625,8 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
     </div>
 
     <!-- OBJEKT DASHBOARD (ImmoCloud-Stil) -->
-    <div id="page-objekt-detail" style="display:none">
-      <div style="display:flex;min-height:calc(100vh - 52px)">
+    <div id="page-objekt-detail" style="display:none;position:relative">
+      <div style="display:flex;height:calc(100vh - 52px);overflow:hidden">
 
         <!-- LEFT SIDEBAR -->
         <div style="width:300px;min-width:280px;background:var(--white);border-right:1px solid var(--border);padding:1.25rem;overflow-y:auto;flex-shrink:0">
@@ -2084,6 +2085,7 @@ function addKostenRow(tbodyId,name='',schluessel='flaeche',notiz='',direktWerte=
       <option value="flaeche" ${schluessel==='flaeche'?'selected':''}>Nach Wohnfläche</option>
       <option value="person"  ${schluessel==='person'?'selected':''}>Nach Personenanzahl</option>
       <option value="mea"     ${schluessel==='mea'?'selected':''}>Nach Miteigentumsanteil (MEA)</option>
+      <option value="einheiten" ${schluessel==='einheiten'?'selected':''}>Nach Einheiten (gleich)</option>
       <option value="direkt"  ${schluessel==='direkt'?'selected':''}>Direkte Zuordnung</option>
     </select></td>
     <td><input type="text" placeholder="z. B. Rechnung Nr. 2025-001" class="k-notiz" value="${notiz}" style="min-width:130px"></td>
@@ -2239,21 +2241,29 @@ function berechnen(){
   });
 
   function calcKosten(kosten,periode,wohnung){
-    return kosten.map(k=>{
-      let anteil=0;
+    return kosten.map(function(k){
+      var anteil=0;
       if(k.schluessel==='direkt'){
-        const dv=(k.direktWerte&&k.direktWerte[wohnung.bez])||0;
+        var dv=(k.direktWerte&&k.direktWerte[wohnung.bez])||0;
         anteil=(parseFloat(dv)||0)*(periode.days/365);
       } else if(k.schluessel==='mea'){
-        const mea=wohnung.meaNum||wohnung.flaeche;
+        var mea=wohnung.meaNum||wohnung.flaeche;
         anteil=totalMEATag>0?(mea*periode.days/totalMEATag)*k.betrag:0;
       } else if(k.schluessel==='flaeche'){
         anteil=totalFlTag>0?(wohnung.flaeche*periode.days/totalFlTag)*k.betrag:0;
-      }else{
-        const pts=periode.isLeerstand?0:periode.personen*periode.days;
+      } else if(k.schluessel==='einheiten'){
+        // Alle Wohneinheiten gleichmäßig - 1 Einheit = 1 Anteil, tagegenau
+        // Eine Einheit zählt für jeden Tag ihres Bestehens (unabhängig ob Leerstand)
+        var totalEinhTage=allWohn.reduce(function(s,we){
+          return s+we.perioden.reduce(function(ps,p){return ps+p.days;},0);
+        },0);
+        anteil=totalEinhTage>0?(periode.days/totalEinhTage)*k.betrag:0;
+      } else {
+        // Person
+        var pts=periode.isLeerstand?0:periode.personen*periode.days;
         anteil=totalPersTag>0?(pts/totalPersTag)*k.betrag:0;
       }
-      return{name:k.name,anteil,schluessel:k.schluessel,notiz:k.notiz||''};
+      return{name:k.name,anteil:anteil,schluessel:k.schluessel,notiz:k.notiz||''};
     });
   }
 
@@ -2330,7 +2340,7 @@ async function renderErgebnis(){
       const bkVorauszEffektiv=p.vorauszBK; // BK-Vorauszahlung bleibt separat
       const gesamtDiff=totalVorausz-totalGes; // positiv=Erstattung, negativ=Nachzahlung
 
-      const schluesselLabel=(s)=>s==='flaeche'?'Wohnfläche':s==='person'?'Pers.':s==='mea'?'MEA':'Direkt';
+      var schluesselLabel=function(s){return s==='flaeche'?'Wohnfläche':s==='person'?'Pers.':s==='mea'?'MEA':s==='einheiten'?'Einheiten':'Direkt';};
 
       html+=`<div class="periode-section">
         <div class="periode-header">
@@ -2511,7 +2521,7 @@ function buildPeriodContent(doc,we,pe,withWatermark,isFirstPage){
   secH('Angaben zur Verteilung');
   var objektFlaeche=e.objektFlaeche||0;
   var anteilPct=objektFlaeche>0?((we.wohnung.flaeche/objektFlaeche)*100).toFixed(1)+'%':'--';
-  var skLabels={flaeche:'Wohnflaeche',person:'Personenanzahl',mea:'MEA',direkt:'Direkte Zuordnung'};
+  var skLabels={flaeche:'Wohnflaeche',person:'Personenanzahl',mea:'MEA',einheiten:'Einheiten (gleich)',direkt:'Direkte Zuordnung'};
   var schluessel=[];
   var allKosten=(e.bkKosten||[]).concat(e.hkKosten||[]);
   allKosten.forEach(function(k){if(schluessel.indexOf(k.schluessel)<0)schluessel.push(k.schluessel);});
@@ -3005,14 +3015,26 @@ function loadAbrechnung(a){
 
 // ── KUNDEN ──
 async function loadKundenAbrechnungen(){
-  const {data,error}=await sb.from('abrechnungen').select('*').eq('kunden_email',currentUser.email).order('created_at',{ascending:false});
-  const container=document.getElementById('kunden-content');
-  if(error||!data&&data.length){container.innerHTML='<div class="empty-state"><div class="empty-icon">📄</div>Keine Abrechnungen vorhanden.<br><span style="font-size:.78rem">Fragen: info@nekosta.de</span></div>';return;}
-  container.innerHTML=data.map(a=>`
-    <div class="kunden-abr-card">
-      <div class="kunden-abr-head"><div><div class="kah-title">${a.titel||'NK '+a.jahr}</div><div class="kah-meta">${a.objekt||''} · ${new Date(a.created_at).toLocaleDateString('de-DE')}</div></div><div style="font-size:1.4rem;font-weight:700;color:var(--p-accent)">${a.jahr}</div></div>
-      <div style="padding:.9rem 1rem;font-size:.82rem;color:var(--muted)">Abrechnung verfügbar. PDF-Download folgt nach Zahlungsintegration.</div>
-    </div>`).join('');
+  var container=document.getElementById('kunden-content');
+  if(!container)return;
+  var {data,error}=await sb.from('abrechnungen').select('*')
+    .eq('created_by',currentUser.id)
+    .order('created_at',{ascending:false});
+  if(error||!data||!data.length){
+    container.innerHTML='<div class="empty-state"><div class="empty-icon">📄</div>Noch keine Abrechnungen vorhanden.</div>';
+    return;
+  }
+  container.innerHTML='<div class="archiv-grid">'+data.map(function(a){
+    var isAbg=a.titel&&a.titel.includes('[Abgerechnet]');
+    var clean=(a.titel||'').replace('[Abgerechnet]','').replace('[Entwurf]','').trim();
+    var fn=isAbg?"viewAbgerechnet('"+a.id+"')":'loadAbrechnung('+JSON.stringify(a).replace(/"/g,'&quot;')+')';
+    return '<div class="archiv-card" onclick="'+fn+'" style="cursor:pointer">'
+      +'<div class="ac-jahr">'+(a.jahr||'–')+'</div>'
+      +'<div class="ac-titel">'+clean+'</div>'
+      +'<div class="ac-meta">'+(a.objekt||'')+'<br>'+new Date(a.created_at).toLocaleDateString('de-DE')+'</div>'
+      +'<div style="margin-top:.4rem"><span style="font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:10px;background:'+(isAbg?'#d4edda':'#fff3cd')+';color:'+(isAbg?'#155724':'#856404')+'">'+(isAbg?'Fertiggestellt':'In Arbeit')+'</span></div>'
+      +'</div>';
+  }).join('')+'</div>';
 }
 
 // ── TOAST ──
@@ -4133,10 +4155,11 @@ function renderObjekteTabelle(){
       :'<span style="color:var(--muted);font-size:.82rem">&ndash;</span>';
     var einh=(o.einheiten_anzahl||'&ndash;')+' Einheit'+(o.einheiten_anzahl===1?'':'en');
     var fl=o.gesamtflaeche?o.gesamtflaeche.toLocaleString('de-DE')+' m&sup2;':'&ndash;';
-    html+='<tr style="border-bottom:1px solid var(--border)" '
+    html+='<tr style="border-bottom:1px solid var(--border);cursor:pointer" '
+      +'onclick="openObjektDetail(\''+o.id+'\')" '
       +'onmouseover="this.style.background=\'var(--p-light)\'" '
       +'onmouseout="this.style.background=\'\'">'+
-      '<td style="padding:.75rem 1rem"><input type="checkbox" class="obj-check" style="cursor:pointer"></td>'+
+      '<td style="padding:.75rem 1rem" onclick="event.stopPropagation()"><input type="checkbox" class="obj-check" style="cursor:pointer"></td>'+
       '<td style="padding:.75rem .5rem">'+
         '<div style="display:flex;align-items:center;gap:.65rem">'+
           '<div style="width:36px;height:36px;border-radius:8px;background:var(--p-light);display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0">&#x1F3E2;</div>'+
@@ -4152,16 +4175,16 @@ function renderObjekteTabelle(){
         '<span style="background:'+cs[0]+';color:'+cs[1]+';font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:12px">'+kat+'</span>'+
       '</td>'+
       '<td style="padding:.75rem 1rem;text-align:right">'+vzHtml+'</td>'+
-      '<td style="padding:.75rem .5rem;text-align:center">'+
+      '<td style="padding:.75rem .5rem;text-align:center" onclick="event.stopPropagation()">'+
         '<div style="position:relative;display:inline-block">'+
           '<button onclick="toggleObjektMenu(\'menu_'+o.id+'\')" '+
             'style="background:none;border:1px solid var(--border);border-radius:6px;padding:3px 10px;cursor:pointer;font-size:.9rem;color:var(--muted)">'+
             '&hellip;</button>'+
           '<div id="menu_'+o.id+'" '+
             'style="display:none;position:absolute;right:0;top:100%;background:var(--white);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.12);z-index:200;min-width:165px;overflow:hidden">'+
+            '<div onclick="openObjektDetail(\''+o.id+'\')" class="omenu-item">&#x1F4CA; Dashboard öffnen</div>'+
             '<div onclick="editObjekt(\''+o.id+'\')" class="omenu-item">&#x270F; Bearbeiten</div>'+
             '<div onclick="startAbrechnungFuerObjekt(\''+o.name+'\',\''+o.gesamtflaeche+'\')" class="omenu-item">&#x1F4C4; Abrechnen</div>'+
-            '<div onclick="toggleMieterRow(\'mrow_'+o.id+'\',\''+o.id+'\')" class="omenu-item">&#x1F465; Mieter anzeigen</div>'+
             '<div onclick="openMieterModalFuerObjekt(\''+o.id+'\',\''+o.name+'\')" class="omenu-item">+ Mieter hinzuf&uuml;gen</div>'+
             '<div style="height:1px;background:var(--border)"></div>'+
             '<div onclick="deleteObjekt(\''+o.id+'\')" class="omenu-item omenu-danger">&#x1F5D1; L&ouml;schen</div>'+

@@ -2880,8 +2880,9 @@ async function saveDiscountCodes(){
 let pendingUnlockIdx=null;
 function openUnlock(wi){
   pendingUnlockIdx=wi;
-  const we=lastErgebnis&&lastErgebnis.ergebnisse?.[wi];
-  document.getElementById('unlock-desc').textContent=`Abrechnung für „${we&&we.(wohnung&&wohnung.bez)||'Wohnung'}" vollständig freischalten?`;
+  var we=lastErgebnis&&lastErgebnis.ergebnisse?lastErgebnis.ergebnisse[wi]:null;
+  var wBez=we&&we.wohnung?we.wohnung.bez:'Wohnung';
+  document.getElementById('unlock-desc').textContent='Abrechnung fuer "'+wBez+'" vollstaendig freischalten?';
   document.getElementById('unlock-bal').textContent=tokenBalance;
   document.getElementById('unlock-checkbox').checked=false;
   document.getElementById('unlock-error').style.display='none';

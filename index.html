@@ -73,7 +73,8 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--tex
 .page-wrap{padding:2rem;max-width:900px;box-sizing:border-box;width:100%}
 
 /* ── WIZARD ── */
-.wizard-bar{background:var(--white);border-bottom:2px solid var(--border);padding:.65rem 1.5rem;display:flex;align-items:center;gap:0;position:fixed;top:52px;left:var(--sidebar);right:0;z-index:149;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.wizard-bar{background:var(--white);border-bottom:2px solid var(--border);padding:.65rem 1.5rem;align-items:center;gap:0;position:fixed;top:52px;left:var(--sidebar);right:0;z-index:149;box-shadow:0 2px 8px rgba(0,0,0,.06);display:none}
+#page-tool .wizard-bar{display:flex}
 .wizard-step{display:flex;align-items:center;gap:.5rem;padding:1rem .75rem;font-size:.82rem;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;transition:color .2s,border-color .2s;white-space:nowrap}
 .wizard-step.active{color:var(--p);border-bottom-color:var(--p);font-weight:700}
 .wizard-step.done{color:var(--success)}
@@ -2187,6 +2188,21 @@ async function initApp(user){
     showPage('dashboard');
     await loadKundenAbrechnungen();
   }
+  // Leere Entwürfe beim Login automatisch bereinigen (stille Hintergrundreinigung)
+  try{
+    var {data:allEntwuerfe}=await sb.from('abrechnungen')
+      .select('id,titel,objekt').eq('created_by',user.id).is('deleted_at',null);
+    var badIds=(allEntwuerfe||[]).filter(function(a){
+      var isEntwurf=!a.titel||!a.titel.includes('[Abgerechnet]');
+      var badObjekt=!a.objekt||a.objekt.trim()===''||a.objekt==='Unbekannt';
+      var badTitel=!a.titel||a.titel.trim()==='';
+      return isEntwurf&&(badObjekt||badTitel);
+    }).map(function(a){return a.id;});
+    if(badIds.length>0){
+      await sb.from('abrechnungen').update({deleted_at:new Date().toISOString()}).in('id',badIds);
+      console.log('Auto-bereinigt: '+badIds.length+' leere Entwürfe entfernt');
+    }
+  }catch(e){console.log('Auto-cleanup fehlgeschlagen:',e);}
 }
 sb.auth.onAuthStateChange(function(event,session){
   if(event==='SIGNED_IN'&&!currentUser&&session&&session.user){
@@ -4946,28 +4962,26 @@ async function loadDashboard(){
     // Tokens: admin shows actual balance (not infinite in dashboard)
     document.getElementById('dash-tokens').textContent=tokens;
 
-    // Entwürfe & Abgerechnet - only user's own
-    var {data:alle}=await sb.from('abrechnungen').select('titel').eq('created_by',currentUser.id);
-    var entwuerfe=(alle||[]).filter(function(a){return a.titel&&a.titel.includes('[Entwurf]');}).length;
+    // Entwürfe & Abgerechnet - only user's own, only valid (with objekt)
+    var {data:alle}=await sb.from('abrechnungen').select('titel,objekt').eq('created_by',currentUser.id);
+    var entwuerfe=(alle||[]).filter(function(a){return a.titel&&a.titel.includes('[Entwurf]')&&a.objekt&&a.objekt.trim()!=='';}).length;
     var abgerechnet=(alle||[]).filter(function(a){return a.titel&&a.titel.includes('[Abgerechnet]');}).length;
     document.getElementById('dash-entwuerfe').textContent=entwuerfe;
     document.getElementById('dash-abgerechnet').textContent=abgerechnet;
 
-    // Letzte Abrechnungen - ONLY own data
+    // Letzte Abrechnungen - ONLY own data, ONLY finalized (no drafts in dashboard)
     var laEl=document.getElementById('dash-letzte-abr');
-    if(!letzteAbr.length){
-      laEl.innerHTML='<div style="color:var(--muted);text-align:center;padding:.75rem;font-size:.85rem">Noch keine Abrechnungen.</div>';
+    var nurAbgerechnet=(letzteAbr||[]).filter(function(a){return a.titel&&a.titel.includes('[Abgerechnet]');});
+    if(!nurAbgerechnet.length){
+      laEl.innerHTML='<div style="color:var(--muted);text-align:center;padding:.75rem;font-size:.85rem">Noch keine finalen Abrechnungen.</div>';
     }else{
-      laEl.innerHTML=letzteAbr.map(function(a){
-        var isAbg=a.titel&&a.titel.includes&&a.titel.includes('[Abgerechnet]');
-        var clean=(a.titel||'').replace('[Abgerechnet]','').replace('[Entwurf]','').trim();
-        var bg=isAbg?'#d4edda':'#fff3cd';var col=isAbg?'#155724':'#856404';
-        var lbl=isAbg?'Abgerechnet':'Entwurf';
+      laEl.innerHTML=nurAbgerechnet.map(function(a){
+        var clean=(a.titel||'').replace('[Abgerechnet]','').trim();
         return [
           '<div style="border-bottom:1px solid var(--border);padding:.45rem .25rem;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-size:.82rem" ',
-          isAbg ? 'onclick="viewAbgerechnet(\''+a.id+'\')">':'onclick="showPage(\'archiv\')">',
+          'onclick="viewAbgerechnet(\''+a.id+'\')">',
           '<div><div style="font-weight:600">'+clean+'</div><div style="font-size:.7rem;color:var(--muted)">'+(a.objekt||'')+'</div></div>',
-          '<span style="font-size:.68rem;padding:2px 7px;border-radius:10px;font-weight:700;background:'+bg+';color:'+col+'">'+lbl+'</span>',
+          '<span style="font-size:.68rem;padding:2px 7px;border-radius:10px;font-weight:700;background:#d4edda;color:#155724">Abgerechnet</span>',
           '</div>'
         ].join('');
       }).join('');
@@ -5312,12 +5326,37 @@ async function saveObjekt(){
     kategorie:selectedObjektTyp||'wgh',
     notiz:document.getElementById('obj-notiz').value.trim()||null
   };
-  var r=id?await sb.from('objekte').update(d).eq('id',id):await sb.from('objekte').insert(d);
+  var r=id?await sb.from('objekte').update(d).eq('id',id):await sb.from('objekte').insert(d).select();
   if(r.error){
     if(msg){msg.textContent='Fehler: '+r.error.message;msg.style.background='#fdf0ef';msg.style.color='#c0392b';msg.style.display='block';}
   }else{
+    // Bei neuem Objekt: Mustereinheiten automatisch anlegen
+    if(!id&&r.data&&r.data[0]){
+      var newObjId=r.data[0].id;
+      var anzahl=parseInt(document.getElementById('obj-einheiten').value)||0;
+      var typ=selectedObjektTyp||'wgh';
+      if(anzahl>0&&anzahl<=20){
+        var musterEinheiten=[];
+        var stockwerke=['EG','1.OG','2.OG','3.OG','4.OG','DG'];
+        var typLabels={wgh:'Wohnung',wohnung:'Wohnung',efh:'Haus',garage:'Garage'};
+        var einLabel=typLabels[typ]||'Einheit';
+        for(var ei=0;ei<anzahl;ei++){
+          var stw=stockwerke[Math.floor(ei/2)]||((Math.floor(ei/2))+'.'+'OG');
+          var seite=ei%2===0?'links':'rechts';
+          var bez=(anzahl===1&&typ==='efh')?'Gesamtobjekt':(einLabel+' '+(ei+1)+' ('+stw+(anzahl>1?' '+seite:'')+')');
+          musterEinheiten.push({
+            objekt_id:newObjId,user_id:currentUser.id,
+            bezeichnung:bez,typ:(typ==='garage'?'Garage':'Wohnung'),
+            stockwerk:stw,flaeche:null,kaltmiete:null,sollmiete:null
+          });
+        }
+        await sb.from('einheiten').insert(musterEinheiten);
+        // Einheiten-Anzahl in Objekt aktualisieren
+        await sb.from('objekte').update({einheiten_anzahl:anzahl}).eq('id',newObjId);
+      }
+    }
     closeObjektModal();
-    showToast('✅ Objekt gespeichert!');
+    showToast('✅ Objekt gespeichert!'+((!id&&parseInt(document.getElementById('obj-einheiten').value)>0)?' '+parseInt(document.getElementById('obj-einheiten').value)+' Einheiten angelegt.':''));
     loadObjekte();fillObjektDropdown();
   }
 }

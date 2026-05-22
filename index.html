@@ -5044,7 +5044,7 @@ async function legeTestobjektAn(){
   var {data:obj,error:e1}=await sb.from('objekte').insert({
     user_id:currentUser.id,name:'Musterstraße 10',strasse:'Musterstraße 10',
     plz:'53881',ort:'Euskirchen',gesamtflaeche:215,einheiten_anzahl:3,
-    kategorie:'wgh',baujahr:1985,notiz:'Testobjekt – bitte anpassen'
+    kategorie:'wgh',notiz:'Testobjekt – bitte anpassen'
   }).select().single();
   if(e1){showToast('Objekt-Fehler: '+e1.message);return;}
 
@@ -5322,7 +5322,6 @@ async function saveObjekt(){
     ort:document.getElementById('obj-ort').value.trim()||null,
     gesamtflaeche:parseFloat(document.getElementById('obj-flaeche').value)||null,
     einheiten_anzahl:parseInt(document.getElementById('obj-einheiten').value)||null,
-    baujahr:parseInt(document.getElementById('obj-baujahr').value)||null,
     kategorie:selectedObjektTyp||'wgh',
     notiz:document.getElementById('obj-notiz').value.trim()||null
   };

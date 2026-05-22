@@ -399,7 +399,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
         📄 Abrechnung fortsetzen →
       </button>
     </div>
-    <div class="token-balance-chip" id="token-chip" onclick="showPage('tokens')">
+    <div class="token-balance-chip" id="token-chip" onclick="showPage(\'tokens\')">
       🪙 <span class="tbc-val" id="token-count">0</span> Nekosta Token
     </div>
     <select class="ansicht-select" id="ansicht-select" onchange="switchAnsicht(this.value)" style="display:none">
@@ -462,15 +462,15 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
   <div class="sidebar">
     <div id="admin-menu" style="display:none">
       <!-- Dashboard -->
-      <div class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard" style="padding:.65rem 1rem;margin:.25rem .5rem;border-radius:8px;border-left:none"><span class="ni-icon">📊</span><strong>Dashboard</strong></div>
+      <div class="nav-item active" onclick="showPage(\'dashboard\')" id="nav-dashboard" style="padding:.65rem 1rem;margin:.25rem .5rem;border-radius:8px;border-left:none"><span class="ni-icon">📊</span><strong>Dashboard</strong></div>
       <div class="sidebar-divider"></div>
 
       <!-- VERWALTUNG -->
       <div class="sidebar-section" role="button" onclick="toggleSidebarGroup('sg-verwaltung')">VERWALTUNG <span class="sg-arrow open" id="arr-verwaltung">▾</span></div>
       <div class="sg-content" id="sg-verwaltung">
-        <div class="nav-item" onclick="showPage('stammdaten')" id="nav-stammdaten"><span class="ni-icon">👤</span>Stammdaten</div>
-        <div class="nav-item" onclick="showPage('objekte')" id="nav-objekte"><span class="ni-icon">🏢</span>Objekte</div>
-        <div class="nav-item" onclick="showPage('kontakte')" id="nav-kontakte"><span class="ni-icon">👥</span>Kontakte</div>
+        <div class="nav-item" onclick="showPage(\'stammdaten\')" id="nav-stammdaten"><span class="ni-icon">👤</span>Stammdaten</div>
+        <div class="nav-item" onclick="showPage(\'objekte\')" id="nav-objekte"><span class="ni-icon">🏢</span>Objekte</div>
+        <div class="nav-item" onclick="showPage(\'kontakte\')" id="nav-kontakte"><span class="ni-icon">👥</span>Kontakte</div>
       </div>
       <div class="sidebar-divider"></div>
 
@@ -486,7 +486,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
       <!-- ABRECHNUNGEN -->
       <div class="sidebar-section" role="button" onclick="toggleSidebarGroup('sg-abr')">ABRECHNUNGEN <span class="sg-arrow open" id="arr-abr">▾</span></div>
       <div class="sg-content" id="sg-abr">
-        <div class="nav-item" onclick="showPage('archiv')" id="nav-archiv"><span class="ni-icon">🗂</span>Alle Abrechnungen</div>
+        <div class="nav-item" onclick="showPage(\'archiv\')" id="nav-archiv"><span class="ni-icon">🗂</span>Alle Abrechnungen</div>
         <div class="nav-item" onclick="showPage('bearbeitungsnotizen')" id="nav-bearbeitungsnotizen"><span class="ni-icon">📝</span>Notizen</div>
       </div>
       <div class="sidebar-divider"></div>
@@ -494,20 +494,20 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
       <!-- SYSTEM -->
       <div class="sidebar-section" role="button" onclick="toggleSidebarGroup('sg-sys')">SYSTEM <span class="sg-arrow open" id="arr-sys">▾</span></div>
       <div class="sg-content" id="sg-sys">
-        <div class="nav-item" onclick="showPage('tokens')" id="nav-tokens"><span class="ni-icon">🪙</span>Nekosta Token</div>
+        <div class="nav-item" onclick="showPage(\'tokens\')" id="nav-tokens"><span class="ni-icon">🪙</span>Nekosta Token</div>
         <div class="nav-item" onclick="showPage('adminpanel')" id="nav-adminpanel"><span class="ni-icon">🔧</span>Admin-Panel</div>
-        <div class="nav-item" onclick="showPage('einstellungen')" id="nav-einstellungen"><span class="ni-icon">⚙️</span>Einstellungen</div>
+        <div class="nav-item" onclick="showPage(\'einstellungen\')" id="nav-einstellungen"><span class="ni-icon">⚙️</span>Einstellungen</div>
         <div class="nav-item" onclick="showPage('impressum')" id="nav-impressum"><span class="ni-icon">📋</span>Impressum</div>
       </div>
     </div>
     <div id="kunden-menu" style="display:none">
-      <div class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard-k" style="padding:.65rem 1rem;margin:.25rem .5rem;border-radius:8px;border-left:none"><span class="ni-icon">📊</span><strong>Dashboard</strong></div>
+      <div class="nav-item active" onclick="showPage(\'dashboard\')" id="nav-dashboard-k" style="padding:.65rem 1rem;margin:.25rem .5rem;border-radius:8px;border-left:none"><span class="ni-icon">📊</span><strong>Dashboard</strong></div>
       <div class="sidebar-divider"></div>
       <div class="sidebar-section" role="button" onclick="toggleSidebarGroup('sg-k-verw')">VERWALTUNG <span class="sg-arrow open" id="arr-k-verw">▾</span></div>
       <div class="sg-content" id="sg-k-verw">
-        <div class="nav-item" onclick="showPage('stammdaten')" id="nav-stammdaten-k"><span class="ni-icon">👤</span>Stammdaten</div>
-        <div class="nav-item" onclick="showPage('objekte')" id="nav-objekte-k"><span class="ni-icon">🏢</span>Objekte</div>
-        <div class="nav-item" onclick="showPage('kontakte')" id="nav-kontakte-k"><span class="ni-icon">👥</span>Kontakte</div>
+        <div class="nav-item" onclick="showPage(\'stammdaten\')" id="nav-stammdaten-k"><span class="ni-icon">👤</span>Stammdaten</div>
+        <div class="nav-item" onclick="showPage(\'objekte\')" id="nav-objekte-k"><span class="ni-icon">🏢</span>Objekte</div>
+        <div class="nav-item" onclick="showPage(\'kontakte\')" id="nav-kontakte-k"><span class="ni-icon">👥</span>Kontakte</div>
       </div>
       <div class="sidebar-divider"></div>
       <div class="sidebar-section" role="button" onclick="toggleSidebarGroup('sg-k-erst')">ERSTELLEN <span class="sg-arrow open" id="arr-k-erst">▾</span></div>
@@ -523,8 +523,8 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
         <div class="nav-item" onclick="showPage('bearbeitungsnotizen')" id="nav-bearbeitungsnotizen-k"><span class="ni-icon">📝</span>Notizen</div>
       </div>
       <div class="sidebar-divider"></div>
-      <div class="nav-item" onclick="showPage('tokens')" id="nav-tokens-k"><span class="ni-icon">🪙</span>Nekosta Token</div>
-      <div class="nav-item" onclick="showPage('einstellungen')" id="nav-einstellungen-k"><span class="ni-icon">⚙️</span>Einstellungen</div>
+      <div class="nav-item" onclick="showPage(\'tokens\')" id="nav-tokens-k"><span class="ni-icon">🪙</span>Nekosta Token</div>
+      <div class="nav-item" onclick="showPage(\'einstellungen\')" id="nav-einstellungen-k"><span class="ni-icon">⚙️</span>Einstellungen</div>
       <div class="nav-item" onclick="showPage('impressum')" id="nav-impressum-k"><span class="ni-icon">📋</span>Impressum</div>
     </div>
   </div>
@@ -572,7 +572,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
           <div class="card">
             <div class="card-title" style="display:flex;justify-content:space-between">
               <span>📄 Letzte Abrechnungen</span>
-              <button class="btn-small" style="font-size:.7rem" onclick="showPage('archiv')">Alle anzeigen</button>
+              <button class="btn-small" style="font-size:.7rem" onclick="showPage(\'archiv\')">Alle anzeigen</button>
             </div>
             <div id="dash-letzte-abr"><div style="color:var(--muted);font-size:.85rem;text-align:center;padding:1rem">Wird geladen...</div></div>
           </div>
@@ -580,7 +580,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
           <div class="card">
             <div class="card-title" style="display:flex;justify-content:space-between">
               <span>🏢 Meine Objekte</span>
-              <button class="btn-small" style="font-size:.7rem" onclick="showPage('objekte')">Verwalten</button>
+              <button class="btn-small" style="font-size:.7rem" onclick="showPage(\'objekte\')">Verwalten</button>
             </div>
             <div id="dash-objekte-list"><div style="color:var(--muted);font-size:.85rem;text-align:center;padding:1rem">Wird geladen...</div></div>
           </div>
@@ -588,7 +588,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
           <div class="card">
             <div class="card-title">⚡ Schnellzugriff</div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
-              <button onclick="showPage('stammdaten')" style="background:var(--p-light);color:var(--p);border:1px solid rgba(106,45,159,.2);border-radius:10px;padding:1rem;cursor:pointer;text-align:left;font-family:Arial,sans-serif;transition:.15s" onmouseover="this.style.background='var(--p)';this.style.color='#fff'" onmouseout="this.style.background='var(--p-light)';this.style.color='var(--p)'">
+              <button onclick="showPage(\'stammdaten\')" style="background:var(--p-light);color:var(--p);border:1px solid rgba(106,45,159,.2);border-radius:10px;padding:1rem;cursor:pointer;text-align:left;font-family:Arial,sans-serif;transition:.15s" onmouseover="this.style.background='var(--p)';this.style.color='#fff'" onmouseout="this.style.background='var(--p-light)';this.style.color='var(--p)'">
                 <div style="font-size:1.25rem;margin-bottom:.3rem">👤</div>
                 <div style="font-size:.85rem;font-weight:700">Stammdaten verwalten</div>
                 <div style="font-size:.72rem;opacity:.75;margin-top:2px">Vermieter &amp; Bankdaten</div>
@@ -603,7 +603,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
                 <div style="font-size:.85rem;font-weight:700">Objekt anlegen</div>
                 <div style="font-size:.72rem;opacity:.75;margin-top:2px">Neues Mietobjekt erfassen</div>
               </button>
-              <button onclick="showPage('tokens')" style="background:#fffbf0;color:#b8860b;border:1px solid #ffd700;border-radius:10px;padding:1rem;cursor:pointer;text-align:left;font-family:Arial,sans-serif;transition:.15s" onmouseover="this.style.background='#ffd700';this.style.color='#333'" onmouseout="this.style.background='#fffbf0';this.style.color='#b8860b'">
+              <button onclick="showPage(\'tokens\')" style="background:#fffbf0;color:#b8860b;border:1px solid #ffd700;border-radius:10px;padding:1rem;cursor:pointer;text-align:left;font-family:Arial,sans-serif;transition:.15s" onmouseover="this.style.background='#ffd700';this.style.color='#333'" onmouseout="this.style.background='#fffbf0';this.style.color='#b8860b'">
                 <div style="font-size:1.25rem;margin-bottom:.3rem">🪙</div>
                 <div style="font-size:.85rem;font-weight:700">Token kaufen</div>
                 <div style="font-size:.72rem;opacity:.75;margin-top:2px">PDFs freischalten</div>
@@ -716,7 +716,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
 
           <!-- Objekt-Kopf -->
           <div style="padding:1rem 1rem .85rem;border-bottom:1px solid var(--border)">
-            <button onclick="showPage('objekte')" style="background:none;border:none;cursor:pointer;font-size:.75rem;color:var(--muted);padding:0;margin-bottom:.6rem;font-family:Arial,sans-serif;display:flex;align-items:center;gap:.3rem">‹ Alle Objekte</button>
+            <button onclick="showPage(\'objekte\')" style="background:none;border:none;cursor:pointer;font-size:.75rem;color:var(--muted);padding:0;margin-bottom:.6rem;font-family:Arial,sans-serif;display:flex;align-items:center;gap:.3rem">‹ Alle Objekte</button>
             <div style="font-size:.98rem;font-weight:700;color:var(--text);line-height:1.25;margin-bottom:.2rem" id="od-sidebar-name">–</div>
             <div style="font-size:.72rem;color:var(--muted)" id="od-sidebar-adresse"></div>
             <div style="display:flex;gap:.35rem;margin-top:.6rem;flex-wrap:wrap" id="od-unit-badges"></div>
@@ -724,18 +724,18 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
 
           <!-- Vertikale Tab-Navigation -->
           <nav style="padding:.4rem 0;border-bottom:1px solid var(--border);flex-shrink:0">
-            <div class="od-tab" id="odtab-uebersicht" onclick="showObjektTab('uebersicht')" style="display:flex;align-items:center;gap:.65rem;padding:.58rem .85rem .58rem 1rem;cursor:pointer;font-size:.84rem;font-weight:600;color:var(--p);background:var(--p-light);border-left:3px solid var(--p)">
+            <div class="od-tab" id="odtab-uebersicht" onclick="showObjektTab(\'uebersicht\')" style="display:flex;align-items:center;gap:.65rem;padding:.58rem .85rem .58rem 1rem;cursor:pointer;font-size:.84rem;font-weight:600;color:var(--p);background:var(--p-light);border-left:3px solid var(--p)">
               <span style="width:16px;text-align:center">📊</span> Übersicht
             </div>
-            <div class="od-tab" id="odtab-einheiten" onclick="showObjektTab('einheiten')" style="display:flex;align-items:center;gap:.65rem;padding:.58rem .85rem .58rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);border-left:3px solid transparent">
+            <div class="od-tab" id="odtab-einheiten" onclick="showObjektTab(\'einheiten\')" style="display:flex;align-items:center;gap:.65rem;padding:.58rem .85rem .58rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);border-left:3px solid transparent">
               <span style="width:16px;text-align:center">🏠</span> Einheiten
               <span id="odtab-einheiten-count" style="margin-left:auto;background:var(--border);color:var(--muted);font-size:.62rem;font-weight:700;padding:1px 6px;border-radius:8px;min-width:18px;text-align:center"></span>
             </div>
-            <div class="od-tab" id="odtab-mietverhaeltnisse" onclick="showObjektTab('mietverhaeltnisse')" style="display:flex;align-items:center;gap:.65rem;padding:.58rem .85rem .58rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);border-left:3px solid transparent">
+            <div class="od-tab" id="odtab-mietverhaeltnisse" onclick="showObjektTab(\'mietverhaeltnisse\')" style="display:flex;align-items:center;gap:.65rem;padding:.58rem .85rem .58rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);border-left:3px solid transparent">
               <span style="width:16px;text-align:center">👥</span> Mietverhältnisse
               <span id="odtab-mv-count" style="margin-left:auto;background:var(--border);color:var(--muted);font-size:.62rem;font-weight:700;padding:1px 6px;border-radius:8px;min-width:18px;text-align:center"></span>
             </div>
-            <div class="od-tab" id="odtab-abrechnungsdaten" onclick="showObjektTab('abrechnungsdaten')" style="display:flex;align-items:center;gap:.65rem;padding:.58rem .85rem .58rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);border-left:3px solid transparent">
+            <div class="od-tab" id="odtab-abrechnungsdaten" onclick="showObjektTab(\'abrechnungsdaten\')" style="display:flex;align-items:center;gap:.65rem;padding:.58rem .85rem .58rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);border-left:3px solid transparent">
               <span style="width:16px;text-align:center">📋</span> Abrechnungsdaten
             </div>
           </nav>
@@ -795,7 +795,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
               <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:1.25rem;margin-bottom:1.25rem">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.85rem">
                   <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Einheiten</div>
-                  <button onclick="showObjektTab('einheiten')" style="font-size:.75rem;color:var(--p);background:none;border:none;cursor:pointer;font-family:Arial,sans-serif">Alle anzeigen →</button>
+                  <button onclick="showObjektTab(\'einheiten\')" style="font-size:.75rem;color:var(--p);background:none;border:none;cursor:pointer;font-family:Arial,sans-serif">Alle anzeigen →</button>
                 </div>
                 <div id="od-einheiten-uebersicht"><div style="color:var(--muted);font-size:.82rem">Wird geladen...</div></div>
               </div>
@@ -813,7 +813,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
                 <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:1.25rem">
                   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.65rem">
                     <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Letzte Abrechnungen</div>
-                    <button onclick="showPage('archiv')" style="font-size:.75rem;color:var(--p);background:none;border:none;cursor:pointer;font-family:Arial,sans-serif">Archiv →</button>
+                    <button onclick="showPage(\'archiv\')" style="font-size:.75rem;color:var(--p);background:none;border:none;cursor:pointer;font-family:Arial,sans-serif">Archiv →</button>
                   </div>
                   <div id="od-abr-list"><div style="color:var(--muted);font-size:.82rem">Wird geladen...</div></div>
                 </div>
@@ -1191,7 +1191,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
             <span id="archiv-entwuerfe-badge" style="display:none;background:#fff3cd;color:#856404;font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:12px;cursor:pointer" onclick="document.getElementById('archiv-filter-status').value='entwurf';renderArchivTabelle()">📝 Entwürfe</span>
           </div>
           <div style="display:flex;gap:.65rem">
-            <button class="btn-secondary" onclick="showPage('archiv')" style="font-size:.82rem;padding:.5rem 1rem">📋 BKA aus Vorjahr</button>
+            <button class="btn-secondary" onclick="showPage(\'archiv\')" style="font-size:.82rem;padding:.5rem 1rem">📋 BKA aus Vorjahr</button>
             <button class="btn-secondary" onclick="resetLeereEntwuerfe()" style="font-size:.82rem;padding:.5rem 1rem;color:#c0392b;border-color:#c0392b" title="Leere/fehlerhafte Entwürfe löschen">🗑 Entwürfe bereinigen</button>
             <button class="btn-primary" onclick="startNeueAbrechnung()" style="display:flex;align-items:center;gap:.35rem"><span>+</span> Neue Abrechnung erstellen</button>
           </div>
@@ -5676,20 +5676,16 @@ async function loadMietverhaeltnisse(objId){
   if(!container)return;
   container.innerHTML='<div style="color:var(--muted);font-size:.82rem;text-align:center;padding:2rem">Wird geladen...</div>';
 
-  // Lade Mietverhältnisse aus mietverhaeltnisse-Tabelle (verknüpft mit Einheiten)
-  var [{data:mv},{data:einh}]=await Promise.all([
-    sb.from('mietverhaeltnisse')
-      .select('*,kontakte(anrede,vorname,nachname,email,telefon),einheiten(bezeichnung,flaeche,stockwerk,typ)')
-      .eq('user_id',currentUser.id).eq('objekt_id',objId)
-      .order('aktiv',{ascending:false}).order('einzug',{ascending:false}),
-    sb.from('einheiten').select('id,bezeichnung').eq('user_id',currentUser.id).eq('objekt_id',objId)
-  ]);
+  var {data:mv}=await sb.from('mietverhaeltnisse')
+    .select('*,kontakte(anrede,vorname,nachname,email,telefon),einheiten(bezeichnung,flaeche,stockwerk,typ)')
+    .eq('user_id',currentUser.id).eq('objekt_id',objId)
+    .order('aktiv',{ascending:false}).order('einzug',{ascending:false});
 
   if(!mv||!mv.length){
     container.innerHTML='<div style="text-align:center;padding:3rem;color:var(--muted)">'
       +'<div style="font-size:2rem;margin-bottom:.5rem">👥</div>'
       +'<div style="font-size:.88rem;font-weight:600;margin-bottom:.35rem">Keine Mietverhältnisse</div>'
-      +'<div style="font-size:.78rem">Legen Sie zuerst Einheiten an und fügen Sie dort Mietverhältnisse hinzu.</div>'
+      +'<div style="font-size:.78rem">Legen Sie über den Einheiten-Tab Mietverhältnisse an.</div>'
       +'<button class="btn-secondary" onclick="showObjektTab(\'einheiten\')" style="margin-top:.85rem;font-size:.82rem">→ Zu den Einheiten</button>'
       +'</div>';
     return;
@@ -5708,43 +5704,48 @@ async function loadMietverhaeltnisse(objId){
     var mietList=grouped[einheitBez];
     var firstMV=mietList[0];
     var einheitInfo=firstMV.einheiten;
+    var einheitId=firstMV&&firstMV.einheit_id?firstMV.einheit_id:'';
+    var safeBez=einheitBez.replace(/'/g,'');
 
     html+='<div style="background:var(--white);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:1rem">'
-      // Einheit-Header
       +'<div style="background:var(--p-light);padding:.75rem 1rem;display:flex;align-items:center;justify-content:space-between">'
         +'<div style="display:flex;align-items:center;gap:.6rem">'
-          +'<span style="font-size:1rem">🏠</span>'
+          +'<span>🏠</span>'
           +'<div>'
             +'<div style="font-size:.88rem;font-weight:700;color:var(--p)">'+einheitBez+'</div>'
-            +(einheitInfo?'<div style="font-size:.7rem;color:var(--muted)">'+(einheitInfo.flaeche?einheitInfo.flaeche+' m² · ':'')+'' +(einheitInfo.stockwerk||'')+' '+einheitInfo.typ+'</div>':'')
+            +(einheitInfo?'<div style="font-size:.7rem;color:var(--muted)">'+(einheitInfo.flaeche?einheitInfo.flaeche+' m² · ':'')+''+(einheitInfo.stockwerk||'')+' '+einheitInfo.typ+'</div>':'')
           +'</div>'
         +'</div>'
-        +(firstMV&&firstMV.einheit_id?'<button onclick="openMietverhModal(\''+firstMV.einheit_id+'\',\''+objId+'\',\''+einheitBez.replace(/'/g,'')+'\',null)" class="btn-small" style="font-size:.72rem">+ Mietverhältnis</button>':'')
+        +(einheitId?'<button onclick="openMietverhModal(\''+einheitId+'\',\''+objId+'\',\''+safeBez+'\',null)" class="btn-small" style="font-size:.72rem">+ Mietverhältnis</button>':'')
       +'</div>'
-      // Mietverhältnisse-Liste
       +'<div style="padding:.5rem">'
       +mietList.map(function(m){
         var k=m.kontakte||{};
-        var name=k.vorname||k.nachname?(k.anrede?k.anrede+' ':'')+k.vorname+' '+k.nachname:'Kontakt nicht verknüpft';
+        var name=(k.anrede?k.anrede+' ':'')+[k.vorname,k.nachname].filter(Boolean).join(' ')||'Kontakt nicht verknüpft';
         var einzug=m.einzug?new Date(m.einzug).toLocaleDateString('de-DE'):'–';
         var auszug=m.auszug?new Date(m.auszug).toLocaleDateString('de-DE'):'heute';
         var dauer='';
-        if(m.einzug){var s=new Date(m.einzug),e=m.auszug?new Date(m.auszug):new Date();var mo=Math.round((e-s)/2592000000);dauer=mo>11?(Math.floor(mo/12)+' J. '+mo%12+' Mon.'):(mo+' Mon.');}
+        if(m.einzug){
+          var ms=new Date(m.einzug),me=m.auszug?new Date(m.auszug):new Date();
+          var mo=Math.round((me-ms)/2592000000);
+          dauer=mo>11?(Math.floor(mo/12)+' J. '+mo%12+' Mon.'):(mo+' Mon.');
+        }
+        var mvId=m.id;
+        var mvEinheitId=m.einheit_id||'';
+        var initials=(k.vorname?k.vorname[0].toUpperCase():k.nachname?k.nachname[0].toUpperCase():'?');
         return '<div style="display:flex;align-items:center;justify-content:space-between;padding:.6rem .75rem;border-radius:8px;margin:.25rem 0;background:'+(m.aktiv?'var(--bg)':'#fafafa')+';border:1px solid '+(m.aktiv?'var(--border)':'#eee')+'">'
           +'<div style="display:flex;align-items:center;gap:.75rem">'
-            +'<div style="width:34px;height:34px;border-radius:50%;background:'+(m.aktiv?'var(--p)':'#bbb')+';display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:700;color:#fff;flex-shrink:0">'
-              +(k.vorname?k.vorname[0].toUpperCase():k.nachname?k.nachname[0].toUpperCase():'?')
-            +'</div>'
+            +'<div style="width:34px;height:34px;border-radius:50%;background:'+(m.aktiv?'var(--p)':'#bbb')+';display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:700;color:#fff;flex-shrink:0">'+initials+'</div>'
             +'<div>'
               +'<div style="font-size:.85rem;font-weight:700">'+name.trim()+'</div>'
               +'<div style="font-size:.72rem;color:var(--muted)">📅 '+einzug+' – '+auszug+(dauer?' · ⏱ '+dauer:'')+'</div>'
-              +(m.kaltmiete||m.vorausz_bk?'<div style="font-size:.72rem;color:var(--muted)">'+(m.kaltmiete?'💰 '+m.kaltmiete.toLocaleString('de-DE',{minimumFractionDigits:2})+' € Kaltmiete':'')+(m.vorausz_bk?' · 🔧 '+m.vorausz_bk.toLocaleString('de-DE',{minimumFractionDigits:2})+' € BK-VZ':'')+'</div>':'')
+              +(m.kaltmiete?'<div style="font-size:.72rem;color:var(--muted)">💰 '+m.kaltmiete.toLocaleString('de-DE',{minimumFractionDigits:2})+' €'+(m.vorausz_bk?' · 🔧 '+m.vorausz_bk.toLocaleString('de-DE',{minimumFractionDigits:2})+' € BK':'')+'</div>':'')
             +'</div>'
           +'</div>'
-          +'<div style="display:flex;align-items:center;gap:.5rem">'
+          +'<div style="display:flex;align-items:center;gap:.4rem">'
             +'<span style="font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:8px;background:'+(m.aktiv?'#d4edda':'#f5f5f5')+';color:'+(m.aktiv?'#155724':'#888')+'">'+(m.aktiv?'Aktiv':'Beendet')+'</span>'
-            +'<button onclick="editMietverhaeltnis(''+m.id+'',''+m.einheit_id+'',''+objId+'',''+einheitBez+'')" class="btn-small" style="font-size:.65rem;padding:2px 7px">✏️</button>'
-            +(m.aktiv?'<button onclick="deleteMietverhaeltnis(''+m.id+'')" class="btn-small" style="font-size:.65rem;padding:2px 7px;background:#ddd;color:#666">✕</button>':'')
+            +'<button onclick="editMietverhaeltnis(\''+mvId+'\',\''+mvEinheitId+'\',\''+objId+'\',\''+safeBez+'\')" class="btn-small" style="font-size:.65rem;padding:2px 7px">✏️</button>'
+            +(m.aktiv?'<button onclick="deleteMietverhaeltnis(\''+mvId+'\')" class="btn-small" style="font-size:.65rem;padding:2px 7px;background:#ddd;color:#666">✕</button>':'')
           +'</div>'
         +'</div>';
       }).join('')
@@ -6226,9 +6227,9 @@ async function loadObjektSidebar(objId){
       var k=besetzt&&aktMV.kontakte?aktMV.kontakte:null;
       var mieterName=k?(k.vorname||'')+' '+(k.nachname||''):'';
       var miete=besetzt&&aktMV.kaltmiete?aktMV.kaltmiete.toLocaleString('de-DE',{minimumFractionDigits:0})+' €':'–';
-      return '<div onclick="showObjektTab('einheiten')" style="padding:.55rem .6rem;border-radius:8px;margin-bottom:.3rem;cursor:pointer;'
+      return '<div onclick="showObjektTab(\'einheiten\')" style="padding:.55rem .6rem;border-radius:8px;margin-bottom:.3rem;cursor:pointer;'
         +'background:var(--white);border:1px solid var(--border)" '
-        +'onmouseover="this.style.borderColor='var(--p-accent)'" onmouseout="this.style.borderColor='var(--border)'">'
+        +'onmouseover="this.style.borderColor=\'var(--p-accent)\'" onmouseout="this.style.borderColor=\'var(--border)\'">'
         +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.3rem">'
           +'<div style="font-size:.8rem;font-weight:600;color:var(--text);line-height:1.2">'+e.bezeichnung+'</div>'
           +'<span style="font-size:.6rem;font-weight:700;padding:1px 6px;border-radius:6px;flex-shrink:0;background:'+(besetzt?'#d4edda':'#fdf0ef')+';color:'+(besetzt?'#155724':'#c0392b')+'">'+(besetzt?'Vermietet':'Leer')+'</span>'

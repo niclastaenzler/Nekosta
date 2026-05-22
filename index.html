@@ -55,7 +55,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--tex
 #app{display:none}
 #portal-banner{flex-shrink:0;position:sticky;top:52px;z-index:190}
 .app-layout{display:flex;min-height:calc(100vh - 52px);padding-left:var(--sidebar)}
- .sidebar{width:var(--sidebar);background:var(--white);border-right:1px solid var(--border);padding:.5rem 0 3rem;position:fixed;top:52px;left:0;height:calc(100vh - 52px);overflow-y:auto;z-index:100;flex-shrink:0;transition:width .2s}
+ .sidebar{width:var(--sidebar);background:var(--white);border-right:1px solid var(--border);padding:.75rem 0 3rem;position:fixed;top:52px;left:0;height:calc(100vh - 52px);overflow-y:auto;z-index:100;flex-shrink:0;transition:width .2s}
  .sidebar-section{font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);padding:.6rem 1rem .2rem;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;margin-top:.2rem}
  .sidebar-section:hover{color:var(--p)}
  .sg-arrow{font-size:.58rem;transition:transform .2s;opacity:.4;flex-shrink:0}
@@ -68,12 +68,12 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--tex
  .nav-item .ni-icon{font-size:.88rem;width:17px;text-align:center;flex-shrink:0}
  .nav-badge{margin-left:auto;background:var(--p-light);color:var(--p);font-size:.58rem;font-weight:700;padding:1px 5px;border-radius:8px}
  .sidebar-divider{height:1px;background:var(--border);margin:.35rem .85rem}
-.main-content{flex:1;min-width:0;overflow-x:hidden}
+.main-content{flex:1;min-width:0;overflow-x:hidden;width:calc(100% - var(--sidebar))}
 #page-objekt-detail{position:fixed;top:52px;left:var(--sidebar);right:0;bottom:0;background:var(--bg);z-index:10;overflow:hidden;display:none}
 .page-wrap{padding:2rem;max-width:900px;box-sizing:border-box;width:100%}
 
 /* ── WIZARD ── */
-.wizard-bar{background:var(--white);border-bottom:1px solid var(--border);padding:0 1.5rem;display:flex;align-items:center;gap:0;position:fixed;top:52px;left:var(--sidebar);right:0;z-index:149;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.wizard-bar{background:var(--white);border-bottom:1px solid var(--border);padding:0 1.5rem;display:flex;align-items:center;gap:0;position:fixed;top:52px;left:var(--sidebar);right:0;z-index:149;box-shadow:0 2px 8px rgba(0,0,0,.06);border-top:3px solid var(--p)}
 .wizard-step{display:flex;align-items:center;gap:.5rem;padding:1rem .75rem;font-size:.82rem;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;transition:color .2s,border-color .2s;white-space:nowrap}
 .wizard-step.active{color:var(--p);border-bottom-color:var(--p);font-weight:700}
 .wizard-step.done{color:var(--success)}
@@ -2099,7 +2099,16 @@ async function initApp(user){
     await loadKundenAbrechnungen();
   }
 }
-sb.auth.onAuthStateChange(function(_,session){if(session&&session.user)initApp(session.user);});
+sb.auth.onAuthStateChange(function(event,session){
+  if(event==='SIGNED_IN'&&!currentUser&&session&&session.user){
+    // Nur beim echten ersten Login
+    initApp(session.user);
+  } else if(event==='TOKEN_REFRESHED'&&session&&session.user&&currentUser){
+    // Token-Refresh: nur Token-Balance aktualisieren, NICHT navigieren
+    currentUser=session.user;
+    loadTokenBalance();
+  }
+});
 
 // ── NAVIGATION ──
 var currentPageName='dashboard';
@@ -3536,7 +3545,8 @@ async function loadKundenAbrechnungen(){
   if(!container)return;
   var {data,error}=await sb.from('abrechnungen').select('*')
     .eq('created_by',currentUser.id)
-    .order('created_at',{ascending:false});
+    .is('deleted_at',null)
+    .order('updated_at',{ascending:false});
   if(error||!data||!data.length){
     container.innerHTML='<div class="empty-state"><div class="empty-icon">📄</div>Noch keine Abrechnungen vorhanden.</div>';
     return;
@@ -4998,7 +5008,7 @@ function renderObjekteTabelle(){
             'style="display:none;position:absolute;right:0;top:100%;background:var(--white);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.15);z-index:9999;min-width:165px;overflow:hidden">'+
             '<div onclick="openObjektDetail(\''+o.id+'\')" class="omenu-item">&#x1F4CA; Dashboard öffnen</div>'+
             '<div onclick="editObjekt(\''+o.id+'\')" class="omenu-item">&#x270F; Bearbeiten</div>'+
-            '<div onclick="startAbrechnungFuerObjekt(\''+o.name+'\',\''+o.gesamtflaeche+'\')" class="omenu-item">&#x1F4C4; Abrechnen</div>'+
+            '<div onclick="startAbrechnungFuerAktivesObjektById(\''+o.id+'\')" class="omenu-item">&#x1F4C4; Abrechnen</div>'+
             '<div onclick="openMieterModalFuerObjekt(\''+o.id+'\',\''+o.name+'\')" class="omenu-item">+ Mieter hinzuf&uuml;gen</div>'+
             '<div style="height:1px;background:var(--border)"></div>'+
             '<div onclick="deleteObjekt(\''+o.id+'\')" class="omenu-item omenu-danger">&#x1F5D1; L&ouml;schen</div>'+
@@ -5095,11 +5105,24 @@ function showMieterVonObjekt(objId){
   if(sel)sel.value=objId;
   showPage('mieter');
 }
-function startAbrechnungFuerObjekt(name,flaeche){
+async function startAbrechnungFuerAktivesObjektById(objId){
+  if(!objId)return;
+  var {data}=await sb.from('objekte').select('*').eq('id',objId).single();
+  if(!data)return;
+  aktivesObjekt=data;
+  startAbrechnungFuerAktivesObjekt();
+}
+function startAbrechnungFuerObjekt(name,flaeche,objId,adresse){
   startNeueAbrechnung();
   setTimeout(function(){
-    var ob=document.getElementById('objekt');if(ob)ob.value=name;
+    var fullName=name+(adresse?', '+adresse:'');
+    var ob=document.getElementById('objekt');if(ob)ob.value=fullName;
     var fl=document.getElementById('objekt-flaeche');if(fl&&flaeche)fl.value=flaeche;
+    // Pre-select in dropdown if id given
+    if(objId){
+      var sel=document.getElementById('objekt-select');
+      if(sel)sel.value=objId;
+    }
   },200);
 }
 
@@ -5698,9 +5721,24 @@ async function saveObjektNotiz(){
   if(msg){msg.style.display='block';setTimeout(function(){msg.style.display='none';},2000);}
 }
 
-function startAbrechnungFuerAktivesObjekt(){
+async function startAbrechnungFuerAktivesObjekt(){
   if(!aktivesObjekt)return;
-  startAbrechnungFuerObjekt(aktivesObjekt.name,aktivesObjekt.gesamtflaeche);
+  // Check if abgerechnet for current year
+  var year=new Date().getFullYear()-1;
+  var {data:existingAbr}=await sb.from('abrechnungen')
+    .select('id,titel')
+    .eq('created_by',currentUser.id)
+    .eq('objekt',aktivesObjekt.name+(aktivesObjekt.strasse?', '+aktivesObjekt.strasse+', '+(aktivesObjekt.plz||'')+' '+(aktivesObjekt.ort||''):''))
+    .eq('jahr',year)
+    .is('deleted_at',null)
+    .limit(1);
+  var fertig=existingAbr&&existingAbr.length&&existingAbr[0].titel&&existingAbr[0].titel.includes('[Abgerechnet]');
+  if(fertig){
+    var action=confirm('Für '+aktivesObjekt.name+' wurde '+year+' bereits eine fertiggestellte Abrechnung gefunden.\n\nKorrektur erstellen? (OK)\nNein, neue Abrechnung? (Abbrechen)');
+    if(action){ladeKorrektur(existingAbr[0].id);return;}
+  }
+  var adresse=[aktivesObjekt.strasse,(aktivesObjekt.plz||'')+(aktivesObjekt.ort?' '+aktivesObjekt.ort:'')].filter(Boolean).join(', ');
+  startAbrechnungFuerObjekt(aktivesObjekt.name,aktivesObjekt.gesamtflaeche,aktivesObjekt.id,adresse);
 }
 function editAktivesObjekt(){
   if(!aktivesObjekt)return;

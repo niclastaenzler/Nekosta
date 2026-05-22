@@ -993,30 +993,6 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
         </div>
       </div>
     </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-bottom:.7rem">
-          <div class="field" style="grid-column:1/-1"><label>Name / Bezeichnung *</label><input type="text" id="obj-name" placeholder="z. B. Musterstr. 10 Euskirchen"></div>
-          <div class="field"><label>Straße &amp; Nr.</label><input type="text" id="obj-strasse" placeholder="Musterstraße 10"></div>
-          <div class="field"><label>PLZ</label><input type="text" id="obj-plz" placeholder="53881"></div>
-          <div class="field"><label>Ort</label><input type="text" id="obj-ort" placeholder="Euskirchen"></div>
-          <div class="field"><label>Gesamtwohnfläche (m²)</label><input type="number" id="obj-flaeche" placeholder="215" step="0.01"></div>
-          <div class="field"><label>Kategorie</label>
-            <select id="obj-kategorie" style="border:1px solid var(--border);border-radius:var(--r);padding:.48rem .72rem;font-size:.86rem;font-family:Arial,sans-serif;background:var(--bg);outline:none;width:100%">
-              <option value="Wohnhaus">Gesamtes Wohnhaus</option>
-              <option value="Einfamilienhaus">Einfamilienhaus</option>
-              <option value="Wohn- & Geschäftshaus">Wohn- &amp; Geschäftshaus</option>
-              <option value="Gewerbe">Gewerbe</option>
-            </select>
-          </div>
-          <div class="field"><label>Anzahl Einheiten</label><input type="number" id="obj-einheiten" placeholder="4" step="1" min="1"></div>
-          <div class="field" style="grid-column:1/-1"><label>Notiz (optional)</label><textarea id="obj-notiz" style="border:1px solid var(--border);border-radius:var(--r);padding:.5rem .75rem;font-size:.88rem;font-family:Arial,sans-serif;width:100%;min-height:55px;resize:vertical;outline:none;background:var(--bg)" placeholder="Interne Anmerkungen..."></textarea></div>
-        </div>
-        <div style="display:flex;gap:.65rem;margin-top:.25rem">
-          <button class="btn-primary" onclick="saveObjekt()" style="flex:1">💾 Speichern</button>
-          <button class="btn-secondary" onclick="closeObjektModal()" style="flex:1">Abbrechen</button>
-        </div>
-        <div id="objekt-modal-msg" style="display:none;margin-top:.6rem;font-size:.78rem;padding:.4rem .7rem;border-radius:6px"></div>
-      </div>
-    </div>
 
     <!-- MIETER MODAL -->
     <div id="mieter-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:600;align-items:flex-start;justify-content:center;padding:1rem;overflow-y:auto">
@@ -1228,7 +1204,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
           </div>
           <div style="display:flex;gap:.65rem">
             <button class="btn-secondary" onclick="showPage('archiv')" style="font-size:.82rem;padding:.5rem 1rem">📋 BKA aus Vorjahr</button>
-            <button class="btn-secondary" onclick="showPapierkorb()" style="font-size:.82rem;padding:.5rem 1rem" id="btn-papierkorb">🗑 Papierkorb</button>
+            <button class="btn-secondary" onclick="resetLeereEntwuerfe()" style="font-size:.82rem;padding:.5rem 1rem;color:#c0392b;border-color:#c0392b" title="Leere/fehlerhafte Entwürfe löschen">🗑 Entwürfe bereinigen</button>
             <button class="btn-primary" onclick="startNeueAbrechnung()" style="display:flex;align-items:center;gap:.35rem"><span>+</span> Neue Abrechnung erstellen</button>
           </div>
         </div>
@@ -3763,7 +3739,10 @@ document.addEventListener('visibilitychange',function(){
 async function autoSaveEntwurf(){
   if(!currentUser)return;
   var jVal=(document.getElementById('jahr')||{}).value||'';
-  var oVal=(document.getElementById('objekt')||{}).value||'Unbekannt';
+  var oVal=(document.getElementById('objekt')||{}).value||'';
+  // Only auto-save if user has entered meaningful data (past step 1 OR has objekt name)
+  if(!oVal&&currentStep<=1)return;
+  oVal=oVal||'Unbekannt';
   var titel=oVal+' \u2013 NK '+(jVal||new Date().getFullYear()-1)+' [Entwurf]';
   var draftData={
     wohnungen:typeof getWohnungen==='function'?getWohnungen():[],
@@ -4585,7 +4564,26 @@ async function renameAbrechnung(id,currentTitle){
 }
 
 // ── KORREKTUR LADEN ──
-// ── PAPIERKORB ──
+async function resetLeereEntwuerfe(){
+  if(!confirm('Alle leeren/fehlerhaften Entwürfe löschen?\n\n(Nur Entwürfe ohne Objektname oder mit "Unbekannt" werden entfernt)'))return;
+  // Delete drafts with no real objekt name or "Unbekannt"
+  var {data}=await sb.from('abrechnungen')
+    .select('id,titel,objekt')
+    .eq('created_by',currentUser.id)
+    .is('deleted_at',null);
+  var toDelete=(data||[]).filter(function(a){
+    var isEntwurf=!a.titel||!a.titel.includes('[Abgerechnet]');
+    var badObjekt=!a.objekt||a.objekt==='Unbekannt'||a.objekt.trim()==='';
+    var badTitel=!a.titel||a.titel.trim()==='';
+    return isEntwurf&&(badObjekt||badTitel);
+  });
+  if(!toDelete.length){showToast('✅ Keine fehlerhaften Entwürfe gefunden!');return;}
+  var ids=toDelete.map(function(a){return a.id;});
+  // Soft delete into trash
+  await sb.from('abrechnungen').update({deleted_at:new Date().toISOString()}).in('id',ids);
+  showToast('🗑 '+ids.length+' Entwurf'+(ids.length>1?'e':'')+' bereinigt!');
+  loadArchiv();loadDashboard();
+}
 async function moveToTrash(id){
   if(!confirm('In den Papierkorb verschieben?\n\nDie Abrechnung wird nach 7 Tagen permanent gelöscht.'))return;
   var {error}=await sb.from('abrechnungen').update({deleted_at:new Date().toISOString()}).eq('id',id);
@@ -6134,7 +6132,7 @@ async function loadObjektMieter(objId){
 async function loadObjektAbrechnungen(objId){
   var container=document.getElementById('od-abr-list');
   if(!container)return;
-  var {data}=await sb.from('abrechnungen').select('titel,jahr,created_at').eq('created_by',currentUser.id).order('created_at',{ascending:false}).limit(5);
+  var {data}=await sb.from('abrechnungen').select('titel,jahr,created_at').eq('created_by',currentUser.id).is('deleted_at',null).order('updated_at',{ascending:false}).limit(5);
   if(!data||!data.length){container.innerHTML='<div style="color:var(--muted);font-size:.85rem;text-align:center;padding:1rem">Noch keine Abrechnungen.</div>';return;}
   container.innerHTML=data.map(function(a){
     var isAbg=a.titel&&a.titel.includes('[Abgerechnet]');

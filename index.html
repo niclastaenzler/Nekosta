@@ -54,8 +54,8 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--tex
 /* ── APP LAYOUT ── */
 #app{display:none}
 #portal-banner{flex-shrink:0;position:sticky;top:52px;z-index:190}
-.app-layout{display:flex;min-height:calc(100vh - 52px)}
- .sidebar{width:var(--sidebar);background:var(--white);border-right:1px solid var(--border);padding:.5rem 0 3rem;position:sticky;top:52px;height:calc(100vh - 52px);overflow-y:auto;flex-shrink:0;transition:width .2s}
+.app-layout{display:flex;min-height:calc(100vh - 52px);padding-left:var(--sidebar)}
+ .sidebar{width:var(--sidebar);background:var(--white);border-right:1px solid var(--border);padding:.5rem 0 3rem;position:fixed;top:52px;left:0;height:calc(100vh - 52px);overflow-y:auto;z-index:100;flex-shrink:0;transition:width .2s}
  .sidebar-section{font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);padding:.6rem 1rem .2rem;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;margin-top:.2rem}
  .sidebar-section:hover{color:var(--p)}
  .sg-arrow{font-size:.58rem;transition:transform .2s;opacity:.4;flex-shrink:0}
@@ -73,7 +73,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--tex
 .page-wrap{padding:2rem;max-width:900px;box-sizing:border-box;width:100%}
 
 /* ── WIZARD ── */
-.wizard-bar{background:var(--white);border-bottom:1px solid var(--border);padding:0 1.5rem;display:flex;align-items:center;gap:0;position:sticky;top:52px;z-index:150;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.wizard-bar{background:var(--white);border-bottom:1px solid var(--border);padding:0 1.5rem;display:flex;align-items:center;gap:0;position:fixed;top:52px;left:var(--sidebar);right:0;z-index:149;box-shadow:0 2px 8px rgba(0,0,0,.06)}
 .wizard-step{display:flex;align-items:center;gap:.5rem;padding:1rem .75rem;font-size:.82rem;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;transition:color .2s,border-color .2s;white-space:nowrap}
 .wizard-step.active{color:var(--p);border-bottom-color:var(--p);font-weight:700}
 .wizard-step.done{color:var(--success)}
@@ -81,7 +81,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--tex
 .ws-num{width:22px;height:22px;border-radius:50%;background:var(--border);color:var(--muted);font-size:.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .wizard-step.active .ws-num{background:var(--p);color:#fff}
 .wizard-arrow{color:var(--border);font-size:.8rem;padding:0 .25rem}
-.wizard-content{padding:2rem;flex:1}
+.wizard-content{padding:2rem}
 .wizard-footer{background:var(--white);border-top:1px solid var(--border);padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center;position:sticky;bottom:0;z-index:100;flex-wrap:wrap;gap:.5rem}
 
 /* ── CARDS ── */
@@ -961,7 +961,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
       </div>
 
             <!-- STEPS WRAPPER -->
-      <div id="steps-wrapper">
+      <div id="steps-wrapper" style="padding-top:48px">
 <!-- STEP 1: GRUNDDATEN -->
       <div id="step1" class="wizard-content">
         <div class="page-header"><div class="page-title">Grunddaten der Abrechnung</div><div class="page-sub">Objekt auswählen oder manuell eingeben.</div></div>
@@ -2118,10 +2118,9 @@ function showPage(name){
     name='dashboard';
   }
 
-  // If leaving the tool page and there's unsaved work, warn
+  // If leaving the tool page - auto-save silently, no confirm needed
   if(currentPageName==='tool' && name!=='tool' && (hasUnsavedChanges||currentStep>1)){
-    var leave=confirm('⚠️ Sie erstellen gerade eine Abrechnung.\n\nSeite verlassen? Der aktuelle Stand bleibt erhalten – über „Abrechnung erstellen" können Sie jederzeit zurück.');
-    if(!leave) return; // Stay on tool page
+    autoSaveEntwurf(); // Fire and forget - saves in background
   }
 
   currentPageName=name;
@@ -3623,6 +3622,47 @@ function loadLayoutSettings(){
     applyLayoutSettings();
   }catch(e){}
 }
+// ── AUTO-SAVE bei Tab-Wechsel ──
+document.addEventListener('visibilitychange',function(){
+  if(document.hidden&&currentPageName==='tool'&&(hasUnsavedChanges||currentStep>1)){
+    autoSaveEntwurf();
+  }
+});
+
+async function autoSaveEntwurf(){
+  if(!currentUser)return;
+  var jVal=(document.getElementById('jahr')||{}).value||'';
+  var oVal=(document.getElementById('objekt')||{}).value||'Unbekannt';
+  var titel=oVal+' \u2013 NK '+(jVal||new Date().getFullYear()-1)+' [Entwurf]';
+  var draftData={
+    wohnungen:typeof getWohnungen==='function'?getWohnungen():[],
+    bkKosten:typeof getKosten==='function'?getKosten('bkRows'):[],
+    hkKosten:typeof getKosten==='function'?getKosten('hkRows'):[],
+    jahr:parseInt(jVal)||null,objekt:oVal,status:'entwurf',
+    objektFlaeche:parseFloat((document.getElementById('objekt-flaeche')||{}).value)||0,
+    datum:(document.getElementById('datum')||{}).value||null,
+    _autoSaved:new Date().toISOString(),_step:currentStep
+  };
+  try{
+    if(currentDraftId){
+      await sb.from('abrechnungen').update({titel:titel,jahr:parseInt(jVal)||null,objekt:oVal,
+        datum:draftData.datum,data:draftData,updated_at:new Date().toISOString()
+      }).eq('id',currentDraftId);
+    }else{
+      var r=await sb.from('abrechnungen').insert({titel:titel,
+        jahr:parseInt(jVal)||null,objekt:oVal,datum:draftData.datum,
+        data:draftData,created_by:currentUser.id
+      }).select().single();
+      if(!r.error&&r.data)currentDraftId=r.data.id;
+    }
+    hasUnsavedChanges=false;
+    // Brief visual feedback on chip
+    var btn=document.querySelector('#abrechnung-active-chip button');
+    if(btn){var orig=btn.textContent;btn.textContent='✅ Automatisch gespeichert';setTimeout(function(){btn.textContent=orig;},2000);}
+  }catch(e){console.error('Auto-save:',e);}
+}
+
+// ── PASSWORT STÄRKE ──
 function checkPwStrength(pw){
   var fill=document.getElementById('pw-strength-fill');
   var txt=document.getElementById('pw-strength-text');

@@ -70,6 +70,13 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--tex
  .sidebar-divider{height:1px;background:var(--border);margin:.35rem .85rem}
 .main-content{flex:1;min-width:0;overflow-x:hidden}
 #page-objekt-detail{position:fixed;top:52px;left:var(--sidebar);right:0;bottom:0;background:var(--bg);z-index:10;overflow:hidden;display:none}
+.od-nav-icon{transition:background .15s;}
+.od-nav-icon:hover{background:var(--p-light)!important;}
+.od-nav-icon:hover div:first-child{transform:scale(1.15);}
+/* Sidebar collapse when objekt-detail open */
+body.objekt-detail-open .sidebar{width:0;overflow:hidden;padding:0;}
+body.objekt-detail-open .app-layout{padding-left:0;}
+#page-objekt-detail.active{left:0;}
 .page-wrap{padding:2rem;max-width:900px;box-sizing:border-box;width:100%}
 
 /* ── WIZARD ── */
@@ -709,61 +716,61 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
     <div id="page-objekt-detail" style="display:none">
       <div style="display:flex;height:calc(100vh - 52px);overflow:hidden">
 
-        <!-- LEFT SIDEBAR -->
-        <div style="width:300px;min-width:280px;background:var(--white);border-right:1px solid var(--border);padding:1.25rem;overflow-y:auto;flex-shrink:0">
-          <!-- Back -->
-          <button onclick="showPage('objekte')" style="display:flex;align-items:center;gap:.4rem;background:none;border:none;cursor:pointer;font-size:.82rem;color:var(--muted);padding:0;margin-bottom:1rem;font-family:Arial,sans-serif">← Zurück zur Objektübersicht</button>
+        <!-- LEFT SIDEBAR (ImmoCloud-Stil: schmal, mit Icon-Navigation) -->
+        <div id="od-left-sidebar" style="width:260px;min-width:240px;background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;transition:width .25s ease">
 
-          <!-- Objekt Info Card -->
-          <div style="border:2px solid var(--p);border-radius:12px;padding:1rem;margin-bottom:1.25rem">
-            <h2 style="font-size:.95rem;font-weight:700;color:var(--text);line-height:1.3;margin-bottom:.25rem" id="od-sidebar-name">Objekt</h2>
-            <div style="font-size:.75rem;color:var(--muted)" id="od-sidebar-adresse"></div>
-            <!-- Quick Icons -->
-            <div style="display:flex;gap:.75rem;margin-top:.85rem">
-              <div onclick="showObjektTab('uebersicht')" style="flex:1;text-align:center;cursor:pointer;padding:.5rem .3rem;border-radius:8px;border:1px solid var(--border)" title="Nebenkosten">
-                <div style="font-size:1.2rem">📊</div>
-                <div style="font-size:.62rem;color:var(--muted);margin-top:2px">Übersicht</div>
-              </div>
-              <div onclick="openMieterFuerAktivesObjekt()" style="flex:1;text-align:center;cursor:pointer;padding:.5rem .3rem;border-radius:8px;border:1px solid var(--border)" title="Mieter">
-                <div style="font-size:1.2rem">👥</div>
-                <div style="font-size:.62rem;color:var(--muted);margin-top:2px">Mieter</div>
-              </div>
-              <div onclick="startAbrechnungFuerAktivesObjekt()" style="flex:1;text-align:center;cursor:pointer;padding:.5rem .3rem;border-radius:8px;border:1px solid var(--border)" title="Abrechnen">
-                <div style="font-size:1.2rem">📄</div>
-                <div style="font-size:.62rem;color:var(--muted);margin-top:2px">Abrechnen</div>
-              </div>
+          <!-- Header: Back + Objekt-Info -->
+          <div style="padding:1rem 1.1rem .75rem;border-bottom:1px solid var(--border);flex-shrink:0">
+            <button onclick="showPage('objekte')" style="display:flex;align-items:center;gap:.4rem;background:none;border:none;cursor:pointer;font-size:.78rem;color:var(--muted);padding:0;margin-bottom:.75rem;font-family:Arial,sans-serif;white-space:nowrap">
+              ← Objektübersicht
+            </button>
+            <div style="font-size:.95rem;font-weight:700;color:var(--text);line-height:1.2;margin-bottom:.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="od-sidebar-name">Objekt</div>
+            <div style="font-size:.72rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="od-sidebar-adresse"></div>
+          </div>
+
+          <!-- Icon-Navigationsleiste (ImmoCloud-Stil) -->
+          <div style="display:flex;border-bottom:1px solid var(--border);background:var(--bg);flex-shrink:0">
+            <div class="od-nav-icon" onclick="showObjektTab('uebersicht')" id="od-icon-uebersicht" title="Übersicht" style="flex:1;text-align:center;padding:.65rem .3rem;cursor:pointer;border-bottom:2px solid var(--p);position:relative">
+              <div style="font-size:1.1rem">📊</div>
+              <div style="font-size:.55rem;color:var(--p);font-weight:700;margin-top:1px">Übersicht</div>
+            </div>
+            <div class="od-nav-icon" onclick="showObjektTab('einheiten')" id="od-icon-einheiten" title="Einheiten" style="flex:1;text-align:center;padding:.65rem .3rem;cursor:pointer;border-bottom:2px solid transparent;position:relative">
+              <div style="font-size:1.1rem">🏠</div>
+              <div style="font-size:.55rem;color:var(--muted);margin-top:1px">Einheiten</div>
+            </div>
+            <div class="od-nav-icon" onclick="showObjektTab('mietverhaeltnisse')" id="od-icon-mietverh" title="Mietverhältnisse" style="flex:1;text-align:center;padding:.65rem .3rem;cursor:pointer;border-bottom:2px solid transparent;position:relative">
+              <div style="font-size:1.1rem">👥</div>
+              <div style="font-size:.55rem;color:var(--muted);margin-top:1px">Mieter</div>
+            </div>
+            <div class="od-nav-icon" onclick="showObjektTab('abrechnungsdaten')" id="od-icon-abrdaten" title="Abrechnungsdaten" style="flex:1;text-align:center;padding:.65rem .3rem;cursor:pointer;border-bottom:2px solid transparent;position:relative">
+              <div style="font-size:1.1rem">📋</div>
+              <div style="font-size:.55rem;color:var(--muted);margin-top:1px">Abrechnung</div>
+            </div>
+            <div class="od-nav-icon" onclick="startAbrechnungFuerAktivesObjekt()" title="Neue Abrechnung erstellen" style="flex:1;text-align:center;padding:.65rem .3rem;cursor:pointer;border-bottom:2px solid transparent;position:relative;background:var(--p);border-radius:0">
+              <div style="font-size:1.1rem">📄</div>
+              <div style="font-size:.55rem;color:#fff;margin-top:1px">Erstellen</div>
             </div>
           </div>
 
-          <!-- Wohneinheiten -->
-          <div id="od-sidebar-einheiten"></div>
+          <!-- Einheiten-Liste in Sidebar -->
+          <div style="flex:1;overflow-y:auto;padding:.75rem .85rem" id="od-sidebar-einheiten"></div>
         </div>
 
         <!-- MAIN CONTENT -->
         <div style="flex:1;overflow-y:auto;min-width:0">
           <!-- Object Header -->
-          <div style="background:var(--white);border-bottom:1px solid var(--border);padding:1.25rem 2rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem;position:sticky;top:0;z-index:50">
+          <div style="background:var(--white);border-bottom:1px solid var(--border);padding:1rem 1.75rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem;position:sticky;top:0;z-index:50">
             <div>
-              <h1 style="font-size:1.25rem;font-weight:700" id="od-main-name">Objekt</h1>
+              <h1 style="font-size:1.2rem;font-weight:700" id="od-main-name">Objekt</h1>
               <div style="display:flex;gap:.5rem;margin-top:.3rem;flex-wrap:wrap" id="od-unit-badges"></div>
             </div>
             <div style="display:flex;gap:.5rem;flex-wrap:wrap">
-              <button class="btn-secondary" style="font-size:.82rem;padding:.5rem 1rem" onclick="startAbrechnungFuerAktivesObjekt()">📄 Abrechnen</button>
-              <button class="btn-secondary" style="font-size:.82rem;padding:.5rem 1rem" onclick="editAktivesObjekt()">✏️ Ändern</button>
-              <button style="background:none;border:1px solid var(--border);border-radius:8px;padding:.5rem .75rem;cursor:pointer;font-size:.82rem;color:var(--danger)" onclick="deleteObjekt(aktivesObjekt.id).then(function(){showPage('objekte')})">Löschen</button>
+              <button class="btn-secondary" style="font-size:.82rem;padding:.45rem .9rem" onclick="editAktivesObjekt()" title="Objekt bearbeiten">✏️ Ändern</button>
+              <button style="background:none;border:1px solid var(--border);border-radius:8px;padding:.45rem .75rem;cursor:pointer;font-size:.82rem;color:var(--danger)" onclick="deleteObjekt(aktivesObjekt.id).then(function(){showPage('objekte')})" title="Objekt löschen">🗑 Löschen</button>
             </div>
           </div>
 
-          <!-- TABS -->
-          <div style="border-bottom:2px solid var(--border);padding:0 2rem;background:var(--white);display:flex;gap:0">
-            <button type="button" id="tab-uebersicht" onclick="showObjektTab('uebersicht')" style="background:none;border:none;border-bottom:2px solid var(--p);margin-bottom:-2px;padding:.75rem 1.25rem;cursor:pointer;font-size:.88rem;font-weight:700;color:var(--p);font-family:Arial,sans-serif">Übersicht</button>
-            <button type="button" id="tab-abrechnungsdaten" onclick="showObjektTab('abrechnungsdaten')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.75rem 1.25rem;cursor:pointer;font-size:.88rem;color:var(--muted);font-family:Arial,sans-serif">Abrechnungsdaten</button>
-            <button type="button" id="tab-einheiten-tab" onclick="showObjektTab('einheiten')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.75rem 1.25rem;cursor:pointer;font-size:.88rem;color:var(--muted);font-family:Arial,sans-serif">Einheiten</button>
-
-            <button type="button" id="tab-mietverh-tab" onclick="showObjektTab('mietverhaeltnisse')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.75rem 1.25rem;cursor:pointer;font-size:.88rem;color:var(--muted);font-family:Arial,sans-serif">Mietverhältnisse</button>
-          </div>
-
-          <div style="padding:1.75rem 2rem">
+          <div style="padding:1.5rem 1.75rem">
             <!-- TAB: ÜBERSICHT -->
             <div id="tab-content-uebersicht">
               <!-- TOP ROW: Eckdaten + Einheiten-Schnellübersicht -->
@@ -877,7 +884,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
             <!-- TAB: EINHEITEN -->
             <div id="tab-content-einheiten" style="display:none">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
-                <h3 style="font-size:.9rem;font-weight:700">Einheiten &amp; Mietverhältnisse</h3>
+                <h3 style="font-size:.9rem;font-weight:700">Einheiten</h3>
                 <button class="btn-primary" style="font-size:.82rem;padding:.5rem 1rem" onclick="openEinheitModal()">+ Einheit hinzufügen</button>
               </div>
               <div id="od-einheiten-list"><div style="color:var(--muted);font-size:.85rem;text-align:center;padding:2rem">Wird geladen...</div></div>
@@ -1048,7 +1055,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
       </div>
 
             <!-- STEPS WRAPPER -->
-      <div id="steps-wrapper" style="padding-top:60px">
+      <div id="steps-wrapper" style="padding-top:65px;min-height:calc(100vh - 52px - 56px - 64px)">
 <!-- STEP 1: GRUNDDATEN -->
       <div id="step1" class="wizard-content">
         <div class="page-header"><div class="page-title">Grunddaten der Abrechnung</div><div class="page-sub">Objekt auswählen oder manuell eingeben.</div></div>
@@ -1184,11 +1191,17 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
         <button class="btn-secondary" id="btn-zurueck" onclick="goStep(currentStep-1)" style="visibility:hidden">← Zurück</button>
         <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
           <div id="stammdaten-warn" style="display:none;background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:.3rem .75rem;font-size:.75rem;color:#856404">
-            ⚠️ <strong>Stammdaten fehlen!</strong> <a href="#" onclick="showPage('stammdaten');return false" style="color:#856404;text-decoration:underline">Jetzt ausfüllen</a> – sonst fehlt der Absender im PDF.
+            ⚠️ <strong>Stammdaten fehlen!</strong> <a href="#" onclick="showPage('stammdaten');return false" style="color:#856404;text-decoration:underline">Jetzt ausfüllen</a>
           </div>
-          <button class="btn-success" onclick="zwischenspeichern()">💾 Zwischenspeichern</button>
+          <button class="btn-success" onclick="zwischenspeichern()" style="font-size:.82rem;padding:.5rem 1rem">💾 Speichern</button>
           <button class="btn-secondary" id="btn-probe" onclick="ladeProbeabrechnung()" style="font-size:.78rem;padding:.5rem 1rem;display:none">🧪 Probe</button>
-          <span id="wizard-step-label" style="font-size:.82rem;color:var(--muted)">Schritt 1 von 4</span>
+          <!-- Progress bar -->
+          <div style="display:flex;align-items:center;gap:.5rem">
+            <div style="width:80px;height:6px;background:var(--border);border-radius:3px;overflow:hidden">
+              <div id="wizard-progress-bar" style="height:100%;background:var(--p);border-radius:3px;transition:width .3s;width:25%"></div>
+            </div>
+            <span id="wizard-step-label" style="font-size:.78rem;color:var(--muted)">1/4</span>
+          </div>
         </div>
         <button class="btn-primary" id="btn-weiter" onclick="wizardWeiter()">Weiter →</button>
       </div>
@@ -2237,6 +2250,11 @@ function showPage(name){
     'einstellungen','heizkostenerstellen','impressum','welcome','bearbeitungsnotizen',
     'adminpanel','dashboard','objekte','mieter','objekt-detail','kontakte'];
 
+  // Restore main sidebar when leaving objekt-detail
+  if(name!=='objekt-detail'){
+    document.body.classList.remove('objekt-detail-open');
+  }
+
   var adminVisible=document.getElementById('admin-menu').style.display!=='none';
 
   // Block customers from locked pages - redirect to dashboard
@@ -2450,7 +2468,8 @@ function goStep(n){
     bw.style.visibility=n===4?'hidden':'visible';
     bw.textContent=n===3?'🔢 Berechnen →':'Weiter →';
   }
-  var sl=document.getElementById('wizard-step-label');if(sl)sl.textContent='Schritt '+n+' von 4';
+  var sl=document.getElementById('wizard-step-label');if(sl)sl.textContent=n+'/4';
+  var pb=document.getElementById('wizard-progress-bar');if(pb)pb.style.width=(n/4*100)+'%';
 }
 function wizardWeiter(){
   if(currentStep===2&&!validateWohnungen())return;
@@ -4976,8 +4995,8 @@ async function loadDashboard(){
     // Tokens: admin shows actual balance (not infinite in dashboard)
     document.getElementById('dash-tokens').textContent=tokens;
 
-    // Entwürfe & Abgerechnet - only user's own, only valid (with objekt)
-    var {data:alle}=await sb.from('abrechnungen').select('titel,objekt').eq('created_by',currentUser.id);
+    // Entwürfe & Abgerechnet - only user's own, only valid, exclude soft-deleted
+    var {data:alle}=await sb.from('abrechnungen').select('titel,objekt').eq('created_by',currentUser.id).is('deleted_at',null);
     var entwuerfe=(alle||[]).filter(function(a){return a.titel&&a.titel.includes('[Entwurf]')&&a.objekt&&a.objekt.trim()!=='';}).length;
     var abgerechnet=(alle||[]).filter(function(a){return a.titel&&a.titel.includes('[Abgerechnet]');}).length;
     document.getElementById('dash-entwuerfe').textContent=entwuerfe;
@@ -5676,10 +5695,12 @@ async function editMietverhaeltnis(mvId,einheitId,objektId,einheitBez){
   if(data)openMietverhModal(einheitId,objektId,einheitBez,data);
 }
 async function deleteMietverhaeltnis(id){
-  if(!confirm('Mietverhältnis beenden/löschen?'))return;
-  await sb.from('mietverhaeltnisse').update({aktiv:false,auszug:new Date().toISOString().split('T')[0]}).eq('id',id);
+  var action=confirm('Mietverhältnis beenden oder löschen?\n\nOK = Beenden (Auszugsdatum setzen)\nAbbrechen = Abbrechen');
+  if(!action)return;
+  var {error}=await sb.from('mietverhaeltnisse').update({aktiv:false,auszug:new Date().toISOString().split('T')[0]}).eq('id',id);
+  if(error){showToast('❌ Fehler: '+error.message);return;}
   showToast('✅ Mietverhältnis beendet');
-  if(aktivesObjekt){loadObjektEinheiten(aktivesObjekt.id);loadObjektStats(aktivesObjekt.id);loadObjektSidebar(aktivesObjekt.id);}
+  if(aktivesObjekt){loadObjektEinheiten(aktivesObjekt.id);loadObjektStats(aktivesObjekt.id);loadObjektSidebar(aktivesObjekt.id);loadMietverhaeltnisse(aktivesObjekt.id);}
 }
 async function loadMietverhaeltnisse(objId){
   var container=document.getElementById('od-mietverh-list');
@@ -5743,6 +5764,9 @@ async function openObjektDetail(objId){
   if(error||!data){showToast('Fehler beim Laden');return;}
   aktivesObjekt=data;
 
+  // Collapse main sidebar, expand objekt-detail to full width
+  document.body.classList.add('objekt-detail-open');
+
   // Populate header/sidebar
   var name=data.name||'Objekt';
   var adresse=[data.strasse,data.plz&&data.ort?data.plz+' '+data.ort:data.ort].filter(Boolean).join(', ');
@@ -5764,24 +5788,39 @@ async function openObjektDetail(objId){
 
 function showObjektTab(tab){
   ['uebersicht','abrechnungsdaten','einheiten','mieterlist','mietverhaeltnisse'].forEach(function(t){
-    var content=document.getElementById('tab-content-'+t);
-    if(content)content.style.display=t===tab?'block':'none';
+    var c=document.getElementById('tab-content-'+t);
+    if(c)c.style.display=t===tab?'block':'none';
   });
-  var tabMap={
-    'uebersicht':'tab-uebersicht',
-    'abrechnungsdaten':'tab-abrechnungsdaten',
-    'einheiten':'tab-einheiten-tab',
-    'mietverhaeltnisse':'tab-mietverh-tab'
+  // Update icon nav active states
+  var iconMap={
+    'uebersicht':'od-icon-uebersicht',
+    'einheiten':'od-icon-einheiten',
+    'mietverhaeltnisse':'od-icon-mietverh',
+    'abrechnungsdaten':'od-icon-abrdaten'
   };
-  Object.keys(tabMap).forEach(function(t){
-    var btn=document.getElementById(tabMap[t]);
-    if(!btn)return;
-    if(t===tab){btn.style.borderBottomColor='var(--p)';btn.style.color='var(--p)';btn.style.fontWeight='700';}
-    else{btn.style.borderBottomColor='transparent';btn.style.color='var(--muted)';btn.style.fontWeight='400';}
+  Object.keys(iconMap).forEach(function(t){
+    var el=document.getElementById(iconMap[t]);
+    if(!el)return;
+    var lbl=el.querySelector('div:last-child');
+    if(t===tab){
+      el.style.borderBottomColor='var(--p)';
+      el.style.background='var(--white)';
+      if(lbl)lbl.style.color='var(--p)';
+      if(lbl)lbl.style.fontWeight='700';
+    }else{
+      el.style.borderBottomColor='transparent';
+      el.style.background='';
+      if(lbl)lbl.style.color='var(--muted)';
+      if(lbl)lbl.style.fontWeight='';
+    }
   });
-  if(tab==='mietverhaeltnisse'&&aktivesObjekt)loadMietverhaeltnisse(aktivesObjekt.id);
-  if(tab==='abrechnungsdaten'&&aktivesObjekt)loadAbrechnungsdatenTab(aktivesObjekt.id);
-  if(tab==='uebersicht'&&aktivesObjekt){loadObjektUebersichtTab(aktivesObjekt.id);}
+  // Load data for tab
+  if(aktivesObjekt){
+    if(tab==='einheiten')loadObjektEinheiten(aktivesObjekt.id);
+    if(tab==='mietverhaeltnisse')loadMietverhaeltnisse(aktivesObjekt.id);
+    if(tab==='abrechnungsdaten')loadAbrechnungsdatenTab(aktivesObjekt.id);
+    if(tab==='uebersicht')loadObjektUebersichtTab(aktivesObjekt.id);
+  }
 }
 
 async function loadObjektSidebar(objId){

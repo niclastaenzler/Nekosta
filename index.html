@@ -202,8 +202,48 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--tex
 #forgot-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1100;align-items:center;justify-content:center;padding:1rem}
 .forgot-box{background:#fff;border-radius:14px;padding:1.75rem;width:100%;max-width:380px}
 /* ERGEBNIS ── */
-.ergebnis-section{padding:2rem;max-width:980px}
-.ergebnis-header{background:var(--p);color:#fff;border-radius:12px;padding:1.5rem 2rem;margin-bottom:1.5rem;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem}
+/* ── ERGEBNIS ImmoCloud-Stil ── */
+.ergebnis-section{padding:1.5rem 2rem;max-width:1050px}
+.erg-header-bar{background:var(--p);color:#fff;border-radius:12px;padding:1.25rem 1.75rem;margin-bottom:1.25rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem}
+.erg-summary-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.75rem;margin-bottom:1.25rem}
+.erg-summary-card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:.85rem 1rem;text-align:center}
+.erg-summary-card .esc-val{font-size:1.35rem;font-weight:700;margin-bottom:.15rem}
+.erg-summary-card .esc-lbl{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+
+/* Einheiten-Zeile */
+.erg-unit-row{background:var(--white);border:1px solid var(--border);border-radius:10px;margin-bottom:.5rem;overflow:hidden}
+.erg-unit-head{display:flex;align-items:center;padding:.75rem 1rem;cursor:pointer;transition:background .12s;gap:.75rem;user-select:none}
+.erg-unit-head:hover{background:var(--p-light)}
+.erg-unit-expand{font-size:.65rem;color:var(--muted);transition:transform .2s;flex-shrink:0}
+.erg-unit-name{font-weight:700;font-size:.92rem;flex:1}
+.erg-unit-meta{font-size:.78rem;color:var(--muted)}
+.erg-unit-saldo{font-size:.9rem;font-weight:700;padding:.2rem .7rem;border-radius:20px}
+.erg-unit-saldo.pos{background:#d4edda;color:#155724}
+.erg-unit-saldo.neg{background:#fef3c7;color:#92400e}
+
+/* Aufgeklappter Bereich */
+.erg-unit-body{display:none;border-top:1px solid var(--border)}
+.erg-unit-body.open{display:block}
+
+/* Perioden-Tabs innerhalb Einheit */
+.erg-periode-nav{display:flex;gap:0;border-bottom:1px solid var(--border);background:#faf8fc;padding:0 1rem}
+.erg-periode-tab{padding:.5rem .85rem;font-size:.78rem;cursor:pointer;border-bottom:2px solid transparent;color:var(--muted);white-space:nowrap;transition:color .12s}
+.erg-periode-tab.active{color:var(--p);border-bottom-color:var(--p);font-weight:700}
+
+/* Kosten-Tabelle */
+.erg-kosten-table{width:100%;border-collapse:collapse}
+.erg-kosten-table th{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:.5rem .85rem;text-align:left;background:#faf8fc;border-bottom:2px solid var(--border)}
+.erg-kosten-table td{font-size:.82rem;padding:.45rem .85rem;border-bottom:1px solid #f5f3fa}
+.erg-kosten-table tr:last-child td{border-bottom:none}
+.erg-kosten-section{background:#f0ecf8;font-size:.72rem;font-weight:700;color:var(--p);padding:.35rem .85rem;text-transform:uppercase;letter-spacing:.06em}
+.erg-kosten-section.bk{background:#e8f5e9;color:#1a7a4a}
+.erg-saldo-bar{display:flex;justify-content:space-between;align-items:center;padding:.85rem 1rem;font-size:.9rem;font-weight:700;border-top:2px solid var(--border)}
+.erg-saldo-bar.pos{background:#d4edda;color:#155724}
+.erg-saldo-bar.neg{background:#fef3c7;color:#92400e}
+
+/* PDF Buttons inline */
+.erg-pdf-row{display:flex;gap:.4rem;padding:.6rem 1rem;background:var(--bg);border-top:1px solid var(--border);flex-wrap:wrap;align-items:center}
+.erg-pdf-label{font-size:.72rem;color:var(--muted);margin-right:.25rem}
 .eh-left .eh-title{font-size:1.2rem;font-weight:700}
 .eh-left .eh-sub{font-size:.82rem;color:rgba(255,255,255,.65);margin-top:3px}
 .eh-right{text-align:right}
@@ -2651,132 +2691,157 @@ async function renderErgebnis(){
   }
 
   const rw=document.getElementById('res-wohnungen');rw.innerHTML='';
-  e.ergebnisse.forEach((we,wi)=>{
-    const card=document.createElement('div');card.className='wohn-erg-card';
-    // Mieter-Perioden und Leerstand getrennt
-    const mieterPerioden=we.perioden.filter(p=>!p.periode.isLeerstand);
-    const leerstandPerioden=we.perioden.filter(p=>p.periode.isLeerstand);
 
-    let html=`<div class="wohn-erg-header">
-      <div class="wohn-erg-name">${we.wohnung.bez}</div>
-      <div class="wohn-erg-meta">${we.wohnung.flaeche} m²</div>
-      <div class="wohn-erg-pdf-btns">
-        <button class="btn-small grau" onclick="handleWohnPDF(${wi},true,'vorschau')">👁 Demo</button>
-        <button class="btn-small grau" onclick="handleWohnPDF(${wi},true,'download')">⬇️ Demo</button>
-        ${free||isAdmin?`<button class="btn-small gruen" onclick="handleWohnPDF(${wi},false,'vorschau')">👁 Vorschau</button><button class="btn-small gruen" onclick="handleWohnPDF(${wi},false,'download')">⬇️ PDF</button>`:`<button class="btn-small" onclick="openUnlock(${wi})">🔓 Freischalten (1 Token)</button>`}
-      </div>
-    </div>`;
-
-    // Mieter-Perioden
-    mieterPerioden.forEach((pe,pi)=>{
-      const p=pe.periode;
-      const bkGes=pe.bkGes, hkGes=pe.hkGes;
-      const totalGes=bkGes+(e.hasHK?hkGes:0);
-      const totalVorausz=p.vorauszBK+(e.hasHK?p.vorauszHK:0);
-
-      // Kombinierte Abrechnung: HK-Fehlbetrag wird von BK-Vorauszahlung gedeckt
-      const hkFehl=e.hasHK? Math.max(0, hkGes-p.vorauszHK) : 0;
-      const bkVorauszEffektiv=p.vorauszBK; // BK-Vorauszahlung bleibt separat
-      const gesamtDiff=totalVorausz-totalGes; // positiv=Erstattung, negativ=Nachzahlung
-
-      var schluesselLabel=function(s){return s==='flaeche'?'Wohnfläche':s==='person'?'Pers.':s==='mea'?'MEA':s==='einheiten'?'Einheiten':'Direkt';};
-
-      html+=`<div class="periode-section">
-        <div class="periode-header">
-          <div class="periode-name">👤 ${p.name}</div>
-          <div class="periode-zeit">${fmtDatum(p.von)} – ${fmtDatum(p.bis)}</div>
-          <div class="periode-tage">${p.days} Tage · ${p.personen} Person${p.personen!==1?'en':''}</div>
-          <div style="margin-left:auto;display:flex;gap:.4rem;flex-wrap:wrap">
-            <button class="btn-small grau" style="font-size:.68rem" onclick="handlePeriodePDF(${wi},${pi},true,'vorschau')">👁 Demo</button>
-            <button class="btn-small grau" style="font-size:.68rem" onclick="handlePeriodePDF(${wi},${pi},true,'download')">⬇️ Demo</button>
-            ${(free&&tokenBalance>0)||isAdmin?`<button class="btn-small gruen" style="font-size:.68rem" onclick="handlePeriodePDF(${wi},${pi},false,'vorschau')">👁 Vorschau</button><button class="btn-small gruen" style="font-size:.68rem" onclick="handlePeriodePDF(${wi},${pi},false,'download')">⬇️ PDF</button>`:`<button class="btn-small" style="font-size:.68rem" onclick="openUnlock(${wi})">🔓 Token einlösen</button>`}
-          </div>
-        </div>
-
-        <!-- OBJEKT-KOSTEN ÜBERSICHT -->
-        <div style="background:#faf8fc;border:1px solid var(--border);border-radius:8px;padding:.75rem 1rem;margin-bottom:.75rem">
-          <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.5rem">Gesamtkosten Objekt · Ihr Anteil (${p.days} von 365 Tagen)</div>
-          ${e.hasHK?`
-          <div style="font-size:.7rem;font-weight:700;color:#8e44c0;margin-bottom:.25rem;padding:.2rem 0;border-bottom:1px solid #ede9f5">🔥 Heizkosten</div>
-          ${pe.hkPos.map(pos=>`<div style="display:flex;justify-content:space-between;font-size:.78rem;padding:.18rem 0;border-bottom:1px solid #f5f3fa">
-            <span style="color:var(--muted);flex:1">${pos.name}</span>
-            <span style="color:var(--muted);font-size:.7rem;padding-right:.75rem">${schluesselLabel(pos.schluessel)}</span>
-            <span style="font-weight:600">${fmt(pos.anteil)}</span>
-          </div>`).join('')}
-          <div style="display:flex;justify-content:space-between;font-size:.82rem;font-weight:700;padding:.3rem 0;border-bottom:2px solid #e0d8f0;margin-bottom:.4rem">
-            <span style="color:#6a2d9f">Zwischensumme Heizkosten</span><span style="color:#6a2d9f">${fmt(hkGes)}</span>
-          </div>`:''}
-          <div style="font-size:.7rem;font-weight:700;color:#1a7a4a;margin-bottom:.25rem;padding:.2rem 0;border-bottom:1px solid #ede9f5">📋 Betriebskosten</div>
-          ${pe.bkPos.map(pos=>`<div style="display:flex;justify-content:space-between;font-size:.78rem;padding:.18rem 0;border-bottom:1px solid #f5f3fa">
-            <span style="color:var(--muted);flex:1">${pos.name}</span>
-            <span style="color:var(--muted);font-size:.7rem;padding-right:.75rem">${schluesselLabel(pos.schluessel)}</span>
-            <span style="font-weight:600">${fmt(pos.anteil)}</span>
-          </div>`).join('')}
-          <div style="display:flex;justify-content:space-between;font-size:.82rem;font-weight:700;padding:.3rem 0;border-bottom:2px solid #d4ead9;margin-bottom:.4rem">
-            <span style="color:#1a7a4a">Zwischensumme Betriebskosten</span><span style="color:#1a7a4a">${fmt(bkGes)}</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:.9rem;font-weight:700;padding:.35rem 0;background:var(--p-light);border-radius:6px;padding:.45rem .75rem;margin-top:.25rem">
-            <span style="color:var(--p)">Gesamtkosten Ihr Anteil</span><span style="color:var(--p)">${fmt(totalGes)}</span>
-          </div>
-        </div>
-
-        <!-- ABRECHNUNG SALDO -->
-        <div style="background:#fff;border:1px solid var(--border);border-radius:8px;overflow:hidden">
-          <div style="background:var(--p);color:#fff;padding:.5rem .9rem;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Abrechnung</div>
-          <div style="padding:.75rem 1rem">
-            ${e.hasHK?`
-            <div style="font-size:.75rem;font-weight:700;color:#8e44c0;margin-bottom:.3rem;border-bottom:1px solid #f0eef5;padding-bottom:.25rem">Heizkosten</div>
-            <div style="display:flex;justify-content:space-between;font-size:.82rem;padding:.18rem 0"><span style="color:var(--muted)">Ihr HK-Anteil:</span><span style="font-weight:600">${fmt(hkGes)}</span></div>
-            <div style="display:flex;justify-content:space-between;font-size:.82rem;padding:.18rem 0"><span style="color:var(--muted)">HK-Vorauszahlung:</span><span style="font-weight:600">${fmt(p.vorauszHK)}</span></div>
-            ${hkFehl>0?`<div style="display:flex;justify-content:space-between;font-size:.78rem;padding:.15rem 0;color:#e67e22;font-style:italic"><span>⚠️ HK-Fehlbetrag (wird über BK-VZ gedeckt):</span><span>– ${fmt(hkFehl)}</span></div>`:''}
-            <div style="height:1px;background:var(--border);margin:.5rem 0"></div>
-            <div style="font-size:.75rem;font-weight:700;color:#1a7a4a;margin-bottom:.3rem;border-bottom:1px solid #f0eef5;padding-bottom:.25rem">Betriebskosten</div>`:''}
-            <div style="display:flex;justify-content:space-between;font-size:.82rem;padding:.18rem 0"><span style="color:var(--muted)">Ihr BK-Anteil:</span><span style="font-weight:600">${fmt(bkGes)}</span></div>
-            <div style="display:flex;justify-content:space-between;font-size:.82rem;padding:.18rem 0"><span style="color:var(--muted)">BK-Vorauszahlung:</span><span style="font-weight:600">${fmt(p.vorauszBK)}</span></div>
-            ${e.hasHK&&hkFehl>0?`<div style="display:flex;justify-content:space-between;font-size:.78rem;padding:.15rem 0;color:var(--muted);font-style:italic"><span>davon für HK-Deckung:</span><span>– ${fmt(hkFehl)}</span></div>`:''}
-            <div style="height:1px;background:var(--border);margin:.5rem 0"></div>
-            <div style="display:flex;justify-content:space-between;font-size:.82rem;padding:.18rem 0;font-weight:700">
-              <span>Gesamtvorauszahlungen:</span><span>${fmt(totalVorausz)}</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;font-size:.82rem;padding:.18rem 0;font-weight:700">
-              <span>Gesamtkosten Ihr Anteil:</span><span>${fmt(totalGes)}</span>
-            </div>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:.65rem 1rem;font-size:.9rem;font-weight:700;${gesamtDiff>=0?'background:#eaf7ef;color:#1a7a4a':'background:#fef5ec;color:#e67e22'}">
-            <span>${gesamtDiff>=0?'✅ Erstattung an Mieter':'⚠️ Nachzahlung durch Mieter'}</span>
-            <span style="font-size:1rem">${fmt(Math.abs(gesamtDiff))}</span>
-          </div>
-        </div>
-      </div>`;
+  // Summary bar totals
+  var totalNachzahlung=0,totalErstattung=0,einheitenCount=e.ergebnisse.length;
+  e.ergebnisse.forEach(function(we){
+    we.perioden.filter(function(p){return !p.periode.isLeerstand;}).forEach(function(pe){
+      var totalVorausz=pe.periode.vorauszBK+(e.hasHK?pe.periode.vorauszHK:0);
+      var totalGes=pe.bkGes+(e.hasHK?pe.hkGes:0);
+      var diff=totalVorausz-totalGes;
+      if(diff>=0) totalErstattung+=diff; else totalNachzahlung+=Math.abs(diff);
     });
-
-    // Leerstand-Perioden
-    if(leerstandPerioden.length){
-      html+=`<div class="periode-section" style="background:#fafafa">
-        <div class="periode-header">
-          <div class="periode-name" style="color:#888">🏚 Leerstand-Abrechnung (Eigentümer)</div>
-          <div style="margin-left:auto;display:flex;gap:.4rem">
-            <button class="btn-small" style="background:#888;font-size:.68rem" onclick="handleLeerstandPDF(${wi},'vorschau')">👁 Vorschau</button>
-            <button class="btn-small" style="background:#888;font-size:.68rem" onclick="handleLeerstandPDF(${wi},'download')">⬇️ PDF</button>
-          </div>
-        </div>
-        ${leerstandPerioden.map(pe=>`
-          <div class="leerstand-box">
-            <div class="lb-title">Leerstand: ${fmtDatum(pe.periode.von)} – ${fmtDatum(pe.periode.bis)} (${pe.periode.days} Tage)</div>
-            <div class="lb-row"><span>BK-Anteil Eigentümer:</span><strong>${fmt(pe.bkGes)}</strong></div>
-            ${e.hasHK?`<div class="lb-row"><span>HK-Anteil Eigentümer:</span><strong>${fmt(pe.hkGes)}</strong></div>`:''}
-          </div>`).join('')}
-      </div>`;
-    }
-
-    card.innerHTML=html;
-    rw.appendChild(card);
   });
 
-  // Vorausberechnung
-  renderVoraus(e);
-}
+  // Summary cards
+  var summaryHtml='<div class="erg-summary-row">'
+    +'<div class="erg-summary-card"><div class="esc-val" style="color:var(--p)">'+einheitenCount+'</div><div class="esc-lbl">Einheiten</div></div>'
+    +'<div class="erg-summary-card"><div class="esc-val" style="color:#c0392b">'+fmt(totalNachzahlung)+'</div><div class="esc-lbl">Gesamt Nachzahlung</div></div>'
+    +'<div class="erg-summary-card"><div class="esc-val" style="color:#1a7a4a">'+fmt(totalErstattung)+'</div><div class="esc-lbl">Gesamt Erstattung</div></div>'
+    +'<div class="erg-summary-card"><div class="esc-val" style="color:var(--p)">'+e.jahr+'</div><div class="esc-lbl">Abrechnungsjahr</div></div>'
+    +'</div>';
 
+  var summaryEl=document.getElementById('res-summary');
+  if(!summaryEl){summaryEl=document.createElement('div');summaryEl.id='res-summary';rw.parentNode.insertBefore(summaryEl,rw);}
+  summaryEl.innerHTML=summaryHtml;
+
+  // Per-unit rows
+  e.ergebnisse.forEach(function(we,wi){
+    var mieterPerioden=we.perioden.filter(function(p){return !p.periode.isLeerstand;});
+    var leerstandPerioden=we.perioden.filter(function(p){return p.periode.isLeerstand;});
+
+    // Compute unit total saldo
+    var unitSaldo=0;
+    mieterPerioden.forEach(function(pe){
+      var totalVorausz=pe.periode.vorauszBK+(e.hasHK?pe.periode.vorauszHK:0);
+      var totalGes=pe.bkGes+(e.hasHK?pe.hkGes:0);
+      unitSaldo+=totalVorausz-totalGes;
+    });
+
+    var row=document.createElement('div');
+    row.className='erg-unit-row';
+
+    // Header
+    var headHtml='<div class="erg-unit-head" onclick="toggleErgUnit(this)">'
+      +'<span class="erg-unit-expand">▶</span>'
+      +'<div class="erg-unit-name">'+we.wohnung.bez+'</div>'
+      +'<div class="erg-unit-meta">'+we.wohnung.flaeche+' m²'+(mieterPerioden.length>1?' · '+mieterPerioden.length+' Perioden':'')+'</div>'
+      +(mieterPerioden.length>0
+        ?'<div class="erg-unit-saldo '+(unitSaldo>=0?'pos':'neg')+'">'+
+          (unitSaldo>=0?'⮐ Erstattung ':'⮑ Nachzahlung ')+fmt(Math.abs(unitSaldo))+'</div>'
+        :'<div class="erg-unit-saldo" style="background:#f5f5f5;color:#888">Leerstand</div>')
+      +'<div style="display:flex;gap:.35rem;margin-left:.5rem" onclick="event.stopPropagation()">'
+        +(isAdmin
+          ?'<button class="btn-small gruen" style="font-size:.65rem;padding:2px 7px" onclick="handleWohnPDF('+wi+',false,\'download\')">⬇ PDF</button>'
+          :'<button class="btn-small" style="font-size:.65rem;padding:2px 7px" onclick="openUnlock('+wi+')">🔓 Token</button>')
+      +'</div>'
+      +'</div>';
+
+    // Body (collapsed by default)
+    var bodyHtml='<div class="erg-unit-body">';
+
+    // Period tabs if multiple periods
+    if(mieterPerioden.length>1){
+      bodyHtml+='<div class="erg-periode-nav">';
+      mieterPerioden.forEach(function(pe,pi){
+        bodyHtml+='<div class="erg-periode-tab'+(pi===0?' active':'')+'" onclick="switchErgTab(this,\'erg-tab-'+wi+'-'+pi+'\')">'
+          +pe.periode.name+' ('+pe.periode.days+' Tage)</div>';
+      });
+      bodyHtml+='</div>';
+    }
+
+    // Each period content
+    mieterPerioden.forEach(function(pe,pi){
+      var p=pe.periode;
+      var totalGes=pe.bkGes+(e.hasHK?pe.hkGes:0);
+      var totalVorausz=p.vorauszBK+(e.hasHK?p.vorauszHK:0);
+      var diff=totalVorausz-totalGes;
+      var schlLbl=function(s){return s==='flaeche'?'Fläche':s==='person'?'Person':s==='mea'?'MEA':s==='einheiten'?'Einheiten':'Direkt';};
+
+      bodyHtml+='<div id="erg-tab-'+wi+'-'+pi+'" style="'+(pi===0?'':'display:none')+'">';
+
+      // Mieter info bar
+      bodyHtml+='<div style="display:flex;align-items:center;gap:1rem;padding:.6rem 1rem;background:#faf8fc;border-bottom:1px solid var(--border);flex-wrap:wrap">'
+        +'<div style="font-size:.82rem"><strong>'+p.name+'</strong> <span style="color:var(--muted);font-size:.75rem">'+fmtDatum(p.von)+' – '+fmtDatum(p.bis)+' · '+p.days+' Tage</span></div>'
+        +'<div style="margin-left:auto;display:flex;gap:.35rem">'
+          +'<button class="btn-small grau" style="font-size:.65rem;padding:2px 6px" onclick="handlePeriodePDF('+wi+','+pi+',true,\'vorschau\')">👁 Demo</button>'
+          +((free&&tokenBalance>0)||isAdmin
+            ?'<button class="btn-small gruen" style="font-size:.65rem;padding:2px 6px" onclick="handlePeriodePDF('+wi+','+pi+',false,\'vorschau\')">👁 Vorschau</button>'
+             +'<button class="btn-small gruen" style="font-size:.65rem;padding:2px 6px" onclick="handlePeriodePDF('+wi+','+pi+',false,\'download\')">⬇ PDF</button>'
+            :'<button class="btn-small" style="font-size:.65rem;padding:2px 6px" onclick="openUnlock('+wi+')">🔓</button>')
+        +'</div>'
+        +'</div>';
+
+      // Kosten-Tabelle aufklappbar
+      var kostenId='kpos-'+wi+'-'+pi;
+      bodyHtml+='<div onclick="toggleKostenDetail(\''+kostenId+'\')" style="display:flex;align-items:center;justify-content:space-between;padding:.5rem 1rem;cursor:pointer;background:#f8f6fc;border-bottom:1px solid var(--border)">'
+        +'<span style="font-size:.75rem;font-weight:700;color:var(--p)">📋 Kostenpositionen aufklappen</span>'
+        +'<span id="'+kostenId+'-arrow" style="font-size:.65rem;color:var(--muted);transition:transform .2s">▶</span>'
+        +'</div>'
+        +'<div id="'+kostenId+'" style="display:none">'
+        +'<table class="erg-kosten-table">'
+        +'<tr><th>Position</th><th>Schlüssel</th><th style="text-align:right">Ihr Anteil</th></tr>';
+
+      if(e.hasHK&&pe.hkPos.length){
+        bodyHtml+='<tr><td colspan="3" class="erg-kosten-section">🔥 Heizkosten</td></tr>';
+        pe.hkPos.forEach(function(pos){
+          bodyHtml+='<tr><td>'+pos.name+'</td><td style="color:var(--muted);font-size:.75rem">'+schlLbl(pos.schluessel)+'</td><td style="text-align:right;font-weight:600">'+fmt(pos.anteil)+'</td></tr>';
+        });
+        bodyHtml+='<tr style="background:#f0ecf8"><td colspan="2" style="font-weight:700;color:var(--p)">Zwischensumme Heizkosten</td><td style="text-align:right;font-weight:700;color:var(--p)">'+fmt(pe.hkGes)+'</td></tr>';
+      }
+      if(pe.bkPos.length){
+        bodyHtml+='<tr><td colspan="3" class="erg-kosten-section bk">📋 Betriebskosten</td></tr>';
+        pe.bkPos.forEach(function(pos){
+          bodyHtml+='<tr><td>'+pos.name+'</td><td style="color:var(--muted);font-size:.75rem">'+schlLbl(pos.schluessel)+'</td><td style="text-align:right;font-weight:600">'+fmt(pos.anteil)+'</td></tr>';
+        });
+        bodyHtml+='<tr style="background:#e8f5e9"><td colspan="2" style="font-weight:700;color:#1a7a4a">Zwischensumme Betriebskosten</td><td style="text-align:right;font-weight:700;color:#1a7a4a">'+fmt(pe.bkGes)+'</td></tr>';
+      }
+      bodyHtml+='</table></div>';
+
+      // Saldo-Übersicht kompakt
+      bodyHtml+='<div style="padding:.75rem 1rem;background:var(--white)">'
+        +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem;font-size:.82rem;margin-bottom:.6rem">'
+          +'<div style="display:flex;justify-content:space-between;padding:.3rem .5rem;background:var(--bg);border-radius:6px"><span style="color:var(--muted)">Gesamtkosten Anteil</span><span style="font-weight:700">'+fmt(totalGes)+'</span></div>'
+          +'<div style="display:flex;justify-content:space-between;padding:.3rem .5rem;background:var(--bg);border-radius:6px"><span style="color:var(--muted)">Vorauszahlungen</span><span style="font-weight:700">'+fmt(totalVorausz)+'</span></div>'
+        +'</div>'
+        +'</div>'
+        +'<div class="erg-saldo-bar '+(diff>=0?'pos':'neg')+'">'
+          +'<span>'+(diff>=0?'✅ Erstattung an Mieter':'⚠️ Nachzahlung durch Mieter')+'</span>'
+          +'<span style="font-size:1.05rem">'+fmt(Math.abs(diff))+'</span>'
+        +'</div>';
+
+      bodyHtml+='</div>'; // close tab div
+    });
+
+    // Leerstand
+    if(leerstandPerioden.length){
+      bodyHtml+='<div style="background:#fafafa;border-top:1px solid var(--border);padding:.6rem 1rem">'
+        +'<div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#888;margin-bottom:.4rem">🏚 Leerstand-Anteil (Eigentümer)</div>';
+      leerstandPerioden.forEach(function(pe){
+        var leerTotal=pe.bkGes+(e.hasHK?pe.hkGes:0);
+        bodyHtml+='<div style="display:flex;justify-content:space-between;font-size:.82rem;padding:.25rem 0;border-bottom:1px solid #eee">'
+          +'<span style="color:#888">'+fmtDatum(pe.periode.von)+' – '+fmtDatum(pe.periode.bis)+' ('+pe.periode.days+' Tage)</span>'
+          +'<span style="font-weight:700;color:#888">'+fmt(leerTotal)+'</span></div>';
+      });
+      bodyHtml+='<div style="display:flex;justify-content:flex-end;gap:.4rem;margin-top:.4rem">'
+        +'<button class="btn-small" style="background:#888;font-size:.65rem" onclick="handleLeerstandPDF('+wi+',\'download\')">⬇ Leerstand-PDF</button></div>';
+      bodyHtml+='</div>';
+    }
+
+    bodyHtml+='</div>'; // close body
+    row.innerHTML=headHtml+bodyHtml;
+    rw.appendChild(row);
+  });
 function renderVoraus(e){
   document.getElementById('voraus-jahr').textContent=e.jahr+1;
   const grid=document.getElementById('voraus-grid');grid.innerHTML='';
@@ -3012,9 +3077,7 @@ function buildPeriodContent(doc,we,pe,withWatermark,isFirstPage){
     doc.text(fmt(Math.abs(gesamtDiff)),W-R-1,y+6,{align:'right'});y+=13;
 
     if(!gr&&sm.iban){
-      npi(12);setFont(8.5,'normal',80,80,80);
-      doc.text('Bitte ueberweisen bis: '+new Date(Date.now()+30*86400000).toLocaleDateString('de-DE'),L,y);y+=5;
-      doc.text('IBAN: '+sm.iban+(sm.bic?' | BIC: '+sm.bic:'')+(sm.bank?' | '+sm.bank:''),L,y);
+      // Zahlungshinweis im Anschreiben – nicht im PDF
     }
   } else {
     var leerTotal=bkSubtotal+(e.hasHK?hkSubtotal:0);

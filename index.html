@@ -67,7 +67,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--tex
  .nav-item .ni-icon{font-size:.88rem;width:17px;text-align:center;flex-shrink:0}
  .nav-badge{margin-left:auto;background:var(--p-light);color:var(--p);font-size:.58rem;font-weight:700;padding:1px 5px;border-radius:8px}
  .sidebar-divider{height:1px;background:var(--border);margin:.35rem .85rem}
-.main-content{flex:1;overflow-x:hidden;overflow-y:auto;min-width:0;width:0}
+.main-content{flex:1;overflow-x:hidden;overflow-y:auto;min-width:0;width:0;scroll-padding-top:110px}
 #page-objekt-detail{position:absolute;top:0;left:0;right:0;bottom:0;z-index:10;background:var(--bg)}
 .page-wrap{padding:2rem;max-width:900px;box-sizing:border-box;width:100%}
 
@@ -81,7 +81,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--tex
 .wizard-step.active .ws-num{background:var(--p);color:#fff}
 .wizard-arrow{color:var(--border);font-size:.8rem;padding:0 .25rem}
 .wizard-content{padding:2rem}
-.wizard-footer{background:var(--white);border-top:1px solid var(--border);padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center;position:sticky;bottom:0;z-index:100}
+.wizard-footer{background:var(--white);border-top:1px solid var(--border);padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center;position:sticky;bottom:0;z-index:100;flex-wrap:wrap;gap:.5rem}
 
 /* ── CARDS ── */
 .card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin-bottom:1.1rem}
@@ -203,7 +203,8 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--tex
 .forgot-box{background:#fff;border-radius:14px;padding:1.75rem;width:100%;max-width:380px}
 /* ERGEBNIS ── */
 /* ── ERGEBNIS ImmoCloud-Stil ── */
-.ergebnis-section{padding:1.5rem 2rem;max-width:1050px}
+.ergebnis-section{scroll-margin-top:110px}
+.ergebnis-section{padding:1.5rem 2rem 2rem;max-width:1050px;overflow-x:hidden}
 .erg-header-bar{background:var(--p);color:#fff;border-radius:12px;padding:1.25rem 1.75rem;margin-bottom:1.25rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem}
 .erg-summary-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.75rem;margin-bottom:1.25rem}
 .erg-summary-card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:.85rem 1rem;text-align:center}
@@ -2056,7 +2057,7 @@ async function doRegister(){
     const {error}=await sb.auth.signUp({email,password:pw,options:{data:{full_name:name}}});
     if(error){showAuthError(err,'Fehler: '+error.message);return;}
     suc.textContent='✅ Konto erstellt! Bitte E-Mail bestätigen.';suc.className='auth-msg auth-success';suc.style.display='block';
-    ['reg-name','reg-email','reg-pw','reg-pw2'].forEach(function(id){document.getElementById(id)}.value='');newCaptcha();
+    ['reg-name','reg-email','reg-pw','reg-pw2'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});newCaptcha();
   }catch(e){showAuthError(err,'Fehler: '+e.message);}
 }
 function showAuthError(el,msg){el.textContent=msg;el.className='auth-msg show';el.style.display='block';}
@@ -2853,7 +2854,7 @@ async function renderErgebnis(){
     rw.appendChild(row);
   });
 // ── ERGEBNIS TOGGLE FUNCTIONS ──
-function toggleErgUnit(headEl){
+window.toggleErgUnit=function toggleErgUnit(headEl){
   var row=headEl.parentNode;
   var body=row.querySelector('.erg-unit-body');
   var arrow=headEl.querySelector('.erg-unit-expand');
@@ -2863,7 +2864,7 @@ function toggleErgUnit(headEl){
   if(arrow)arrow.style.transform=isOpen?'rotate(0deg)':'rotate(90deg)';
 }
 
-function switchErgTab(tabEl,targetId){
+window.switchErgTab=function switchErgTab(tabEl,targetId){
   var nav=tabEl.parentNode;
   nav.querySelectorAll('.erg-periode-tab').forEach(function(t){t.classList.remove('active');});
   tabEl.classList.add('active');
@@ -2877,7 +2878,7 @@ function switchErgTab(tabEl,targetId){
   if(target)target.style.display='block';
 }
 
-function toggleKostenDetail(id){
+window.toggleKostenDetail=function toggleKostenDetail(id){
   var el=document.getElementById(id);
   var arrow=document.getElementById(id+'-arrow');
   if(!el)return;

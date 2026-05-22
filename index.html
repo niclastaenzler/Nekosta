@@ -5478,8 +5478,6 @@ function renderKontakte(){
       var einheiten=k._einheiten&&k._einheiten.length?k._einheiten.slice(0,2).join(', ')+(k._einheiten.length>2?' +mehr':''):'';
       var typ=getTyp(k);var tc=(typColors[typ]||typColors.Sonstiges).split(',');
       return '<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:box-shadow .15s;cursor:pointer" '
-        +'onmouseover="this.style.boxShadow=\'0 4px 16px rgba(0,0,0,.1)\'" onmouseout="this.style.boxShadow=\'none\'" onclick="
-      return '<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:box-shadow .15s;cursor:pointer" '
         +'onmouseover="this.style.boxShadow=\'0 4px 16px rgba(0,0,0,.1)\'" onmouseout="this.style.boxShadow=\'none\'" onclick="editKontakt(\''+k.id+'\')">'
         // Farbiger Header
         +'<div style="background:'+color+';padding:1.5rem 1rem 1rem;position:relative">'

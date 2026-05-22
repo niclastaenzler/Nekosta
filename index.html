@@ -12,10 +12,10 @@
   --danger:#c0392b;--danger-bg:#fdf0ef;--success:#1a7a4a;--success-bg:#eaf7ef;
   --warn:#e67e22;--warn-bg:#fef5ec;--r:8px;--sidebar:220px;
 }
-body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.5;min-height:100vh}
+body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.5;height:100vh;overflow:hidden}
 
 /* ── HEADER ── */
-.header{background:var(--p);padding:.85rem 1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;position:sticky;top:0;z-index:200}
+.header{background:var(--p);padding:.85rem 1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;flex-shrink:0;z-index:200}
 .logo-name{font-size:1.1rem;font-weight:700;color:#fff}
 .logo-sub{font-size:.62rem;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.08em}
 #user-bar{display:none;align-items:center;gap:.75rem}
@@ -52,9 +52,10 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--tex
 .auth-success{background:var(--success-bg)!important;color:var(--success)!important}
 
 /* ── APP LAYOUT ── */
-#app{display:none}
-.app-layout{display:flex;min-height:calc(100vh - 52px)}
- .sidebar{width:var(--sidebar);background:var(--white);border-right:1px solid var(--border);padding:.5rem 0 1rem;position:sticky;top:52px;height:calc(100vh - 52px);overflow-y:auto;flex-shrink:0;transition:width .2s}
+#app{display:none;flex-direction:column;height:100vh;overflow:hidden}
+#portal-banner{flex-shrink:0}
+.app-layout{display:flex;flex:1;overflow:hidden;min-height:0}
+ .sidebar{width:var(--sidebar);background:var(--white);border-right:1px solid var(--border);padding:.5rem 0 1rem;height:100%;overflow-y:auto;flex-shrink:0;transition:width .2s}
  .sidebar-section{font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);padding:.6rem 1rem .2rem;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;margin-top:.2rem}
  .sidebar-section:hover{color:var(--p)}
  .sg-arrow{font-size:.58rem;transition:transform .2s;opacity:.4;flex-shrink:0}
@@ -67,12 +68,15 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--tex
  .nav-item .ni-icon{font-size:.88rem;width:17px;text-align:center;flex-shrink:0}
  .nav-badge{margin-left:auto;background:var(--p-light);color:var(--p);font-size:.58rem;font-weight:700;padding:1px 5px;border-radius:8px}
  .sidebar-divider{height:1px;background:var(--border);margin:.35rem .85rem}
-.main-content{flex:1;overflow-x:hidden;overflow-y:auto;min-width:0;width:0;scroll-padding-top:110px}
-#page-objekt-detail{position:absolute;top:0;left:0;right:0;bottom:0;z-index:10;background:var(--bg)}
+.main-content{flex:1;overflow-x:hidden;overflow-y:auto;min-width:0;width:0;height:100%;display:flex;flex-direction:column}
+#page-objekt-detail{flex:1;overflow:hidden;background:var(--bg)}
 .page-wrap{padding:2rem;max-width:900px;box-sizing:border-box;width:100%}
+/* Pages scroll independently */
+[id^="page-"]:not(#page-tool):not(#page-objekt-detail){overflow-y:auto;overflow-x:hidden;flex:1;height:100%}
+
 
 /* ── WIZARD ── */
-.wizard-bar{background:var(--white);border-bottom:1px solid var(--border);padding:0 1.5rem;display:flex;align-items:center;gap:0;position:sticky;top:52px;z-index:150;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.wizard-bar{background:var(--white);border-bottom:1px solid var(--border);padding:0 1.5rem;display:flex;align-items:center;gap:0;position:sticky;top:0;z-index:150;box-shadow:0 2px 8px rgba(0,0,0,.06);flex-shrink:0}
 .wizard-step{display:flex;align-items:center;gap:.5rem;padding:1rem .75rem;font-size:.82rem;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;transition:color .2s,border-color .2s;white-space:nowrap}
 .wizard-step.active{color:var(--p);border-bottom-color:var(--p);font-weight:700}
 .wizard-step.done{color:var(--success)}
@@ -80,8 +84,8 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--tex
 .ws-num{width:22px;height:22px;border-radius:50%;background:var(--border);color:var(--muted);font-size:.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .wizard-step.active .ws-num{background:var(--p);color:#fff}
 .wizard-arrow{color:var(--border);font-size:.8rem;padding:0 .25rem}
-.wizard-content{padding:2rem}.wizard-content #step4{padding-top:0}
-.wizard-footer{background:var(--white);border-top:1px solid var(--border);padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center;position:sticky;bottom:0;z-index:100;flex-wrap:wrap;gap:.5rem}
+.wizard-content{padding:2rem;flex:1;overflow-y:auto;overflow-x:hidden}
+.wizard-footer{background:var(--white);border-top:1px solid var(--border);padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center;position:sticky;bottom:0;z-index:100;flex-wrap:wrap;gap:.5rem;flex-shrink:0}
 
 /* ── CARDS ── */
 .card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin-bottom:1.1rem}
@@ -402,7 +406,6 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
   </div>
 </div>
 
-<div id="portal-banner" style="display:none;padding:.55rem 1.5rem;font-size:.82rem;font-weight:600;text-align:center"></div>
 <div id="login-overlay">
   <div class="login-card">
     <div class="login-logo"><div class="ln">NEKOSTA</div><div class="ls">Nebenkostenportal</div></div>
@@ -447,6 +450,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
 
 <!-- APP -->
 <div id="app">
+<div id="portal-banner" style="display:none;padding:.55rem 1.5rem;font-size:.82rem;font-weight:600;text-align:center;flex-shrink:0;z-index:190;border-bottom:1px solid rgba(0,0,0,.06)"></div>
 <div class="app-layout">
 
   <!-- SIDEBAR -->
@@ -942,7 +946,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
 
     <!-- ══ TOOL ══ -->
     <!-- ══ TOOL ══ -->
-    <div id="page-tool" style="display:none">
+    <div id="page-tool" style="display:none;flex-direction:column;height:100%;overflow:hidden;flex:1">
       <!-- WIZARD BAR -->
       <div class="wizard-bar">
         <div class="wizard-step active" id="ws1" onclick="goStep(1)"><span class="ws-num">1</span>Grunddaten</div>
@@ -2108,7 +2112,7 @@ function showPage(name){
 
   allPages.forEach(function(p){
     var el=document.getElementById('page-'+p);
-    if(el)el.style.display=p===name?'block':'none';
+    if(el)el.style.display=p===name?(p==='tool'?'flex':'block'):'none';
   });
 
   // Nav active state
@@ -3444,9 +3448,12 @@ async function viewAbgerechnet(id){
     }
     renderErgebnis();goStep(4);
     document.getElementById('abrechnen-bar').style.display='none';
-    // Alle Schritte navigierbar lassen (Zurück-Taste funktioniert)
-    var bz=document.getElementById('btn-zurueck');if(bz){bz.style.visibility='visible';}
+    // Abgerechnet: NUR Step 4, keine Navigation möglich
+    var bz=document.getElementById('btn-zurueck');if(bz){bz.style.visibility='hidden';}
     var bw=document.getElementById('btn-weiter');if(bw){bw.style.display='none';}
+    // Wizard step buttons deaktivieren
+    [1,2,3].forEach(function(n){var ws=document.getElementById('ws'+n);if(ws){ws.style.pointerEvents='none';ws.style.opacity='.4';}});
+    var ws4=document.getElementById('ws4');if(ws4){ws4.style.pointerEvents='none';}
   },150);
   showToast('📄 Abgerechnet – Navigation zu Schritten 1-3 weiterhin möglich.');
 }
@@ -3463,12 +3470,18 @@ function loadAbrechnung(a){
     if(a.data.objektFlaeche&&document.getElementById('objekt-flaeche'))document.getElementById('objekt-flaeche').value=a.data.objektFlaeche;
 
     if(isAbgerechnet){
-      // Abgerechnete: direkt Ergebnis anzeigen
+      // Abgerechnete: direkt Ergebnis anzeigen, KEINE Navigation zurück
       lastErgebnis=a.data;
       renderErgebnis();goStep(4);
+      var bz=document.getElementById('btn-zurueck');if(bz)bz.style.visibility='hidden';
+      var bw=document.getElementById('btn-weiter');if(bw)bw.style.display='none';
+      [1,2,3].forEach(function(n){var ws=document.getElementById('ws'+n);if(ws){ws.style.pointerEvents='none';ws.style.opacity='.4';}});
     } else {
-      // Entwurf: von vorne beginnen
+      // Entwurf: von vorne beginnen, alle Schritte navigierbar
       lastErgebnis=null;
+      [1,2,3,4].forEach(function(n){var ws=document.getElementById('ws'+n);if(ws){ws.style.pointerEvents='';ws.style.opacity='';}});
+      var bz2=document.getElementById('btn-zurueck');if(bz2)bz2.style.visibility='hidden';
+      var bw2=document.getElementById('btn-weiter');if(bw2){bw2.style.display='block';bw2.style.visibility='visible';}
       goStep(1);
     }
   },150);
@@ -3934,6 +3947,8 @@ async function importiereObjektInStep2(){
 function startNeueAbrechnung(){
   currentDraftId=null;clearUnsaved();
   importiertesObjekt=null;
+  // Reset all step buttons to active state
+  [1,2,3,4].forEach(function(n){var ws=document.getElementById('ws'+n);if(ws){ws.style.pointerEvents='';ws.style.opacity='';}});
   var bwEl=document.getElementById('btn-weiter');if(bwEl){bwEl.style.display='block';bwEl.style.visibility='visible';}
   
   var info=document.getElementById('objekt-import-info');
@@ -4591,23 +4606,38 @@ async function saveTokenPreise(){
 async function saveBanner(){
   var text=document.getElementById('banner-text').value.trim();
   var type=document.getElementById('banner-type').value;
-  var {error}=await sb.from('admin_settings').upsert({key:'banner',value:JSON.stringify({text:text,type:type})},{onConflict:'key'});
-  if(!error){showToast('✅ Banner gespeichert!');loadBanner();}
-  else showToast('❌ Fehler: '+error.message);
+  // Delete then insert to avoid upsert conflict issues
+  await sb.from('admin_settings').delete().eq('key','banner');
+  if(text&&type){
+    var {error}=await sb.from('admin_settings').insert({key:'banner',value:JSON.stringify({text:text,type:type})});
+    if(error){showToast('❌ Fehler: '+error.message);return;}
+  }
+  showToast('✅ Banner '+(text?'gespeichert':'entfernt')+'!');
+  loadBanner();
 }
 
+function hideBanner(){var b=document.getElementById("portal-banner");if(b)b.style.display="none";}
 async function loadBanner(){
   try{
     var {data}=await sb.from('admin_settings').select('value').eq('key','banner').maybeSingle();
-    if(!data)return;
-    var banner=JSON.parse(data.value);
     var bar=document.getElementById('portal-banner');
-    if(!bar||!banner.text||!banner.type)return;
-    var colors={info:'#e8f4fd,#0c5460',warn:'#fff3cd,#856404',success:'#d4edda,#155724'};
-    var c=colors[banner.type]||'#fff3cd,#856404';
-    bar.style.background=c.split(',')[0];bar.style.color=c.split(',')[1];
-    bar.textContent=banner.text;bar.style.display='block';
-  }catch(e){}
+    if(!bar)return;
+    if(!data||!data.value){bar.style.display='none';return;}
+    var banner=JSON.parse(data.value);
+    if(!banner.text||!banner.type){bar.style.display='none';return;}
+    var colorMap={
+      info:{bg:'#e8f4fd',color:'#0c5460',icon:'ℹ️'},
+      warn:{bg:'#fff3cd',color:'#856404',icon:'⚠️'},
+      success:{bg:'#d4edda',color:'#155724',icon:'✅'}
+    };
+    var clr=colorMap[banner.type]||colorMap.warn;
+    bar.style.background=clr.bg;
+    bar.style.color=clr.color;
+    bar.style.borderBottom='1px solid '+clr.color+'33';
+    bar.innerHTML=clr.icon+' '+banner.text
+      +(isAdmin?'<span onclick="hideBanner()" style="float:right;cursor:pointer;opacity:.5;font-size:.9rem;margin-left:.5rem">✕</span>':'');
+    bar.style.display='block';
+  }catch(e){console.error('Banner error:',e);}
 }
 
 async function loadTokenPreise(){

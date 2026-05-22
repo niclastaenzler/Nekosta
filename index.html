@@ -120,8 +120,8 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--tex
 .btn-remove-wohn{background:none;border:none;cursor:pointer;color:#bbb;font-size:.95rem;padding:3px 6px;border-radius:4px;transition:color .15s;margin-left:auto}
 .btn-remove-wohn:hover{color:var(--danger)}
 .mieter-table-wrap{padding:.4rem .8rem .5rem}
-.mieter-header-row{display:grid;grid-template-columns:70px 1fr 1.2fr 90px 90px 45px 75px 75px 26px;gap:.3rem;font-size:.6rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:.15rem 0 .3rem;border-bottom:1px solid var(--border);margin-bottom:.3rem}
-.mieter-row{display:grid;grid-template-columns:70px 1fr 1.2fr 90px 90px 45px 75px 75px 26px;gap:.3rem;align-items:center;padding:.28rem 0;border-bottom:1px dashed #ede9f5}
+.mieter-header-row{display:grid;grid-template-columns:60px .75fr .85fr 88px 88px 35px 65px 65px 70px 24px;gap:.25rem;font-size:.6rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:.15rem 0 .3rem;border-bottom:1px solid var(--border);margin-bottom:.3rem}
+.mieter-row{display:grid;grid-template-columns:60px .75fr .85fr 88px 88px 35px 65px 65px 70px 24px;gap:.25rem;align-items:center;padding:.28rem 0;border-bottom:1px dashed #ede9f5}
 .mieter-row:last-child{border-bottom:none}
 .mieter-row input{border:1px solid var(--border);border-radius:5px;padding:.26rem .42rem;font-size:.78rem;font-family:Arial,sans-serif;background:#fff;outline:none;width:100%}
 .mieter-row input:focus{border-color:var(--p-mid)}
@@ -687,6 +687,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
         <div id="objekte-empty-hint" style="display:none;text-align:center;padding:1.5rem">
           <div style="font-size:.88rem;color:var(--muted);margin-bottom:.75rem">Noch keine Objekte angelegt.</div>
           <button class="btn-secondary" onclick="legeTestobjektAn()">🧪 Testobjekt anlegen</button>
+        <button class="btn-secondary" onclick="legeMusterkontakteAn()" style="font-size:.82rem;margin-top:.5rem">👥 Musterkontakte anlegen</button>
         </div>
       </div>
     </div>
@@ -1221,6 +1222,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
           </div>
           <button class="btn-success" onclick="zwischenspeichern()" style="font-size:.82rem;padding:.5rem 1rem">💾 Speichern</button>
           <button class="btn-secondary" id="btn-probe" onclick="ladeProbeabrechnung()" style="font-size:.78rem;padding:.5rem 1rem;display:none">🧪 Probe</button>
+          <button class="btn-secondary" id="btn-vorschau-wizard" onclick="wizardVorschau()" style="font-size:.78rem;padding:.5rem 1rem;display:none;background:var(--p);color:#fff;border-color:var(--p)">👁 Vorschau</button>
           <!-- Progress bar -->
           <div style="display:flex;align-items:center;gap:.5rem">
             <div style="width:80px;height:6px;background:var(--border);border-radius:3px;overflow:hidden">
@@ -1513,11 +1515,29 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
         <div id="einhalt-design" style="display:none">
           <div class="card">
             <div class="card-title">🎨 Design / Farbschema</div>
+            <div style="margin-bottom:.65rem;font-size:.78rem;color:var(--muted)">Wähle ein Farbschema – wird für deinen Account gespeichert und gilt auf allen Geräten.</div>
             <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:.85rem">
-              <div onclick="setTheme('lila')" style="border:2px solid var(--border);border-radius:10px;padding:1rem;text-align:center;cursor:pointer" id="theme-btn-lila"><div style="width:36px;height:36px;border-radius:50%;background:#6a2d9f;margin:0 auto .5rem"></div><div style="font-size:.82rem;font-weight:700">Lila</div><div style="font-size:.68rem;color:var(--muted)">Standard</div></div>
-              <div onclick="setTheme('black')" style="border:2px solid var(--border);border-radius:10px;padding:1rem;text-align:center;cursor:pointer" id="theme-btn-black"><div style="width:36px;height:36px;border-radius:50%;background:#1a1a1a;margin:0 auto .5rem"></div><div style="font-size:.82rem;font-weight:700">Schwarz</div><div style="font-size:.68rem;color:var(--muted)">Elegant</div></div>
-              <div onclick="setTheme('grey')" style="border:2px solid var(--border);border-radius:10px;padding:1rem;text-align:center;cursor:pointer" id="theme-btn-grey"><div style="width:36px;height:36px;border-radius:50%;background:#4a5568;margin:0 auto .5rem"></div><div style="font-size:.82rem;font-weight:700">Grau</div><div style="font-size:.68rem;color:var(--muted)">Neutral</div></div>
-              <div onclick="setTheme('dark')" style="border:2px solid var(--border);border-radius:10px;padding:1rem;text-align:center;cursor:pointer" id="theme-btn-dark"><div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0f0e17,#8b5cf6);margin:0 auto .5rem"></div><div style="font-size:.82rem;font-weight:700">Dark Mode</div><div style="font-size:.68rem;color:var(--muted)">Nacht</div></div>
+              <div onclick="setThemeAndSync('lila')" style="border:2px solid var(--border);border-radius:10px;padding:1rem;text-align:center;cursor:pointer" id="theme-btn-lila"><div style="width:36px;height:36px;border-radius:50%;background:#6a2d9f;margin:0 auto .5rem"></div><div style="font-size:.82rem;font-weight:700">Lila</div><div style="font-size:.68rem;color:var(--muted)">Standard</div></div>
+              <div onclick="setThemeAndSync('black')" style="border:2px solid var(--border);border-radius:10px;padding:1rem;text-align:center;cursor:pointer" id="theme-btn-black"><div style="width:36px;height:36px;border-radius:50%;background:#1a1a1a;margin:0 auto .5rem"></div><div style="font-size:.82rem;font-weight:700">Schwarz</div><div style="font-size:.68rem;color:var(--muted)">Elegant</div></div>
+              <div onclick="setThemeAndSync('grey')" style="border:2px solid var(--border);border-radius:10px;padding:1rem;text-align:center;cursor:pointer" id="theme-btn-grey"><div style="width:36px;height:36px;border-radius:50%;background:#4a5568;margin:0 auto .5rem"></div><div style="font-size:.82rem;font-weight:700">Grau</div><div style="font-size:.68rem;color:var(--muted)">Neutral</div></div>
+              <div onclick="setThemeAndSync('dark')" style="border:2px solid var(--border);border-radius:10px;padding:1rem;text-align:center;cursor:pointer" id="theme-btn-dark"><div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0f0e17,#8b5cf6);margin:0 auto .5rem"></div><div style="font-size:.82rem;font-weight:700">Dark Mode</div><div style="font-size:.68rem;color:var(--muted)">Nacht</div></div>
+            </div>
+
+            <!-- EIGENE FARBE -->
+            <div style="margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid var(--border)">
+              <div style="font-size:.82rem;font-weight:700;margin-bottom:.5rem">🎨 Eigene Akzentfarbe</div>
+              <div style="font-size:.75rem;color:var(--muted);margin-bottom:.7rem">Ändert die Hauptfarbe (Buttons, Akzente, Sidebar). Wird für deinen Account gespeichert.</div>
+              <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap">
+                <input type="color" id="custom-color-input" value="#6a2d9f"
+                  oninput="document.getElementById('custom-color-hex').value=this.value"
+                  style="width:44px;height:44px;border:2px solid var(--border);border-radius:8px;cursor:pointer;padding:2px">
+                <input type="text" id="custom-color-hex" placeholder="#6a2d9f"
+                  style="border:1px solid var(--border);border-radius:8px;padding:.45rem .75rem;font-size:.85rem;font-family:monospace;width:110px;outline:none;box-sizing:border-box"
+                  oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value))document.getElementById('custom-color-input').value=this.value">
+                <button onclick="applyCustomColor(document.getElementById('custom-color-hex').value||document.getElementById('custom-color-input').value)"
+                  class="btn-primary" style="font-size:.82rem;padding:.45rem 1rem">✅ Anwenden &amp; Speichern</button>
+                <button onclick="setThemeAndSync('lila')" class="btn-secondary" style="font-size:.78rem;padding:.45rem .8rem">↩ Standard</button>
+              </div>
             </div>
           </div>
         </div>
@@ -2242,6 +2262,9 @@ async function initApp(user){
   checkStammdatenWarn();
   fillObjektDropdown();
   loadTokenBalance();
+  // Theme aus Supabase laden (geräteübergreifend)
+  loadThemeFromProfile();
+  loadCustomColorIfSet();
   if(isAdmin){
     document.getElementById('admin-menu').style.display='block';
     document.getElementById('btn-speichern').style.display='block';
@@ -2481,7 +2504,8 @@ function goStep(n){
         setTimeout(importiereObjektInStep2,100);
       }
     }
-    if(currentStep===2)checkFlaecheWarning();
+    // Flächenwarnung nur anzeigen wenn wir zu Step 3 gehen
+    if(n===3)checkFlaecheWarning();
   }
   currentStep=n;
   // Mark as having work in progress once user goes past step 1
@@ -2504,6 +2528,9 @@ function goStep(n){
   }
   var sl=document.getElementById('wizard-step-label');if(sl)sl.textContent=n+'/4';
   var pb=document.getElementById('wizard-progress-bar');if(pb)pb.style.width=(n/4*100)+'%';
+  // Vorschau-Button ab Step 3 zeigen
+  var bvw=document.getElementById('btn-vorschau-wizard');
+  if(bvw)bvw.style.display=n>=3?'inline-block':'none';
 }
 function wizardWeiter(){
   if(currentStep===2&&!validateWohnungen())return;
@@ -2568,6 +2595,10 @@ function addWohn(){
             <input type="checkbox" class="w-mea-cb" onchange="toggleMEA(this)" style="cursor:pointer;accent-color:var(--p)">
             MEA anzeigen
           </label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:.75rem;cursor:pointer;white-space:nowrap;color:#c0392b;font-weight:600" title="Keine Mieter – ganzes Jahr Leerstand">
+            <input type="checkbox" class="w-leerstand-cb" onchange="toggleLeerstand(this)" style="cursor:pointer;accent-color:#c0392b">
+            📭 Leerstand
+          </label>
           <div class="flaeche-wrap w-mea-wrap" style="display:none" title="Miteigentumsanteil (z.B. 123/1000)">
             <input type="text" class="w-mea" placeholder="z.B. 123/1000" style="width:100px;font-size:.78rem">
             <span style="font-size:.7rem">MEA</span>
@@ -2575,7 +2606,7 @@ function addWohn(){
           <button class="btn-remove-wohn" onclick="removeWohn(this)">✕</button>
         </div>
         <div class="mieter-header-row">
-          <span>Anrede</span><span style="min-width:80px">Vorname *</span><span style="min-width:90px">Nachname *</span><span>Von</span><span>Bis</span><span>Pers.</span><span>BK-Vor. €</span><span>HK-Vor. €</span><span></span>
+          <span>Anrede</span><span>Vorname</span><span>Nachname</span><span>Von</span><span>Bis</span><span>Pers.</span><span>BK-VZ €</span><span>HK-VZ €</span><span style="color:#c0392b">📭 Leerstand</span><span></span>
         </div>
         <div class="mieter-table-wrap">
           <div class="mieter-list"></div>
@@ -2595,20 +2626,24 @@ function toggleMEA(cb){
 function createMieterRow(vonVal,bisVal){
   const row=document.createElement('div');row.className='mieter-row';
   row.innerHTML=`
-    <select class="m-anrede" style="border:1px solid var(--border);border-radius:5px;padding:.26rem .3rem;font-size:.75rem;font-family:Arial,sans-serif;background:#fff;outline:none;width:100%">
+    <select class="m-anrede" style="border:1px solid var(--border);border-radius:5px;padding:.26rem .3rem;font-size:.72rem;font-family:Arial,sans-serif;background:#fff;outline:none;width:100%">
       <option value="Herr">Herr</option>
       <option value="Frau">Frau</option>
       <option value="Eheleute">Eheleute</option>
       <option value="Firma">Firma</option>
       <option value="Divers">Divers</option>
     </select>
-    <input type="text" class="m-vname" placeholder="Vorname *">
-    <input type="text" class="m-nname" placeholder="Nachname *">
-    <input type="date" class="m-von" value="${vonVal}">
-    <input type="date" class="m-bis" value="${bisVal}">
-    <input type="number" class="m-pers" value="1" min="0" step="1">
-    <input type="number" class="m-vbk" placeholder="0.00" step="0.01" min="0">
-    <input type="number" class="m-vhk" placeholder="0.00" step="0.01" min="0">
+    <input type="text" class="m-vname" placeholder="Vorname" style="font-size:.75rem">
+    <input type="text" class="m-nname" placeholder="Nachname" style="font-size:.75rem">
+    <input type="date" class="m-von" value="${vonVal}" style="font-size:.72rem;min-width:0;width:100%">
+    <input type="date" class="m-bis" value="${bisVal}" style="font-size:.72rem;min-width:0;width:100%">
+    <input type="number" class="m-pers" value="1" min="0" step="1" style="font-size:.75rem">
+    <input type="number" class="m-vbk" placeholder="0.00" step="0.01" min="0" style="font-size:.75rem">
+    <input type="number" class="m-vhk" placeholder="0.00" step="0.01" min="0" style="font-size:.75rem">
+    <label style="display:flex;align-items:center;gap:3px;font-size:.7rem;cursor:pointer;white-space:nowrap;color:#c0392b;justify-content:center">
+      <input type="checkbox" class="m-leerstand-cb" onchange="toggleMieterLeerstand(this)" style="cursor:pointer;accent-color:#c0392b;margin:0">
+      Leerstand
+    </label>
     <button class="btn-remove-mieter" onclick="removeMieter(this)">✕</button>`;
   return row;
 }
@@ -2618,11 +2653,57 @@ function addMieter(btn){
   const jahr=parseInt(document.getElementById('jahr').value)||defaultJahr();
   card.querySelector('.mieter-list').appendChild(createMieterRow(`${jahr}-01-01`,`${jahr}-12-31`));
 }
+function toggleLeerstand(cb){
+  const card=cb.closest('.wohn-card');
+  const mieterWrap=card.querySelector('.mieter-table-wrap');
+  const addBtn=card.querySelector('.btn-add-mieter');
+  const header=card.querySelector('.mieter-header-row');
+  if(cb.checked){
+    mieterWrap.style.display='none';
+    if(addBtn)addBtn.style.display='none';
+    if(header)header.style.display='none';
+    // Clear all mieter rows so getPerioden returns Leerstand
+    card.querySelector('.mieter-list').innerHTML='';
+    // Visual indicator
+    cb.closest('.wohn-card').style.borderLeft='3px solid #c0392b';
+    cb.closest('.wohn-card').style.opacity='.85';
+  }else{
+    mieterWrap.style.display='';
+    if(addBtn)addBtn.style.display='';
+    if(header)header.style.display='';
+    cb.closest('.wohn-card').style.borderLeft='';
+    cb.closest('.wohn-card').style.opacity='';
+    // Restore a blank mieter row
+    const jahr=parseInt(document.getElementById('jahr').value)||defaultJahr();
+    if(!card.querySelector('.mieter-row')){
+      card.querySelector('.mieter-list').appendChild(createMieterRow(`${jahr}-01-01`,`${jahr}-12-31`));
+    }
+  }
+}
+
 function removeMieter(btn){
   const list=btn.closest('.mieter-list');
-  if(list.querySelectorAll('.mieter-row').length<=1){showToast('❌ Mindestens ein Mieter je Wohnung.');return;}
+  const card=btn.closest('.wohn-card');
+  const isLeerstand=card&&card.querySelector('.w-leerstand-cb')&&card.querySelector('.w-leerstand-cb').checked;
+  if(!isLeerstand&&list.querySelectorAll('.mieter-row').length<=1){
+    showToast('❌ Mindestens ein Mieter – oder „Leerstand" ankreuzen.');return;
+  }
   btn.closest('.mieter-row').remove();
 }
+function toggleMieterLeerstand(cb){
+  const row=cb.closest('.mieter-row');
+  const inputs=row.querySelectorAll('.m-vname,.m-nname,.m-anrede,.m-pers,.m-vbk,.m-vhk');
+  if(cb.checked){
+    inputs.forEach(function(el){el.disabled=true;el.style.opacity='.35';});
+    row.style.background='#fdf0ef';
+    row.querySelector('.m-vname').value='';
+    row.querySelector('.m-nname').value='';
+  }else{
+    inputs.forEach(function(el){el.disabled=false;el.style.opacity='';});
+    row.style.background='';
+  }
+}
+
 function removeWohn(btn){
   if(document.querySelectorAll('.wohn-card').length<=1){showToast('❌ Mindestens eine Wohneinheit.');return;}
   btn.closest('.wohn-card').remove();
@@ -2646,157 +2727,21 @@ function getWohnungen(){
     mea:(card.querySelector('.w-mea')||{}).value&&card.querySelector('.w-mea').value.trim()||'',
     meaNum:parseMEA((card.querySelector('.w-mea')||{}).value&&card.querySelector('.w-mea').value.trim()||''),
     mieter:Array.from(card.querySelectorAll('.mieter-row')).map(row=>{
+      const isLeerstand=row.querySelector('.m-leerstand-cb')&&row.querySelector('.m-leerstand-cb').checked;
+      if(isLeerstand)return null;
       const anrede=(row.querySelector('.m-anrede')||{}).value||'';
       const vname=(row.querySelector('.m-vname')||{value:''}).value||'';
       const nname=(row.querySelector('.m-nname')||{value:''}).value||'';
       const name=[anrede,vname,nname].filter(Boolean).join(' ');
-      return{
-        anrede,vname,nname,name,
-        von:row.querySelector('.m-von').value,
-        bis:row.querySelector('.m-bis').value,
-        personen:parseInt(row.querySelector('.m-pers').value)||1,
-        vorauszBK:parseFloat(row.querySelector('.m-vbk').value)||0,
-        vorauszHK:parseFloat(row.querySelector('.m-vhk').value)||0,
-      };
-    }).filter(m=>m.von&&m.bis)
+      const von=(row.querySelector('.m-von')||{value:''}).value||'';
+      const bis=(row.querySelector('.m-bis')||{value:''}).value||'';
+      if(!name.trim()||!von||!bis)return null;
+      return{name:name.trim(),von,bis,
+        personen:parseInt((row.querySelector('.m-pers')||{value:'1'}).value)||1,
+        vorauszBK:parseFloat((row.querySelector('.m-vbk')||{value:'0'}).value)||0,
+        vorauszHK:parseFloat((row.querySelector('.m-vhk')||{value:'0'}).value)||0};
+    }).filter(Boolean).sort((a,b)=>a.von.localeCompare(b.von)),
   }));
-}
-
-function parseMEA(s){
-  if(!s)return 0;
-  if(s.includes('/'))return parseFloat(s.split('/')[0])||0;
-  return parseFloat(s)||0;
-}
-
-// ── KOSTEN ──
-const BK_VORGABEN=[
-  {name:'Grundsteuer B',s:'flaeche'},{name:'Wasserversorgung',s:'flaeche'},
-  {name:'Entwässerung',s:'flaeche'},{name:'Straßenreinigung',s:'flaeche'},
-  {name:'Müllbeseitigung',s:'person'},{name:'Gebäudereinigung',s:'flaeche'},
-  {name:'Gartenpflege',s:'flaeche'},{name:'Allgemeinstrom',s:'flaeche'},
-  {name:'Gebäudeversicherung',s:'flaeche'},{name:'Hausmeister',s:'flaeche'},
-  {name:'Winterdienst',s:'flaeche'},
-];
-const HK_VORGABEN=[
-  {name:'Heizung gesamt',s:'flaeche'},
-  {name:'Warmwasser gesamt',s:'flaeche'},
-];
-
-function addKostenRow(tbodyId,name='',schluessel='flaeche',notiz='',direktWerte={}){
-  const tbody=document.getElementById(tbodyId);
-  const tr=document.createElement('tr');
-  const rowId='kr_'+Math.random().toString(36).substr(2,9);
-  tr.dataset.rowId=rowId;
-  tr.dataset.direkt=JSON.stringify(direktWerte);
-  tr.innerHTML=`
-    <td><div class="kosten-reorder">
-      <button class="reorder-btn" onclick="moveKosten(this,-1)">▲</button>
-      <button class="reorder-btn" onclick="moveKosten(this,1)">▼</button>
-    </div></td>
-    <td><input type="text" placeholder="Kostenart" class="k-name" value="${name}" style="min-width:115px"></td>
-    <td><input type="number" placeholder="0.00" step="0.01" min="0" class="k-betrag"></td>
-    <td><select class="k-schluessel" onchange="handleSchluesselChange(this)">
-      <option value="flaeche" ${schluessel==='flaeche'?'selected':''}>Nach Wohnfläche</option>
-      <option value="person"  ${schluessel==='person'?'selected':''}>Nach Personenanzahl</option>
-      <option value="mea"     ${schluessel==='mea'?'selected':''}>Nach Miteigentumsanteil (MEA)</option>
-      <option value="einheiten" ${schluessel==='einheiten'?'selected':''}>Nach Einheiten (gleich)</option>
-      <option value="direkt"  ${schluessel==='direkt'?'selected':''}>Direkte Zuordnung</option>
-    </select></td>
-    <td><input type="text" placeholder="z. B. Rechnung Nr. 2025-001" class="k-notiz" value="${notiz}" style="min-width:130px"></td>
-    <td><button class="btn-small" style="background:var(--p-mid);font-size:.7rem;display:${schluessel==='direkt'?'block':'none'}" onclick="openDirekt(this)">🔧 Bearbeiten</button></td>
-    <td><button class="btn-remove" onclick="this.closest('tr').remove()">✕</button></td>`;
-  tbody.appendChild(tr);
-}
-function handleSchluesselChange(sel){
-  const tr=sel.closest('tr');
-  const direktBtn=tr.querySelector('.btn-small');
-  if(sel.value==='direkt'){
-    direktBtn.style.display='block';
-  } else {
-    direktBtn.style.display='none';
-  }
-}
-function moveKosten(btn,dir){
-  const row=btn.closest('tr'),tbody=row.closest('tbody');
-  const rows=Array.from(tbody.querySelectorAll('tr'));
-  const idx=rows.indexOf(row),ni=idx+dir;
-  if(ni<0||ni>=rows.length)return;
-  if(dir===-1)tbody.insertBefore(row,rows[ni]);else tbody.insertBefore(rows[ni],row);
-}
-function getKosten(id){
-  return Array.from(document.querySelectorAll('#'+id+' tr')).map(tr=>({
-    name:(tr.querySelector('.k-name')||{value:''}).value.trim()||'',
-    betrag:parseFloat((tr.querySelector('.k-betrag')||{value:'0'}).value)||0,
-    schluessel:(tr.querySelector('.k-schluessel')||{value:'flaeche'}).value||'flaeche',
-    notiz:(tr.querySelector('.k-notiz')||{value:''}).value.trim()||'',
-    direktWerte:tr.dataset.direkt?JSON.parse(tr.dataset.direkt):{},
-  })).filter(k=>k.betrag>0&&k.name);
-}
-
-// ── DIREKTE ZUORDNUNG MODAL ──
-let aktiveDirektRow=null;
-function openDirekt(btn){
-  aktiveDirektRow=btn.closest('tr');
-  const wohnungen=getWohnungen();
-  if(!wohnungen.length){showToast('❌ Bitte zuerst Wohneinheiten in Schritt 2 anlegen.');return;}
-  const kostenname=aktiveDirektRow.querySelector('.k-name').value||'Kostenart';
-  const existing=JSON.parse(aktiveDirektRow.dataset.direkt||'{}');
-  document.getElementById('direkt-modal-sub').textContent=`„${kostenname}" – Betrag direkt pro Wohneinheit festlegen.`;
-  const felder=document.getElementById('direkt-modal-felder');
-  felder.innerHTML='';
-  wohnungen.forEach((w,i)=>{
-    const wrap=document.createElement('div');
-    wrap.style.cssText='display:flex;align-items:center;gap:.75rem;margin-bottom:.6rem;padding:.5rem .75rem;background:var(--bg);border-radius:8px;border:1px solid var(--border)';
-    wrap.innerHTML=`
-      <span style="flex:1;font-size:.88rem;font-weight:700">${w.bez}</span>
-      <span style="font-size:.75rem;color:var(--muted)">${w.flaeche} m²</span>
-      <div style="display:flex;align-items:center;gap:4px">
-        <input type="number" placeholder="0.00" step="0.01" min="0" data-idx="${i}"
-          style="border:1px solid var(--border);border-radius:6px;padding:.35rem .55rem;font-size:.88rem;width:90px;text-align:right;font-family:Arial,sans-serif;outline:none"
-          value="${existing[w.bez]||''}" oninput="updateDirektSumme()">
-        <span style="font-size:.8rem;color:var(--muted)">€</span>
-      </div>`;
-    felder.appendChild(wrap);
-  });
-  updateDirektSumme();
-  document.getElementById('direkt-modal').style.display='flex';
-}
-function updateDirektSumme(){
-  const inputs=document.querySelectorAll('#direkt-modal-felder input');
-  const sum=Array.from(inputs).reduce((s,i)=>s+(parseFloat(i.value)||0),0);
-  document.getElementById('direkt-modal-summe').textContent='Summe: '+sum.toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
-}
-function saveDirekt(){
-  if(!aktiveDirektRow)return;
-  const wohnungen=getWohnungen();
-  const inputs=document.querySelectorAll('#direkt-modal-felder input');
-  const werte={};
-  let sum=0;
-  inputs.forEach((inp,i)=>{
-    const val=parseFloat(inp.value)||0;
-    werte[wohnungen[i].bez]=val;
-    sum+=val;
-  });
-  aktiveDirektRow.dataset.direkt=JSON.stringify(werte);
-  // Gesamtbetrag auto-setzen
-  const betragInput=aktiveDirektRow.querySelector('.k-betrag');
-  if(!betragInput.value||parseFloat(betragInput.value)===0)betragInput.value=sum.toFixed(2);
-  closeDirekt();
-  showToast('✅ Direkte Zuordnung gespeichert');
-}
-function closeDirekt(){document.getElementById('direkt-modal').style.display='none';aktiveDirektRow=null;}
-
-// ── TAGGENAU PERIODEN BERECHNEN ──
-function getPerioden(wohnung, jahr){
-  const ys=`${jahr}-01-01`, ye=`${jahr}-12-31`;
-  // Mieter-Perioden auf Abrechnungsjahr beschneiden
-  const rawPerioden=wohnung.mieter.filter(m=>m.name&&m.von&&m.bis).map(m=>{
-    // Schnittmenge mit Abrechnungsjahr
-    const von=m.von<ys?ys:m.von;
-    const bis=m.bis>ye?ye:m.bis;
-    if(von>bis)return null;
-    return{name:m.name,von,bis,personen:m.personen||1,vorauszBK:m.vorauszBK||0,vorauszHK:m.vorauszHK||0,isLeerstand:false,days:daysBetween(von,bis)};
-  }).filter(Boolean).sort((a,b)=>a.von.localeCompare(b.von));
 
   // Überschneidungen entfernen (immer den ersten Mieter bevorzugen)
   const merged=[];
@@ -4047,16 +3992,20 @@ async function sendTokensToUser(){
 
 // ── FLÄCHE WARNUNG ──
 function checkFlaecheWarning(){
+  const warn=document.getElementById('flaeche-warning');
+  if(!warn)return;
+  warn.style.display='none';
+  // Wenn Objekt aus Dropdown gewählt: kein Vergleich (Fläche kommt aus den Einheiten)
+  const sel=document.getElementById('objekt-select');
+  if(sel&&sel.value)return;
   const objektFlaeche=parseFloat((document.getElementById('objekt-flaeche')||{}).value)||0;
   if(!objektFlaeche)return;
   const summe=Array.from(document.querySelectorAll('.w-flaeche')).reduce((s,i)=>s+(parseFloat(i.value)||0),0);
-  const warn=document.getElementById('flaeche-warning');
-  if(warn){
-    if(Math.abs(summe-objektFlaeche)>0.5){
-      document.getElementById('fw-summe').textContent=summe.toLocaleString('de-DE');
-      document.getElementById('fw-objekt').textContent=objektFlaeche.toLocaleString('de-DE');
-      warn.style.display='block';
-    }else{warn.style.display='none';}
+  if(summe===0)return;
+  if(Math.abs(summe-objektFlaeche)>0.5){
+    document.getElementById('fw-summe').textContent=summe.toLocaleString('de-DE');
+    document.getElementById('fw-objekt').textContent=objektFlaeche.toLocaleString('de-DE');
+    warn.style.display='block';
   }
 }
 
@@ -4199,7 +4148,9 @@ async function ladeObjektInWizard(){
     };});
   }
 
-  importiertesObjekt={id:objId,name:name,mieter:mieterFuerWizard};
+  importiertesObjekt={id:objId,name:name,mieter:mieterFuerWizard,einheiten:(einheiten||[]).map(function(e){
+    return {id:e.id,bezeichnung:e.bezeichnung,flaeche:e.flaeche,mea:e.mea};
+  }),mvByEinheit:mvByEinheit};
 
   var mCount=mieterFuerWizard.filter(function(m){return !m.isLeerstand;}).length;
   if(info){
@@ -4211,56 +4162,228 @@ async function ladeObjektInWizard(){
 }
 
 async function importiereObjektInStep2(){
-  if(!importiertesObjekt||!importiertesObjekt.mieter||!importiertesObjekt.mieter.length)return;
+  if(!importiertesObjekt)return;
   var jahr=parseInt(document.getElementById('jahr').value)||defaultJahr();
 
-  // Wohnungen leeren
   document.getElementById('wohnCards').innerHTML='';
   document.getElementById('addWohnBtn').style.display='';
 
-  // Mieter nach Wohneinheit gruppieren
-  var wohnMap={};
-  importiertesObjekt.mieter.forEach(function(m){
-    var key=m.wohneinheit||'Wohnung';
-    if(!wohnMap[key])wohnMap[key]={bez:key,flaeche:m.flaeche||0,mea:m.mea||'',mieter:[]};
-    wohnMap[key].mieter.push(m);
+  // Lade Einheiten + Mietverhältnisse des Objekts
+  var einheiten=importiertesObjekt.einheiten||[];
+  var mieterListe=importiertesObjekt.mieter||[];
+
+  if(!einheiten.length&&!mieterListe.length){showToast('Keine Einheiten oder Mieter gefunden.');return;}
+
+  // Wenn nur alte mieter-Struktur (keine einheiten) → alte Methode
+  if(!einheiten.length&&mieterListe.length){
+    var wohnMap={};
+    mieterListe.forEach(function(m){
+      var key=m.wohneinheit||'Wohnung';
+      if(!wohnMap[key])wohnMap[key]={bez:key,flaeche:m.flaeche||0,mea:m.mea||'',mieter:[]};
+      wohnMap[key].mieter.push(m);
+    });
+    Object.values(wohnMap).forEach(function(w){
+      addWohn();
+      var cards=document.querySelectorAll('.wohn-card');
+      var card=cards[cards.length-1];
+      var bez=card.querySelector('.w-bez');if(bez)bez.value=w.bez;
+      var fl=card.querySelector('.w-flaeche');if(fl)fl.value=w.flaeche||'';
+      var mieterList=card.querySelector('.mieter-list');
+      if(mieterList)mieterList.innerHTML='';
+      w.mieter.forEach(function(m){
+        var von=m.einzug&&m.einzug>=(jahr+'-01-01')?m.einzug:(jahr+'-01-01');
+        var bis=m.auszug&&m.auszug<=(jahr+'-12-31')?m.auszug:(jahr+'-12-31');
+        var row=createMieterRow(von,bis);
+        // Leerstand-Einheit?
+        if(m.isLeerstand||m.vorname==='Leerstand'){
+          var lsCb=row.querySelector('.m-leerstand-cb');
+          if(lsCb){lsCb.checked=true;toggleMieterLeerstand(lsCb);}
+        }else{
+          var anr=row.querySelector('.m-anrede');if(anr)anr.value=m.anrede||'Herr';
+          var vn=row.querySelector('.m-vname');if(vn)vn.value=m.vorname||'';
+          var nn=row.querySelector('.m-nname');if(nn)nn.value=m.nachname||'';
+          var pers=row.querySelector('.m-pers');if(pers)pers.value=1;
+          var vbk=row.querySelector('.m-vbk');if(vbk)vbk.value=m.vorausz_bk||'';
+          var vhk=row.querySelector('.m-vhk');if(vhk)vhk.value=m.vorausz_hk||'';
+        }
+        if(mieterList)mieterList.appendChild(row);
+      });
+    });
+    showToast('✅ '+Object.keys(wohnMap).length+' Wohneinheiten übernommen!');
+    importiertesObjekt=null;
+    return;
+  }
+
+  // Neue Methode: Einheiten aus DB, mit/ohne Mietverhältnis
+  var mvMap={};
+  mieterListe.forEach(function(m){
+    if(m.einheit_id)mvMap[m.einheit_id]=m;
   });
 
-  // Für jede Wohneinheit eine Wohn-Card erstellen
-  Object.values(wohnMap).forEach(function(w){
+  var angelegtCount=0;
+  var leerstandCount=0;
+  einheiten.forEach(function(e){
     addWohn();
     var cards=document.querySelectorAll('.wohn-card');
     var card=cards[cards.length-1];
     // Felder befüllen
-    var bez=card.querySelector('.w-bez');if(bez)bez.value=w.bez;
-    var fl=card.querySelector('.w-flaeche');if(fl)fl.value=w.flaeche||'';
-    if(w.mea){
-      var cb=card.querySelector('.w-mea-cb');
-      if(cb){cb.checked=true;toggleMEA(cb);}
-      var mea=card.querySelector('.w-mea');if(mea)mea.value=w.mea;
-    }
-    // Mieter-Zeilen befüllen
+    var bez=card.querySelector('.w-bez');if(bez)bez.value=e.bezeichnung||e.bez||'Einheit';
+    var fl=card.querySelector('.w-flaeche');if(fl)fl.value=e.flaeche||'';
     var mieterList=card.querySelector('.mieter-list');
     if(mieterList)mieterList.innerHTML='';
-    w.mieter.forEach(function(m){
-      var von=m.einzug&&m.einzug>=(jahr+'-01-01')?m.einzug:(jahr+'-01-01');
-      var bis=m.auszug&&m.auszug<=(jahr+'-12-31')?m.auszug:(jahr+'-12-31');
+
+    var mv=mvMap[e.id];
+    if(mv){
+      // Einheit hat aktives Mietverhältnis → Mieter-Zeile
+      var von=mv.einzug&&mv.einzug>=(jahr+'-01-01')?mv.einzug:(jahr+'-01-01');
+      var bis=mv.auszug&&mv.auszug<=(jahr+'-12-31')?mv.auszug:(jahr+'-12-31');
       var row=createMieterRow(von,bis);
-      var anr=row.querySelector('.m-anrede');if(anr)anr.value=m.anrede||'Herr';
-      var vn=row.querySelector('.m-vname');if(vn)vn.value=m.vorname||'';
-      var nn=row.querySelector('.m-nname');if(nn)nn.value=m.nachname||'';
+      var k=mv.kontakte||{};
+      var anr=row.querySelector('.m-anrede');if(anr)anr.value=k.anrede||'Herr';
+      var vn=row.querySelector('.m-vname');if(vn)vn.value=k.vorname||'';
+      var nn=row.querySelector('.m-nname');if(nn)nn.value=k.nachname||'';
       var pers=row.querySelector('.m-pers');if(pers)pers.value=1;
-      var vbk=row.querySelector('.m-vbk');if(vbk)vbk.value=m.vorausz_bk||'';
-      var vhk=row.querySelector('.m-vhk');if(vhk)vhk.value=m.vorausz_hk||'';
-      if(mieterList)mieterList.appendChild(row);
-    });
+      var vbk=row.querySelector('.m-vbk');if(vbk)vbk.value=mv.vorausz_bk||'';
+      var vhk=row.querySelector('.m-vhk');if(vhk)vhk.value=mv.vorausz_hk||'';
+      mieterList.appendChild(row);
+      angelegtCount++;
+    }else{
+      // Keine Mietverhältnis → Leerstand-Zeile
+      var row=createMieterRow(jahr+'-01-01',jahr+'-12-31');
+      var lsCb=row.querySelector('.m-leerstand-cb');
+      if(lsCb){lsCb.checked=true;toggleMieterLeerstand(lsCb);}
+      mieterList.appendChild(row);
+      leerstandCount++;
+    }
+    angelegtCount++;
   });
 
-  showToast('✅ '+Object.keys(wohnMap).length+' Wohneinheiten mit Mietern übernommen!');
-  importiertesObjekt=null; // Reset after import
+  var msg='✅ '+einheiten.length+' Einheiten übernommen';
+  if(leerstandCount)msg+=' ('+leerstandCount+' Leerstand)';
+  showToast(msg);
+  importiertesObjekt=null;
 }
 
-// ── NEUE ABRECHNUNG STARTEN ──
+const BK_VORGABEN=[
+  {name:'Grundsteuer B',s:'flaeche'},{name:'Wasserversorgung',s:'flaeche'},
+  {name:'Entwässerung',s:'flaeche'},{name:'Straßenreinigung',s:'flaeche'},
+  {name:'Müllbeseitigung',s:'person'},{name:'Gebäudereinigung',s:'flaeche'},
+  {name:'Gartenpflege',s:'flaeche'},{name:'Allgemeinstrom',s:'flaeche'},
+  {name:'Gebäudeversicherung',s:'flaeche'},{name:'Hausmeister',s:'flaeche'},
+  {name:'Winterdienst',s:'flaeche'},
+];
+const HK_VORGABEN=[
+  {name:'Heizung gesamt',s:'flaeche'},
+  {name:'Warmwasser gesamt',s:'flaeche'},
+];
+
+
+
+function addKostenRow(tbodyId,name='',schluessel='flaeche',notiz='',direktWerte={}){
+  const tbody=document.getElementById(tbodyId);
+  const tr=document.createElement('tr');
+  const rowId='kr_'+Math.random().toString(36).substr(2,9);
+  tr.dataset.rowId=rowId;
+  tr.dataset.direkt=JSON.stringify(direktWerte);
+  tr.innerHTML=`
+    <td><div class="kosten-reorder">
+      <button class="reorder-btn" onclick="moveKosten(this,-1)">▲</button>
+      <button class="reorder-btn" onclick="moveKosten(this,1)">▼</button>
+    </div></td>
+    <td><input type="text" placeholder="Kostenart" class="k-name" value="${name}" style="min-width:115px"></td>
+    <td><input type="number" placeholder="0.00" step="0.01" class="k-betrag" oninput="this.value=this.value.replace(/(\..{2})./,'$1')" title="Negativer Wert = Erstattung"></td>
+    <td><select class="k-schluessel" onchange="handleSchluesselChange(this)">
+      <option value="flaeche" ${schluessel==='flaeche'?'selected':''}>Nach Wohnfläche</option>
+      <option value="person"  ${schluessel==='person'?'selected':''}>Nach Personenanzahl</option>
+      <option value="mea"     ${schluessel==='mea'?'selected':''}>Nach Miteigentumsanteil (MEA)</option>
+      <option value="einheiten" ${schluessel==='einheiten'?'selected':''}>Nach Einheiten (gleich)</option>
+      <option value="direkt"  ${schluessel==='direkt'?'selected':''}>Direkte Zuordnung</option>
+    </select></td>
+    <td><input type="text" placeholder="z. B. Rechnung Nr. 2025-001" class="k-notiz" value="${notiz}" style="min-width:130px"></td>
+    <td><button class="btn-small" style="background:var(--p-mid);font-size:.7rem;display:${schluessel==='direkt'?'block':'none'}" onclick="openDirekt(this)">🔧 Bearbeiten</button></td>
+    <td><button class="btn-remove" onclick="this.closest('tr').remove()">✕</button></td>`;
+  tbody.appendChild(tr);
+}
+function handleSchluesselChange(sel){
+  const tr=sel.closest('tr');
+  const direktBtn=tr.querySelector('.btn-small');
+  if(sel.value==='direkt'){
+    direktBtn.style.display='block';
+  } else {
+    direktBtn.style.display='none';
+  }
+}
+function moveKosten(btn,dir){
+  const row=btn.closest('tr'),tbody=row.closest('tbody');
+  const rows=Array.from(tbody.querySelectorAll('tr'));
+  const idx=rows.indexOf(row),ni=idx+dir;
+  if(ni<0||ni>=rows.length)return;
+  if(dir===-1)tbody.insertBefore(row,rows[ni]);else tbody.insertBefore(rows[ni],row);
+}
+function getKosten(id){
+  return Array.from(document.querySelectorAll('#'+id+' tr')).map(tr=>({
+    name:(tr.querySelector('.k-name')||{value:''}).value.trim()||'',
+    betrag:parseFloat((tr.querySelector('.k-betrag')||{value:'0'}).value)||0,
+    schluessel:(tr.querySelector('.k-schluessel')||{value:'flaeche'}).value||'flaeche',
+    notiz:(tr.querySelector('.k-notiz')||{value:''}).value.trim()||'',
+    direktWerte:tr.dataset.direkt?JSON.parse(tr.dataset.direkt):{},
+  })).filter(k=>k.betrag!==0&&!isNaN(k.betrag)&&k.name);
+}
+
+// ── DIREKTE ZUORDNUNG MODAL ──
+let aktiveDirektRow=null;
+function openDirekt(btn){
+  aktiveDirektRow=btn.closest('tr');
+  const wohnungen=getWohnungen();
+  if(!wohnungen.length){showToast('❌ Bitte zuerst Wohneinheiten in Schritt 2 anlegen.');return;}
+  const kostenname=aktiveDirektRow.querySelector('.k-name').value||'Kostenart';
+  const existing=JSON.parse(aktiveDirektRow.dataset.direkt||'{}');
+  document.getElementById('direkt-modal-sub').textContent=`„${kostenname}" – Betrag direkt pro Wohneinheit festlegen.`;
+  const felder=document.getElementById('direkt-modal-felder');
+  felder.innerHTML='';
+  wohnungen.forEach((w,i)=>{
+    const wrap=document.createElement('div');
+    wrap.style.cssText='display:flex;align-items:center;gap:.75rem;margin-bottom:.6rem;padding:.5rem .75rem;background:var(--bg);border-radius:8px;border:1px solid var(--border)';
+    wrap.innerHTML=`
+      <span style="flex:1;font-size:.88rem;font-weight:700">${w.bez}</span>
+      <span style="font-size:.75rem;color:var(--muted)">${w.flaeche} m²</span>
+      <div style="display:flex;align-items:center;gap:4px">
+        <input type="number" placeholder="0.00" step="0.01" min="0" data-idx="${i}"
+          style="border:1px solid var(--border);border-radius:6px;padding:.35rem .55rem;font-size:.88rem;width:90px;text-align:right;font-family:Arial,sans-serif;outline:none"
+          value="${existing[w.bez]||''}" oninput="updateDirektSumme()">
+        <span style="font-size:.8rem;color:var(--muted)">€</span>
+      </div>`;
+    felder.appendChild(wrap);
+  });
+  updateDirektSumme();
+  document.getElementById('direkt-modal').style.display='flex';
+}
+function updateDirektSumme(){
+  const inputs=document.querySelectorAll('#direkt-modal-felder input');
+  const sum=Array.from(inputs).reduce((s,i)=>s+(parseFloat(i.value)||0),0);
+  document.getElementById('direkt-modal-summe').textContent='Summe: '+sum.toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
+}
+function saveDirekt(){
+  if(!aktiveDirektRow)return;
+  const wohnungen=getWohnungen();
+  const inputs=document.querySelectorAll('#direkt-modal-felder input');
+  const werte={};
+  let sum=0;
+  inputs.forEach((inp,i)=>{
+    const val=parseFloat(inp.value)||0;
+    werte[wohnungen[i].bez]=val;
+    sum+=val;
+  });
+  aktiveDirektRow.dataset.direkt=JSON.stringify(werte);
+  // Gesamtbetrag auto-setzen
+  const betragInput=aktiveDirektRow.querySelector('.k-betrag');
+  if(!betragInput.value||parseFloat(betragInput.value)===0)betragInput.value=sum.toFixed(2);
+  closeDirekt();
+  showToast('✅ Direkte Zuordnung gespeichert');
+}
+function closeDirekt(){document.getElementById('direkt-modal').style.display='none';aktiveDirektRow=null;}
+
+
 function startNeueAbrechnung(){
   currentDraftId=null;clearUnsaved();
   importiertesObjekt=null;
@@ -5344,7 +5467,13 @@ function openObjektModal(data){
     document.getElementById('obj-strasse').value=data.strasse||'';
     document.getElementById('obj-plz').value=data.plz||'';
     document.getElementById('obj-ort').value=data.ort||'';
-    document.getElementById('obj-notiz').value=data.notiz||'';
+    var notizEl=document.getElementById('obj-notiz');
+    if(notizEl){
+      // notiz field stores JSON - extract the _notiz key if present
+      var rawNotiz=data.notiz||'';
+      try{var parsed=JSON.parse(rawNotiz);notizEl.value=parsed._notiz||'';}
+      catch(e){notizEl.value=rawNotiz;}
+    }
   } else {
     // New: show type selection
     document.getElementById('obj-step1').style.display='block';
@@ -5735,22 +5864,14 @@ async function editMietverhaeltnis(mvId,einheitId,objektId,einheitBez){
   if(data)openMietverhModal(einheitId,objektId,einheitBez,data);
 }
 async function deleteMietverhaeltnis(id){
-  var wahl=window.confirm('Was möchten Sie tun?\n\n[OK] = Mietverhältnis BEENDEN (Auszugsdatum heute)\n[Abbrechen] = Abbrechen');
-  if(!wahl){
-    // Offer hard delete via second confirm
-    var hardDel=window.confirm('Mietverhältnis dauerhaft LÖSCHEN?\n(Alle zugehörigen Mietzahlungen werden ebenfalls gelöscht)');
-    if(!hardDel)return;
-    await sb.from('mietzahlungen').delete().eq('mietverhaeltnis_id',id);
-    var {error}=await sb.from('mietverhaeltnisse').delete().eq('id',id);
-    if(error){showToast('❌ Fehler: '+error.message);return;}
-    showToast('🗑 Mietverhältnis gelöscht');
-  }else{
-    var {error}=await sb.from('mietverhaeltnisse').update({aktiv:false,auszug:new Date().toISOString().split('T')[0]}).eq('id',id);
-    if(error){showToast('❌ Fehler: '+error.message);return;}
-    showToast('✅ Mietverhältnis beendet');
-  }
+  if(!confirm('Mietverhältnis dauerhaft löschen?\n(inkl. aller Mietzahlungen)'))return;
+  await sb.from('mietzahlungen').delete().eq('mietverhaeltnis_id',id);
+  var {error}=await sb.from('mietverhaeltnisse').delete().eq('id',id);
+  if(error){showToast('❌ Fehler: '+error.message);return;}
+  showToast('🗑 Mietverhältnis gelöscht');
   if(aktivesObjekt){loadObjektEinheiten(aktivesObjekt.id);loadObjektStats(aktivesObjekt.id);loadObjektSidebar(aktivesObjekt.id);loadMietverhaeltnisse(aktivesObjekt.id);}
 }
+
 async function loadMietverhaeltnisse(objId){
   var container=document.getElementById('od-mietverh-list');
   if(!container)return;
@@ -5855,10 +5976,9 @@ async function openObjektDetail(objId){
     'adminpanel','dashboard','objekte','mieter','objekt-detail','kontakte'];
   allPages.forEach(function(p){var el=document.getElementById('page-'+p);if(el)el.style.display=p==='objekt-detail'?'block':'none';});
 
-  // Load data
+  // Load data – showObjektTab('uebersicht') lädt bereits loadObjektUebersichtTab
+  await Promise.all([loadObjektSidebar(objId),loadObjektStats(objId),loadObjektEinheiten(objId)]);
   showObjektTab('uebersicht');
-  await Promise.all([loadObjektSidebar(objId),loadObjektStats(objId),loadObjektEinheiten(objId),loadObjektMieter(objId),loadObjektAbrechnungen(objId)]);
-  loadObjektUebersichtTab(objId);
 }
 
 function showObjektTab(tab){
@@ -6372,7 +6492,7 @@ async function loadObjektUebersichtTab(objId){
     });
     if(!objAbr.length){
       abrEl.innerHTML='<div style="color:var(--muted);font-size:.82rem;font-style:italic">Noch keine Abrechnung für dieses Objekt.</div>'
-        +'<button class="btn-primary" onclick="startAbrechnungFuerAktivesObjekt()" style="margin-top:.5rem;font-size:.78rem">📄 Erste Abrechnung erstellen</button>';
+        +'<button class="btn-secondary" onclick="startAbrechnungFuerAktivesObjekt()" style="margin-top:.5rem;font-size:.78rem">📄 Abrechnung erstellen</button>';
     }else{
       abrEl.innerHTML=objAbr.slice(0,4).map(function(a){
         var isAbg=a.titel&&a.titel.includes('[Abgerechnet]');
@@ -6968,6 +7088,111 @@ async function ladeNKSaldoBadges(objId){
   });
 }
 
+
+async function legeMusterkontakteAn(){
+  if(!confirm('7 Musterkontakte anlegen?\n(5 Mieter + 2 Eigentümer)'))return;
+  var {data,error}=await sb.from('kontakte').insert([
+    {user_id:currentUser.id,anrede:'Herr',    vorname:'Max',          nachname:'Mustermann',  email:'max@example.de',     telefon:'0151 12345678',notiz:'[Mieter]'},
+    {user_id:currentUser.id,anrede:'Frau',    vorname:'Anna',         nachname:'Schmidt',     email:'anna@example.de',    telefon:'0152 98765432',notiz:'[Mieter]'},
+    {user_id:currentUser.id,anrede:'Eheleute',vorname:'Klaus & Maria',nachname:'Weber',       email:'weber@example.de',   telefon:'0153 11223344',notiz:'[Mieter]'},
+    {user_id:currentUser.id,anrede:'Herr',    vorname:'Thomas',       nachname:'Müller',      email:'mueller@example.de', telefon:'0154 55667788',notiz:'[Mieter]'},
+    {user_id:currentUser.id,anrede:'Frau',    vorname:'Sandra',       nachname:'Becker',      email:'becker@example.de',  telefon:'0155 99887766',notiz:'[Mieter]'},
+    {user_id:currentUser.id,anrede:'Herr',    vorname:'Peter',        nachname:'Hoffmann',    email:'hoffmann@example.de',telefon:'0156 33445566',notiz:'[Eigentümer]'},
+    {user_id:currentUser.id,anrede:'Firma',   vorname:'',             nachname:'Muster GmbH', email:'info@mustergmbh.de', telefon:'02251 123456',  notiz:'[Eigentümer]'},
+  ]).select();
+  if(error){showToast('❌ Fehler: '+error.message);return;}
+  showToast('✅ 7 Musterkontakte angelegt!');
+  alleKontakte=[];
+  if(typeof loadKontakte==='function')loadKontakte();
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// WIZARD VORSCHAU
+// ═══════════════════════════════════════════════════════════════
+
+function wizardVorschau(){
+  // Berechnen falls nötig, dann Vorschau öffnen
+  if(!lastErgebnis){
+    // Step 3→4 triggern (berechnet automatisch)
+    if(currentStep<3){showToast('⚠️ Bitte erst Schritt 3 (Kosten) ausfüllen.');return;}
+    goStep(4);
+    // Warten bis berechnen() fertig ist, dann Demo-Vorschau
+    setTimeout(function(){
+      if(lastErgebnis)handleGesamtPDF(true,'vorschau');
+      else showToast('⚠️ Bitte Kosten eintragen und berechnen.');
+    },400);
+  }else{
+    // Bereits berechnet – direkt Vorschau
+    handleGesamtPDF(true,'vorschau');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// THEME – SUPABASE SYNC (geräteübergreifend)
+// ═══════════════════════════════════════════════════════════════
+
+async function setThemeAndSync(t){
+  // 1. Lokal anwenden
+  setTheme(t);
+  // 2. In Supabase user_profiles speichern
+  if(!currentUser)return;
+  try{
+    var {data:profile}=await sb.from('user_profiles').select('id').eq('user_id',currentUser.id).maybeSingle();
+    if(profile){
+      await sb.from('user_profiles').update({username:profile.username,phone:profile.phone,nekosta_theme:t}).eq('user_id',currentUser.id);
+    }else{
+      await sb.from('user_profiles').insert({user_id:currentUser.id,nekosta_theme:t});
+    }
+    showToast('✅ Farbschema gespeichert');
+  }catch(e){
+    // Spalte existiert noch nicht – nur lokal speichern
+    showToast('✅ Farbschema lokal gespeichert');
+  }
+}
+
+async function loadThemeFromProfile(){
+  if(!currentUser)return;
+  try{
+    var {data}=await sb.from('user_profiles').select('nekosta_theme').eq('user_id',currentUser.id).maybeSingle();
+    if(data&&data.nekosta_theme){
+      setTheme(data.nekosta_theme);
+      return;
+    }
+  }catch(e){}
+  // Fallback: localStorage
+  var t=localStorage.getItem('nekosta-theme');
+  if(t)setTheme(t);
+}
+
+function applyCustomColor(hex){
+  if(!hex||!/^#[0-9a-fA-F]{6}$/.test(hex)){showToast('⚠️ Bitte gültige Hex-Farbe eingeben (z.B. #3a7bd5)');return;}
+  // Custom theme über CSS-Variablen
+  var r=document.documentElement;
+  r.style.setProperty('--p',hex);
+  // Hellere Variante berechnen
+  var light=hex+'22';
+  r.style.setProperty('--p-light',light);
+  localStorage.setItem('nekosta-theme','custom');
+  localStorage.setItem('nekosta-custom-color',hex);
+  setThemeAndSync('custom:'+hex);
+  loadThemeUI();
+  showToast('✅ Eigene Farbe angewendet');
+}
+
+function loadCustomColorIfSet(){
+  var t=localStorage.getItem('nekosta-theme')||'';
+  if(t.startsWith('custom:')){
+    var hex=t.replace('custom:','');
+    if(/^#[0-9a-fA-F]{6}$/.test(hex)){
+      document.documentElement.style.setProperty('--p',hex);
+      document.documentElement.style.setProperty('--p-light',hex+'22');
+      var inp=document.getElementById('custom-color-input');
+      if(inp)inp.value=hex;
+    }
+  }
+}
+
 // Init sidebar groups
 document.addEventListener('DOMContentLoaded',function(){
   document.querySelectorAll('.sg-content').forEach(function(el){el.style.maxHeight='500px';el.style.overflow='visible';});
@@ -6976,3 +7201,4 @@ document.addEventListener('DOMContentLoaded',function(){
 </script>
 </body>
 </html>
+

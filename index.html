@@ -794,8 +794,8 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
               <!-- Einheiten-Übersicht-Karte -->
               <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:1.25rem;margin-bottom:1.25rem">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.85rem">
-                  <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Einheiten</div>
-                  <button onclick="showObjektTab('einheiten')" style="font-size:.75rem;color:var(--p);background:none;border:none;cursor:pointer;font-family:Arial,sans-serif">Alle anzeigen →</button>
+                  <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Zahlungsverlauf (letzte 6 Monate)</div>
+                  <button onclick="showObjektTab('einheiten')" style="font-size:.75rem;color:var(--p);background:none;border:none;cursor:pointer;font-family:Arial,sans-serif">Alle verwalten →</button>
                 </div>
                 <div id="od-einheiten-uebersicht"><div style="color:var(--muted);font-size:.82rem">Wird geladen...</div></div>
               </div>
@@ -883,6 +883,58 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
 
           </div>
         </div>
+      </div>
+    </div>
+
+
+    <!-- EINHEIT DETAIL MODAL -->
+    <div id="einheit-detail-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:660;align-items:flex-start;justify-content:center;padding:1.5rem;overflow-y:auto">
+      <div style="background:var(--white);border-radius:14px;width:100%;max-width:700px;margin:auto;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.2)">
+        <!-- Header -->
+        <div style="background:var(--p);color:#fff;padding:1.1rem 1.5rem;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:1rem;font-weight:700" id="ed-title">Einheit</div>
+            <div style="font-size:.75rem;opacity:.8;margin-top:1px" id="ed-sub"></div>
+          </div>
+          <button onclick="document.getElementById('einheit-detail-modal').style.display='none'" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:6px 10px;cursor:pointer">✕</button>
+        </div>
+        <!-- Tabs -->
+        <div style="display:flex;border-bottom:2px solid var(--border);background:var(--white)">
+          <button type="button" id="edtab-zahlungen" onclick="showEinheitDetailTab('zahlungen')" style="background:none;border:none;border-bottom:2px solid var(--p);margin-bottom:-2px;padding:.65rem 1.25rem;cursor:pointer;font-size:.85rem;font-weight:700;color:var(--p);font-family:Arial,sans-serif">💳 Zahlungen</button>
+          <button type="button" id="edtab-notiz" onclick="showEinheitDetailTab('notiz')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.65rem 1.25rem;cursor:pointer;font-size:.85rem;color:var(--muted);font-family:Arial,sans-serif">📝 Notiz</button>
+          <button type="button" id="edtab-info" onclick="showEinheitDetailTab('info')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.65rem 1.25rem;cursor:pointer;font-size:.85rem;color:var(--muted);font-family:Arial,sans-serif">ℹ️ Info</button>
+        </div>
+        <div style="padding:1.25rem 1.5rem">
+          <!-- Zahlungen Tab -->
+          <div id="edtab-content-zahlungen">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+              <div style="font-size:.8rem;font-weight:700">Monatliche Mietzahlungen</div>
+              <div style="display:flex;gap:.4rem">
+                <button onclick="filterEinheitZahlungen('alle')" class="btn-small" id="ezf-alle" style="background:var(--p);color:#fff;font-size:.72rem">Alle</button>
+                <button onclick="filterEinheitZahlungen('offen')" class="btn-small" id="ezf-offen" style="font-size:.72rem">Offen</button>
+                <button onclick="filterEinheitZahlungen('gemahnt')" class="btn-small" id="ezf-gemahnt" style="font-size:.72rem">Gemahnt</button>
+              </div>
+            </div>
+            <div id="ed-zahlungen-list"><div style="color:var(--muted);font-size:.82rem;text-align:center;padding:2rem">Wird geladen...</div></div>
+          </div>
+          <!-- Notiz Tab -->
+          <div id="edtab-content-notiz" style="display:none">
+            <div style="font-size:.78rem;color:var(--muted);margin-bottom:.5rem">Interne Notiz zur Einheit:</div>
+            <textarea id="ed-notiz-input" rows="5" style="border:1px solid var(--border);border-radius:8px;padding:.65rem .85rem;font-size:.85rem;font-family:Arial,sans-serif;width:100%;resize:vertical;outline:none;background:var(--bg);box-sizing:border-box" placeholder="Notizen, Besonderheiten, Mängel..."></textarea>
+            <div style="display:flex;align-items:center;gap:.6rem;margin-top:.6rem">
+              <button class="btn-primary" onclick="saveEinheitNotiz()" style="font-size:.82rem;padding:.5rem 1rem">💾 Speichern</button>
+              <span id="ed-notiz-saved" style="display:none;font-size:.72rem;color:var(--success)">✅ Gespeichert</span>
+            </div>
+          </div>
+          <!-- Info Tab -->
+          <div id="edtab-content-info" style="display:none">
+            <div id="ed-info-content"><div style="color:var(--muted);font-size:.82rem">Wird geladen...</div></div>
+            <div style="margin-top:1rem;display:flex;gap:.5rem">
+              <button class="btn-secondary" onclick="editEinheitFromDetail()" style="font-size:.82rem">✏️ Einheit bearbeiten</button>
+            </div>
+          </div>
+        </div>
+        <input type="hidden" id="ed-einheit-id">
       </div>
     </div>
 
@@ -1822,6 +1874,19 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
             <div class="field"><label>BK-Vorauszahlung €/Mon.</label><input type="number" id="mv-bk" placeholder="120,00" step="0.01"></div>
             <div class="field"><label>HK-Vorauszahlung €/Mon.</label><input type="number" id="mv-hk" placeholder="80,00" step="0.01"></div>
             <div class="field"><label>MEA <span style="font-size:.7rem;font-weight:400;color:var(--muted)">(z.B. 123/1000)</span></label><input type="text" id="mv-mea" placeholder="123/1000"></div>
+          </div>
+
+          <!-- UNTERJÄHRIGE NK-ERHÖHUNG -->
+          <div style="background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:.85rem 1rem;margin-bottom:1rem">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+              <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#856404">⚡ Unterjährige NK-Erhöhung</div>
+              <button type="button" onclick="toggleNkErhoehung()" style="background:none;border:none;cursor:pointer;font-size:.75rem;color:#856404;font-family:Arial,sans-serif" id="nk-toggle-btn">+ Hinzufügen</button>
+            </div>
+            <div id="nk-erhoehung-section" style="display:none">
+              <div style="font-size:.75rem;color:#856404;margin-bottom:.6rem">Falls die NK-Vorauszahlung sich im Laufe des Mietverhältnisses geändert hat, hier erfassen:</div>
+              <div id="nk-erhoehung-list" style="display:flex;flex-direction:column;gap:.35rem;margin-bottom:.5rem"></div>
+              <button type="button" onclick="addNkErhoehungZeile()" style="background:#fff3cd;border:1px solid #ffe082;border-radius:6px;padding:.3rem .7rem;cursor:pointer;font-size:.75rem;color:#856404;font-family:Arial,sans-serif">+ Erhöhung erfassen</button>
+            </div>
           </div>
 
           <div class="field" style="margin-bottom:1.25rem"><label>Notiz <span style="font-size:.7rem;font-weight:400;color:var(--muted)">(optional)</span></label>
@@ -5633,6 +5698,8 @@ async function saveMietverhaeltnis(){
   var objektId=document.getElementById('mv-objekt-id').value;
   var kontaktId=document.getElementById('mv-kontakt-select').value||null;
   var msg=document.getElementById('mietverh-msg');msg.style.display='none';
+  if(!kontaktId){msg.textContent='Bitte einen Mieter (Kontakt) auswählen.';msg.style.background='#fdf0ef';msg.style.color='#c0392b';msg.style.display='block';return;}
+  if(!document.getElementById('mv-einzug').value){msg.textContent='Bitte Einzugsdatum angeben.';msg.style.background='#fdf0ef';msg.style.color='#c0392b';msg.style.display='block';return;}
   var auszug=document.getElementById('mv-auszug').value||null;
   var d={user_id:currentUser.id,einheit_id:einheitId,objekt_id:objektId,kontakt_id:kontaktId,
     einzug:document.getElementById('mv-einzug').value||null,
@@ -5664,11 +5731,20 @@ async function editMietverhaeltnis(mvId,einheitId,objektId,einheitBez){
   if(data)openMietverhModal(einheitId,objektId,einheitBez,data);
 }
 async function deleteMietverhaeltnis(id){
-  var action=confirm('Mietverhältnis beenden oder löschen?\n\nOK = Beenden (Auszugsdatum setzen)\nAbbrechen = Abbrechen');
-  if(!action)return;
-  var {error}=await sb.from('mietverhaeltnisse').update({aktiv:false,auszug:new Date().toISOString().split('T')[0]}).eq('id',id);
-  if(error){showToast('❌ Fehler: '+error.message);return;}
-  showToast('✅ Mietverhältnis beendet');
+  var wahl=window.confirm('Was möchten Sie tun?\n\n[OK] = Mietverhältnis BEENDEN (Auszugsdatum heute)\n[Abbrechen] = Abbrechen');
+  if(!wahl){
+    // Offer hard delete via second confirm
+    var hardDel=window.confirm('Mietverhältnis dauerhaft LÖSCHEN?\n(Alle zugehörigen Mietzahlungen werden ebenfalls gelöscht)');
+    if(!hardDel)return;
+    await sb.from('mietzahlungen').delete().eq('mietverhaeltnis_id',id);
+    var {error}=await sb.from('mietverhaeltnisse').delete().eq('id',id);
+    if(error){showToast('❌ Fehler: '+error.message);return;}
+    showToast('🗑 Mietverhältnis gelöscht');
+  }else{
+    var {error}=await sb.from('mietverhaeltnisse').update({aktiv:false,auszug:new Date().toISOString().split('T')[0]}).eq('id',id);
+    if(error){showToast('❌ Fehler: '+error.message);return;}
+    showToast('✅ Mietverhältnis beendet');
+  }
   if(aktivesObjekt){loadObjektEinheiten(aktivesObjekt.id);loadObjektStats(aktivesObjekt.id);loadObjektSidebar(aktivesObjekt.id);loadMietverhaeltnisse(aktivesObjekt.id);}
 }
 async function loadMietverhaeltnisse(objId){
@@ -5862,7 +5938,7 @@ async function loadObjektEinheiten(objId){
 
     return '<div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:.85rem">'
       // Header - click to edit unit
-      +'<div style="display:flex;justify-content:space-between;align-items:center;padding:.85rem 1rem;background:var(--white);cursor:pointer" onclick="editEinheit(\''+e.id+'\')">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;padding:.85rem 1rem;background:var(--white);cursor:pointer" onclick="openEinheitDetail(\''+e.id+'\')">'
         +'<div style="display:flex;align-items:center;gap:.75rem">'
           +'<div style="width:38px;height:38px;border-radius:8px;background:'+tc[0]+';display:flex;align-items:center;justify-content:center;font-size:1rem;color:'+tc[1]+';font-weight:700">'+e.bezeichnung[0]+'</div>'
           +'<div>'
@@ -6277,50 +6353,11 @@ async function loadObjektUebersichtTab(objId){
   if(bEl)bEl.textContent=totalBK>0?fmt(totalBK):'–';
   if(lEl)lEl.textContent=leerstand+' / '+einh.length;
 
-  // Einheiten-Übersicht in Karte
+  // Zahlungsverlauf letzte 6 Monate
   var ueEl=document.getElementById('od-einheiten-uebersicht');
-  if(ueEl){
-    if(!einh.length){
-      ueEl.innerHTML='<div style="color:var(--muted);font-size:.82rem;font-style:italic">Noch keine Einheiten angelegt.</div>'
-        +'<button class="btn-small" onclick="showObjektTab(\'einheiten\')" style="margin-top:.5rem">+ Einheit anlegen</button>';
-    }else{
-      var mvMap={};
-      mv.forEach(function(m){if(m.einheit_id)mvMap[m.einheit_id]=m;});
-      ueEl.innerHTML='<div style="display:flex;flex-direction:column;gap:.35rem">'
-        +einh.map(function(e){
-          var aktMV=mvMap[e.id];
-          var besetzt=!!aktMV;
-          var k=besetzt&&aktMV.kontakte?aktMV.kontakte:null;
-          var mieterName=k?[(k.anrede||''),(k.vorname||''),(k.nachname||'')].filter(Boolean).join(' '):'';
-          var kalt=besetzt&&aktMV.kaltmiete?aktMV.kaltmiete.toLocaleString('de-DE',{minimumFractionDigits:2})+' €':'';
-          return '<div style="display:flex;align-items:center;justify-content:space-between;padding:.5rem .75rem;border-radius:8px;border:1px solid var(--border);background:var(--white)">'
-            +'<div style="display:flex;align-items:center;gap:.6rem">'
-              +'<div style="width:8px;height:8px;border-radius:50%;background:'+(besetzt?'#2e7d32':'#c0392b')+';flex-shrink:0"></div>'
-              +'<div>'
-                +'<div style="font-size:.83rem;font-weight:600">'+e.bezeichnung+'</div>'
-                +'<div style="font-size:.7rem;color:var(--muted)">'+(e.flaeche?e.flaeche+' m²':'')+(e.stockwerk?' · '+e.stockwerk:'')+'</div>'
-              +'</div>'
-            +'</div>'
-            +'<div style="text-align:right">'
-              +(besetzt
-                ?'<div style="font-size:.78rem;font-weight:600;color:var(--p)">'+mieterName+'</div>'
-                 +'<div style="font-size:.68rem;color:#c0392b">Leerstand</div>'
-                :'<div style="font-size:.72rem;color:#c0392b;font-weight:600">📭 Leerstand</div>'
-                 +'<button onclick="showObjektTab(\'einheiten\')" class="btn-small" style="font-size:.65rem;margin-top:2px">+ Mieter</button>'
-              )
-              +(kalt?'<div style="font-size:.7rem;color:var(--muted)">'+kalt+'/Mon.</div>':'')
-            +'</div>'
-          +'</div>';
-        }).join('')
-        +'</div>'
-        +'<div style="display:flex;justify-content:space-between;margin-top:.85rem;padding-top:.75rem;border-top:1px solid var(--border)">'
-          +'<span style="font-size:.72rem;color:var(--muted)">'+einh.length+' Einheiten · '+mv.length+' vermietet · '+leerstand+' Leerstand</span>'
-          +'<button onclick="showObjektTab(\'einheiten\')" style="font-size:.72rem;color:var(--p);background:none;border:none;cursor:pointer">Alle verwalten →</button>'
-        +'</div>';
-    }
-  }
+  if(ueEl) await loadZahlungsverlaufObjekt(objId,ueEl,mv,einh);
 
-  // Letzte Abrechnungen
+    // Letzte Abrechnungen
   var abrEl=document.getElementById('od-abr-list');
   if(abrEl){
     // Filter für dieses Objekt
@@ -6482,6 +6519,326 @@ async function loadMietubersichtFuerEinheit(einheitId,containerId){
         +'<span style="font-size:.62rem;font-weight:700;padding:1px 6px;border-radius:6px;background:'+statusBg+';color:'+statusColor+'">'+z.status+'</span>';
     }).join('')
     +'</div></div>';
+  container.innerHTML=html;
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// EINHEIT DETAIL MODAL
+// ═══════════════════════════════════════════════════════════════
+
+var _einheitDetailFilter='alle';
+
+async function openEinheitDetail(einheitId){
+  var modal=document.getElementById('einheit-detail-modal');
+  if(!modal)return;
+  document.getElementById('ed-einheit-id').value=einheitId;
+
+  // Einheit laden
+  var {data:e}=await sb.from('einheiten').select('*').eq('id',einheitId).maybeSingle();
+  if(!e){showToast('Einheit nicht gefunden');return;}
+
+  document.getElementById('ed-title').textContent=e.bezeichnung;
+  document.getElementById('ed-sub').textContent=
+    [e.typ,e.flaeche?e.flaeche+' m²':null,e.stockwerk].filter(Boolean).join(' · ');
+  document.getElementById('ed-notiz-input').value=e.notiz||'';
+  modal.style.display='flex';
+  _einheitDetailFilter='alle';
+  showEinheitDetailTab('zahlungen');
+}
+
+function showEinheitDetailTab(tab){
+  ['zahlungen','notiz','info'].forEach(function(t){
+    var c=document.getElementById('edtab-content-'+t);
+    var b=document.getElementById('edtab-'+t);
+    if(c)c.style.display=t===tab?'block':'none';
+    if(b){
+      b.style.borderBottomColor=t===tab?'var(--p)':'transparent';
+      b.style.color=t===tab?'var(--p)':'var(--muted)';
+      b.style.fontWeight=t===tab?'700':'';
+    }
+  });
+  var eid=document.getElementById('ed-einheit-id').value;
+  if(tab==='zahlungen')loadEinheitZahlungen(eid);
+  if(tab==='info')loadEinheitInfo(eid);
+}
+
+async function loadEinheitZahlungen(einheitId){
+  var container=document.getElementById('ed-zahlungen-list');
+  if(!container)return;
+  container.innerHTML='<div style="color:var(--muted);font-size:.82rem;text-align:center;padding:1.5rem">Wird geladen...</div>';
+
+  var q=sb.from('mietzahlungen').select('*').eq('einheit_id',einheitId).eq('user_id',currentUser.id).order('monat',{ascending:false}).limit(36);
+  if(_einheitDetailFilter==='offen') q=q.eq('status','offen');
+  if(_einheitDetailFilter==='gemahnt') q=q.eq('status','gemahnt');
+  var {data:zahlungen}=await q;
+
+  if(!zahlungen||!zahlungen.length){
+    container.innerHTML='<div style="text-align:center;padding:2rem;color:var(--muted)">'
+      +'<div style="font-size:1.5rem;margin-bottom:.5rem">📭</div>'
+      +'<div style="font-size:.85rem">Keine Zahlungen vorhanden.</div>'
+      +'<button onclick="generiereZahlungenFuerEinheit(\''+einheitId+'\')" class="btn-secondary" style="margin-top:.75rem;font-size:.78rem">📊 Zahlungen generieren</button>'
+      +'</div>';
+    return;
+  }
+
+  var statusColors={offen:'#fff3cd,#856404',bezahlt:'#d4edda,#155724',gemahnt:'#fdf0ef,#c0392b',ausstehend:'#e3f2fd,#1565c0'};
+
+  container.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:.82rem">'
+    +'<thead><tr style="border-bottom:2px solid var(--border)">'
+      +'<th style="text-align:left;padding:.4rem .5rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Monat</th>'
+      +'<th style="text-align:left;padding:.4rem .5rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Bezeichnung</th>'
+      +'<th style="text-align:right;padding:.4rem .5rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Betrag</th>'
+      +'<th style="text-align:right;padding:.4rem .5rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Kaltmiete</th>'
+      +'<th style="text-align:right;padding:.4rem .5rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">BK-VZ</th>'
+      +'<th style="padding:.4rem .5rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Status</th>'
+    +'</tr></thead><tbody>'
+    +zahlungen.map(function(z){
+      var monat=z.monat?new Date(z.monat).toLocaleDateString('de-DE',{month:'short',year:'numeric'}):'–';
+      var sc=(statusColors[z.status]||'#f5f5f5,#666').split(',');
+      return '<tr style="border-bottom:1px solid var(--border)" id="zrow-'+z.id+'">'
+        +'<td style="padding:.45rem .5rem;font-weight:600">'+monat+'</td>'
+        +'<td style="padding:.45rem .5rem;color:var(--muted);font-size:.78rem">'+(z.bezeichnung||'–')+'</td>'
+        +'<td style="padding:.45rem .5rem;text-align:right;font-weight:700">'+(z.betrag!=null?z.betrag.toLocaleString('de-DE',{minimumFractionDigits:2})+' €':'–')+'</td>'
+        +'<td style="padding:.45rem .5rem;text-align:right;color:var(--muted)">'+(z.kaltmiete_anteil!=null?z.kaltmiete_anteil.toLocaleString('de-DE',{minimumFractionDigits:2})+' €':'–')+'</td>'
+        +'<td style="padding:.45rem .5rem;text-align:right;color:var(--muted)">'+(z.bk_anteil!=null?z.bk_anteil.toLocaleString('de-DE',{minimumFractionDigits:2})+' €':'–')+'</td>'
+        +'<td style="padding:.45rem .5rem">'
+          +'<select onchange="updateZahlungStatus(\''+z.id+'\',this.value)" style="border:1px solid '+sc[0]+';border-radius:6px;padding:2px 5px;font-size:.72rem;font-weight:700;background:'+sc[0]+';color:'+sc[1]+';font-family:Arial,sans-serif;outline:none;cursor:pointer">'
+            +'<option value="offen"'+(z.status==='offen'?' selected':'')+'>Offen</option>'
+            +'<option value="bezahlt"'+(z.status==='bezahlt'?' selected':'')+'>Bezahlt</option>'
+            +'<option value="gemahnt"'+(z.status==='gemahnt'?' selected':'')+'>Gemahnt</option>'
+            +'<option value="ausstehend"'+(z.status==='ausstehend'?' selected':'')+'>Ausstehend</option>'
+          +'</select>'
+        +'</td>'
+        +'</tr>';
+    }).join('')
+    +'</tbody></table>';
+}
+
+async function updateZahlungStatus(zahlungId,newStatus){
+  var {error}=await sb.from('mietzahlungen').update({status:newStatus}).eq('id',zahlungId);
+  if(error){showToast('❌ Fehler: '+error.message);return;}
+  // Visuelles Feedback: Farbe der Zeile updaten
+  var statusColors={offen:'#fff3cd,#856404',bezahlt:'#d4edda,#155724',gemahnt:'#fdf0ef,#c0392b',ausstehend:'#e3f2fd,#1565c0'};
+  var sc=(statusColors[newStatus]||'#f5f5f5,#666').split(',');
+  var sel=document.querySelector('#zrow-'+zahlungId+' select');
+  if(sel){sel.style.background=sc[0];sel.style.color=sc[1];sel.style.borderColor=sc[0];}
+  showToast(newStatus==='bezahlt'?'✅ Als bezahlt markiert':'📋 Status aktualisiert');
+}
+
+function filterEinheitZahlungen(filter){
+  _einheitDetailFilter=filter;
+  ['alle','offen','gemahnt'].forEach(function(f){
+    var btn=document.getElementById('ezf-'+f);
+    if(!btn)return;
+    btn.style.background=f===filter?'var(--p)':'';
+    btn.style.color=f===filter?'#fff':'';
+  });
+  var eid=document.getElementById('ed-einheit-id').value;
+  if(eid)loadEinheitZahlungen(eid);
+}
+
+async function loadEinheitInfo(einheitId){
+  var container=document.getElementById('ed-info-content');
+  if(!container)return;
+  var [{data:e},{data:mv}]=await Promise.all([
+    sb.from('einheiten').select('*').eq('id',einheitId).maybeSingle(),
+    sb.from('mietverhaeltnisse').select('*,kontakte(anrede,vorname,nachname,email,telefon)')
+      .eq('einheit_id',einheitId).eq('user_id',currentUser.id).order('einzug',{ascending:false})
+  ]);
+  if(!e){container.innerHTML='<div style="color:var(--muted)">Nicht gefunden</div>';return;}
+  var typColors={Wohnung:'#e8f5e9,#2e7d32',Gewerbe:'#fff3e0,#e65100',Garage:'#f3f3f3,#666'};
+  var tc=(typColors[e.typ]||'#f0e6f8,#6a2d9f').split(',');
+  container.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1.25rem">'
+    +'<div style="background:var(--bg);border-radius:8px;padding:.75rem"><div style="font-size:.62rem;color:var(--muted);margin-bottom:.2rem">TYP</div><span style="background:'+tc[0]+';color:'+tc[1]+';font-size:.75rem;font-weight:700;padding:2px 8px;border-radius:8px">'+e.typ+'</span></div>'
+    +'<div style="background:var(--bg);border-radius:8px;padding:.75rem"><div style="font-size:.62rem;color:var(--muted);margin-bottom:.2rem">FLÄCHE</div><div style="font-weight:700">'+(e.flaeche?e.flaeche+' m²':'–')+'</div></div>'
+    +'<div style="background:var(--bg);border-radius:8px;padding:.75rem"><div style="font-size:.62rem;color:var(--muted);margin-bottom:.2rem">STOCKWERK</div><div style="font-weight:700">'+(e.stockwerk||'–')+'</div></div>'
+    +'<div style="background:var(--bg);border-radius:8px;padding:.75rem"><div style="font-size:.62rem;color:var(--muted);margin-bottom:.2rem">EINHEIT-ID</div><div style="font-size:.7rem;color:var(--muted);font-family:monospace">'+e.id.substring(0,8)+'...</div></div>'
+    +'</div>'
+    +'<div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:.6rem">Mietverhältnisse</div>'
+    +((mv&&mv.length)?mv.map(function(m){
+      var k=m.kontakte;
+      var name=k?[(k.anrede||''),(k.vorname||''),(k.nachname||'')].filter(Boolean).join(' '):'–';
+      var einzug=m.einzug?new Date(m.einzug).toLocaleDateString('de-DE'):'–';
+      var auszug=m.auszug?new Date(m.auszug).toLocaleDateString('de-DE'):'heute';
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:.55rem .75rem;border-radius:8px;background:'+(m.aktiv?'#f8f5fc':'#f8f8f8')+';border:1px solid '+(m.aktiv?'var(--p-light)':'var(--border)')+';margin-bottom:.3rem">'
+        +'<div><div style="font-size:.85rem;font-weight:700">'+name+'</div>'
+        +'<div style="font-size:.7rem;color:var(--muted)">'+einzug+' – '+auszug
+        +(m.kaltmiete?' · '+m.kaltmiete.toLocaleString('de-DE',{minimumFractionDigits:2})+' €':'')+'</div></div>'
+        +'<span style="font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:8px;background:'+(m.aktiv?'#d4edda':'#f5f5f5')+';color:'+(m.aktiv?'#155724':'#888')+'">'+(m.aktiv?'Aktiv':'Beendet')+'</span>'
+        +'</div>';
+    }).join(''):'<div style="color:var(--muted);font-size:.82rem;font-style:italic">Keine Mietverhältnisse.</div>');
+}
+
+async function saveEinheitNotiz(){
+  var eid=document.getElementById('ed-einheit-id').value;
+  var notiz=document.getElementById('ed-notiz-input').value;
+  if(!eid)return;
+  var {error}=await sb.from('einheiten').update({notiz:notiz}).eq('id',eid);
+  if(error){showToast('❌ Fehler: '+error.message);return;}
+  var saved=document.getElementById('ed-notiz-saved');
+  if(saved){saved.style.display='inline';setTimeout(function(){saved.style.display='none';},2000);}
+}
+
+function editEinheitFromDetail(){
+  var eid=document.getElementById('ed-einheit-id').value;
+  document.getElementById('einheit-detail-modal').style.display='none';
+  editEinheit(eid);
+}
+
+async function generiereZahlungenFuerEinheit(einheitId){
+  var {data:mv}=await sb.from('mietverhaeltnisse').select('*').eq('einheit_id',einheitId).eq('aktiv',true).maybeSingle();
+  if(!mv){showToast('Kein aktives Mietverhältnis gefunden');return;}
+  await generiereMonatlicheMieten(mv);
+  showToast('✅ Zahlungen generiert');
+  loadEinheitZahlungen(einheitId);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// NK-ERHÖHUNG HELPERS
+// ═══════════════════════════════════════════════════════════════
+
+function toggleNkErhoehung(){
+  var sec=document.getElementById('nk-erhoehung-section');
+  var btn=document.getElementById('nk-toggle-btn');
+  if(!sec)return;
+  var open=sec.style.display!=='none';
+  sec.style.display=open?'none':'block';
+  if(btn)btn.textContent=open?'+ Hinzufügen':'– Einklappen';
+  if(!open&&!document.querySelector('#nk-erhoehung-list .nk-row'))addNkErhoehungZeile();
+}
+
+function addNkErhoehungZeile(){
+  var list=document.getElementById('nk-erhoehung-list');
+  if(!list)return;
+  var row=document.createElement('div');
+  row.className='nk-row';
+  row.style.cssText='display:grid;grid-template-columns:130px 1fr 1fr auto;gap:.4rem;align-items:end';
+  row.innerHTML='<div><div style="font-size:.65rem;color:var(--muted);margin-bottom:.2rem">AB DATUM</div>'
+    +'<input type="date" class="nk-datum" style="border:1px solid var(--border);border-radius:6px;padding:.35rem .5rem;font-size:.82rem;width:100%;outline:none;box-sizing:border-box"></div>'
+    +'<div><div style="font-size:.65rem;color:var(--muted);margin-bottom:.2rem">NEUE BK-VZ €</div>'
+    +'<input type="number" class="nk-bk" placeholder="0.00" step="0.01" style="border:1px solid var(--border);border-radius:6px;padding:.35rem .5rem;font-size:.82rem;width:100%;outline:none;box-sizing:border-box"></div>'
+    +'<div><div style="font-size:.65rem;color:var(--muted);margin-bottom:.2rem">NEUE HK-VZ €</div>'
+    +'<input type="number" class="nk-hk" placeholder="0.00" step="0.01" style="border:1px solid var(--border);border-radius:6px;padding:.35rem .5rem;font-size:.82rem;width:100%;outline:none;box-sizing:border-box"></div>'
+    +'<button onclick="this.parentNode.remove()" style="background:#ddd;border:none;border-radius:6px;padding:.35rem .5rem;cursor:pointer;font-size:.75rem;color:#666;font-family:Arial,sans-serif;margin-bottom:0">✕</button>';
+  list.appendChild(row);
+}
+
+function getNkErhoehungen(){
+  var rows=document.querySelectorAll('#nk-erhoehung-list .nk-row');
+  var result=[];
+  rows.forEach(function(row){
+    var datum=row.querySelector('.nk-datum').value;
+    var bk=parseFloat(row.querySelector('.nk-bk').value)||0;
+    var hk=parseFloat(row.querySelector('.nk-hk').value)||0;
+    if(datum)result.push({ab:datum,bk:bk,hk:hk});
+  });
+  return result;
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// ZAHLUNGSVERLAUF OBJEKT (Übersicht-Tab)
+// ═══════════════════════════════════════════════════════════════
+
+async function loadZahlungsverlaufObjekt(objId,container,activeMV,einh){
+  if(!container)return;
+
+  // Letzte 6 Monate berechnen
+  var monate=[];
+  var now=new Date();
+  for(var i=5;i>=0;i--){
+    var d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    monate.push({
+      key:d.toISOString().split('T')[0].substring(0,7),
+      label:d.toLocaleDateString('de-DE',{month:'short',year:'2-digit'})
+    });
+  }
+
+  // Alle Einheiten des Objekts laden
+  var allEinh=einh||[];
+  if(!allEinh.length){
+    var {data:e}=await sb.from('einheiten').select('id,bezeichnung').eq('user_id',currentUser.id).eq('objekt_id',objId);
+    allEinh=e||[];
+  }
+
+  if(!allEinh.length){
+    container.innerHTML='<div style="color:var(--muted);font-size:.82rem;font-style:italic;text-align:center;padding:1.5rem">Noch keine Einheiten angelegt.'
+      +'<br><button class="btn-small" onclick="showObjektTab(\'einheiten\')" style="margin-top:.5rem">+ Einheit anlegen</button></div>';
+    return;
+  }
+
+  // Zahlungen für dieses Objekt der letzten 6 Monate laden
+  var firstMonth=monate[0].key+'-01';
+  var {data:zahlungen}=await sb.from('mietzahlungen')
+    .select('*,einheiten(bezeichnung)')
+    .eq('user_id',currentUser.id).eq('objekt_id',objId)
+    .gte('monat',firstMonth)
+    .order('monat',{ascending:true});
+
+  zahlungen=zahlungen||[];
+
+  // Map: einheitId → monat → zahlungen[]
+  var zMap={};
+  zahlungen.forEach(function(z){
+    if(!z.einheit_id)return;
+    if(!zMap[z.einheit_id])zMap[z.einheit_id]={};
+    var mk=z.monat?z.monat.substring(0,7):'';
+    if(!zMap[z.einheit_id][mk])zMap[z.einheit_id][mk]=[];
+    zMap[z.einheit_id][mk].push(z);
+  });
+
+  var mvMap={};
+  (activeMV||[]).forEach(function(m){if(m.einheit_id)mvMap[m.einheit_id]=m;});
+
+  var statusColors={offen:'#fff3cd,#856404',bezahlt:'#d4edda,#155724',gemahnt:'#fdf0ef,#c0392b',ausstehend:'#e3f2fd,#1565c0'};
+
+  var html='<div style="overflow-x:auto">'
+    +'<table style="width:100%;border-collapse:collapse;font-size:.8rem;min-width:500px">'
+    +'<thead><tr style="border-bottom:2px solid var(--border)">'
+      +'<th style="text-align:left;padding:.4rem .5rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted);white-space:nowrap">Einheit</th>'
+      +monate.map(function(m){return '<th style="text-align:center;padding:.4rem .5rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted);white-space:nowrap">'+m.label+'</th>';}).join('')
+      +'<th style="text-align:right;padding:.4rem .5rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Miete/Mon.</th>'
+    +'</tr></thead><tbody>'
+    +allEinh.map(function(e){
+      var aktMV=mvMap[e.id];
+      var kalt=aktMV&&aktMV.kaltmiete?aktMV.kaltmiete.toLocaleString('de-DE',{minimumFractionDigits:2})+' €':'–';
+      return '<tr style="border-bottom:1px solid var(--border)" onclick="openEinheitDetail(\''+e.id+'\')" style="cursor:pointer" onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'\'">'
+        +'<td style="padding:.45rem .5rem;font-weight:600;white-space:nowrap;cursor:pointer">'+e.bezeichnung+'</td>'
+        +monate.map(function(m){
+          var zl=zMap[e.id]&&zMap[e.id][m.key]?zMap[e.id][m.key]:[];
+          if(!zl.length){
+            // Kein Eintrag
+            return '<td style="text-align:center;padding:.45rem .25rem">'
+              +'<span style="font-size:.65rem;color:#ccc">–</span>'
+              +'</td>';
+          }
+          // Aggregiere Status: worst case
+          var hasGemahnt=zl.some(function(z){return z.status==='gemahnt';});
+          var hasOffen=zl.some(function(z){return z.status==='offen';});
+          var allBezahlt=zl.every(function(z){return z.status==='bezahlt';});
+          var status=hasGemahnt?'gemahnt':(allBezahlt?'bezahlt':'offen');
+          var sc=(statusColors[status]||'#f5f5f5,#666').split(',');
+          var total=zl.reduce(function(s,z){return s+(parseFloat(z.betrag)||0);},0);
+          var ids=zl.map(function(z){return z.id;}).join(',');
+          return '<td style="text-align:center;padding:.45rem .25rem">'
+            +'<div style="display:inline-flex;flex-direction:column;align-items:center;gap:1px;cursor:pointer" onclick="event.stopPropagation();openEinheitDetail(\''+e.id+'\')">'
+              +'<span style="font-size:.6rem;font-weight:700;padding:2px 6px;border-radius:5px;background:'+sc[0]+';color:'+sc[1]+'">'
+                +status.charAt(0).toUpperCase()+status.slice(1)
+              +'</span>'
+              +'<span style="font-size:.6rem;color:var(--muted)">'+total.toLocaleString('de-DE',{minimumFractionDigits:0})+'€</span>'
+            +'</div>'
+            +'</td>';
+        }).join('')
+        +'<td style="text-align:right;padding:.45rem .5rem;font-weight:700;color:var(--p)">'+kalt+'</td>'
+      +'</tr>';
+    }).join('')
+    +'</tbody></table></div>'
+    +'<div style="display:flex;justify-content:space-between;margin-top:.85rem;padding-top:.75rem;border-top:1px solid var(--border)">'
+      +'<span style="font-size:.72rem;color:var(--muted)">'+allEinh.length+' Einheiten · Klick auf Zeile öffnet Details</span>'
+      +'<button onclick="showObjektTab(\'einheiten\')" style="font-size:.72rem;color:var(--p);background:none;border:none;cursor:pointer;font-family:Arial,sans-serif">Einheiten verwalten →</button>'
+    +'</div>';
+
   container.innerHTML=html;
 }
 

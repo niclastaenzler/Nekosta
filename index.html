@@ -5482,10 +5482,7 @@ function openObjektModal(data){
     document.getElementById('obj-strasse').value='';
     document.getElementById('obj-plz').value='';
     document.getElementById('obj-ort').value='';
-    document.getElementById('obj-flaeche').value='';
-    document.getElementById('obj-einheiten').value='';
-    document.getElementById('obj-baujahr').value='';
-    document.getElementById('obj-notiz').value='';
+    var notizReset=document.getElementById('obj-notiz');if(notizReset)notizReset.value='';
     document.querySelectorAll('.obj-typ-card').forEach(function(card){card.style.borderColor='var(--border)';card.style.background='var(--white)';});
   }
   var msg=document.getElementById('obj-msg');if(msg)msg.style.display='none';

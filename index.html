@@ -12,10 +12,10 @@
   --danger:#c0392b;--danger-bg:#fdf0ef;--success:#1a7a4a;--success-bg:#eaf7ef;
   --warn:#e67e22;--warn-bg:#fef5ec;--r:8px;--sidebar:220px;
 }
-body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.5;height:100vh;overflow:hidden}
+body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.5;min-height:100vh}
 
 /* ── HEADER ── */
-.header{background:var(--p);padding:.85rem 1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;flex-shrink:0;z-index:200}
+.header{background:var(--p);padding:.85rem 1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;position:sticky;top:0;z-index:200;flex-shrink:0}
 .logo-name{font-size:1.1rem;font-weight:700;color:#fff}
 .logo-sub{font-size:.62rem;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.08em}
 #user-bar{display:none;align-items:center;gap:.75rem}
@@ -52,10 +52,10 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--tex
 .auth-success{background:var(--success-bg)!important;color:var(--success)!important}
 
 /* ── APP LAYOUT ── */
-#app{display:none;flex-direction:column;height:100vh;overflow:hidden}
-#portal-banner{flex-shrink:0}
-.app-layout{display:flex;flex:1;overflow:hidden;min-height:0}
- .sidebar{width:var(--sidebar);background:var(--white);border-right:1px solid var(--border);padding:.5rem 0 1rem;height:100%;overflow-y:auto;flex-shrink:0;transition:width .2s}
+#app{display:none}
+#portal-banner{flex-shrink:0;position:sticky;top:52px;z-index:190}
+.app-layout{display:flex;min-height:calc(100vh - 52px)}
+ .sidebar{width:var(--sidebar);background:var(--white);border-right:1px solid var(--border);padding:.5rem 0 3rem;position:sticky;top:52px;height:calc(100vh - 52px);overflow-y:auto;flex-shrink:0;transition:width .2s}
  .sidebar-section{font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);padding:.6rem 1rem .2rem;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;margin-top:.2rem}
  .sidebar-section:hover{color:var(--p)}
  .sg-arrow{font-size:.58rem;transition:transform .2s;opacity:.4;flex-shrink:0}
@@ -68,15 +68,12 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--tex
  .nav-item .ni-icon{font-size:.88rem;width:17px;text-align:center;flex-shrink:0}
  .nav-badge{margin-left:auto;background:var(--p-light);color:var(--p);font-size:.58rem;font-weight:700;padding:1px 5px;border-radius:8px}
  .sidebar-divider{height:1px;background:var(--border);margin:.35rem .85rem}
-.main-content{flex:1;overflow-x:hidden;overflow-y:auto;min-width:0;width:0;height:100%;display:flex;flex-direction:column}
-#page-objekt-detail{flex:1;overflow:hidden;background:var(--bg)}
+.main-content{flex:1;min-width:0;overflow-x:hidden}
+#page-objekt-detail{position:fixed;top:52px;left:var(--sidebar);right:0;bottom:0;background:var(--bg);z-index:10;overflow:hidden;display:none}
 .page-wrap{padding:2rem;max-width:900px;box-sizing:border-box;width:100%}
-/* Pages scroll independently */
-[id^="page-"]:not(#page-tool):not(#page-objekt-detail){overflow-y:auto;overflow-x:hidden;flex:1;height:100%}
-
 
 /* ── WIZARD ── */
-.wizard-bar{background:var(--white);border-bottom:1px solid var(--border);padding:0 1.5rem;display:flex;align-items:center;gap:0;position:sticky;top:0;z-index:150;box-shadow:0 2px 8px rgba(0,0,0,.06);flex-shrink:0}
+.wizard-bar{background:var(--white);border-bottom:1px solid var(--border);padding:0 1.5rem;display:flex;align-items:center;gap:0;position:sticky;top:52px;z-index:150;box-shadow:0 2px 8px rgba(0,0,0,.06)}
 .wizard-step{display:flex;align-items:center;gap:.5rem;padding:1rem .75rem;font-size:.82rem;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;transition:color .2s,border-color .2s;white-space:nowrap}
 .wizard-step.active{color:var(--p);border-bottom-color:var(--p);font-weight:700}
 .wizard-step.done{color:var(--success)}
@@ -84,8 +81,8 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--tex
 .ws-num{width:22px;height:22px;border-radius:50%;background:var(--border);color:var(--muted);font-size:.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .wizard-step.active .ws-num{background:var(--p);color:#fff}
 .wizard-arrow{color:var(--border);font-size:.8rem;padding:0 .25rem}
-.wizard-content{padding:2rem;flex:1;overflow-y:auto;overflow-x:hidden}
-.wizard-footer{background:var(--white);border-top:1px solid var(--border);padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center;position:sticky;bottom:0;z-index:100;flex-wrap:wrap;gap:.5rem;flex-shrink:0}
+.wizard-content{padding:2rem;flex:1}
+.wizard-footer{background:var(--white);border-top:1px solid var(--border);padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center;position:sticky;bottom:0;z-index:100;flex-wrap:wrap;gap:.5rem}
 
 /* ── CARDS ── */
 .card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin-bottom:1.1rem}
@@ -394,6 +391,11 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
 <div class="header">
   <div><div class="logo-name">NEKOSTA</div><div class="logo-sub">Nebenkostenportal</div></div>
   <div id="user-bar">
+    <div id="abrechnung-active-chip" style="display:none">
+      <button type="button" onclick="showPage('tool')" style="background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:20px;padding:.35rem .9rem;cursor:pointer;font-size:.75rem;font-family:Arial,sans-serif;font-weight:600">
+        📄 Abrechnung fortsetzen →
+      </button>
+    </div>
     <div class="token-balance-chip" id="token-chip" onclick="showPage('tokens')">
       🪙 <span class="tbc-val" id="token-count">0</span> Nekosta Token
     </div>
@@ -946,7 +948,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
 
     <!-- ══ TOOL ══ -->
     <!-- ══ TOOL ══ -->
-    <div id="page-tool" style="display:none;flex-direction:column;height:100%;overflow:hidden;flex:1">
+    <div id="page-tool" style="display:none">
       <!-- WIZARD BAR -->
       <div class="wizard-bar">
         <div class="wizard-step active" id="ws1" onclick="goStep(1)"><span class="ws-num">1</span>Grunddaten</div>
@@ -958,7 +960,9 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
         <div class="wizard-step" id="ws4" onclick="goStep(4)"><span class="ws-num">4</span>Ergebnis &amp; PDF</div>
       </div>
 
-      <!-- STEP 1: GRUNDDATEN -->
+            <!-- STEPS WRAPPER -->
+      <div id="steps-wrapper">
+<!-- STEP 1: GRUNDDATEN -->
       <div id="step1" class="wizard-content">
         <div class="page-header"><div class="page-title">Grunddaten der Abrechnung</div><div class="page-sub">Objekt auswählen oder manuell eingeben.</div></div>
         <div class="card">
@@ -1085,6 +1089,8 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
           </div>
         </div>
       </div>
+
+            </div><!-- /steps-wrapper -->
 
       <!-- WIZARD FOOTER -->
       <div class="wizard-footer">
@@ -2096,6 +2102,8 @@ async function initApp(user){
 sb.auth.onAuthStateChange(function(_,session){if(session&&session.user)initApp(session.user);});
 
 // ── NAVIGATION ──
+var currentPageName='dashboard';
+
 function showPage(name){
   var allPages=['tool','archiv','stammdaten','anschreiben','kunden','tokens',
     'einstellungen','heizkostenerstellen','impressum','welcome','bearbeitungsnotizen',
@@ -2110,9 +2118,24 @@ function showPage(name){
     name='dashboard';
   }
 
+  // If leaving the tool page and there's unsaved work, warn
+  if(currentPageName==='tool' && name!=='tool' && (hasUnsavedChanges||currentStep>1)){
+    var leave=confirm('⚠️ Sie erstellen gerade eine Abrechnung.\n\nSeite verlassen? Der aktuelle Stand bleibt erhalten – über „Abrechnung erstellen" können Sie jederzeit zurück.');
+    if(!leave) return; // Stay on tool page
+  }
+
+  currentPageName=name;
+
+  // Show/hide "Abrechnung fortsetzen" chip in header
+  var chip=document.getElementById('abrechnung-active-chip');
+  if(chip){
+    var showChip=name!=='tool'&&(hasUnsavedChanges||currentStep>1);
+    chip.style.display=showChip?'block':'none';
+  }
+
   allPages.forEach(function(p){
     var el=document.getElementById('page-'+p);
-    if(el)el.style.display=p===name?(p==='tool'?'flex':'block'):'none';
+    if(el)el.style.display=p===name?'block':'none';
   });
 
   // Nav active state
@@ -2140,6 +2163,21 @@ function showPage(name){
     if(dtc)dtc.style.display=(isAdmin&&adminVisible)?'block':'none';
     if(isAdmin&&adminVisible)loadDiscountCodes();
   }
+}
+
+// Check if there's unsaved work in the wizard
+function getUnsavedFlag(){
+  // Has the user entered anything meaningful?
+  var step=currentStep||1;
+  if(step>1)return true; // Already past step 1
+  var objekt=document.getElementById('objekt');
+  var jahr=document.getElementById('jahr');
+  if(objekt&&objekt.value&&objekt.value.trim())return true;
+  if(jahr&&jahr.value&&parseInt(jahr.value)>0)return true;
+  // Check if any Wohnkarten were added
+  var cards=document.querySelectorAll('.wohn-card');
+  if(cards.length>2)return true; // More than default 2
+  return false;
 }
 
 
@@ -2267,6 +2305,11 @@ function goStep(n){
     if(currentStep===2)checkFlaecheWarning();
   }
   currentStep=n;
+  // Mark as having work in progress once user goes past step 1
+  if(n>1)hasUnsavedChanges=true;
+  // Update chip visibility
+  var chip=document.getElementById('abrechnung-active-chip');
+  if(chip)chip.style.display=(currentPageName!=='tool'&&(hasUnsavedChanges||n>1))?'block':'none';
   [1,2,3,4].forEach(function(i){
     var s=document.getElementById('step'+i);if(s)s.style.display=i===n?'block':'none';
     var ws=document.getElementById('ws'+i);
@@ -3947,6 +3990,10 @@ async function importiereObjektInStep2(){
 function startNeueAbrechnung(){
   currentDraftId=null;clearUnsaved();
   importiertesObjekt=null;
+  currentStep=1;
+  // Hide the chip - fresh start
+  var chip=document.getElementById('abrechnung-active-chip');
+  if(chip)chip.style.display='none';
   // Reset all step buttons to active state
   [1,2,3,4].forEach(function(n){var ws=document.getElementById('ws'+n);if(ws){ws.style.pointerEvents='';ws.style.opacity='';}});
   var bwEl=document.getElementById('btn-weiter');if(bwEl){bwEl.style.display='block';bwEl.style.visibility='visible';}
@@ -4698,26 +4745,38 @@ async function loadDashboard(){
 
     // Letzte Abrechnungen - ONLY own data
     var laEl=document.getElementById('dash-letzte-abr');
-    if(!letzteAbr.length){laEl.innerHTML='<div style="color:var(--muted);font-size:.85rem;text-align:center;padding:.75rem">Noch keine Abrechnungen.</div>';}
-    else{laEl.innerHTML=letzteAbr.map(function(a){
-      var isAbg=a.titel&&a.titel.includes('[Abgerechnet]');
-      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem 0;border-bottom:1px solid var(--border);font-size:.82rem">'
-        +'<div><span style="font-weight:600">'+(a.titel||'').replace('[Abgerechnet]','').replace('[Entwurf]','').trim()+'</span>'
-        +'<div style="font-size:.7rem;color:var(--muted)">'+(a.objekt||'')+'</div></div>'
-        +'<span style="font-size:.68rem;padding:2px 7px;border-radius:10px;font-weight:700;background:'+(isAbg?'#d4edda':'#fff3cd')+';color:'+(isAbg?'#155724':'#856404')+'">'+(isAbg?'Abgerechnet':'Entwurf')+'</span>'
-        +'</div>';
-    }).join('');}
+    if(!letzteAbr.length){
+      laEl.innerHTML='<div style="color:var(--muted);text-align:center;padding:.75rem;font-size:.85rem">Noch keine Abrechnungen.</div>';
+    }else{
+      laEl.innerHTML=letzteAbr.map(function(a){
+        var isAbg=a.titel&&a.titel.includes&&a.titel.includes('[Abgerechnet]');
+        var clean=(a.titel||'').replace('[Abgerechnet]','').replace('[Entwurf]','').trim();
+        var bg=isAbg?'#d4edda':'#fff3cd';var col=isAbg?'#155724':'#856404';
+        var lbl=isAbg?'Abgerechnet':'Entwurf';
+        return [
+          '<div style="border-bottom:1px solid var(--border);padding:.45rem .25rem;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-size:.82rem" ',
+          isAbg ? 'onclick="viewAbgerechnet(\''+a.id+'\')">':'onclick="showPage(\'archiv\')">',
+          '<div><div style="font-weight:600">'+clean+'</div><div style="font-size:.7rem;color:var(--muted)">'+(a.objekt||'')+'</div></div>',
+          '<span style="font-size:.68rem;padding:2px 7px;border-radius:10px;font-weight:700;background:'+bg+';color:'+col+'">'+lbl+'</span>',
+          '</div>'
+        ].join('');
+      }).join('');
+    }
 
-    // Objekte - ONLY own data
     var olEl=document.getElementById('dash-objekte-list');
-    if(!objekte.length){olEl.innerHTML='<div style="color:var(--muted);font-size:.85rem;text-align:center;padding:.75rem">Noch keine Objekte. <a href="#" onclick="openObjektModal();return false" style="color:var(--p)">Jetzt anlegen →</a></div>';}
-    else{olEl.innerHTML=objekte.map(function(o){
-      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem 0;border-bottom:1px solid var(--border);font-size:.82rem;cursor:pointer" onclick="openObjektDetail(\''+o.id+'\')">'+
-        '<div><div style="font-weight:700">'+o.name+'</div><div style="font-size:.72rem;color:var(--muted)">'+(o.ort||'')+'</div></div>'+
-        '<span style="font-size:.72rem;color:var(--muted)">'+(o.einheiten_anzahl||'–')+' Einh.</span>'+
-        '</div>';
-    }).join('');}
-
+    if(!objekte.length){
+      olEl.innerHTML='<div style="color:var(--muted);text-align:center;padding:.75rem;font-size:.85rem">Noch keine Objekte.</div>';
+    }else{
+      olEl.innerHTML=objekte.map(function(o){
+        return [
+          '<div style="border-bottom:1px solid var(--border);padding:.45rem .25rem;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-size:.82rem" ',
+          'onclick="openObjektDetail(\''+o.id+'\')">',
+          '<div><div style="font-weight:700">'+o.name+'</div><div style="font-size:.72rem;color:var(--muted)">'+(o.ort||'')+'</div></div>',
+          '<span style="font-size:.72rem;color:var(--muted)">'+(o.einheiten_anzahl||'–')+' Einh.</span>',
+          '</div>'
+        ].join('');
+      }).join('');
+    }
     // Status Checks
     var sm=stammdaten;
     var checks=[
@@ -5301,7 +5360,7 @@ async function loadMietverhaeltnisse(objId){
 var aktivesObjekt=null;
 
 async function openObjektDetail(objId){
-  var {data,error}=await sb.from('objekte').select('*').eq('id',objId).single();
+  var {data,error}=await sb.from('objekte').select('*').eq('id',objId).maybeSingle();
   if(error||!data){showToast('Fehler beim Laden');return;}
   aktivesObjekt=data;
 

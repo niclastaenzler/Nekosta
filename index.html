@@ -359,6 +359,12 @@ body.theme-dark .nav-item:hover{background:#1e1b2e}
 body.theme-dark table{color:var(--text)}
 body.theme-dark .lfield input,body.theme-dark .lfield label{background:#0f0e17;color:var(--text);border-color:#2d2a3e}
 body.theme-dark .kosten-table td{border-color:#2d2a3e;background:#1a1825}
+.ergebnis-header{background:var(--p);color:#fff;border-radius:12px;padding:1.25rem 1.75rem;margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem}
+.eh-left .eh-title{font-size:1.1rem;font-weight:700}
+.eh-left .eh-sub{font-size:.82rem;color:rgba(255,255,255,.65);margin-top:3px}
+.eh-right{text-align:right}
+.eh-right .eh-jahr{font-size:1.5rem;font-weight:700;color:rgba(255,255,255,.9)}
+.eh-right .eh-date{font-size:.72rem;color:rgba(255,255,255,.55)}
 body.theme-dark .ergebnis-header{background:linear-gradient(135deg,#1e1b2e,#2d1b4e)}
 body.theme-dark .pdf-actions-bar{background:#1a1825;border-color:#2d2a3e}
 body.theme-dark .voraus-card,.theme-dark .kunden-abr-card{background:#1a1825;border-color:#2d2a3e}
@@ -1052,6 +1058,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
           </div>
 
           <!-- WOHNUNGS-ERGEBNISSE -->
+          <div id="res-summary" style="margin-bottom:1rem"></div>
           <div id="res-wohnungen"></div>
 
           <!-- VORAUSBERECHNUNG -->
@@ -2713,6 +2720,7 @@ async function renderErgebnis(){
 
   var summaryEl=document.getElementById('res-summary');
   if(!summaryEl){summaryEl=document.createElement('div');summaryEl.id='res-summary';rw.parentNode.insertBefore(summaryEl,rw);}
+  summaryEl.style.marginBottom='1rem';
   summaryEl.innerHTML=summaryHtml;
 
   // Per-unit rows
@@ -2842,6 +2850,40 @@ async function renderErgebnis(){
     row.innerHTML=headHtml+bodyHtml;
     rw.appendChild(row);
   });
+// ── ERGEBNIS TOGGLE FUNCTIONS ──
+function toggleErgUnit(headEl){
+  var row=headEl.parentNode;
+  var body=row.querySelector('.erg-unit-body');
+  var arrow=headEl.querySelector('.erg-unit-expand');
+  if(!body)return;
+  var isOpen=body.classList.contains('open');
+  body.classList.toggle('open',!isOpen);
+  if(arrow)arrow.style.transform=isOpen?'rotate(0deg)':'rotate(90deg)';
+}
+
+function switchErgTab(tabEl,targetId){
+  var nav=tabEl.parentNode;
+  nav.querySelectorAll('.erg-periode-tab').forEach(function(t){t.classList.remove('active');});
+  tabEl.classList.add('active');
+  // Find the unit body container
+  var body=nav.parentNode;
+  var prefix=targetId.substring(0,targetId.lastIndexOf('-'));
+  body.querySelectorAll('[id^="erg-tab-"]').forEach(function(el){
+    if(el.id.indexOf(prefix)===0)el.style.display='none';
+  });
+  var target=document.getElementById(targetId);
+  if(target)target.style.display='block';
+}
+
+function toggleKostenDetail(id){
+  var el=document.getElementById(id);
+  var arrow=document.getElementById(id+'-arrow');
+  if(!el)return;
+  var isOpen=el.style.display!=='none';
+  el.style.display=isOpen?'none':'block';
+  if(arrow)arrow.style.transform=isOpen?'rotate(0deg)':'rotate(90deg)';
+}
+
 function renderVoraus(e){
   document.getElementById('voraus-jahr').textContent=e.jahr+1;
   const grid=document.getElementById('voraus-grid');grid.innerHTML='';

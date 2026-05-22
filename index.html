@@ -72,7 +72,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--tex
 .page-wrap{padding:2rem;max-width:900px;box-sizing:border-box;width:100%}
 
 /* ── WIZARD ── */
-.wizard-bar{background:var(--white);border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;gap:0;position:sticky;top:52px;z-index:150;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.wizard-bar{background:var(--white);border-bottom:1px solid var(--border);padding:0 1.5rem;display:flex;align-items:center;gap:0;position:sticky;top:52px;z-index:150;box-shadow:0 2px 8px rgba(0,0,0,.06)}
 .wizard-step{display:flex;align-items:center;gap:.5rem;padding:1rem .75rem;font-size:.82rem;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;transition:color .2s,border-color .2s;white-space:nowrap}
 .wizard-step.active{color:var(--p);border-bottom-color:var(--p);font-weight:700}
 .wizard-step.done{color:var(--success)}
@@ -80,7 +80,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--tex
 .ws-num{width:22px;height:22px;border-radius:50%;background:var(--border);color:var(--muted);font-size:.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .wizard-step.active .ws-num{background:var(--p);color:#fff}
 .wizard-arrow{color:var(--border);font-size:.8rem;padding:0 .25rem}
-.wizard-content{padding:2rem}
+.wizard-content{padding:2rem}.wizard-content #step4{padding-top:0}
 .wizard-footer{background:var(--white);border-top:1px solid var(--border);padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center;position:sticky;bottom:0;z-index:100;flex-wrap:wrap;gap:.5rem}
 
 /* ── CARDS ── */
@@ -204,7 +204,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--tex
 /* ERGEBNIS ── */
 /* ── ERGEBNIS ImmoCloud-Stil ── */
 .ergebnis-section{scroll-margin-top:110px}
-.ergebnis-section{padding:1.5rem 2rem 2rem;max-width:1050px;overflow-x:hidden}
+.ergebnis-section{padding:.75rem 2rem 2rem;max-width:1050px;overflow-x:hidden}
 .erg-header-bar{background:var(--p);color:#fff;border-radius:12px;padding:1.25rem 1.75rem;margin-bottom:1.25rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem}
 .erg-summary-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.75rem;margin-bottom:1.25rem}
 .erg-summary-card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:.85rem 1rem;text-align:center}
@@ -3417,23 +3417,43 @@ async function viewAbgerechnet(id){
   var {data}=await sb.from('abrechnungen').select('*').eq('id',id).single();
   if(!data||!data.data)return;
   lastErgebnis=data.data;
+  currentDraftId=id;
   showPage('tool');
   setTimeout(function(){
+    // Grunddaten
     if(document.getElementById('jahr'))document.getElementById('jahr').value=data.jahr||'';
     if(document.getElementById('objekt'))document.getElementById('objekt').value=data.objekt||'';
     if(data.datum&&document.getElementById('datum'))document.getElementById('datum').value=data.datum;
     if(data.data.objektFlaeche&&document.getElementById('objekt-flaeche'))document.getElementById('objekt-flaeche').value=data.data.objektFlaeche;
+    // Kosten wiederherstellen
+    if(data.data.bkKosten){
+      document.getElementById('bkRows').innerHTML='';
+      data.data.bkKosten.forEach(function(k){
+        addKostenRow('bkRows',k.name,k.schluessel||'flaeche');
+        var rows=document.querySelectorAll('#bkRows tr');
+        if(rows.length)rows[rows.length-1].querySelector('.k-betrag').value=k.betrag||0;
+      });
+    }
+    if(data.data.hkKosten){
+      document.getElementById('hkRows').innerHTML='';
+      data.data.hkKosten.forEach(function(k){
+        addKostenRow('hkRows',k.name,k.schluessel||'flaeche');
+        var rows=document.querySelectorAll('#hkRows tr');
+        if(rows.length)rows[rows.length-1].querySelector('.k-betrag').value=k.betrag||0;
+      });
+    }
     renderErgebnis();goStep(4);
     document.getElementById('abrechnen-bar').style.display='none';
-    // Hide Weiter/Berechnen buttons - read only
-    ['btn-weiter','btn-zurueck'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.visibility='hidden';});
+    // Alle Schritte navigierbar lassen (Zurück-Taste funktioniert)
+    var bz=document.getElementById('btn-zurueck');if(bz){bz.style.visibility='visible';}
+    var bw=document.getElementById('btn-weiter');if(bw){bw.style.display='none';}
   },150);
-  showToast('📄 Abgerechnete Abrechnung wird angezeigt (nur Lesemodus)');
+  showToast('📄 Abgerechnet – Navigation zu Schritten 1-3 weiterhin möglich.');
 }
 async function deleteAbrechnung(id){if(!confirm('Wirklich löschen?'))return;await sb.from('abrechnungen').delete().eq('id',id);showToast('🗑 Gelöscht');loadArchiv();}
 function loadAbrechnung(a){
   if(!a.data)return;
-  const isAbgerechnet=(a.titel&&a.titel.includes)('[Abgerechnet]');
+  var isAbgerechnet=a.titel&&a.titel.includes&&a.titel.includes('[Abgerechnet]');
   showPage('tool');
   setTimeout(()=>{
     // Grunddaten befüllen

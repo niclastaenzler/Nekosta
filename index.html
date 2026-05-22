@@ -399,7 +399,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
         📄 Abrechnung fortsetzen →
       </button>
     </div>
-    <div class="token-balance-chip" id="token-chip" onclick="showPage(\'tokens\')">
+    <div class="token-balance-chip" id="token-chip" onclick="showPage('tokens')">
       🪙 <span class="tbc-val" id="token-count">0</span> Nekosta Token
     </div>
     <select class="ansicht-select" id="ansicht-select" onchange="switchAnsicht(this.value)" style="display:none">
@@ -462,15 +462,15 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
   <div class="sidebar">
     <div id="admin-menu" style="display:none">
       <!-- Dashboard -->
-      <div class="nav-item active" onclick="showPage(\'dashboard\')" id="nav-dashboard" style="padding:.65rem 1rem;margin:.25rem .5rem;border-radius:8px;border-left:none"><span class="ni-icon">📊</span><strong>Dashboard</strong></div>
+      <div class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard" style="padding:.65rem 1rem;margin:.25rem .5rem;border-radius:8px;border-left:none"><span class="ni-icon">📊</span><strong>Dashboard</strong></div>
       <div class="sidebar-divider"></div>
 
       <!-- VERWALTUNG -->
       <div class="sidebar-section" role="button" onclick="toggleSidebarGroup('sg-verwaltung')">VERWALTUNG <span class="sg-arrow open" id="arr-verwaltung">▾</span></div>
       <div class="sg-content" id="sg-verwaltung">
-        <div class="nav-item" onclick="showPage(\'stammdaten\')" id="nav-stammdaten"><span class="ni-icon">👤</span>Stammdaten</div>
-        <div class="nav-item" onclick="showPage(\'objekte\')" id="nav-objekte"><span class="ni-icon">🏢</span>Objekte</div>
-        <div class="nav-item" onclick="showPage(\'kontakte\')" id="nav-kontakte"><span class="ni-icon">👥</span>Kontakte</div>
+        <div class="nav-item" onclick="showPage('stammdaten')" id="nav-stammdaten"><span class="ni-icon">👤</span>Stammdaten</div>
+        <div class="nav-item" onclick="showPage('objekte')" id="nav-objekte"><span class="ni-icon">🏢</span>Objekte</div>
+        <div class="nav-item" onclick="showPage('kontakte')" id="nav-kontakte"><span class="ni-icon">👥</span>Kontakte</div>
       </div>
       <div class="sidebar-divider"></div>
 
@@ -486,7 +486,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
       <!-- ABRECHNUNGEN -->
       <div class="sidebar-section" role="button" onclick="toggleSidebarGroup('sg-abr')">ABRECHNUNGEN <span class="sg-arrow open" id="arr-abr">▾</span></div>
       <div class="sg-content" id="sg-abr">
-        <div class="nav-item" onclick="showPage(\'archiv\')" id="nav-archiv"><span class="ni-icon">🗂</span>Alle Abrechnungen</div>
+        <div class="nav-item" onclick="showPage('archiv')" id="nav-archiv"><span class="ni-icon">🗂</span>Alle Abrechnungen</div>
         <div class="nav-item" onclick="showPage('bearbeitungsnotizen')" id="nav-bearbeitungsnotizen"><span class="ni-icon">📝</span>Notizen</div>
       </div>
       <div class="sidebar-divider"></div>
@@ -494,20 +494,20 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
       <!-- SYSTEM -->
       <div class="sidebar-section" role="button" onclick="toggleSidebarGroup('sg-sys')">SYSTEM <span class="sg-arrow open" id="arr-sys">▾</span></div>
       <div class="sg-content" id="sg-sys">
-        <div class="nav-item" onclick="showPage(\'tokens\')" id="nav-tokens"><span class="ni-icon">🪙</span>Nekosta Token</div>
+        <div class="nav-item" onclick="showPage('tokens')" id="nav-tokens"><span class="ni-icon">🪙</span>Nekosta Token</div>
         <div class="nav-item" onclick="showPage('adminpanel')" id="nav-adminpanel"><span class="ni-icon">🔧</span>Admin-Panel</div>
-        <div class="nav-item" onclick="showPage(\'einstellungen\')" id="nav-einstellungen"><span class="ni-icon">⚙️</span>Einstellungen</div>
+        <div class="nav-item" onclick="showPage('einstellungen')" id="nav-einstellungen"><span class="ni-icon">⚙️</span>Einstellungen</div>
         <div class="nav-item" onclick="showPage('impressum')" id="nav-impressum"><span class="ni-icon">📋</span>Impressum</div>
       </div>
     </div>
     <div id="kunden-menu" style="display:none">
-      <div class="nav-item active" onclick="showPage(\'dashboard\')" id="nav-dashboard-k" style="padding:.65rem 1rem;margin:.25rem .5rem;border-radius:8px;border-left:none"><span class="ni-icon">📊</span><strong>Dashboard</strong></div>
+      <div class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard-k" style="padding:.65rem 1rem;margin:.25rem .5rem;border-radius:8px;border-left:none"><span class="ni-icon">📊</span><strong>Dashboard</strong></div>
       <div class="sidebar-divider"></div>
       <div class="sidebar-section" role="button" onclick="toggleSidebarGroup('sg-k-verw')">VERWALTUNG <span class="sg-arrow open" id="arr-k-verw">▾</span></div>
       <div class="sg-content" id="sg-k-verw">
-        <div class="nav-item" onclick="showPage(\'stammdaten\')" id="nav-stammdaten-k"><span class="ni-icon">👤</span>Stammdaten</div>
-        <div class="nav-item" onclick="showPage(\'objekte\')" id="nav-objekte-k"><span class="ni-icon">🏢</span>Objekte</div>
-        <div class="nav-item" onclick="showPage(\'kontakte\')" id="nav-kontakte-k"><span class="ni-icon">👥</span>Kontakte</div>
+        <div class="nav-item" onclick="showPage('stammdaten')" id="nav-stammdaten-k"><span class="ni-icon">👤</span>Stammdaten</div>
+        <div class="nav-item" onclick="showPage('objekte')" id="nav-objekte-k"><span class="ni-icon">🏢</span>Objekte</div>
+        <div class="nav-item" onclick="showPage('kontakte')" id="nav-kontakte-k"><span class="ni-icon">👥</span>Kontakte</div>
       </div>
       <div class="sidebar-divider"></div>
       <div class="sidebar-section" role="button" onclick="toggleSidebarGroup('sg-k-erst')">ERSTELLEN <span class="sg-arrow open" id="arr-k-erst">▾</span></div>
@@ -523,8 +523,8 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
         <div class="nav-item" onclick="showPage('bearbeitungsnotizen')" id="nav-bearbeitungsnotizen-k"><span class="ni-icon">📝</span>Notizen</div>
       </div>
       <div class="sidebar-divider"></div>
-      <div class="nav-item" onclick="showPage(\'tokens\')" id="nav-tokens-k"><span class="ni-icon">🪙</span>Nekosta Token</div>
-      <div class="nav-item" onclick="showPage(\'einstellungen\')" id="nav-einstellungen-k"><span class="ni-icon">⚙️</span>Einstellungen</div>
+      <div class="nav-item" onclick="showPage('tokens')" id="nav-tokens-k"><span class="ni-icon">🪙</span>Nekosta Token</div>
+      <div class="nav-item" onclick="showPage('einstellungen')" id="nav-einstellungen-k"><span class="ni-icon">⚙️</span>Einstellungen</div>
       <div class="nav-item" onclick="showPage('impressum')" id="nav-impressum-k"><span class="ni-icon">📋</span>Impressum</div>
     </div>
   </div>
@@ -572,7 +572,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
           <div class="card">
             <div class="card-title" style="display:flex;justify-content:space-between">
               <span>📄 Letzte Abrechnungen</span>
-              <button class="btn-small" style="font-size:.7rem" onclick="showPage(\'archiv\')">Alle anzeigen</button>
+              <button class="btn-small" style="font-size:.7rem" onclick="showPage('archiv')">Alle anzeigen</button>
             </div>
             <div id="dash-letzte-abr"><div style="color:var(--muted);font-size:.85rem;text-align:center;padding:1rem">Wird geladen...</div></div>
           </div>
@@ -580,7 +580,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
           <div class="card">
             <div class="card-title" style="display:flex;justify-content:space-between">
               <span>🏢 Meine Objekte</span>
-              <button class="btn-small" style="font-size:.7rem" onclick="showPage(\'objekte\')">Verwalten</button>
+              <button class="btn-small" style="font-size:.7rem" onclick="showPage('objekte')">Verwalten</button>
             </div>
             <div id="dash-objekte-list"><div style="color:var(--muted);font-size:.85rem;text-align:center;padding:1rem">Wird geladen...</div></div>
           </div>
@@ -588,7 +588,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
           <div class="card">
             <div class="card-title">⚡ Schnellzugriff</div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
-              <button onclick="showPage(\'stammdaten\')" style="background:var(--p-light);color:var(--p);border:1px solid rgba(106,45,159,.2);border-radius:10px;padding:1rem;cursor:pointer;text-align:left;font-family:Arial,sans-serif;transition:.15s" onmouseover="this.style.background='var(--p)';this.style.color='#fff'" onmouseout="this.style.background='var(--p-light)';this.style.color='var(--p)'">
+              <button onclick="showPage('stammdaten')" style="background:var(--p-light);color:var(--p);border:1px solid rgba(106,45,159,.2);border-radius:10px;padding:1rem;cursor:pointer;text-align:left;font-family:Arial,sans-serif;transition:.15s" onmouseover="this.style.background='var(--p)';this.style.color='#fff'" onmouseout="this.style.background='var(--p-light)';this.style.color='var(--p)'">
                 <div style="font-size:1.25rem;margin-bottom:.3rem">👤</div>
                 <div style="font-size:.85rem;font-weight:700">Stammdaten verwalten</div>
                 <div style="font-size:.72rem;opacity:.75;margin-top:2px">Vermieter &amp; Bankdaten</div>
@@ -603,7 +603,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
                 <div style="font-size:.85rem;font-weight:700">Objekt anlegen</div>
                 <div style="font-size:.72rem;opacity:.75;margin-top:2px">Neues Mietobjekt erfassen</div>
               </button>
-              <button onclick="showPage(\'tokens\')" style="background:#fffbf0;color:#b8860b;border:1px solid #ffd700;border-radius:10px;padding:1rem;cursor:pointer;text-align:left;font-family:Arial,sans-serif;transition:.15s" onmouseover="this.style.background='#ffd700';this.style.color='#333'" onmouseout="this.style.background='#fffbf0';this.style.color='#b8860b'">
+              <button onclick="showPage('tokens')" style="background:#fffbf0;color:#b8860b;border:1px solid #ffd700;border-radius:10px;padding:1rem;cursor:pointer;text-align:left;font-family:Arial,sans-serif;transition:.15s" onmouseover="this.style.background='#ffd700';this.style.color='#333'" onmouseout="this.style.background='#fffbf0';this.style.color='#b8860b'">
                 <div style="font-size:1.25rem;margin-bottom:.3rem">🪙</div>
                 <div style="font-size:.85rem;font-weight:700">Token kaufen</div>
                 <div style="font-size:.72rem;opacity:.75;margin-top:2px">PDFs freischalten</div>
@@ -716,7 +716,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
 
           <!-- Objekt-Kopf -->
           <div style="padding:1rem 1rem .85rem;border-bottom:1px solid var(--border)">
-            <button onclick="showPage(\'objekte\')" style="background:none;border:none;cursor:pointer;font-size:.75rem;color:var(--muted);padding:0;margin-bottom:.6rem;font-family:Arial,sans-serif;display:flex;align-items:center;gap:.3rem">‹ Alle Objekte</button>
+            <button onclick="showPage('objekte')" style="background:none;border:none;cursor:pointer;font-size:.75rem;color:var(--muted);padding:0;margin-bottom:.6rem;font-family:Arial,sans-serif;display:flex;align-items:center;gap:.3rem">‹ Alle Objekte</button>
             <div style="font-size:.98rem;font-weight:700;color:var(--text);line-height:1.25;margin-bottom:.2rem" id="od-sidebar-name">–</div>
             <div style="font-size:.72rem;color:var(--muted)" id="od-sidebar-adresse"></div>
             <div style="display:flex;gap:.35rem;margin-top:.6rem;flex-wrap:wrap" id="od-unit-badges"></div>
@@ -724,18 +724,18 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
 
           <!-- Vertikale Tab-Navigation -->
           <nav style="padding:.4rem 0;border-bottom:1px solid var(--border);flex-shrink:0">
-            <div class="od-tab" id="odtab-uebersicht" onclick="showObjektTab(\'uebersicht\')" style="display:flex;align-items:center;gap:.65rem;padding:.58rem .85rem .58rem 1rem;cursor:pointer;font-size:.84rem;font-weight:600;color:var(--p);background:var(--p-light);border-left:3px solid var(--p)">
+            <div class="od-tab" id="odtab-uebersicht" onclick="showObjektTab('uebersicht')" style="display:flex;align-items:center;gap:.65rem;padding:.58rem .85rem .58rem 1rem;cursor:pointer;font-size:.84rem;font-weight:600;color:var(--p);background:var(--p-light);border-left:3px solid var(--p)">
               <span style="width:16px;text-align:center">📊</span> Übersicht
             </div>
-            <div class="od-tab" id="odtab-einheiten" onclick="showObjektTab(\'einheiten\')" style="display:flex;align-items:center;gap:.65rem;padding:.58rem .85rem .58rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);border-left:3px solid transparent">
+            <div class="od-tab" id="odtab-einheiten" onclick="showObjektTab('einheiten')" style="display:flex;align-items:center;gap:.65rem;padding:.58rem .85rem .58rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);border-left:3px solid transparent">
               <span style="width:16px;text-align:center">🏠</span> Einheiten
               <span id="odtab-einheiten-count" style="margin-left:auto;background:var(--border);color:var(--muted);font-size:.62rem;font-weight:700;padding:1px 6px;border-radius:8px;min-width:18px;text-align:center"></span>
             </div>
-            <div class="od-tab" id="odtab-mietverhaeltnisse" onclick="showObjektTab(\'mietverhaeltnisse\')" style="display:flex;align-items:center;gap:.65rem;padding:.58rem .85rem .58rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);border-left:3px solid transparent">
+            <div class="od-tab" id="odtab-mietverhaeltnisse" onclick="showObjektTab('mietverhaeltnisse')" style="display:flex;align-items:center;gap:.65rem;padding:.58rem .85rem .58rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);border-left:3px solid transparent">
               <span style="width:16px;text-align:center">👥</span> Mietverhältnisse
               <span id="odtab-mv-count" style="margin-left:auto;background:var(--border);color:var(--muted);font-size:.62rem;font-weight:700;padding:1px 6px;border-radius:8px;min-width:18px;text-align:center"></span>
             </div>
-            <div class="od-tab" id="odtab-abrechnungsdaten" onclick="showObjektTab(\'abrechnungsdaten\')" style="display:flex;align-items:center;gap:.65rem;padding:.58rem .85rem .58rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);border-left:3px solid transparent">
+            <div class="od-tab" id="odtab-abrechnungsdaten" onclick="showObjektTab('abrechnungsdaten')" style="display:flex;align-items:center;gap:.65rem;padding:.58rem .85rem .58rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);border-left:3px solid transparent">
               <span style="width:16px;text-align:center">📋</span> Abrechnungsdaten
             </div>
           </nav>
@@ -795,7 +795,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
               <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:1.25rem;margin-bottom:1.25rem">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.85rem">
                   <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Einheiten</div>
-                  <button onclick="showObjektTab(\'einheiten\')" style="font-size:.75rem;color:var(--p);background:none;border:none;cursor:pointer;font-family:Arial,sans-serif">Alle anzeigen →</button>
+                  <button onclick="showObjektTab('einheiten')" style="font-size:.75rem;color:var(--p);background:none;border:none;cursor:pointer;font-family:Arial,sans-serif">Alle anzeigen →</button>
                 </div>
                 <div id="od-einheiten-uebersicht"><div style="color:var(--muted);font-size:.82rem">Wird geladen...</div></div>
               </div>
@@ -813,7 +813,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
                 <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:1.25rem">
                   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.65rem">
                     <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Letzte Abrechnungen</div>
-                    <button onclick="showPage(\'archiv\')" style="font-size:.75rem;color:var(--p);background:none;border:none;cursor:pointer;font-family:Arial,sans-serif">Archiv →</button>
+                    <button onclick="showPage('archiv')" style="font-size:.75rem;color:var(--p);background:none;border:none;cursor:pointer;font-family:Arial,sans-serif">Archiv →</button>
                   </div>
                   <div id="od-abr-list"><div style="color:var(--muted);font-size:.82rem">Wird geladen...</div></div>
                 </div>
@@ -1191,7 +1191,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
             <span id="archiv-entwuerfe-badge" style="display:none;background:#fff3cd;color:#856404;font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:12px;cursor:pointer" onclick="document.getElementById('archiv-filter-status').value='entwurf';renderArchivTabelle()">📝 Entwürfe</span>
           </div>
           <div style="display:flex;gap:.65rem">
-            <button class="btn-secondary" onclick="showPage(\'archiv\')" style="font-size:.82rem;padding:.5rem 1rem">📋 BKA aus Vorjahr</button>
+            <button class="btn-secondary" onclick="showPage('archiv')" style="font-size:.82rem;padding:.5rem 1rem">📋 BKA aus Vorjahr</button>
             <button class="btn-secondary" onclick="resetLeereEntwuerfe()" style="font-size:.82rem;padding:.5rem 1rem;color:#c0392b;border-color:#c0392b" title="Leere/fehlerhafte Entwürfe löschen">🗑 Entwürfe bereinigen</button>
             <button class="btn-primary" onclick="startNeueAbrechnung()" style="display:flex;align-items:center;gap:.35rem"><span>+</span> Neue Abrechnung erstellen</button>
           </div>
@@ -6238,6 +6238,251 @@ async function loadObjektSidebar(objId){
         +(besetzt&&mieterName?'<div style="font-size:.72rem;color:var(--p);margin-top:2px;font-weight:600">'+mieterName.trim()+(miete!=='–'?' · '+miete:'')+'</div>':'')
         +'</div>';
     }).join('')+'</div>';
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// OBJEKTE – FEHLENDE FUNKTIONEN
+// ═══════════════════════════════════════════════════════════════
+
+async function loadObjektUebersichtTab(objId){
+  if(!aktivesObjekt)return;
+
+  // KPIs berechnen aus Einheiten + aktiven Mietverhältnissen
+  var [{data:einh},{data:mv},{data:abr}]=await Promise.all([
+    sb.from('einheiten').select('*').eq('user_id',currentUser.id).eq('objekt_id',objId),
+    sb.from('mietverhaeltnisse').select('*,kontakte(anrede,vorname,nachname),einheiten(bezeichnung,flaeche)')
+      .eq('user_id',currentUser.id).eq('objekt_id',objId).eq('aktiv',true),
+    sb.from('abrechnungen').select('titel,objekt,created_at,data')
+      .eq('created_by',currentUser.id).is('deleted_at',null)
+      .order('created_at',{ascending:false}).limit(5)
+  ]);
+
+  einh=einh||[]; mv=mv||[];
+
+  // KPI: Kaltmiete
+  var totalKalt=mv.reduce(function(s,m){return s+(parseFloat(m.kaltmiete)||0);},0);
+  var totalBK=mv.reduce(function(s,m){return s+(parseFloat(m.vorausz_bk)||0);},0);
+  var totalFlaeche=einh.reduce(function(s,e){return s+(parseFloat(e.flaeche)||0);},0);
+  var leerstand=einh.filter(function(e){return !mv.find(function(m){return m.einheit_id===e.id;});}).length;
+
+  var fmt=function(n){return n.toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';};
+
+  var kEl=document.getElementById('od-kaltmiete-total');
+  var fEl=document.getElementById('od-flaeche-total');
+  var bEl=document.getElementById('od-bk-total');
+  var lEl=document.getElementById('od-leerstand-count');
+  if(kEl)kEl.textContent=totalKalt>0?fmt(totalKalt):'–';
+  if(fEl)fEl.textContent=totalFlaeche>0?totalFlaeche.toLocaleString('de-DE')+' m²':'–';
+  if(bEl)bEl.textContent=totalBK>0?fmt(totalBK):'–';
+  if(lEl)lEl.textContent=leerstand+' / '+einh.length;
+
+  // Einheiten-Übersicht in Karte
+  var ueEl=document.getElementById('od-einheiten-uebersicht');
+  if(ueEl){
+    if(!einh.length){
+      ueEl.innerHTML='<div style="color:var(--muted);font-size:.82rem;font-style:italic">Noch keine Einheiten angelegt.</div>'
+        +'<button class="btn-small" onclick="showObjektTab(\'einheiten\')" style="margin-top:.5rem">+ Einheit anlegen</button>';
+    }else{
+      var mvMap={};
+      mv.forEach(function(m){if(m.einheit_id)mvMap[m.einheit_id]=m;});
+      ueEl.innerHTML='<div style="display:flex;flex-direction:column;gap:.35rem">'
+        +einh.map(function(e){
+          var aktMV=mvMap[e.id];
+          var besetzt=!!aktMV;
+          var k=besetzt&&aktMV.kontakte?aktMV.kontakte:null;
+          var mieterName=k?[(k.anrede||''),(k.vorname||''),(k.nachname||'')].filter(Boolean).join(' '):'';
+          var kalt=besetzt&&aktMV.kaltmiete?aktMV.kaltmiete.toLocaleString('de-DE',{minimumFractionDigits:2})+' €':'';
+          return '<div style="display:flex;align-items:center;justify-content:space-between;padding:.5rem .75rem;border-radius:8px;border:1px solid var(--border);background:var(--white)">'
+            +'<div style="display:flex;align-items:center;gap:.6rem">'
+              +'<div style="width:8px;height:8px;border-radius:50%;background:'+(besetzt?'#2e7d32':'#c0392b')+';flex-shrink:0"></div>'
+              +'<div>'
+                +'<div style="font-size:.83rem;font-weight:600">'+e.bezeichnung+'</div>'
+                +'<div style="font-size:.7rem;color:var(--muted)">'+(e.flaeche?e.flaeche+' m²':'')+(e.stockwerk?' · '+e.stockwerk:'')+'</div>'
+              +'</div>'
+            +'</div>'
+            +'<div style="text-align:right">'
+              +(besetzt
+                ?'<div style="font-size:.78rem;font-weight:600;color:var(--p)">'+mieterName+'</div>'
+                 +'<div style="font-size:.68rem;color:#c0392b">Leerstand</div>'
+                :'<div style="font-size:.72rem;color:#c0392b;font-weight:600">📭 Leerstand</div>'
+                 +'<button onclick="showObjektTab(\'einheiten\')" class="btn-small" style="font-size:.65rem;margin-top:2px">+ Mieter</button>'
+              )
+              +(kalt?'<div style="font-size:.7rem;color:var(--muted)">'+kalt+'/Mon.</div>':'')
+            +'</div>'
+          +'</div>';
+        }).join('')
+        +'</div>'
+        +'<div style="display:flex;justify-content:space-between;margin-top:.85rem;padding-top:.75rem;border-top:1px solid var(--border)">'
+          +'<span style="font-size:.72rem;color:var(--muted)">'+einh.length+' Einheiten · '+mv.length+' vermietet · '+leerstand+' Leerstand</span>'
+          +'<button onclick="showObjektTab(\'einheiten\')" style="font-size:.72rem;color:var(--p);background:none;border:none;cursor:pointer">Alle verwalten →</button>'
+        +'</div>';
+    }
+  }
+
+  // Letzte Abrechnungen
+  var abrEl=document.getElementById('od-abr-list');
+  if(abrEl){
+    // Filter für dieses Objekt
+    var objAbr=(abr||[]).filter(function(a){
+      return a.objekt===aktivesObjekt.name||(a.data&&a.data.objekt===aktivesObjekt.name);
+    });
+    if(!objAbr.length){
+      abrEl.innerHTML='<div style="color:var(--muted);font-size:.82rem;font-style:italic">Noch keine Abrechnung für dieses Objekt.</div>'
+        +'<button class="btn-primary" onclick="startAbrechnungFuerAktivesObjekt()" style="margin-top:.5rem;font-size:.78rem">📄 Erste Abrechnung erstellen</button>';
+    }else{
+      abrEl.innerHTML=objAbr.slice(0,4).map(function(a){
+        var isAbg=a.titel&&a.titel.includes('[Abgerechnet]');
+        var clean=(a.titel||'').replace('[Abgerechnet]','').replace('[Entwurf]','').trim();
+        var datum=new Date(a.created_at).toLocaleDateString('de-DE');
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem 0;border-bottom:1px solid var(--border)">'
+          +'<div>'
+            +'<div style="font-size:.82rem;font-weight:600">'+clean+'</div>'
+            +'<div style="font-size:.7rem;color:var(--muted)">'+datum+'</div>'
+          +'</div>'
+          +'<span style="font-size:.65rem;font-weight:700;padding:2px 7px;border-radius:8px;background:'+(isAbg?'#d4edda':'#fff3cd')+';color:'+(isAbg?'#155724':'#856404')+'">'+(isAbg?'Final':'Entwurf')+'</span>'
+        +'</div>';
+      }).join('');
+    }
+  }
+}
+
+async function loadObjektStats(objId){
+  // Aktualisiert nur die KPI-Zahlen (leichtgewichtig)
+  var [{data:einh},{data:mv}]=await Promise.all([
+    sb.from('einheiten').select('flaeche').eq('user_id',currentUser.id).eq('objekt_id',objId),
+    sb.from('mietverhaeltnisse').select('kaltmiete,vorausz_bk,einheit_id').eq('user_id',currentUser.id).eq('objekt_id',objId).eq('aktiv',true)
+  ]);
+  einh=einh||[]; mv=mv||[];
+  var totalKalt=mv.reduce(function(s,m){return s+(parseFloat(m.kaltmiete)||0);},0);
+  var totalBK=mv.reduce(function(s,m){return s+(parseFloat(m.vorausz_bk)||0);},0);
+  var totalFlaeche=einh.reduce(function(s,e){return s+(parseFloat(e.flaeche)||0);},0);
+  var mvEinheiten=mv.map(function(m){return m.einheit_id;});
+  var leerstand=einh.length-mvEinheiten.length;
+  var fmt=function(n){return n.toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';};
+  var kEl=document.getElementById('od-kaltmiete-total');if(kEl)kEl.textContent=totalKalt>0?fmt(totalKalt):'–';
+  var fEl=document.getElementById('od-flaeche-total');if(fEl)fEl.textContent=totalFlaeche>0?totalFlaeche+' m²':'–';
+  var bEl=document.getElementById('od-bk-total');if(bEl)bEl.textContent=totalBK>0?fmt(totalBK):'–';
+  var lEl=document.getElementById('od-leerstand-count');if(lEl)lEl.textContent=leerstand+' / '+einh.length;
+  // Abrechnungsdaten-Tab Werte updaten
+  var vf=document.getElementById('obj-vs-flaeche');if(vf)vf.textContent=totalFlaeche?totalFlaeche.toLocaleString('de-DE')+' m²':'–';
+  var ve=document.getElementById('obj-vs-einheiten');if(ve)ve.textContent=einh.length+' Einheit'+(einh.length!==1?'en':'');
+}
+
+async function loadAbrechnungsdatenTab(objId){
+  // Fläche + Einheiten aus DB laden
+  await loadObjektStats(objId);
+  // Bankdaten aus notiz (json) laden falls gespeichert
+  var {data:obj}=await sb.from('objekte').select('notiz').eq('id',objId).maybeSingle();
+  if(obj&&obj.notiz){
+    try{
+      var parsed=JSON.parse(obj.notiz);
+      if(parsed._bank){
+        var bi=document.getElementById('obj-bank-inhaber');if(bi)bi.value=parsed._bank.inhaber||'';
+        var bib=document.getElementById('obj-bank-iban');if(bib)bib.value=parsed._bank.iban||'';
+        var bic=document.getElementById('obj-bank-bic');if(bic)bic.value=parsed._bank.bic||'';
+      }
+      if(parsed._zeitraum){
+        var za=document.getElementById('abr-zeitraum-anfang');if(za)za.value=parsed._zeitraum.anfang||'01.01.';
+        var ze=document.getElementById('abr-zeitraum-ende');if(ze)ze.value=parsed._zeitraum.ende||'31.12.';
+      }
+      // Restore Notiz-Text
+      var ni=document.getElementById('od-notiz-input');
+      if(ni)ni.value=parsed._notiz||'';
+    }catch(e){}
+  }
+}
+
+async function saveAbrechnungszeitraum(){
+  if(!aktivesObjekt)return;
+  var anfang=(document.getElementById('abr-zeitraum-anfang')||{}).value||'01.01.';
+  var ende=(document.getElementById('abr-zeitraum-ende')||{}).value||'31.12.';
+  await _saveObjektMeta(aktivesObjekt.id,{_zeitraum:{anfang:anfang,ende:ende}});
+  showToast('✅ Abrechnungszeitraum gespeichert');
+}
+
+async function saveBankdaten(){
+  if(!aktivesObjekt)return;
+  var inhaber=(document.getElementById('obj-bank-inhaber')||{}).value||'';
+  var iban=(document.getElementById('obj-bank-iban')||{}).value||'';
+  var bic=(document.getElementById('obj-bank-bic')||{}).value||'';
+  await _saveObjektMeta(aktivesObjekt.id,{_bank:{inhaber:inhaber,iban:iban,bic:bic}});
+  showToast('✅ Bankdaten gespeichert');
+}
+
+async function saveObjektNotiz(){
+  if(!aktivesObjekt)return;
+  var notiz=(document.getElementById('od-notiz-input')||{}).value||'';
+  await _saveObjektMeta(aktivesObjekt.id,{_notiz:notiz});
+  var saved=document.getElementById('od-notiz-saved');
+  if(saved){saved.style.display='inline';setTimeout(function(){saved.style.display='none';},2000);}
+}
+
+async function _saveObjektMeta(objId,patch){
+  // Speichert strukturierte Daten als JSON in objekte.notiz
+  var {data:obj}=await sb.from('objekte').select('notiz').eq('id',objId).maybeSingle();
+  var existing={};
+  if(obj&&obj.notiz){try{existing=JSON.parse(obj.notiz);}catch(e){existing={_notiz:obj.notiz||''};}}
+  var merged=Object.assign({},existing,patch);
+  await sb.from('objekte').update({notiz:JSON.stringify(merged)}).eq('id',objId);
+  if(aktivesObjekt&&aktivesObjekt.id===objId)aktivesObjekt.notiz=JSON.stringify(merged);
+}
+
+async function generiereMonatlicheMieten(mv){
+  if(!mv||!mv.einzug||!mv.id)return;
+  var start=new Date(mv.einzug);
+  var end=mv.auszug?new Date(mv.auszug):new Date();
+  var eintraege=[];
+  var cur=new Date(start.getFullYear(),start.getMonth(),1);
+  var maxDate=new Date(end.getFullYear(),end.getMonth(),1);
+  var count=0;
+  while(cur<=maxDate&&count<120){
+    eintraege.push({
+      user_id:mv.user_id||currentUser.id,
+      mietverhaeltnis_id:mv.id,
+      einheit_id:mv.einheit_id,
+      objekt_id:mv.objekt_id,
+      typ:'soll',
+      bezeichnung:'Sollmiete '+cur.toLocaleDateString('de-DE',{month:'long',year:'numeric'}),
+      monat:new Date(cur).toISOString().split('T')[0],
+      betrag:(parseFloat(mv.kaltmiete)||0)+(parseFloat(mv.vorausz_bk)||0)+(parseFloat(mv.vorausz_hk)||0),
+      kaltmiete_anteil:parseFloat(mv.kaltmiete)||0,
+      bk_anteil:parseFloat(mv.vorausz_bk)||0,
+      hk_anteil:parseFloat(mv.vorausz_hk)||0,
+      status:'offen'
+    });
+    cur=new Date(cur.getFullYear(),cur.getMonth()+1,1);
+    count++;
+  }
+  if(eintraege.length){
+    await sb.from('mietzahlungen').insert(eintraege);
+  }
+}
+
+async function loadMietubersichtFuerEinheit(einheitId,containerId){
+  var container=document.getElementById(containerId);
+  if(!container)return;
+  container.innerHTML='<div style="color:var(--muted);font-size:.75rem">Lade...</div>';
+  var {data:zahlungen}=await sb.from('mietzahlungen')
+    .select('*').eq('einheit_id',einheitId).eq('user_id',currentUser.id)
+    .order('monat',{ascending:false}).limit(12);
+  if(!zahlungen||!zahlungen.length){
+    container.innerHTML='<div style="color:var(--muted);font-size:.75rem;font-style:italic">Keine Mietzahlungen vorhanden.</div>';
+    return;
+  }
+  var html='<div style="margin-top:.35rem">'
+    +'<div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:.35rem">Letzte Zahlungen</div>'
+    +'<div style="display:grid;grid-template-columns:1fr auto auto;gap:.25rem .75rem;align-items:center;font-size:.75rem">'
+    +zahlungen.map(function(z){
+      var monat=z.monat?new Date(z.monat).toLocaleDateString('de-DE',{month:'short',year:'numeric'}):'–';
+      var statusColor={offen:'#856404',bezahlt:'#155724',ausstehend:'#c0392b'}[z.status]||'#666';
+      var statusBg={offen:'#fff3cd',bezahlt:'#d4edda',ausstehend:'#fdf0ef'}[z.status]||'#f5f5f5';
+      return '<div style="color:var(--muted)">'+monat+'</div>'
+        +'<div style="font-weight:600;text-align:right">'+(z.betrag?z.betrag.toLocaleString('de-DE',{minimumFractionDigits:2})+' €':'–')+'</div>'
+        +'<span style="font-size:.62rem;font-weight:700;padding:1px 6px;border-radius:6px;background:'+statusBg+';color:'+statusColor+'">'+z.status+'</span>';
+    }).join('')
+    +'</div></div>';
+  container.innerHTML=html;
 }
 
 // Init sidebar groups

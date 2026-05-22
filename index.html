@@ -5719,7 +5719,7 @@ async function loadMietverhaeltnisse(objId){
             +(einheitInfo?'<div style="font-size:.7rem;color:var(--muted)">'+(einheitInfo.flaeche?einheitInfo.flaeche+' m² · ':'')+'' +(einheitInfo.stockwerk||'')+' '+einheitInfo.typ+'</div>':'')
           +'</div>'
         +'</div>'
-        +'<button onclick="var mv='+JSON.stringify(firstMV&&firstMV.einheit_id?{eid:firstMV.einheit_id}:{}).replace(/"/g,'&quot;')+';openMietverhModal(''+( firstMV&&firstMV.einheit_id?firstMV.einheit_id:'')+'',''+objId+'',''+einheitBez+'',null)" class="btn-small" style="font-size:.72rem">+ Mietverhältnis</button>'
+        +(firstMV&&firstMV.einheit_id?'<button onclick="openMietverhModal(\''+firstMV.einheit_id+'\',\''+objId+'\',\''+einheitBez.replace(/'/g,'')+'\',null)" class="btn-small" style="font-size:.72rem">+ Mietverhältnis</button>':'')
       +'</div>'
       // Mietverhältnisse-Liste
       +'<div style="padding:.5rem">'

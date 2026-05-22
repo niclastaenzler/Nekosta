@@ -54,14 +54,19 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--tex
 /* ── APP LAYOUT ── */
 #app{display:none}
 .app-layout{display:flex;min-height:calc(100vh - 52px)}
-.sidebar{width:var(--sidebar);background:var(--white);border-right:1px solid var(--border);padding:1.25rem 0;position:sticky;top:52px;height:calc(100vh - 52px);overflow-y:auto;flex-shrink:0}
-.sidebar-section{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);padding:.5rem 1.25rem .3rem;margin-top:.5rem}
-.nav-item{display:flex;align-items:center;gap:.65rem;padding:.6rem 1.25rem;font-size:.85rem;font-weight:700;color:var(--muted);cursor:pointer;transition:background .15s,color .15s;border-left:3px solid transparent;user-select:none}
-.nav-item:hover{background:var(--p-light);color:var(--p)}
-.nav-item.active{background:var(--p-light);color:var(--p);border-left-color:var(--p)}
-.nav-item .ni-icon{font-size:1rem;width:20px;text-align:center}
-.nav-badge{margin-left:auto;background:var(--p-light);color:var(--p);font-size:.62rem;font-weight:700;padding:1px 6px;border-radius:10px}
-.sidebar-divider{height:1px;background:var(--border);margin:.5rem 1.25rem}
+ .sidebar{width:var(--sidebar);background:var(--white);border-right:1px solid var(--border);padding:.5rem 0 1rem;position:sticky;top:52px;height:calc(100vh - 52px);overflow-y:auto;flex-shrink:0;transition:width .2s}
+ .sidebar-section{font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);padding:.6rem 1rem .2rem;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;margin-top:.2rem}
+ .sidebar-section:hover{color:var(--p)}
+ .sg-arrow{font-size:.58rem;transition:transform .2s;opacity:.4;flex-shrink:0}
+ .sg-arrow.open{transform:rotate(0deg)}
+ .sg-arrow.closed{transform:rotate(-90deg)}
+ .sg-content{overflow:hidden;max-height:500px;transition:max-height .2s ease,overflow .2s}
+ .nav-item{display:flex;align-items:center;gap:.55rem;padding:.48rem 1rem;font-size:.82rem;font-weight:500;color:var(--muted);cursor:pointer;transition:background .12s,color .12s;border-left:3px solid transparent;user-select:none;white-space:nowrap}
+ .nav-item:hover{background:var(--p-light);color:var(--p)}
+ .nav-item.active{background:var(--p-light);color:var(--p);border-left-color:var(--p);font-weight:700}
+ .nav-item .ni-icon{font-size:.88rem;width:17px;text-align:center;flex-shrink:0}
+ .nav-badge{margin-left:auto;background:var(--p-light);color:var(--p);font-size:.58rem;font-weight:700;padding:1px 5px;border-radius:8px}
+ .sidebar-divider{height:1px;background:var(--border);margin:.35rem .85rem}
 .main-content{flex:1;overflow-x:hidden;overflow-y:auto;min-width:0;width:0}
 #page-objekt-detail{position:absolute;top:0;left:0;right:0;bottom:0;z-index:10;background:var(--bg)}
 .page-wrap{padding:2rem;max-width:900px;box-sizing:border-box;width:100%}
@@ -400,51 +405,71 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
   <!-- SIDEBAR -->
   <div class="sidebar">
     <div id="admin-menu" style="display:none">
-      <div class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard" style="background:var(--p-light);color:var(--p);border-left:3px solid var(--p);margin-bottom:.25rem"><span class="ni-icon">📊</span><strong>Dashboard</strong></div>
+      <!-- Dashboard -->
+      <div class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard" style="padding:.65rem 1rem;margin:.25rem .5rem;border-radius:8px;border-left:none"><span class="ni-icon">📊</span><strong>Dashboard</strong></div>
       <div class="sidebar-divider"></div>
-      <div class="sidebar-section">Stammdaten</div>
-      <div class="nav-item" onclick="showPage('stammdaten')" id="nav-stammdaten"><span class="ni-icon">👤</span>Meine Stammdaten</div>
-      <div class="nav-item" onclick="showPage('objekte')" id="nav-objekte"><span class="ni-icon">🏢</span>Objekte</div>
+
+      <!-- VERWALTUNG -->
+      <div class="sidebar-section" onclick="toggleSidebarGroup('sg-verwaltung')">VERWALTUNG <span class="sg-arrow open" id="arr-verwaltung">▾</span></div>
+      <div class="sg-content" id="sg-verwaltung">
+        <div class="nav-item" onclick="showPage('stammdaten')" id="nav-stammdaten"><span class="ni-icon">👤</span>Stammdaten</div>
+        <div class="nav-item" onclick="showPage('objekte')" id="nav-objekte"><span class="ni-icon">🏢</span>Objekte</div>
+        <div class="nav-item" onclick="showPage('kontakte')" id="nav-kontakte"><span class="ni-icon">👥</span>Kontakte</div>
+      </div>
       <div class="sidebar-divider"></div>
-      <div class="sidebar-section">Erstellen</div>
-      <div class="nav-item" onclick="startNeueAbrechnung()" id="nav-tool"><span class="ni-icon">📄</span>Abrechnung erstellen</div>
-      <div class="nav-item" onclick="showPage('heizkostenerstellen')" id="nav-heizkostenerstellen"><span class="ni-icon">🔥</span>Heizkosten erstellen<span class="nav-badge">Neu</span></div>
-      <div class="nav-item" onclick="showPage('anschreiben')" id="nav-anschreiben"><span class="ni-icon">✉️</span>Anschreiben erstellen</div>
+
+      <!-- ERSTELLEN -->
+      <div class="sidebar-section" onclick="toggleSidebarGroup('sg-erstellen')">ERSTELLEN <span class="sg-arrow open" id="arr-erstellen">▾</span></div>
+      <div class="sg-content" id="sg-erstellen">
+        <div class="nav-item" onclick="startNeueAbrechnung()" id="nav-tool"><span class="ni-icon">📄</span>Abrechnung</div>
+        <div class="nav-item" onclick="showPage('heizkostenerstellen')" id="nav-heizkostenerstellen"><span class="ni-icon">🔥</span>Heizkosten<span class="nav-badge">Neu</span></div>
+        <div class="nav-item" onclick="showPage('anschreiben')" id="nav-anschreiben"><span class="ni-icon">✉️</span>Anschreiben</div>
+      </div>
       <div class="sidebar-divider"></div>
-      <div class="sidebar-section">Meine Abrechnungen</div>
-      <div class="nav-item" onclick="showPage('archiv')" id="nav-archiv"><span class="ni-icon">🗂</span>Alle Abrechnungen</div>
-      <div class="nav-item" onclick="showPage('kontakte')" id="nav-kontakte"><span class="ni-icon">👤</span>Kontakte</div>
-      <div class="nav-item" onclick="showPage('bearbeitungsnotizen')" id="nav-bearbeitungsnotizen"><span class="ni-icon">📝</span>Bearbeitungsnotizen</div>
+
+      <!-- ABRECHNUNGEN -->
+      <div class="sidebar-section" onclick="toggleSidebarGroup('sg-abr')">ABRECHNUNGEN <span class="sg-arrow open" id="arr-abr">▾</span></div>
+      <div class="sg-content" id="sg-abr">
+        <div class="nav-item" onclick="showPage('archiv')" id="nav-archiv"><span class="ni-icon">🗂</span>Alle Abrechnungen</div>
+        <div class="nav-item" onclick="showPage('bearbeitungsnotizen')" id="nav-bearbeitungsnotizen"><span class="ni-icon">📝</span>Notizen</div>
+      </div>
       <div class="sidebar-divider"></div>
-      <div class="sidebar-section">Shop</div>
-      <div class="nav-item" onclick="showPage('tokens')" id="nav-tokens"><span class="ni-icon">🪙</span>Nekosta Token</div>
-      <div class="nav-item" onclick="showPage('adminpanel')" id="nav-adminpanel"><span class="ni-icon">🔧</span>Admin-Panel</div>
-      <div class="sidebar-divider"></div>
-      <div class="nav-item" onclick="showPage('einstellungen')" id="nav-einstellungen"><span class="ni-icon">⚙️</span>Einstellungen</div>
-      <div class="nav-item" onclick="showPage('impressum')" id="nav-impressum"><span class="ni-icon">📋</span>Impressum &amp; Datenschutz</div>
+
+      <!-- SYSTEM -->
+      <div class="sidebar-section" onclick="toggleSidebarGroup('sg-sys')">SYSTEM <span class="sg-arrow open" id="arr-sys">▾</span></div>
+      <div class="sg-content" id="sg-sys">
+        <div class="nav-item" onclick="showPage('tokens')" id="nav-tokens"><span class="ni-icon">🪙</span>Nekosta Token</div>
+        <div class="nav-item" onclick="showPage('adminpanel')" id="nav-adminpanel"><span class="ni-icon">🔧</span>Admin-Panel</div>
+        <div class="nav-item" onclick="showPage('einstellungen')" id="nav-einstellungen"><span class="ni-icon">⚙️</span>Einstellungen</div>
+        <div class="nav-item" onclick="showPage('impressum')" id="nav-impressum"><span class="ni-icon">📋</span>Impressum</div>
+      </div>
     </div>
     <div id="kunden-menu" style="display:none">
-      <div class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard-k" style="background:var(--p-light);color:var(--p);border-left:3px solid var(--p);margin-bottom:.25rem"><span class="ni-icon">📊</span><strong>Dashboard</strong></div>
+      <div class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard-k" style="padding:.65rem 1rem;margin:.25rem .5rem;border-radius:8px;border-left:none"><span class="ni-icon">📊</span><strong>Dashboard</strong></div>
       <div class="sidebar-divider"></div>
-      <div class="sidebar-section">Stammdaten</div>
-      <div class="nav-item" onclick="showPage('stammdaten')" id="nav-stammdaten-k"><span class="ni-icon">👤</span>Meine Stammdaten</div>
-      <div class="nav-item" onclick="showPage('objekte')" id="nav-objekte-k"><span class="ni-icon">🏢</span>Objekte</div>
+      <div class="sidebar-section" onclick="toggleSidebarGroup('sg-k-verw')">VERWALTUNG <span class="sg-arrow open" id="arr-k-verw">▾</span></div>
+      <div class="sg-content" id="sg-k-verw">
+        <div class="nav-item" onclick="showPage('stammdaten')" id="nav-stammdaten-k"><span class="ni-icon">👤</span>Stammdaten</div>
+        <div class="nav-item" onclick="showPage('objekte')" id="nav-objekte-k"><span class="ni-icon">🏢</span>Objekte</div>
+        <div class="nav-item" onclick="showPage('kontakte')" id="nav-kontakte-k"><span class="ni-icon">👥</span>Kontakte</div>
+      </div>
       <div class="sidebar-divider"></div>
-      <div class="sidebar-section">Erstellen</div>
-      <div class="nav-item" onclick="startNeueAbrechnung()" id="nav-tool-k"><span class="ni-icon">📄</span>Abrechnung erstellen</div>
-      <div class="nav-item" style="opacity:.45;cursor:not-allowed;pointer-events:none" title="Demnächst verfügbar"><span class="ni-icon">🔥</span>Heizkosten erstellen<span class="nav-badge" style="background:#eee;color:#aaa">Bald</span></div>
-      <div class="nav-item" style="opacity:.45;cursor:not-allowed;pointer-events:none" title="Demnächst verfügbar"><span class="ni-icon">✉️</span>Anschreiben erstellen<span class="nav-badge" style="background:#eee;color:#aaa">Bald</span></div>
+      <div class="sidebar-section" onclick="toggleSidebarGroup('sg-k-erst')">ERSTELLEN <span class="sg-arrow open" id="arr-k-erst">▾</span></div>
+      <div class="sg-content" id="sg-k-erst">
+        <div class="nav-item" onclick="startNeueAbrechnung()" id="nav-tool-k"><span class="ni-icon">📄</span>Abrechnung</div>
+        <div class="nav-item" style="opacity:.4;cursor:not-allowed;pointer-events:none"><span class="ni-icon">🔥</span>Heizkosten<span class="nav-badge" style="background:#eee;color:#aaa">Bald</span></div>
+        <div class="nav-item" style="opacity:.4;cursor:not-allowed;pointer-events:none"><span class="ni-icon">✉️</span>Anschreiben<span class="nav-badge" style="background:#eee;color:#aaa">Bald</span></div>
+      </div>
       <div class="sidebar-divider"></div>
-      <div class="sidebar-section">Meine Abrechnungen</div>
-      <div class="nav-item" onclick="showPage('kunden')" id="nav-kunden"><span class="ni-icon">🗂</span>Alle Abrechnungen</div>
-      <div class="nav-item" onclick="showPage('kontakte')" id="nav-kontakte-k"><span class="ni-icon">👤</span>Kontakte</div>
-      <div class="nav-item" onclick="showPage('bearbeitungsnotizen')" id="nav-bearbeitungsnotizen-k"><span class="ni-icon">📝</span>Bearbeitungsnotizen</div>
+      <div class="sidebar-section" onclick="toggleSidebarGroup('sg-k-abr')">ABRECHNUNGEN <span class="sg-arrow open" id="arr-k-abr">▾</span></div>
+      <div class="sg-content" id="sg-k-abr">
+        <div class="nav-item" onclick="showPage('kunden')" id="nav-kunden"><span class="ni-icon">🗂</span>Alle Abrechnungen</div>
+        <div class="nav-item" onclick="showPage('bearbeitungsnotizen')" id="nav-bearbeitungsnotizen-k"><span class="ni-icon">📝</span>Notizen</div>
+      </div>
       <div class="sidebar-divider"></div>
-      <div class="sidebar-section">Shop</div>
       <div class="nav-item" onclick="showPage('tokens')" id="nav-tokens-k"><span class="ni-icon">🪙</span>Nekosta Token</div>
-      <div class="sidebar-divider"></div>
       <div class="nav-item" onclick="showPage('einstellungen')" id="nav-einstellungen-k"><span class="ni-icon">⚙️</span>Einstellungen</div>
-      <div class="nav-item" onclick="showPage('impressum')" id="nav-impressum-k"><span class="ni-icon">📋</span>Impressum &amp; Datenschutz</div>
+      <div class="nav-item" onclick="showPage('impressum')" id="nav-impressum-k"><span class="ni-icon">📋</span>Impressum</div>
     </div>
   </div>
 
@@ -2022,7 +2047,7 @@ sb.auth.onAuthStateChange(function(_,session){if(session&&session.user)initApp(s
 function showPage(name){
   var allPages=['tool','archiv','stammdaten','anschreiben','kunden','tokens',
     'einstellungen','heizkostenerstellen','impressum','welcome','bearbeitungsnotizen',
-    'adminpanel','dashboard','objekte','mieter','objekt-detail'];
+    'adminpanel','dashboard','objekte','mieter','objekt-detail','kontakte'];
 
   var adminVisible=document.getElementById('admin-menu').style.display!=='none';
 
@@ -2052,7 +2077,7 @@ function showPage(name){
   if(name==='dashboard'){loadDashboard();fillObjektDropdown();}
   if(name==='objekte')loadObjekte();
   if(name==='mieter'){loadObjekteFilter();loadMieter();}
-  if(name==='kontakte')loadKontakte();
+  if(name==='kontakte'){loadKontakte();setKontakteView(kontakteView||'grid');}
   if(name==='einstellungen'){showEinstellTab('profil');loadProfile();loadLayoutSettings();}
   if(name==='adminpanel'&&isAdmin){loadTokenPreise();loadAdminStats();}
   if(name==='tokens'){
@@ -2247,7 +2272,7 @@ const defaultJahr=()=>new Date().getFullYear()-1;
 
 function addWohn(){
   const cards=document.querySelectorAll('.wohn-card');
-  if(cards.length>=10){alert('Maximal 10 Wohneinheiten.');return;}
+  if(cards.length>=10){showToast('❌ Maximal 10 Wohneinheiten möglich.');return;}
   const jahr=parseInt(document.getElementById('jahr').value)||defaultJahr();
   const von=`${jahr}-01-01`,bis=`${jahr}-12-31`;
   const card=document.createElement('div');card.className='wohn-card';
@@ -2320,11 +2345,11 @@ function addMieter(btn){
 }
 function removeMieter(btn){
   const list=btn.closest('.mieter-list');
-  if(list.querySelectorAll('.mieter-row').length<=1){alert('Mindestens ein Mieter je Wohnung.');return;}
+  if(list.querySelectorAll('.mieter-row').length<=1){showToast('❌ Mindestens ein Mieter je Wohnung.');return;}
   btn.closest('.mieter-row').remove();
 }
 function removeWohn(btn){
-  if(document.querySelectorAll('.wohn-card').length<=1){alert('Mindestens eine Wohneinheit.');return;}
+  if(document.querySelectorAll('.wohn-card').length<=1){showToast('❌ Mindestens eine Wohneinheit.');return;}
   btn.closest('.wohn-card').remove();
   document.getElementById('addWohnBtn').style.display='';
 }
@@ -2438,7 +2463,7 @@ let aktiveDirektRow=null;
 function openDirekt(btn){
   aktiveDirektRow=btn.closest('tr');
   const wohnungen=getWohnungen();
-  if(!wohnungen.length){alert('Bitte zuerst Wohneinheiten in Schritt 2 anlegen.');return;}
+  if(!wohnungen.length){showToast('❌ Bitte zuerst Wohneinheiten in Schritt 2 anlegen.');return;}
   const kostenname=aktiveDirektRow.querySelector('.k-name').value||'Kostenart';
   const existing=JSON.parse(aktiveDirektRow.dataset.direkt||'{}');
   document.getElementById('direkt-modal-sub').textContent=`„${kostenname}" – Betrag direkt pro Wohneinheit festlegen.`;
@@ -2536,10 +2561,10 @@ function berechnen(){
   const jahr=parseInt(document.getElementById('jahr').value);
   const hasHK=!document.getElementById('keine-hk').checked;
   const wohnungen=getWohnungen();
-  if(!wohnungen.length){alert('Bitte Wohneinheiten eintragen.');return;}
+  if(!wohnungen.length){showToast('❌ Bitte Wohneinheiten eintragen.');return;}
   const bkKosten=getKosten('bkRows');
   const hkKosten=hasHK?getKosten('hkRows'):[];
-  if(!bkKosten.length&&!hkKosten.length){alert('Bitte Kosten eintragen.');return;}
+  if(!bkKosten.length&&!hkKosten.length){showToast('❌ Bitte Kosten eintragen.');return;}
 
   // Alle Perioden berechnen
   const allWohn=wohnungen.map(w=>({w,perioden:getPerioden(w,jahr)}));
@@ -3131,7 +3156,7 @@ function closePaymentModal(){document.getElementById('payment-modal').style.disp
 
 // ── SPEICHERN ──
 function openSaveDialog(){
-  if(!lastErgebnis){alert('Bitte zuerst berechnen.');return;}
+  if(!lastErgebnis){showToast('❌ Bitte zuerst berechnen.');return;}
   document.getElementById('save-titel').value=`${lastErgebnis.objekt?lastErgebnis.objekt+' – ':''}NK ${lastErgebnis.jahr}`.trim();
   document.getElementById('save-kunde').value=(document.getElementById('kunde-email')||{}).value||'';
   document.getElementById('save-msg').style.display='none';
@@ -3928,7 +3953,7 @@ async function loadTokenBalance(){
 
 function updateTokenUI(){
   const chip=document.getElementById('token-chip');
-  chip.style.display='flex';
+  if(chip)chip.style.display='flex';
   document.getElementById('token-count').textContent=tokenBalance;
   const big=document.getElementById('tokens-balance-big');
   if(big)big.textContent=tokenBalance;
@@ -4146,7 +4171,7 @@ async function hasToken(){
 
 // ── RENAME IN ARCHIV ──
 async function renameAbrechnung(id,currentTitle){
-  var newTitle=prompt('Neue Bezeichnung:',currentTitle.replace('[Abgerechnet]','').replace('[Entwurf]','').trim());
+  var newTitle=window.prompt('Neue Bezeichnung:',currentTitle.replace('[Abgerechnet]','').replace('[Entwurf]','').trim());
   if(!newTitle||newTitle===currentTitle)return;
   var suffix=currentTitle.includes('[Abgerechnet]')?' [Abgerechnet]':currentTitle.includes('[Entwurf]')?' [Entwurf]':'';
   var {error}=await sb.from('abrechnungen').update({titel:newTitle+suffix}).eq('id',id);
@@ -4229,7 +4254,8 @@ async function ladeKorrektur(id){
   }
 
   // Was korrigieren?
-  var what=prompt('Korrektur erstellen\n\nWas soll korrigiert werden?\n1 = Wohneinheiten/Mieter\n2 = Kosten\n3 = Beides\n\nBitte 1, 2 oder 3 eingeben:');
+  var what='3'; // Korrektur: Beides
+
   if(!what||!['1','2','3'].includes(what))return;
 
   // Original-Daten kopieren
@@ -4549,37 +4575,57 @@ async function loadDashboard(){
 }
 
 
+// ── SIDEBAR GROUPS ──
+function toggleSidebarGroup(id){
+  var content=document.getElementById(id);
+  if(!content)return;
+  // Arrow id = id with 'sg-' replaced by 'arr-'
+  var arrowId=id.replace(/^sg-/,'arr-');
+  var arrow=document.getElementById(arrowId);
+  var isOpen=content.style.maxHeight!=='0px'&&content.style.maxHeight!=='';
+  if(isOpen){
+    content.style.maxHeight='0px';content.style.overflow='hidden';
+    if(arrow)arrow.style.transform='rotate(-90deg)';
+  }else{
+    content.style.maxHeight='500px';content.style.overflow='visible';
+    if(arrow)arrow.style.transform='rotate(0deg)';
+  }
+}
+
+// ── TESTOBJEKT (mit Einheiten + Mietverhältnissen) ──
 async function legeTestobjektAn(){
-  if(!confirm('Testobjekt mit Beispieldaten anlegen?\n\nEs wird ein Objekt „Musterstraße 10, Euskirchen" mit 3 Wohneinheiten und Mustermietern erstellt.'))return;
-  // Objekt anlegen
+  if(!confirm('Testobjekt anlegen?\n\nErstellt: 1 Objekt · 3 Einheiten · 3 Kontakte · 3 Mietverhältnisse'))return;
+  showToast('Testobjekt wird angelegt...');
   var {data:obj,error:e1}=await sb.from('objekte').insert({
-    user_id:currentUser.id,
-    name:'Musterstraße 10',
-    strasse:'Musterstraße 10',
-    plz:'53881',
-    ort:'Euskirchen',
-    gesamtflaeche:215,
-    einheiten_anzahl:3,
+    user_id:currentUser.id,name:'Musterstraße 10',strasse:'Musterstraße 10',
+    plz:'53881',ort:'Euskirchen',gesamtflaeche:215,einheiten_anzahl:3,kategorie:'Wohnhaus',
     notiz:'Testobjekt – bitte anpassen'
   }).select().single();
-  if(e1){showToast('❌ Fehler: '+e1.message);return;}
+  if(e1){showToast('Objekt-Fehler: '+e1.message);return;}
 
-  // Mieter anlegen
-  var mieter=[
-    {anrede:'Herr',vorname:'Max',nachname:'Mustermann',email:'max@example.de',telefon:'0151 12345678',
-     wohneinheit:'Whg. EG links',flaeche:65,einzug:'2022-01-01',vorausz_bk:120,vorausz_hk:80,aktiv:true},
-    {anrede:'Frau',vorname:'Anna',nachname:'Schmidt',email:'anna@example.de',telefon:'0152 98765432',
-     wohneinheit:'Whg. EG rechts',flaeche:70,einzug:'2021-03-01',vorausz_bk:130,vorausz_hk:85,aktiv:true},
-    {anrede:'Eheleute',vorname:'Klaus & Maria',nachname:'Weber',email:'weber@example.de',telefon:'0153 11223344',
-     wohneinheit:'Whg. OG',flaeche:80,einzug:'2020-06-01',vorausz_bk:150,vorausz_hk:100,aktiv:true},
-  ].map(function(m){return Object.assign({},m,{user_id:currentUser.id,objekt_id:obj.id});});
+  var {data:einheiten,error:e2}=await sb.from('einheiten').insert([
+    {user_id:currentUser.id,objekt_id:obj.id,bezeichnung:'Whg. EG links', typ:'Wohnung',flaeche:65,stockwerk:'EG',    kaltmiete:650,sollmiete:850},
+    {user_id:currentUser.id,objekt_id:obj.id,bezeichnung:'Whg. EG rechts',typ:'Wohnung',flaeche:70,stockwerk:'EG',    kaltmiete:700,sollmiete:920},
+    {user_id:currentUser.id,objekt_id:obj.id,bezeichnung:'Whg. OG',       typ:'Wohnung',flaeche:80,stockwerk:'1. OG', kaltmiete:800,sollmiete:1050},
+  ]).select();
+  if(e2){showToast('Einheiten-Fehler: '+e2.message);return;}
 
-  var {error:e2}=await sb.from('mieter').insert(mieter);
-  if(e2){showToast('❌ Mieter-Fehler: '+e2.message);return;}
+  var {data:kontakte,error:e3}=await sb.from('kontakte').insert([
+    {user_id:currentUser.id,anrede:'Herr',    vorname:'Max',           nachname:'Mustermann',email:'max@example.de',  telefon:'0151 12345678'},
+    {user_id:currentUser.id,anrede:'Frau',    vorname:'Anna',          nachname:'Schmidt',   email:'anna@example.de', telefon:'0152 98765432'},
+    {user_id:currentUser.id,anrede:'Eheleute',vorname:'Klaus & Maria', nachname:'Weber',     email:'weber@example.de',telefon:'0153 11223344'},
+  ]).select();
+  if(e3){showToast('Kontakte-Fehler: '+e3.message);return;}
 
-  showToast('✅ Testobjekt mit 3 Mietern angelegt!');
-  loadObjekte();
-  fillObjektDropdown();
+  var {error:e4}=await sb.from('mietverhaeltnisse').insert([
+    {user_id:currentUser.id,objekt_id:obj.id,einheit_id:einheiten[0].id,kontakt_id:kontakte[0].id,einzug:'2022-01-01',kaltmiete:650,vorausz_bk:120,vorausz_hk:80, aktiv:true},
+    {user_id:currentUser.id,objekt_id:obj.id,einheit_id:einheiten[1].id,kontakt_id:kontakte[1].id,einzug:'2021-03-01',kaltmiete:700,vorausz_bk:130,vorausz_hk:85, aktiv:true},
+    {user_id:currentUser.id,objekt_id:obj.id,einheit_id:einheiten[2].id,kontakt_id:kontakte[2].id,einzug:'2020-06-01',kaltmiete:800,vorausz_bk:150,vorausz_hk:100,aktiv:true},
+  ]);
+  if(e4){showToast('MV-Fehler: '+e4.message);return;}
+
+  showToast('Testobjekt vollständig angelegt!');
+  loadObjekte();fillObjektDropdown();alleKontakte=[];
 }
 // ── OBJEKTE (ImmoCloud-Stil) ──
 var alleObjekte=[];
@@ -4801,15 +4847,18 @@ function startAbrechnungFuerObjekt(name,flaeche){
 var alleKontakte=[];
 
 async function loadKontakte(){
-  var {data}=await sb.from('kontakte').select('*').eq('user_id',currentUser.id).order('nachname');
-  alleKontakte=data||[];
-  // Attach Mietverhältnisse info
-  if(alleKontakte.length){
-    var {data:mv}=await sb.from('mietverhaeltnisse').select('kontakt_id,einheiten(bezeichnung),objekte(name)').eq('user_id',currentUser.id).eq('aktiv',true);
+  var r=await sb.from('kontakte').select('*').eq('user_id',currentUser.id).order('nachname');
+  if(r.error){console.error('Kontakte:',r.error);alleKontakte=[];renderKontakte();return;}
+  alleKontakte=r.data||[];
+  try{
+    var mv=await sb.from('mietverhaeltnisse').select('kontakt_id,einheiten(bezeichnung)').eq('user_id',currentUser.id).eq('aktiv',true);
     var mvMap={};
-    (mv||[]).forEach(function(m){if(m.kontakt_id){if(!mvMap[m.kontakt_id])mvMap[m.kontakt_id]=[];mvMap[m.kontakt_id].push((m.objekte&&m.objekte.name?m.objekte.name:'')+(m.einheiten&&m.einheiten.bezeichnung?' · '+m.einheiten.bezeichnung:''));}});
+    (mv.data||[]).forEach(function(m){
+      if(m.kontakt_id){if(!mvMap[m.kontakt_id])mvMap[m.kontakt_id]=[];
+      if(m.einheiten&&m.einheiten.bezeichnung)mvMap[m.kontakt_id].push(m.einheiten.bezeichnung);}
+    });
     alleKontakte=alleKontakte.map(function(k){k._einheiten=mvMap[k.id]||[];return k;});
-  }
+  }catch(e){alleKontakte=alleKontakte.map(function(k){k._einheiten=[];return k;});}
   renderKontakte();
 }
 
@@ -4995,6 +5044,7 @@ async function openMietverhModal(einheitId,objektId,einheitBez,data){
   // On change
   var selEl=document.getElementById('mv-kontakt-select');
   if(selEl){selEl.onchange=function(){showKontaktInfo(this.value);};}
+  var qk=document.getElementById('mv-quick-kontakt');if(qk)qk.style.display='none';
   document.getElementById('mietverh-modal').style.display='flex';
 }
 function closeMietverhModal(){document.getElementById('mietverh-modal').style.display='none';}
@@ -5018,7 +5068,7 @@ async function saveMietverhaeltnis(){
   if(r.error){msg.textContent='Fehler: '+r.error.message;msg.style.background='#fdf0ef';msg.style.color='#c0392b';msg.style.display='block';}
   else{
     closeMietverhModal();showToast('✅ Mietverhältnis gespeichert!');
-    if(aktivesObjekt){loadObjektEinheiten(aktivesObjekt.id);loadObjektStats(aktivesObjekt.id);loadObjektSidebar(aktivesObjekt.id);}
+    if(aktivesObjekt){loadObjektEinheiten(aktivesObjekt.id);loadObjektStats(aktivesObjekt.id);loadObjektSidebar(aktivesObjekt.id);if(document.getElementById('page-mieter').style.display!=='none')loadObjektMieter(aktivesObjekt.id);}
   }
 }
 
@@ -5104,7 +5154,7 @@ async function openObjektDetail(objId){
   // Show page
   var allPages=['tool','archiv','stammdaten','anschreiben','kunden','tokens',
     'einstellungen','heizkostenerstellen','impressum','welcome','bearbeitungsnotizen',
-    'adminpanel','dashboard','objekte','mieter','objekt-detail'];
+    'adminpanel','dashboard','objekte','mieter','objekt-detail','kontakte'];
   allPages.forEach(function(p){var el=document.getElementById('page-'+p);if(el)el.style.display=p==='objekt-detail'?'block':'none';});
 
   // Load data
@@ -5544,6 +5594,12 @@ HK_VORGABEN.forEach(function(v){addKostenRow('hkRows',v.name,v.s);});
 BK_VORGABEN.forEach(function(v){addKostenRow('bkRows',v.name,v.s);});
 addWohn();addWohn();
 newCaptcha();
+
+// Init sidebar groups
+document.addEventListener('DOMContentLoaded',function(){
+  document.querySelectorAll('.sg-content').forEach(function(el){el.style.maxHeight='500px';el.style.overflow='visible';});
+  document.querySelectorAll('[id^="arr-"]').forEach(function(el){el.style.transition='transform .2s';});
+});
 </script>
 </body>
 </html>

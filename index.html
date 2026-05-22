@@ -5105,7 +5105,7 @@ function toggleSidebarGroup(id){
 
 // ── TESTOBJEKT (mit Einheiten + Mietverhältnissen) ──
 async function legeTestobjektAn(){
-  if(!confirm('Testobjekt anlegen?\n\nErstellt: 1 Objekt · 3 Einheiten · 3 Kontakte · 3 Mietverhältnisse · Mietzahlungen'))return;
+  if(!confirm('Testobjekt anlegen?\n\nErstellt: 1 Objekt · 3 Einheiten · 7 Kontakte · 3 Mietverhältnisse · Mietzahlungen'))return;
   showToast('Testobjekt wird angelegt...');
 
   var {data:obj,error:e1}=await sb.from('objekte').insert({
@@ -5126,9 +5126,13 @@ async function legeTestobjektAn(){
   await aktualisierObjektFlaeche(obj.id);
 
   var {data:kontakte,error:e3}=await sb.from('kontakte').insert([
-    {user_id:currentUser.id,anrede:'Herr',    vorname:'Max',          nachname:'Mustermann',email:'max@example.de',  telefon:'0151 12345678',notiz:'[Mieter]'},
-    {user_id:currentUser.id,anrede:'Frau',    vorname:'Anna',         nachname:'Schmidt',   email:'anna@example.de', telefon:'0152 98765432',notiz:'[Mieter]'},
-    {user_id:currentUser.id,anrede:'Eheleute',vorname:'Klaus & Maria',nachname:'Weber',     email:'weber@example.de',telefon:'0153 11223344',notiz:'[Mieter]'},
+    {user_id:currentUser.id,anrede:'Herr',    vorname:'Max',          nachname:'Mustermann',  email:'max@example.de',    telefon:'0151 12345678',notiz:'[Mieter]'},
+    {user_id:currentUser.id,anrede:'Frau',    vorname:'Anna',         nachname:'Schmidt',     email:'anna@example.de',   telefon:'0152 98765432',notiz:'[Mieter]'},
+    {user_id:currentUser.id,anrede:'Eheleute',vorname:'Klaus & Maria',nachname:'Weber',       email:'weber@example.de',  telefon:'0153 11223344',notiz:'[Mieter]'},
+    {user_id:currentUser.id,anrede:'Herr',    vorname:'Thomas',       nachname:'Müller',      email:'mueller@example.de',telefon:'0154 55667788',notiz:'[Mieter]'},
+    {user_id:currentUser.id,anrede:'Frau',    vorname:'Sandra',       nachname:'Becker',      email:'becker@example.de', telefon:'0155 99887766',notiz:'[Mieter]'},
+    {user_id:currentUser.id,anrede:'Herr',    vorname:'Peter',        nachname:'Hoffmann',    email:'hoffmann@example.de',telefon:'0156 33445566',notiz:'[Eigentümer]'},
+    {user_id:currentUser.id,anrede:'Firma',   vorname:'',             nachname:'Muster GmbH', email:'info@mustergmbh.de',telefon:'02251 123456',  notiz:'[Eigentümer]'},
   ]).select();
   if(e3){showToast('Kontakte-Fehler: '+e3.message);return;}
 
@@ -5821,7 +5825,7 @@ async function loadMietverhaeltnisse(objId){
           +'<div style="display:flex;align-items:center;gap:.4rem">'
             +'<span style="font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:8px;background:'+(m.aktiv?'#d4edda':'#f5f5f5')+';color:'+(m.aktiv?'#155724':'#888')+'">'+(m.aktiv?'Aktiv':'Beendet')+'</span>'
             +'<button onclick="editMietverhaeltnis(\''+mvId+'\',\''+mvEinheitId+'\',\''+objId+'\',\''+safeBez+'\')" class="btn-small" style="font-size:.65rem;padding:2px 7px">✏️</button>'
-            +(m.aktiv?'<button onclick="deleteMietverhaeltnis(\''+mvId+'\')" class="btn-small" style="font-size:.65rem;padding:2px 7px;background:#ddd;color:#666">✕</button>':'')
+            +'<button onclick="deleteMietverhaeltnis(\''+mvId+'\')" class="btn-small" style="font-size:.65rem;padding:2px 7px;background:#ddd;color:#666">✕</button>'
           +'</div>'
         +'</div>';
       }).join('')
@@ -5962,12 +5966,14 @@ async function loadObjektEinheiten(objId){
       +'</div>'
       // Mietverhältnisse + Mietübersicht expandable
       +'<div style="padding:.65rem 1rem .85rem;background:var(--bg)">'
+        +'<div id="nk-badge-'+e.id+'" style="display:none;margin-top:.4rem"></div>'
         +mvHtml
-        +'<div id="mu-'+e.id+'" style="margin-top:.5rem"></div>'
-        +'<button onclick="loadMietubersichtFuerEinheit(\''+e.id+'\',\'mu-'+e.id+'\')" class="btn-small" style="font-size:.68rem;margin-top:.3rem;background:var(--p-light);color:var(--p)">📊 Mietübersicht laden</button>'
+        +'<div id="mu-'+e.id+'"></div>'
+        +'<button id="mu-btn-'+e.id+'" onclick="toggleMietubersicht(\''+e.id+'\')" class="btn-small" style="font-size:.68rem;margin-top:.3rem;background:var(--p-light);color:var(--p)">📊 Mietübersicht</button>'
       +'</div>'
       +'</div>';
   }).join('');
+  if(aktivesObjekt)ladeNKSaldoBadges(aktivesObjekt.id);
 }
 async function loadObjektMieter(objId){
   var container=document.getElementById('od-mieter-list');
@@ -6011,7 +6017,7 @@ async function loadObjektMieter(objId){
       +'<td style="padding:.6rem .85rem"><span style="font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:10px;background:'+(m.aktiv?'#d4edda':'#f5f5f5')+';color:'+(m.aktiv?'#155724':'#888')+'">'+(m.aktiv?'Aktiv':'Beendet')+'</span></td>'
       +'<td style="padding:.6rem .65rem;display:flex;gap:.3rem">'
         +'<button onclick="editMietverhaeltnis(\''+m.id+'\',\''+m.einheit_id+'\',\''+objId+'\',\'Einheit\')" class="btn-small" style="font-size:.65rem;padding:2px 7px">✏️</button>'
-        +(m.aktiv?'<button onclick="deleteMietverhaeltnis(\''+m.id+'\')" class="btn-small" style="font-size:.65rem;padding:2px 7px;background:#888">✕ Ende</button>':'')
+        +'<button onclick="deleteMietverhaeltnis(\''+m.id+'\')" class="btn-small" style="font-size:.65rem;padding:2px 7px;background:#888">✕</button>'
       +'</td></tr>';
   }
 
@@ -6496,29 +6502,94 @@ async function generiereMonatlicheMieten(mv){
   }
 }
 
+var _muOpen={};
+function toggleMietubersicht(einheitId){
+  var container=document.getElementById('mu-'+einheitId);
+  var btn=document.getElementById('mu-btn-'+einheitId);
+  if(!container)return;
+  if(_muOpen[einheitId]){
+    container.innerHTML='';
+    _muOpen[einheitId]=false;
+    if(btn)btn.textContent='📊 Mietübersicht';
+  }else{
+    _muOpen[einheitId]=true;
+    if(btn)btn.textContent='▲ Schließen';
+    loadMietubersichtFuerEinheit(einheitId,'mu-'+einheitId);
+  }
+}
+
 async function loadMietubersichtFuerEinheit(einheitId,containerId){
   var container=document.getElementById(containerId);
   if(!container)return;
-  container.innerHTML='<div style="color:var(--muted);font-size:.75rem">Lade...</div>';
+  container.innerHTML='<div style="color:var(--muted);font-size:.75rem;padding:.5rem 0">Lade...</div>';
+
   var {data:zahlungen}=await sb.from('mietzahlungen')
     .select('*').eq('einheit_id',einheitId).eq('user_id',currentUser.id)
-    .order('monat',{ascending:false}).limit(12);
+    .order('monat',{ascending:false}).limit(24);
+
   if(!zahlungen||!zahlungen.length){
-    container.innerHTML='<div style="color:var(--muted);font-size:.75rem;font-style:italic">Keine Mietzahlungen vorhanden.</div>';
+    container.innerHTML='<div style="color:var(--muted);font-size:.75rem;font-style:italic;padding:.35rem 0">Keine Zahlungseinträge vorhanden.</div>';
     return;
   }
-  var html='<div style="margin-top:.35rem">'
-    +'<div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:.35rem">Letzte Zahlungen</div>'
-    +'<div style="display:grid;grid-template-columns:1fr auto auto;gap:.25rem .75rem;align-items:center;font-size:.75rem">'
-    +zahlungen.map(function(z){
-      var monat=z.monat?new Date(z.monat).toLocaleDateString('de-DE',{month:'short',year:'numeric'}):'–';
-      var statusColor={offen:'#856404',bezahlt:'#155724',ausstehend:'#c0392b'}[z.status]||'#666';
-      var statusBg={offen:'#fff3cd',bezahlt:'#d4edda',ausstehend:'#fdf0ef'}[z.status]||'#f5f5f5';
-      return '<div style="color:var(--muted)">'+monat+'</div>'
-        +'<div style="font-weight:600;text-align:right">'+(z.betrag?z.betrag.toLocaleString('de-DE',{minimumFractionDigits:2})+' €':'–')+'</div>'
-        +'<span style="font-size:.62rem;font-weight:700;padding:1px 6px;border-radius:6px;background:'+statusBg+';color:'+statusColor+'">'+z.status+'</span>';
-    }).join('')
-    +'</div></div>';
+
+  // Separate: reguläre Mieten vs NK-Abrechnungen
+  var nkEintraege=zahlungen.filter(function(z){return z.bezeichnung&&(z.bezeichnung.includes('NK-Abrechnung')||z.bezeichnung.includes('NK-Korrektur'));});
+  var regulaer=zahlungen.filter(function(z){return !z.bezeichnung||(!z.bezeichnung.includes('NK-Abrechnung')&&!z.bezeichnung.includes('NK-Korrektur'));});
+
+  var statusColors={offen:'#fff3cd,#856404',bezahlt:'#d4edda,#155724',gemahnt:'#fdf0ef,#c0392b',ausstehend:'#e3f2fd,#1565c0'};
+
+  var html='<div style="margin-top:.5rem">';
+
+  // NK-Saldo Bereich (prominent ganz oben wenn vorhanden)
+  if(nkEintraege.length){
+    html+='<div style="margin-bottom:.65rem">'
+      +'<div style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:.3rem">NK-Abrechnungen</div>';
+    nkEintraege.forEach(function(z){
+      var saldo=parseFloat(z.betrag)||0; // positiv=Nachzahlung, negativ=Guthaben
+      var isGuthaben=saldo<0;
+      var absDiff=Math.abs(saldo);
+      var sc=(statusColors[z.status]||'#f5f5f5,#666').split(',');
+      html+='<div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem .65rem;border-radius:8px;'
+        +'background:'+(isGuthaben?'#e8f5e9':'#fdf0ef')+';border:1px solid '+(isGuthaben?'#a5d6a7':'#ffab91')+';margin-bottom:.3rem">'
+        +'<div>'
+          +'<div style="font-size:.78rem;font-weight:700;color:'+(isGuthaben?'#155724':'#b71c1c')+'">'
+            +(isGuthaben?'✅ Guthaben':'⚠️ Nachzahlung')+': '
+            +absDiff.toLocaleString('de-DE',{minimumFractionDigits:2})+' €'
+          +'</div>'
+          +'<div style="font-size:.68rem;color:var(--muted);margin-top:1px">'+(z.bezeichnung||'')+'</div>'
+          +(z.monat?'<div style="font-size:.65rem;color:var(--muted)">Fällig: '
+            +new Date(new Date(z.monat).getTime()+17*24*3600000).toLocaleDateString('de-DE')+'</div>':'')
+        +'</div>'
+        +'<select onchange="updateZahlungStatus(\''+z.id+'\',this.value)" style="border:1px solid '+sc[0]+';border-radius:6px;padding:2px 5px;font-size:.7rem;font-weight:700;background:'+sc[0]+';color:'+sc[1]+';font-family:Arial,sans-serif;outline:none;cursor:pointer">'
+          +'<option value="offen"'+(z.status==='offen'?' selected':'')+'>Offen</option>'
+          +'<option value="bezahlt"'+(z.status==='bezahlt'?' selected':'')+'>Bezahlt</option>'
+          +'<option value="gemahnt"'+(z.status==='gemahnt'?' selected':'')+'>Gemahnt</option>'
+        +'</select>'
+      +'</div>';
+    });
+    html+='</div>';
+  }
+
+  // Reguläre Monatsmieten
+  if(regulaer.length){
+    html+='<div style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:.3rem">Monatliche Mieten</div>'
+      +'<div style="display:grid;grid-template-columns:90px 1fr auto;gap:.2rem .5rem;align-items:center;font-size:.75rem">';
+    regulaer.slice(0,12).forEach(function(z){
+      var monat=z.monat?new Date(z.monat).toLocaleDateString('de-DE',{month:'short',year:'2-digit'}):'–';
+      var sc=(statusColors[z.status]||'#f5f5f5,#666').split(',');
+      html+='<div style="color:var(--muted)">'+monat+'</div>'
+        +'<div style="font-weight:600">'+(z.betrag!=null?z.betrag.toLocaleString('de-DE',{minimumFractionDigits:2})+' €':'–')+'</div>'
+        +'<select onchange="updateZahlungStatus(\''+z.id+'\',this.value)" style="border:none;border-radius:5px;padding:1px 4px;font-size:.65rem;font-weight:700;background:'+sc[0]+';color:'+sc[1]+';font-family:Arial,sans-serif;outline:none;cursor:pointer">'
+          +'<option value="offen"'+(z.status==='offen'?' selected':'')+'>Offen</option>'
+          +'<option value="bezahlt"'+(z.status==='bezahlt'?' selected':'')+'>Bezahlt</option>'
+          +'<option value="gemahnt"'+(z.status==='gemahnt'?' selected':'')+'>Gemahnt</option>'
+          +'<option value="ausstehend"'+(z.status==='ausstehend'?' selected':'')+'>Ausst.</option>'
+        +'</select>';
+    });
+    html+='</div>';
+  }
+
+  html+='</div>';
   container.innerHTML=html;
 }
 
@@ -6840,6 +6911,61 @@ async function loadZahlungsverlaufObjekt(objId,container,activeMV,einh){
     +'</div>';
 
   container.innerHTML=html;
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// NK-ABRECHNUNG → MIETZAHLUNGEN
+// ═══════════════════════════════════════════════════════════════
+
+async function addNKZuMietzahlungen(mvId,einheitId,objektId,bezeichnung,saldo,abrId,isKorrektur){
+  // saldo: positiv = Nachzahlung vom Mieter, negativ = Guthaben an Mieter
+  // Fälligkeitsdatum: 17 Tage nach heute (Mitte 14-30 Tage Zeitraum)
+  var faellig=new Date();
+  faellig.setDate(faellig.getDate()+17);
+  var faelligStr=faellig.toISOString().split('T')[0];
+
+  var eintrag={
+    user_id:currentUser.id,
+    mietverhaeltnis_id:mvId,
+    einheit_id:einheitId,
+    objekt_id:objektId,
+    typ:saldo>0?'nk_nachzahlung':'nk_guthaben',
+    bezeichnung:bezeichnung,
+    monat:faelligStr,  // "Monat" = Fälligkeitsdatum
+    betrag:saldo,      // positiv=Nachzahlung, negativ=Guthaben
+    kaltmiete_anteil:0,
+    bk_anteil:saldo,
+    hk_anteil:0,
+    status:'offen',
+    abrechnung_id:abrId||null
+  };
+  await sb.from('mietzahlungen').insert(eintrag);
+}
+
+// NK-Saldo-Badges für Einheiten-Tab laden
+async function ladeNKSaldoBadges(objId){
+  // Lade alle offenen NK-Einträge für dieses Objekt
+  var {data:nk}=await sb.from('mietzahlungen')
+    .select('einheit_id,betrag,bezeichnung,status,monat')
+    .eq('user_id',currentUser.id).eq('objekt_id',objId)
+    .in('typ',['nk_nachzahlung','nk_guthaben'])
+    .eq('status','offen');
+  if(!nk||!nk.length)return;
+  // Per Einheit die Badges einfügen
+  nk.forEach(function(z){
+    var badge=document.getElementById('nk-badge-'+z.einheit_id);
+    if(!badge)return;
+    var saldo=parseFloat(z.betrag)||0;
+    var isGuth=saldo<0;
+    var absDiff=Math.abs(saldo).toLocaleString('de-DE',{minimumFractionDigits:2});
+    var faellig=z.monat?new Date(z.monat).toLocaleDateString('de-DE'):'';
+    badge.style.display='inline-flex';
+    badge.innerHTML='<span style="font-size:.68rem;font-weight:700;background:'+(isGuth?'#d4edda':'#fdf0ef')+';color:'+(isGuth?'#155724':'#c0392b')+';padding:2px 8px;border-radius:6px;border:1px solid '+(isGuth?'#a5d6a7':'#ffab91')+'">'
+      +(isGuth?'✅ NK-Guthaben: ':'⚠️ NK-Nachzahlung: ')+absDiff+' €'
+      +(faellig?' · fällig '+faellig:'')
+      +'</span>';
+  });
 }
 
 // Init sidebar groups

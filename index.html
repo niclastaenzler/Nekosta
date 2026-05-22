@@ -456,7 +456,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
       <div class="sidebar-divider"></div>
 
       <!-- VERWALTUNG -->
-      <div class="sidebar-section" onclick="toggleSidebarGroup('sg-verwaltung')">VERWALTUNG <span class="sg-arrow open" id="arr-verwaltung">▾</span></div>
+      <div class="sidebar-section" role="button" onclick="toggleSidebarGroup('sg-verwaltung')">VERWALTUNG <span class="sg-arrow open" id="arr-verwaltung">▾</span></div>
       <div class="sg-content" id="sg-verwaltung">
         <div class="nav-item" onclick="showPage('stammdaten')" id="nav-stammdaten"><span class="ni-icon">👤</span>Stammdaten</div>
         <div class="nav-item" onclick="showPage('objekte')" id="nav-objekte"><span class="ni-icon">🏢</span>Objekte</div>
@@ -465,7 +465,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
       <div class="sidebar-divider"></div>
 
       <!-- ERSTELLEN -->
-      <div class="sidebar-section" onclick="toggleSidebarGroup('sg-erstellen')">ERSTELLEN <span class="sg-arrow open" id="arr-erstellen">▾</span></div>
+      <div class="sidebar-section" role="button" onclick="toggleSidebarGroup('sg-erstellen')">ERSTELLEN <span class="sg-arrow open" id="arr-erstellen">▾</span></div>
       <div class="sg-content" id="sg-erstellen">
         <div class="nav-item" onclick="startNeueAbrechnung()" id="nav-tool"><span class="ni-icon">📄</span>Abrechnung</div>
         <div class="nav-item" onclick="showPage('heizkostenerstellen')" id="nav-heizkostenerstellen"><span class="ni-icon">🔥</span>Heizkosten<span class="nav-badge">Neu</span></div>
@@ -474,7 +474,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
       <div class="sidebar-divider"></div>
 
       <!-- ABRECHNUNGEN -->
-      <div class="sidebar-section" onclick="toggleSidebarGroup('sg-abr')">ABRECHNUNGEN <span class="sg-arrow open" id="arr-abr">▾</span></div>
+      <div class="sidebar-section" role="button" onclick="toggleSidebarGroup('sg-abr')">ABRECHNUNGEN <span class="sg-arrow open" id="arr-abr">▾</span></div>
       <div class="sg-content" id="sg-abr">
         <div class="nav-item" onclick="showPage('archiv')" id="nav-archiv"><span class="ni-icon">🗂</span>Alle Abrechnungen</div>
         <div class="nav-item" onclick="showPage('bearbeitungsnotizen')" id="nav-bearbeitungsnotizen"><span class="ni-icon">📝</span>Notizen</div>
@@ -482,7 +482,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
       <div class="sidebar-divider"></div>
 
       <!-- SYSTEM -->
-      <div class="sidebar-section" onclick="toggleSidebarGroup('sg-sys')">SYSTEM <span class="sg-arrow open" id="arr-sys">▾</span></div>
+      <div class="sidebar-section" role="button" onclick="toggleSidebarGroup('sg-sys')">SYSTEM <span class="sg-arrow open" id="arr-sys">▾</span></div>
       <div class="sg-content" id="sg-sys">
         <div class="nav-item" onclick="showPage('tokens')" id="nav-tokens"><span class="ni-icon">🪙</span>Nekosta Token</div>
         <div class="nav-item" onclick="showPage('adminpanel')" id="nav-adminpanel"><span class="ni-icon">🔧</span>Admin-Panel</div>
@@ -493,21 +493,21 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
     <div id="kunden-menu" style="display:none">
       <div class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard-k" style="padding:.65rem 1rem;margin:.25rem .5rem;border-radius:8px;border-left:none"><span class="ni-icon">📊</span><strong>Dashboard</strong></div>
       <div class="sidebar-divider"></div>
-      <div class="sidebar-section" onclick="toggleSidebarGroup('sg-k-verw')">VERWALTUNG <span class="sg-arrow open" id="arr-k-verw">▾</span></div>
+      <div class="sidebar-section" role="button" onclick="toggleSidebarGroup('sg-k-verw')">VERWALTUNG <span class="sg-arrow open" id="arr-k-verw">▾</span></div>
       <div class="sg-content" id="sg-k-verw">
         <div class="nav-item" onclick="showPage('stammdaten')" id="nav-stammdaten-k"><span class="ni-icon">👤</span>Stammdaten</div>
         <div class="nav-item" onclick="showPage('objekte')" id="nav-objekte-k"><span class="ni-icon">🏢</span>Objekte</div>
         <div class="nav-item" onclick="showPage('kontakte')" id="nav-kontakte-k"><span class="ni-icon">👥</span>Kontakte</div>
       </div>
       <div class="sidebar-divider"></div>
-      <div class="sidebar-section" onclick="toggleSidebarGroup('sg-k-erst')">ERSTELLEN <span class="sg-arrow open" id="arr-k-erst">▾</span></div>
+      <div class="sidebar-section" role="button" onclick="toggleSidebarGroup('sg-k-erst')">ERSTELLEN <span class="sg-arrow open" id="arr-k-erst">▾</span></div>
       <div class="sg-content" id="sg-k-erst">
         <div class="nav-item" onclick="startNeueAbrechnung()" id="nav-tool-k"><span class="ni-icon">📄</span>Abrechnung</div>
         <div class="nav-item" style="opacity:.4;cursor:not-allowed;pointer-events:none"><span class="ni-icon">🔥</span>Heizkosten<span class="nav-badge" style="background:#eee;color:#aaa">Bald</span></div>
         <div class="nav-item" style="opacity:.4;cursor:not-allowed;pointer-events:none"><span class="ni-icon">✉️</span>Anschreiben<span class="nav-badge" style="background:#eee;color:#aaa">Bald</span></div>
       </div>
       <div class="sidebar-divider"></div>
-      <div class="sidebar-section" onclick="toggleSidebarGroup('sg-k-abr')">ABRECHNUNGEN <span class="sg-arrow open" id="arr-k-abr">▾</span></div>
+      <div class="sidebar-section" role="button" onclick="toggleSidebarGroup('sg-k-abr')">ABRECHNUNGEN <span class="sg-arrow open" id="arr-k-abr">▾</span></div>
       <div class="sg-content" id="sg-k-abr">
         <div class="nav-item" onclick="showPage('kunden')" id="nav-kunden"><span class="ni-icon">🗂</span>Alle Abrechnungen</div>
         <div class="nav-item" onclick="showPage('bearbeitungsnotizen')" id="nav-bearbeitungsnotizen-k"><span class="ni-icon">📝</span>Notizen</div>
@@ -748,11 +748,11 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
 
           <!-- TABS -->
           <div style="border-bottom:2px solid var(--border);padding:0 2rem;background:var(--white);display:flex;gap:0">
-            <button id="tab-uebersicht" onclick="showObjektTab('uebersicht')" style="background:none;border:none;border-bottom:2px solid var(--p);margin-bottom:-2px;padding:.75rem 1.25rem;cursor:pointer;font-size:.88rem;font-weight:700;color:var(--p);font-family:Arial,sans-serif">Übersicht</button>
-            <button id="tab-abrechnungsdaten" onclick="showObjektTab('abrechnungsdaten')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.75rem 1.25rem;cursor:pointer;font-size:.88rem;color:var(--muted);font-family:Arial,sans-serif">Abrechnungsdaten</button>
-            <button id="tab-einheiten-tab" onclick="showObjektTab('einheiten')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.75rem 1.25rem;cursor:pointer;font-size:.88rem;color:var(--muted);font-family:Arial,sans-serif">Einheiten</button>
-            <button id="tab-mieter-tab" onclick="showObjektTab('mieterlist')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.75rem 1.25rem;cursor:pointer;font-size:.88rem;color:var(--muted);font-family:Arial,sans-serif">Mieter</button>
-            <button id="tab-mietverh-tab" onclick="showObjektTab('mietverhaeltnisse')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.75rem 1.25rem;cursor:pointer;font-size:.88rem;color:var(--muted);font-family:Arial,sans-serif">Mietverhältnisse</button>
+            <button type="button" id="tab-uebersicht" onclick="showObjektTab('uebersicht')" style="background:none;border:none;border-bottom:2px solid var(--p);margin-bottom:-2px;padding:.75rem 1.25rem;cursor:pointer;font-size:.88rem;font-weight:700;color:var(--p);font-family:Arial,sans-serif">Übersicht</button>
+            <button type="button" id="tab-abrechnungsdaten" onclick="showObjektTab('abrechnungsdaten')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.75rem 1.25rem;cursor:pointer;font-size:.88rem;color:var(--muted);font-family:Arial,sans-serif">Abrechnungsdaten</button>
+            <button type="button" id="tab-einheiten-tab" onclick="showObjektTab('einheiten')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.75rem 1.25rem;cursor:pointer;font-size:.88rem;color:var(--muted);font-family:Arial,sans-serif">Einheiten</button>
+            <button type="button" id="tab-mieter-tab" onclick="showObjektTab('mieterlist')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.75rem 1.25rem;cursor:pointer;font-size:.88rem;color:var(--muted);font-family:Arial,sans-serif">Mieter</button>
+            <button type="button" id="tab-mietverh-tab" onclick="showObjektTab('mietverhaeltnisse')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.75rem 1.25rem;cursor:pointer;font-size:.88rem;color:var(--muted);font-family:Arial,sans-serif">Mietverhältnisse</button>
           </div>
 
           <div style="padding:1.75rem 2rem">
@@ -1340,11 +1340,11 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
         <div class="page-header"><div class="page-title">⚙️ Einstellungen</div><div class="page-sub">Profil, Sicherheit, Design und Layout</div></div>
         <!-- SUB-TABS -->
         <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:1.25rem;flex-wrap:wrap">
-          <button id="etab-profil" onclick="showEinstellTab('profil')" style="background:none;border:none;border-bottom:2px solid var(--p);margin-bottom:-2px;padding:.65rem 1.1rem;cursor:pointer;font-size:.86rem;font-weight:700;color:var(--p);font-family:Arial,sans-serif">Profil</button>
-          <button id="etab-sicherheit" onclick="showEinstellTab('sicherheit')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.65rem 1.1rem;cursor:pointer;font-size:.86rem;color:var(--muted);font-family:Arial,sans-serif">Sicherheit</button>
-          <button id="etab-design" onclick="showEinstellTab('design')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.65rem 1.1rem;cursor:pointer;font-size:.86rem;color:var(--muted);font-family:Arial,sans-serif">Design</button>
-          <button id="etab-layout" onclick="showEinstellTab('layout')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.65rem 1.1rem;cursor:pointer;font-size:.86rem;color:var(--muted);font-family:Arial,sans-serif">Layout</button>
-          <button id="etab-backup" onclick="showEinstellTab('backup')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.65rem 1.1rem;cursor:pointer;font-size:.86rem;color:var(--muted);font-family:Arial,sans-serif">Backup</button>
+          <button type="button" id="etab-profil" onclick="showEinstellTab('profil')" style="background:none;border:none;border-bottom:2px solid var(--p);margin-bottom:-2px;padding:.65rem 1.1rem;cursor:pointer;font-size:.86rem;font-weight:700;color:var(--p);font-family:Arial,sans-serif">Profil</button>
+          <button type="button" id="etab-sicherheit" onclick="showEinstellTab('sicherheit')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.65rem 1.1rem;cursor:pointer;font-size:.86rem;color:var(--muted);font-family:Arial,sans-serif">Sicherheit</button>
+          <button type="button" id="etab-design" onclick="showEinstellTab('design')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.65rem 1.1rem;cursor:pointer;font-size:.86rem;color:var(--muted);font-family:Arial,sans-serif">Design</button>
+          <button type="button" id="etab-layout" onclick="showEinstellTab('layout')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.65rem 1.1rem;cursor:pointer;font-size:.86rem;color:var(--muted);font-family:Arial,sans-serif">Layout</button>
+          <button type="button" id="etab-backup" onclick="showEinstellTab('backup')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.65rem 1.1rem;cursor:pointer;font-size:.86rem;color:var(--muted);font-family:Arial,sans-serif">Backup</button>
         </div>
         <div id="einhalt-profil">
           <div class="card">
@@ -1405,7 +1405,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
                 <option value="0">Volle Breite</option>
               </select>
             </div>
-            <button class="btn-secondary" onclick="resetLayoutSettings()">↺ Layout zurücksetzen</button>
+            <button type="button" class="btn-secondary" onclick="resetLayoutSettings()">↺ Layout zurücksetzen</button>
           </div>
 
           <!-- NK-ABRECHNUNG LAYOUTS -->
@@ -1588,8 +1588,8 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
               style="width:100%;border:1px solid var(--border);border-radius:8px;padding:.55rem .75rem .55rem 2.2rem;font-size:.88rem;font-family:Arial,sans-serif;outline:none;background:var(--white);box-sizing:border-box">
           </div>
           <div style="display:flex;gap:.5rem;align-items:center">
-            <button id="kontakt-view-grid" onclick="setKontakteView('grid')" style="background:var(--p);color:#fff;border:none;border-radius:6px;padding:.5rem .75rem;cursor:pointer;font-size:.8rem">⊞</button>
-            <button id="kontakt-view-list" onclick="setKontakteView('list')" style="background:var(--white);color:var(--muted);border:1px solid var(--border);border-radius:6px;padding:.5rem .75rem;cursor:pointer;font-size:.8rem">☰</button>
+            <button type="button" id="kontakt-view-grid" onclick="setKontakteView('grid')" style="background:var(--p);color:#fff;border:none;border-radius:6px;padding:.5rem .75rem;cursor:pointer;font-size:.8rem">⊞</button>
+            <button type="button" id="kontakt-view-list" onclick="setKontakteView('list')" style="background:var(--white);color:var(--muted);border:1px solid var(--border);border-radius:6px;padding:.5rem .75rem;cursor:pointer;font-size:.8rem">☰</button>
           </div>
           <div style="font-size:.82rem;color:var(--muted);align-self:center" id="kontakte-count">Wird geladen...</div>
         </div>
@@ -2681,23 +2681,25 @@ function berechnen(){
 }
 
 async function renderErgebnis(){
-  const e=lastErgebnis;
+  var e=lastErgebnis;
   document.getElementById('res-jahr-big').textContent=e.jahr;
   document.getElementById('res-objekt-line').textContent=e.objekt?'Objekt: '+e.objekt:'';
-  const d=e.datum;
+  var d=e.datum;
   document.getElementById('res-datum-line').textContent=d?'Erstellt: '+new Date(d).toLocaleDateString('de-DE'):'';
-  document.getElementById('res-pills').innerHTML=`
-    <span class="res-pill">${e.wohnungen.length} Einheit${e.wohnungen.length>1?'en':''}</span>
-    <span class="res-pill">BK: ${fmt(e.bkKosten.reduce((s,k)=>s+k.betrag,0))}</span>
-    ${e.hasHK?`<span class="res-pill">HK: ${fmt(e.hkKosten.reduce((s,k)=>s+k.betrag,0))}</span>`:''}`;
+  var bkTotal=e.bkKosten.reduce(function(s,k){return s+k.betrag;},0);
+  var hkTotal=e.hkKosten.reduce(function(s,k){return s+k.betrag;},0);
+  document.getElementById('res-pills').innerHTML=
+    '<span class="res-pill">'+e.wohnungen.length+' Einheit'+(e.wohnungen.length>1?'en':'')+'</span>'
+    +'<span class="res-pill">BK: '+fmt(bkTotal)+'</span>'
+    +(e.hasHK?'<span class="res-pill">HK: '+fmt(hkTotal)+'</span>':'');
 
-  const free=await checkIsFree();
+  var free=await checkIsFree();
   if(free||isAdmin){
     document.getElementById('btn-gesamt-clean').style.display='block';
     document.getElementById('btn-gesamt-dl').style.display='block';
   }
 
-  const rw=document.getElementById('res-wohnungen');rw.innerHTML='';
+  var rw=document.getElementById('res-wohnungen');rw.innerHTML='';
 
   // Summary bar totals
   var totalNachzahlung=0,totalErstattung=0,einheitenCount=e.ergebnisse.length;
@@ -2762,7 +2764,7 @@ async function renderErgebnis(){
     if(mieterPerioden.length>1){
       bodyHtml+='<div class="erg-periode-nav">';
       mieterPerioden.forEach(function(pe,pi){
-        bodyHtml+='<div class="erg-periode-tab'+(pi===0?' active':'')+'" onclick="switchErgTab(this,\'erg-tab-'+wi+'-'+pi+'\')">'
+        bodyHtml+='<div class="erg-periode-tab'+(pi===0?' active':'')+'" role="button" onclick="switchErgTab(this,\'erg-tab-'+wi+'-'+pi+'\')">'
           +pe.periode.name+' ('+pe.periode.days+' Tage)</div>';
       });
       bodyHtml+='</div>';

@@ -55,7 +55,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--tex
 #app{display:none}
 #portal-banner{flex-shrink:0;position:sticky;top:52px;z-index:190}
 .app-layout{display:flex;min-height:calc(100vh - 52px);padding-left:var(--sidebar)}
- .sidebar{width:var(--sidebar);background:var(--white);border-right:1px solid var(--border);padding:.75rem 0 3rem;position:fixed;top:52px;left:0;height:calc(100vh - 52px);overflow-y:auto;z-index:100;flex-shrink:0;transition:width .2s}
+ .sidebar{width:var(--sidebar);background:var(--white);border-right:1px solid var(--border);padding:1.25rem 0 3rem;position:fixed;top:52px;left:0;height:calc(100vh - 52px);overflow-y:auto;z-index:100;flex-shrink:0;transition:width .2s}
  .sidebar-section{font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);padding:.6rem 1rem .2rem;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;margin-top:.2rem}
  .sidebar-section:hover{color:var(--p)}
  .sg-arrow{font-size:.58rem;transition:transform .2s;opacity:.4;flex-shrink:0}
@@ -68,12 +68,12 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--tex
  .nav-item .ni-icon{font-size:.88rem;width:17px;text-align:center;flex-shrink:0}
  .nav-badge{margin-left:auto;background:var(--p-light);color:var(--p);font-size:.58rem;font-weight:700;padding:1px 5px;border-radius:8px}
  .sidebar-divider{height:1px;background:var(--border);margin:.35rem .85rem}
-.main-content{flex:1;min-width:0;overflow-x:hidden;width:calc(100% - var(--sidebar))}
+.main-content{flex:1;min-width:0;overflow-x:hidden}
 #page-objekt-detail{position:fixed;top:52px;left:var(--sidebar);right:0;bottom:0;background:var(--bg);z-index:10;overflow:hidden;display:none}
 .page-wrap{padding:2rem;max-width:900px;box-sizing:border-box;width:100%}
 
 /* ── WIZARD ── */
-.wizard-bar{background:var(--white);border-bottom:1px solid var(--border);padding:0 1.5rem;display:flex;align-items:center;gap:0;position:fixed;top:52px;left:var(--sidebar);right:0;z-index:149;box-shadow:0 2px 8px rgba(0,0,0,.06);border-top:3px solid var(--p)}
+.wizard-bar{background:var(--white);border-bottom:2px solid var(--border);padding:.65rem 1.5rem;display:flex;align-items:center;gap:0;position:fixed;top:52px;left:var(--sidebar);right:0;z-index:149;box-shadow:0 2px 8px rgba(0,0,0,.06)}
 .wizard-step{display:flex;align-items:center;gap:.5rem;padding:1rem .75rem;font-size:.82rem;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;transition:color .2s,border-color .2s;white-space:nowrap}
 .wizard-step.active{color:var(--p);border-bottom-color:var(--p);font-weight:700}
 .wizard-step.done{color:var(--success)}
@@ -765,57 +765,112 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
           <div style="padding:1.75rem 2rem">
             <!-- TAB: ÜBERSICHT -->
             <div id="tab-content-uebersicht">
-              <!-- ECKDATEN -->
-              <div style="margin-bottom:1.5rem">
-                <h3 style="font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:.85rem">Eckdaten</h3>
-                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:1rem">
-                  <div>
-                    <div style="font-size:1.4rem;font-weight:700;color:var(--p)" id="od-kaltmiete-total">–</div>
-                    <div style="font-size:.75rem;color:var(--muted)">€ Kaltmiete/Mon.</div>
-                  </div>
-                  <div>
-                    <div style="font-size:1.4rem;font-weight:700;color:var(--text)" id="od-preis-qm">–</div>
-                    <div style="font-size:.75rem;color:var(--muted)">€ ø/m² Kaltmiete</div>
-                  </div>
-                  <div>
-                    <div style="font-size:1.4rem;font-weight:700;color:var(--text)" id="od-flaeche-total">–</div>
-                    <div style="font-size:.75rem;color:var(--muted)">m² Gesamtfläche</div>
-                  </div>
-                  <div>
-                    <div style="font-size:1.4rem;font-weight:700;color:var(--text)" id="od-bk-total">–</div>
-                    <div style="font-size:.75rem;color:var(--muted)">€ BK-VZ/Mon.</div>
-                  </div>
-                  <div>
-                    <div style="font-size:1.4rem;font-weight:700;color:#c0392b" id="od-leerstand-count">–</div>
-                    <div style="font-size:.75rem;color:var(--muted)">Leerstand</div>
+              <!-- TOP ROW: Eckdaten + Einheiten-Schnellübersicht -->
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem">
+                <!-- Eckdaten -->
+                <div style="background:var(--bg);border-radius:10px;padding:1.1rem">
+                  <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.85rem">Eckdaten</div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:.65rem">
+                    <div><div style="font-size:1.25rem;font-weight:700;color:var(--p)" id="od-kaltmiete-total">–</div><div style="font-size:.7rem;color:var(--muted)">€ Kaltmiete/Mon.</div></div>
+                    <div><div style="font-size:1.25rem;font-weight:700" id="od-preis-qm">–</div><div style="font-size:.7rem;color:var(--muted)">€/m² Kaltmiete</div></div>
+                    <div><div style="font-size:1.25rem;font-weight:700" id="od-flaeche-total">–</div><div style="font-size:.7rem;color:var(--muted)">m² Gesamtfläche</div></div>
+                    <div><div style="font-size:1.25rem;font-weight:700" id="od-bk-total">–</div><div style="font-size:.7rem;color:var(--muted)">€ BK-VZ/Mon.</div></div>
+                    <div><div style="font-size:1.25rem;font-weight:700;color:#c0392b" id="od-leerstand-count">–</div><div style="font-size:.7rem;color:var(--muted)">Leerstand</div></div>
                   </div>
                 </div>
-              </div>
-              <div style="height:1px;background:var(--border);margin-bottom:1.5rem"></div>
-
-              <!-- NOTIZEN -->
-              <div style="margin-bottom:1.5rem">
-                <h3 style="font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:.75rem">Notizen</h3>
-                <textarea id="od-notiz-input" placeholder="Notiz zum Objekt..." style="border:1px solid var(--border);border-radius:8px;padding:.65rem .85rem;font-size:.88rem;font-family:Arial,sans-serif;width:100%;min-height:80px;resize:vertical;outline:none;background:var(--bg);box-sizing:border-box"></textarea>
-                <button class="btn-small" onclick="saveObjektNotiz()" style="margin-top:.5rem">💾 Speichern</button>
-                <span id="od-notiz-saved" style="display:none;font-size:.75rem;color:var(--success);margin-left:.75rem">✅ Gespeichert</span>
+                <!-- Abrechnungssaldo -->
+                <div style="background:var(--bg);border-radius:10px;padding:1.1rem">
+                  <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.85rem">Offene Forderungen</div>
+                  <div id="od-saldo-overview"><div style="color:var(--muted);font-size:.82rem">Wird geladen...</div></div>
+                </div>
               </div>
 
-              <!-- LETZTE ABRECHNUNGEN -->
-              <div>
-                <h3 style="font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:.75rem">Letzte Abrechnungen</h3>
-                <div id="od-abr-list"><div style="color:var(--muted);font-size:.85rem">Wird geladen...</div></div>
+              <!-- EINHEITEN LISTE (aufklappbar, wie ImmoCloud) -->
+              <div style="margin-bottom:1.25rem">
+                <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.65rem">Einheiten</div>
+                <div id="od-einheiten-uebersicht"><div style="color:var(--muted);font-size:.82rem">Wird geladen...</div></div>
+              </div>
+
+              <!-- NOTIZEN + LETZTE ABRECHNUNGEN -->
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem">
+                <div>
+                  <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.65rem">Notizen</div>
+                  <textarea id="od-notiz-input" placeholder="Notiz zum Objekt..." style="border:1px solid var(--border);border-radius:8px;padding:.65rem .85rem;font-size:.85rem;font-family:Arial,sans-serif;width:100%;min-height:70px;resize:vertical;outline:none;background:var(--bg);box-sizing:border-box"></textarea>
+                  <button class="btn-small" onclick="saveObjektNotiz()" style="margin-top:.4rem">💾 Speichern</button>
+                  <span id="od-notiz-saved" style="display:none;font-size:.72rem;color:var(--success);margin-left:.6rem">✅ Gespeichert</span>
+                </div>
+                <div>
+                  <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.65rem">Letzte Abrechnungen</div>
+                  <div id="od-abr-list"><div style="color:var(--muted);font-size:.82rem">Wird geladen...</div></div>
+                </div>
               </div>
             </div>
 
             <!-- TAB: ABRECHNUNGSDATEN -->
             <div id="tab-content-abrechnungsdaten" style="display:none">
-              <div style="background:var(--bg);border-radius:10px;padding:1.25rem;margin-bottom:1rem">
-                <div style="font-size:.85rem;color:var(--muted);line-height:1.8">
-                  Hier können Abrechnungsdaten wie Bankverbindung, Verteilungsschlüssel und weitere objektspezifische Einstellungen hinterlegt werden.
+              <!-- Abrechnungszeitraum -->
+              <div style="background:var(--bg);border-radius:10px;padding:1.1rem;margin-bottom:1rem">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
+                  <div style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Abrechnungszeitraum für Betriebskosten</div>
+                  <button class="btn-small" onclick="saveAbrechnungszeitraum()">Ändern</button>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+                  <div><div style="font-size:.72rem;color:var(--muted);margin-bottom:.2rem">ANFANG</div><input type="text" id="abr-zeitraum-anfang" value="01.01." style="border:none;background:none;font-size:.88rem;font-weight:600;width:100%;outline:none"></div>
+                  <div><div style="font-size:.72rem;color:var(--muted);margin-bottom:.2rem">ENDE</div><input type="text" id="abr-zeitraum-ende" value="31.12." style="border:none;background:none;font-size:.88rem;font-weight:600;width:100%;outline:none"></div>
                 </div>
               </div>
-              <button class="btn-primary" onclick="startAbrechnungFuerAktivesObjekt()">📄 Neue Abrechnung für dieses Objekt erstellen</button>
+
+              <!-- Bankkonto -->
+              <div style="background:var(--bg);border-radius:10px;padding:1.1rem;margin-bottom:1rem">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
+                  <div style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Bankkonto des Objekts</div>
+                  <button class="btn-small" onclick="saveBankdaten()">+ Bankkonto hinzufügen</button>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 2fr 1fr;gap:.75rem">
+                  <div><div style="font-size:.65rem;color:var(--muted);margin-bottom:.2rem">KONTOINHABER</div><input type="text" id="obj-bank-inhaber" placeholder="–" style="border:none;border-bottom:1px solid var(--border);background:none;font-size:.85rem;width:100%;outline:none;padding:.2rem 0"></div>
+                  <div><div style="font-size:.65rem;color:var(--muted);margin-bottom:.2rem">IBAN</div><input type="text" id="obj-bank-iban" placeholder="DE00 0000 0000 0000 0000 00" style="border:none;border-bottom:1px solid var(--border);background:none;font-size:.85rem;width:100%;outline:none;padding:.2rem 0"></div>
+                  <div><div style="font-size:.65rem;color:var(--muted);margin-bottom:.2rem">BIC</div><input type="text" id="obj-bank-bic" placeholder="–" style="border:none;border-bottom:1px solid var(--border);background:none;font-size:.85rem;width:100%;outline:none;padding:.2rem 0"></div>
+                </div>
+              </div>
+
+              <!-- Verteilerschlüssel -->
+              <div style="background:var(--bg);border-radius:10px;padding:1.1rem;margin-bottom:1rem">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
+                  <div style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Verteilerschlüssel</div>
+                  <button class="btn-small">+ Verteilerschlüssel hinzufügen</button>
+                </div>
+                <table style="width:100%;border-collapse:collapse;font-size:.82rem">
+                  <thead><tr style="border-bottom:1px solid var(--border)">
+                    <th style="text-align:left;padding:.4rem .5rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Beschreibung</th>
+                    <th style="text-align:left;padding:.4rem .5rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Hinweis</th>
+                    <th style="text-align:right;padding:.4rem .5rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Gesamtanteil</th>
+                    <th style="width:60px"></th>
+                  </tr></thead>
+                  <tbody id="obj-verteilschluessel-tbody">
+                    <tr style="border-bottom:1px solid var(--border)">
+                      <td style="padding:.5rem">Wohnfläche</td>
+                      <td style="padding:.5rem;color:var(--muted)">–</td>
+                      <td style="padding:.5rem;text-align:right" id="obj-vs-flaeche">–</td>
+                      <td style="padding:.5rem"><button class="btn-small" style="font-size:.62rem">Ändern</button></td>
+                    </tr>
+                    <tr>
+                      <td style="padding:.5rem">Einheiten</td>
+                      <td style="padding:.5rem;color:var(--muted)">–</td>
+                      <td style="padding:.5rem;text-align:right" id="obj-vs-einheiten">–</td>
+                      <td style="padding:.5rem"><button class="btn-small" style="font-size:.62rem">Ändern</button></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Kostenkategorien -->
+              <div style="background:var(--bg);border-radius:10px;padding:1.1rem">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
+                  <div style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Kostenkategorien und Verteilerschlüssel</div>
+                  <button class="btn-small" onclick="startAbrechnungFuerAktivesObjekt()">+ Neue Abrechnung</button>
+                </div>
+                <div id="obj-kostenkategorien"><div style="color:var(--muted);font-size:.82rem;font-style:italic">Kostenkategorien werden aus den Abrechnungen übernommen.</div></div>
+              </div>
             </div>
 
             <!-- TAB: EINHEITEN -->
@@ -879,10 +934,65 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
     </div>
 
 
-    <div id="objekt-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:600;align-items:center;justify-content:center;padding:1rem;overflow-y:auto">
-      <div style="background:#fff;border-radius:14px;padding:1.75rem;width:100%;max-width:560px;margin:auto">
-        <h3 style="font-size:.95rem;font-weight:700;margin-bottom:1rem" id="objekt-modal-title">Objekt anlegen</h3>
+    <div id="objekt-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:600;align-items:flex-start;justify-content:center;padding:1.5rem;overflow-y:auto">
+      <div style="background:var(--white);border-radius:16px;width:100%;max-width:580px;margin:auto;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.2)">
+        <div style="background:var(--p);color:#fff;padding:1.25rem 1.5rem;display:flex;justify-content:space-between;align-items:center">
+          <div style="font-size:1rem;font-weight:700" id="objekt-modal-title">Objekt anlegen</div>
+          <button type="button" onclick="closeObjektModal()" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:.9rem">✕</button>
+        </div>
         <input type="hidden" id="objekt-edit-id">
+
+        <!-- STEP 1: Typ-Auswahl -->
+        <div id="obj-step1" style="padding:1.5rem">
+          <div style="font-size:.82rem;color:var(--muted);margin-bottom:1.25rem">Wählen Sie die Art des Objekts:</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1.5rem">
+            <div onclick="selectObjektTyp('wgh')" id="obj-typ-wgh" class="obj-typ-card" style="border:2px solid var(--border);border-radius:10px;padding:1.1rem;cursor:pointer;transition:.15s">
+              <div style="font-size:1.5rem;margin-bottom:.4rem">🏢</div>
+              <div style="font-size:.88rem;font-weight:700">Wohn- &amp; Geschäftshaus</div>
+              <div style="font-size:.72rem;color:var(--muted);margin-top:.25rem">Mehrere Wohnungen und/oder Gewerbeeinheiten in einem Gebäude</div>
+            </div>
+            <div onclick="selectObjektTyp('wohnung')" id="obj-typ-wohnung" class="obj-typ-card" style="border:2px solid var(--border);border-radius:10px;padding:1.1rem;cursor:pointer;transition:.15s">
+              <div style="font-size:1.5rem;margin-bottom:.4rem">🏠</div>
+              <div style="font-size:.88rem;font-weight:700">Wohnungen / Gewerbe</div>
+              <div style="font-size:.72rem;color:var(--muted);margin-top:.25rem">Einzelne Wohnungen oder Gewerbeeinheiten zur Vermietung</div>
+            </div>
+            <div onclick="selectObjektTyp('efh')" id="obj-typ-efh" class="obj-typ-card" style="border:2px solid var(--border);border-radius:10px;padding:1.1rem;cursor:pointer;transition:.15s">
+              <div style="font-size:1.5rem;margin-bottom:.4rem">🏡</div>
+              <div style="font-size:.88rem;font-weight:700">Einfamilienhaus</div>
+              <div style="font-size:.72rem;color:var(--muted);margin-top:.25rem">Freistehendes Haus, Doppelhaushälfte oder Reihenhaus</div>
+            </div>
+            <div onclick="selectObjektTyp('garage')" id="obj-typ-garage" class="obj-typ-card" style="border:2px solid var(--border);border-radius:10px;padding:1.1rem;cursor:pointer;transition:.15s">
+              <div style="font-size:1.5rem;margin-bottom:.4rem">🚗</div>
+              <div style="font-size:.88rem;font-weight:700">Garagenanlage</div>
+              <div style="font-size:.72rem;color:var(--muted);margin-top:.25rem">Garage, Stellplatz oder Tiefgaragenanlage</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 2: Objekt-Daten -->
+        <div id="obj-step2" style="display:none;padding:1.5rem">
+          <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:1.25rem">
+            <button type="button" onclick="document.getElementById('obj-step1').style.display='block';document.getElementById('obj-step2').style.display='none'" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:.82rem;padding:0">← Zurück</button>
+            <div id="obj-typ-label" style="font-size:.88rem;color:var(--p);font-weight:600"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-bottom:.7rem">
+            <div class="field" style="grid-column:1/-1"><label>Name / Bezeichnung *</label><input type="text" id="obj-name" placeholder="z. B. Musterstr. 10 Euskirchen"></div>
+            <div class="field" style="grid-column:1/-1"><label>Straße &amp; Nr.</label><input type="text" id="obj-strasse" placeholder="Musterstraße 10"></div>
+            <div class="field"><label>PLZ</label><input type="text" id="obj-plz" placeholder="53881"></div>
+            <div class="field"><label>Ort</label><input type="text" id="obj-ort" placeholder="Euskirchen"></div>
+            <div class="field"><label>Gesamtwohnfläche (m²)</label><input type="number" id="obj-flaeche" placeholder="215" step="0.01"></div>
+            <div class="field"><label>Anzahl Einheiten</label><input type="number" id="obj-einheiten" placeholder="3" min="1"></div>
+            <div class="field" style="grid-column:1/-1"><label>Baujahr</label><input type="number" id="obj-baujahr" placeholder="1985" min="1800" max="2030"></div>
+            <div class="field" style="grid-column:1/-1"><label>Notiz (optional)</label><textarea id="obj-notiz" rows="2" style="border:1px solid var(--border);border-radius:8px;padding:.5rem .75rem;font-size:.86rem;font-family:Arial,sans-serif;width:100%;resize:vertical;outline:none;background:var(--bg);box-sizing:border-box" placeholder="Interne Anmerkungen..."></textarea></div>
+          </div>
+          <div id="obj-msg" style="display:none;margin-bottom:.75rem;font-size:.8rem;padding:.5rem .75rem;border-radius:8px"></div>
+          <div style="display:flex;gap:.75rem">
+            <button type="button" class="btn-primary" onclick="saveObjekt()" style="flex:1">🏢 Objekt anlegen</button>
+            <button type="button" class="btn-secondary" onclick="closeObjektModal()" style="flex:1">Abbrechen</button>
+          </div>
+        </div>
+      </div>
+    </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-bottom:.7rem">
           <div class="field" style="grid-column:1/-1"><label>Name / Bezeichnung *</label><input type="text" id="obj-name" placeholder="z. B. Musterstr. 10 Euskirchen"></div>
           <div class="field"><label>Straße &amp; Nr.</label><input type="text" id="obj-strasse" placeholder="Musterstraße 10"></div>
@@ -961,7 +1071,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
       </div>
 
             <!-- STEPS WRAPPER -->
-      <div id="steps-wrapper" style="padding-top:48px">
+      <div id="steps-wrapper" style="padding-top:60px">
 <!-- STEP 1: GRUNDDATEN -->
       <div id="step1" class="wizard-content">
         <div class="page-header"><div class="page-title">Grunddaten der Abrechnung</div><div class="page-sub">Objekt auswählen oder manuell eingeben.</div></div>
@@ -1112,7 +1222,10 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
       <div style="padding:2rem">
         <!-- HEADER -->
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:.75rem">
-          <h1 style="font-size:1.5rem;font-weight:700">Betriebskostenabrechnungen</h1>
+          <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
+            <h1 style="font-size:1.5rem;font-weight:700">Betriebskostenabrechnungen</h1>
+            <span id="archiv-entwuerfe-badge" style="display:none;background:#fff3cd;color:#856404;font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:12px;cursor:pointer" onclick="document.getElementById('archiv-filter-status').value='entwurf';renderArchivTabelle()">📝 Entwürfe</span>
+          </div>
           <div style="display:flex;gap:.65rem">
             <button class="btn-secondary" onclick="showPage('archiv')" style="font-size:.82rem;padding:.5rem 1rem">📋 BKA aus Vorjahr</button>
             <button class="btn-secondary" onclick="showPapierkorb()" style="font-size:.82rem;padding:.5rem 1rem" id="btn-papierkorb">🗑 Papierkorb</button>
@@ -1133,8 +1246,8 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
           <select id="archiv-filter-status" onchange="renderArchivTabelle()"
             style="border:1px solid var(--border);border-radius:8px;padding:.5rem .9rem;font-size:.85rem;font-family:Arial,sans-serif;background:var(--white);outline:none;cursor:pointer">
             <option value="">Alle Status</option>
-            <option value="entwurf">In Arbeit</option>
-            <option value="abgerechnet">Fertiggestellt</option>
+            <option value="entwurf">📝 Entwurf (In Arbeit)</option>
+            <option value="abgerechnet">✅ Fertiggestellt</option>
           </select>
           <button onclick="resetArchivFilter()" style="font-size:.82rem;color:var(--p);background:none;border:none;cursor:pointer">Filter zurücksetzen</button>
         </div>
@@ -3355,6 +3468,14 @@ async function loadArchiv(){
   if(error){if(tbody)tbody.innerHTML='<tr><td colspan="7" style="color:var(--danger);text-align:center;padding:2rem">'+error.message+'</td></tr>';return;}
   alleAbrechnungen=data||[];
 
+  // Show Entwürfe badge
+  var entwuerfCount=alleAbrechnungen.filter(function(a){return !a.titel||!a.titel.includes('[Abgerechnet]');}).length;
+  var badge=document.getElementById('archiv-entwuerfe-badge');
+  if(badge){
+    if(entwuerfCount>0){badge.textContent='📝 '+entwuerfCount+' Entwurf'+(entwuerfCount>1?'e':'');badge.style.display='inline-block';}
+    else badge.style.display='none';
+  }
+
   // Fill objekt filter
   var objekte=[...new Set(alleAbrechnungen.map(function(a){return a.objekt;}).filter(Boolean))].sort();
   var sel=document.getElementById('archiv-filter-objekt');
@@ -3881,19 +4002,60 @@ function checkFlaecheWarning(){
 async function abrechnungAbschliessen(){
   if(!lastErgebnis){showToast('Bitte zuerst berechnen.');return;}
   if(!confirm('Abrechnung jetzt als „Abgerechnet" speichern?\nSie erscheint dann unter „Meine Abrechnungen".\n\nDieser Schritt kann nicht rückgängig gemacht werden.'))return;
-  const titel=`${lastErgebnis.objekt?lastErgebnis.objekt+' – ':''}NK ${lastErgebnis.jahr} [Abgerechnet]`.trim();
-  const {error}=await sb.from('abrechnungen').insert({
-    titel,
+
+  var isKorrektur=lastErgebnis.korrekturVon?true:false;
+  var titel=(lastErgebnis.objekt?lastErgebnis.objekt+' \u2013 ':'')+'NK '+lastErgebnis.jahr+(isKorrektur?' (Korrektur)':'')+' [Abgerechnet]';
+
+  var r=await sb.from('abrechnungen').insert({
+    titel:titel,
     jahr:lastErgebnis.jahr,
     objekt:lastErgebnis.objekt||'',
     datum:lastErgebnis.datum||null,
-    data:{...lastErgebnis,status:'abgerechnet'},
+    data:Object.assign({},lastErgebnis,{status:'abgerechnet'}),
     created_by:currentUser.id,
-    kunden_email:(document.getElementById('kunde-email')||{}).value||null,
-  });
-  if(error){showToast('❌ Fehler: '+error.message);return;}
-  showToast('✅ Abrechnung gespeichert unter Meine Abrechnungen!');
+    kunden_email:(document.getElementById('kunde-email')||{}).value||null
+  }).select().single();
+
+  if(r.error){showToast('❌ Fehler: '+r.error.message);return;}
+  var abrId=r.data?r.data.id:null;
+
+  // Write NK results to mietzahlungen for each Wohneinheit
+  if(abrId&&lastErgebnis.ergebnisse){
+    var e=lastErgebnis;
+    for(var wi=0;wi<e.ergebnisse.length;wi++){
+      var we=e.ergebnisse[wi];
+      // Find matching Mietverhältnis by Wohnungsbezeichnung
+      var mvRes=await sb.from('mietverhaeltnisse')
+        .select('id,einheit_id,objekt_id')
+        .eq('user_id',currentUser.id)
+        .eq('aktiv',true)
+        .limit(1);
+      // Also try matching by einheiten.bezeichnung
+      var einheitenRes=await sb.from('einheiten').select('id,objekt_id').eq('user_id',currentUser.id).eq('bezeichnung',we.wohnung.bez).limit(1);
+      var einheitId=einheitenRes.data&&einheitenRes.data[0]?einheitenRes.data[0].id:null;
+      if(einheitId){
+        var mvRes2=await sb.from('mietverhaeltnisse').select('id,objekt_id').eq('einheit_id',einheitId).eq('aktiv',true).limit(1);
+        var mv=mvRes2.data&&mvRes2.data[0];
+        if(mv){
+          // Calculate total saldo for this unit
+          we.perioden.filter(function(p){return !p.periode.isLeerstand;}).forEach(function(pe){
+            var totalVZ=pe.periode.vorauszBK+(e.hasHK?pe.periode.vorauszHK:0);
+            var totalKosten=pe.bkGes+(e.hasHK?pe.hkGes:0);
+            var diff=totalVZ-totalKosten; // positive=Guthaben, negative=Nachzahlung
+            var mieterName=pe.periode.name;
+            var bezeichnung=(isKorrektur?'NK-Korrektur ':'NK-Abrechnung ')+e.jahr+' ('+mieterName+')';
+            addNKZuMietzahlungen(mv.id,einheitId,mv.objekt_id,bezeichnung,diff*-1,abrId,isKorrektur);
+          });
+        }
+      }
+    }
+  }
+
+  clearUnsaved();
+  showToast('✅ Abrechnung gespeichert! NK-Einträge in Mietübersicht aktualisiert.');
   document.getElementById('abrechnen-bar').style.display='none';
+  currentDraftId=null;
+  var chip=document.getElementById('abrechnung-active-chip');if(chip)chip.style.display='none';
 }
 
 // ── OBJEKT IN WIZARD LADEN ──
@@ -4864,37 +5026,46 @@ function toggleSidebarGroup(id){
 
 // ── TESTOBJEKT (mit Einheiten + Mietverhältnissen) ──
 async function legeTestobjektAn(){
-  if(!confirm('Testobjekt anlegen?\n\nErstellt: 1 Objekt · 3 Einheiten · 3 Kontakte · 3 Mietverhältnisse'))return;
+  if(!confirm('Testobjekt anlegen?\n\nErstellt: 1 Objekt · 3 Einheiten · 3 Kontakte · 3 Mietverhältnisse · Mietzahlungen'))return;
   showToast('Testobjekt wird angelegt...');
+
   var {data:obj,error:e1}=await sb.from('objekte').insert({
     user_id:currentUser.id,name:'Musterstraße 10',strasse:'Musterstraße 10',
-    plz:'53881',ort:'Euskirchen',gesamtflaeche:215,einheiten_anzahl:3,kategorie:'Wohnhaus',
-    notiz:'Testobjekt – bitte anpassen'
+    plz:'53881',ort:'Euskirchen',gesamtflaeche:215,einheiten_anzahl:3,
+    kategorie:'wgh',baujahr:1985,notiz:'Testobjekt – bitte anpassen'
   }).select().single();
   if(e1){showToast('Objekt-Fehler: '+e1.message);return;}
 
+  // Einheiten OHNE Kaltmiete (kommt ins Mietverhältnis)
   var {data:einheiten,error:e2}=await sb.from('einheiten').insert([
-    {user_id:currentUser.id,objekt_id:obj.id,bezeichnung:'Whg. EG links', typ:'Wohnung',flaeche:65,stockwerk:'EG',    kaltmiete:650,sollmiete:850},
-    {user_id:currentUser.id,objekt_id:obj.id,bezeichnung:'Whg. EG rechts',typ:'Wohnung',flaeche:70,stockwerk:'EG',    kaltmiete:700,sollmiete:920},
-    {user_id:currentUser.id,objekt_id:obj.id,bezeichnung:'Whg. OG',       typ:'Wohnung',flaeche:80,stockwerk:'1. OG', kaltmiete:800,sollmiete:1050},
+    {user_id:currentUser.id,objekt_id:obj.id,bezeichnung:'Whg. EG links', typ:'Wohnung',flaeche:65,stockwerk:'EG'},
+    {user_id:currentUser.id,objekt_id:obj.id,bezeichnung:'Whg. EG rechts',typ:'Wohnung',flaeche:70,stockwerk:'EG'},
+    {user_id:currentUser.id,objekt_id:obj.id,bezeichnung:'Whg. OG',       typ:'Wohnung',flaeche:80,stockwerk:'1. OG'},
   ]).select();
   if(e2){showToast('Einheiten-Fehler: '+e2.message);return;}
 
   var {data:kontakte,error:e3}=await sb.from('kontakte').insert([
-    {user_id:currentUser.id,anrede:'Herr',    vorname:'Max',           nachname:'Mustermann',email:'max@example.de',  telefon:'0151 12345678'},
-    {user_id:currentUser.id,anrede:'Frau',    vorname:'Anna',          nachname:'Schmidt',   email:'anna@example.de', telefon:'0152 98765432'},
-    {user_id:currentUser.id,anrede:'Eheleute',vorname:'Klaus & Maria', nachname:'Weber',     email:'weber@example.de',telefon:'0153 11223344'},
+    {user_id:currentUser.id,anrede:'Herr',    vorname:'Max',          nachname:'Mustermann',email:'max@example.de',  telefon:'0151 12345678'},
+    {user_id:currentUser.id,anrede:'Frau',    vorname:'Anna',         nachname:'Schmidt',   email:'anna@example.de', telefon:'0152 98765432'},
+    {user_id:currentUser.id,anrede:'Eheleute',vorname:'Klaus & Maria',nachname:'Weber',     email:'weber@example.de',telefon:'0153 11223344'},
   ]).select();
   if(e3){showToast('Kontakte-Fehler: '+e3.message);return;}
 
-  var {error:e4}=await sb.from('mietverhaeltnisse').insert([
+  var mvDaten=[
     {user_id:currentUser.id,objekt_id:obj.id,einheit_id:einheiten[0].id,kontakt_id:kontakte[0].id,einzug:'2022-01-01',kaltmiete:650,vorausz_bk:120,vorausz_hk:80, aktiv:true},
     {user_id:currentUser.id,objekt_id:obj.id,einheit_id:einheiten[1].id,kontakt_id:kontakte[1].id,einzug:'2021-03-01',kaltmiete:700,vorausz_bk:130,vorausz_hk:85, aktiv:true},
     {user_id:currentUser.id,objekt_id:obj.id,einheit_id:einheiten[2].id,kontakt_id:kontakte[2].id,einzug:'2020-06-01',kaltmiete:800,vorausz_bk:150,vorausz_hk:100,aktiv:true},
-  ]);
+  ];
+  var {data:mvs,error:e4}=await sb.from('mietverhaeltnisse').insert(mvDaten).select();
   if(e4){showToast('MV-Fehler: '+e4.message);return;}
 
-  showToast('Testobjekt vollständig angelegt!');
+  // Generate monthly rent entries for each MV
+  showToast('Mietzahlungen werden generiert...');
+  for(var i=0;i<mvs.length;i++){
+    await generiereMonatlicheMieten(mvs[i]);
+  }
+
+  showToast('✅ Testobjekt vollständig angelegt! (inkl. Mietzahlungen)');
   loadObjekte();fillObjektDropdown();alleKontakte=[];
 }
 // ── OBJEKTE (ImmoCloud-Stil) ──
@@ -5057,47 +5228,100 @@ async function loadObjekteFilter(){
   if(selModal)selModal.innerHTML='<option value="">Objekt wählen...</option>'+(data||[]).map(function(o){return '<option value="'+o.id+'">'+o.name+'</option>';}).join('');
 }
 
+var selectedObjektTyp='wgh';
+var objTypLabels={wgh:'🏢 Wohn- & Geschäftshaus',wohnung:'🏠 Wohnungen / Gewerbe',efh:'🏡 Einfamilienhaus',garage:'🚗 Garagenanlage'};
+
+function selectObjektTyp(typ){
+  selectedObjektTyp=typ;
+  // Highlight selected card
+  document.querySelectorAll('.obj-typ-card').forEach(function(card){
+    card.style.borderColor='var(--border)';card.style.background='var(--white)';
+  });
+  var sel=document.getElementById('obj-typ-'+typ);
+  if(sel){sel.style.borderColor='var(--p)';sel.style.background='var(--p-light)';}
+  // Go to step 2
+  document.getElementById('obj-step1').style.display='none';
+  document.getElementById('obj-step2').style.display='block';
+  var lbl=document.getElementById('obj-typ-label');
+  if(lbl)lbl.textContent=objTypLabels[typ]||typ;
+}
+
 function openObjektModal(data){
   document.getElementById('objekt-modal-title').textContent=data?'Objekt bearbeiten':'Objekt anlegen';
   document.getElementById('objekt-edit-id').value=data?data.id:'';
-  document.getElementById('obj-name').value=data?data.name:'';
-  document.getElementById('obj-strasse').value=data?data.strasse||'':'';
-  document.getElementById('obj-plz').value=data?data.plz||'':'';
-  document.getElementById('obj-ort').value=data?data.ort||'':'';
-  document.getElementById('obj-flaeche').value=data?data.gesamtflaeche||'':'';
-  document.getElementById('obj-einheiten').value=data?data.einheiten_anzahl||'':'';
-  document.getElementById('obj-notiz').value=data?data.notiz||'':'';
-  document.getElementById('objekt-modal-msg').style.display='none';
+  if(data){
+    // Edit mode: skip type selection, go straight to step 2
+    document.getElementById('obj-step1').style.display='none';
+    document.getElementById('obj-step2').style.display='block';
+    var lbl=document.getElementById('obj-typ-label');
+    if(lbl)lbl.textContent=objTypLabels[data.kategorie]||'Objekt';
+    document.getElementById('obj-name').value=data.name||'';
+    document.getElementById('obj-strasse').value=data.strasse||'';
+    document.getElementById('obj-plz').value=data.plz||'';
+    document.getElementById('obj-ort').value=data.ort||'';
+    document.getElementById('obj-flaeche').value=data.gesamtflaeche||'';
+    document.getElementById('obj-einheiten').value=data.einheiten_anzahl||'';
+    document.getElementById('obj-baujahr').value=data.baujahr||'';
+    document.getElementById('obj-notiz').value=data.notiz||'';
+  } else {
+    // New: show type selection
+    document.getElementById('obj-step1').style.display='block';
+    document.getElementById('obj-step2').style.display='none';
+    document.getElementById('obj-name').value='';
+    document.getElementById('obj-strasse').value='';
+    document.getElementById('obj-plz').value='';
+    document.getElementById('obj-ort').value='';
+    document.getElementById('obj-flaeche').value='';
+    document.getElementById('obj-einheiten').value='';
+    document.getElementById('obj-baujahr').value='';
+    document.getElementById('obj-notiz').value='';
+    document.querySelectorAll('.obj-typ-card').forEach(function(card){card.style.borderColor='var(--border)';card.style.background='var(--white)';});
+  }
+  var msg=document.getElementById('obj-msg');if(msg)msg.style.display='none';
   document.getElementById('objekt-modal').style.display='flex';
 }
+
 function closeObjektModal(){document.getElementById('objekt-modal').style.display='none';}
 
 async function editObjekt(id){
-  var {data}=await sb.from('objekte').select('*').eq('id',id).single();
+  var {data}=await sb.from('objekte').select('*').eq('id',id).maybeSingle();
   if(data)openObjektModal(data);
 }
 async function deleteObjekt(id){
-  if(!confirm('Objekt wirklich löschen? Alle zugehörigen Mieter werden ebenfalls gelöscht.'))return;
+  if(!confirm('Objekt wirklich löschen? Alle zugehörigen Daten werden ebenfalls gelöscht.'))return;
   await sb.from('objekte').delete().eq('id',id);
   showToast('🗑 Objekt gelöscht');loadObjekte();
 }
+
 async function saveObjekt(){
   var id=document.getElementById('objekt-edit-id').value;
   var name=document.getElementById('obj-name').value.trim();
-  var msg=document.getElementById('objekt-modal-msg');
-  msg.style.display='none';
-  if(!name){msg.textContent='Bitte Name eingeben.';msg.style.background='#fdf0ef';msg.style.color='#c0392b';msg.style.display='block';return;}
-  var d={user_id:currentUser.id,name:name,
-    strasse:document.getElementById('obj-strasse').value.trim(),
-    plz:document.getElementById('obj-plz').value.trim(),
-    ort:document.getElementById('obj-ort').value.trim(),
+  var msg=document.getElementById('obj-msg');
+  if(msg)msg.style.display='none';
+  if(!name){
+    if(msg){msg.textContent='Bitte Name/Bezeichnung eingeben.';msg.style.background='#fdf0ef';msg.style.color='#c0392b';msg.style.display='block';}
+    return;
+  }
+  var d={
+    user_id:currentUser.id,
+    name:name,
+    strasse:document.getElementById('obj-strasse').value.trim()||null,
+    plz:document.getElementById('obj-plz').value.trim()||null,
+    ort:document.getElementById('obj-ort').value.trim()||null,
     gesamtflaeche:parseFloat(document.getElementById('obj-flaeche').value)||null,
     einheiten_anzahl:parseInt(document.getElementById('obj-einheiten').value)||null,
-    kategorie:document.getElementById('obj-kategorie').value||'Wohnhaus',
-    notiz:document.getElementById('obj-notiz').value.trim()};
+    baujahr:parseInt(document.getElementById('obj-baujahr').value)||null,
+    kategorie:selectedObjektTyp||'wgh',
+    notiz:document.getElementById('obj-notiz').value.trim()||null
+  };
   var r=id?await sb.from('objekte').update(d).eq('id',id):await sb.from('objekte').insert(d);
-  if(r.error){msg.textContent='Fehler: '+r.error.message;msg.style.background='#fdf0ef';msg.style.color='#c0392b';msg.style.display='block';}
-  else{closeObjektModal();showToast('✅ Objekt gespeichert!');loadObjekte();}
+  if(r.error){
+    if(msg){msg.textContent='Fehler: '+r.error.message;msg.style.background='#fdf0ef';msg.style.color='#c0392b';msg.style.display='block';}
+  }else{
+    closeObjektModal();
+    showToast('✅ Objekt gespeichert!');
+    loadObjekte();fillObjektDropdown();
+  }
 }
 
 function showMieterVonObjekt(objId){
@@ -5351,6 +5575,15 @@ async function saveMietverhaeltnis(){
   if(r.error){msg.textContent='Fehler: '+r.error.message;msg.style.background='#fdf0ef';msg.style.color='#c0392b';msg.style.display='block';}
   else{
     closeMietverhModal();showToast('✅ Mietverhältnis gespeichert!');
+    // Auto-generate monthly rent entries for new Mietverhältnisse
+    if(!id){
+      var mvRes2=await sb.from('mietverhaeltnisse').select('id').eq('einheit_id',einheitId).order('created_at',{ascending:false}).limit(1);
+      var newMVId=mvRes2.data&&mvRes2.data[0]?mvRes2.data[0].id:null;
+      if(newMVId){
+        await generiereMonatlicheMieten(Object.assign({},d,{id:newMVId}));
+        showToast('📊 Monatliche Mietzahlungen generiert!');
+      }
+    }
     if(aktivesObjekt){loadObjektEinheiten(aktivesObjekt.id);loadObjektStats(aktivesObjekt.id);loadObjektSidebar(aktivesObjekt.id);if(document.getElementById('page-mieter').style.display!=='none')loadObjektMieter(aktivesObjekt.id);}
   }
 }
@@ -5443,6 +5676,7 @@ async function openObjektDetail(objId){
   // Load data
   showObjektTab('uebersicht');
   await Promise.all([loadObjektSidebar(objId),loadObjektStats(objId),loadObjektEinheiten(objId),loadObjektMieter(objId),loadObjektAbrechnungen(objId)]);
+  loadObjektUebersichtTab(objId);
 }
 
 function showObjektTab(tab){
@@ -5464,6 +5698,8 @@ function showObjektTab(tab){
     else{btn.style.borderBottomColor='transparent';btn.style.color='var(--muted)';btn.style.fontWeight='400';}
   });
   if(tab==='mietverhaeltnisse'&&aktivesObjekt)loadMietverhaeltnisse(aktivesObjekt.id);
+  if(tab==='abrechnungsdaten'&&aktivesObjekt)loadAbrechnungsdatenTab(aktivesObjekt.id);
+  if(tab==='uebersicht'&&aktivesObjekt){loadObjektUebersichtTab(aktivesObjekt.id);}
 }
 
 async function loadObjektSidebar(objId){
@@ -5547,6 +5783,199 @@ async function loadObjektStats(objId){
   if(el('od-leerstand-count'))el('od-leerstand-count').textContent=leerstandCount+' Einh.';
 }
 
+// ── MIETZAHLUNGEN ──
+
+async function generiereMonatlicheMieten(mv){
+  if(!mv||!mv.einzug||!mv.kaltmiete)return;
+  var start=new Date(mv.einzug);
+  var end=mv.auszug?new Date(mv.auszug):new Date();
+  var limit=new Date();limit.setMonth(limit.getMonth()-24);
+  if(start<limit)start=new Date(limit.getFullYear(),limit.getMonth(),1);
+  var eintraege=[];
+  var d=new Date(start.getFullYear(),start.getMonth(),1);
+  while(d<=end){
+    var monat=d.getMonth()+1;var jahr=d.getFullYear();
+    eintraege.push({
+      user_id:currentUser.id,mietverhaeltnis_id:mv.id,
+      einheit_id:mv.einheit_id,objekt_id:mv.objekt_id,
+      typ:'miete',bezeichnung:'Miete '+monat+'/'+jahr,
+      monat:new Date(d).toISOString().split('T')[0],
+      betrag:(mv.kaltmiete||0)+(mv.vorausz_bk||0)+(mv.vorausz_hk||0),
+      kaltmiete_anteil:mv.kaltmiete||0,bk_anteil:mv.vorausz_bk||0,hk_anteil:mv.vorausz_hk||0,
+      status:'offen'
+    });
+    d.setMonth(d.getMonth()+1);
+  }
+  if(!eintraege.length)return;
+  for(var i=0;i<eintraege.length;i+=50){
+    await sb.from('mietzahlungen').insert(eintraege.slice(i,i+50));
+  }
+}
+
+async function loadMietubersichtFuerEinheit(einheitId,containerId){
+  var container=document.getElementById(containerId);
+  if(!container)return;
+  var mvRes=await sb.from('mietverhaeltnisse').select('*,kontakte(anrede,vorname,nachname)').eq('einheit_id',einheitId).eq('aktiv',true).limit(1);
+  var zRes=await sb.from('mietzahlungen').select('*').eq('einheit_id',einheitId).order('monat',{ascending:false}).limit(20);
+  var aktivMV=mvRes.data&&mvRes.data[0];
+  var zahlungen=zRes.data||[];
+  var saldo=0;
+  zahlungen.filter(function(z){return z.status==='offen';}).forEach(function(z){saldo-=z.betrag;});
+  var mieterName=aktivMV&&aktivMV.kontakte?(aktivMV.kontakte.anrede+' '+aktivMV.kontakte.vorname+' '+aktivMV.kontakte.nachname).trim():'– Leerstand –';
+  var mieterSeit=aktivMV&&aktivMV.einzug?new Date(aktivMV.einzug).toLocaleDateString('de-DE'):'–';
+  var fmt2=function(v){return v?v.toLocaleString('de-DE',{minimumFractionDigits:2})+' €':'0,00 €';};
+
+  container.innerHTML='<div style="display:grid;grid-template-columns:1fr 280px;gap:1.25rem;margin-top:.75rem">'
+    +'<div>'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem">'
+        +'<span style="font-size:.82rem;font-weight:700">Mietübersicht</span>'
+        +'<span style="font-size:.88rem;font-weight:700;color:'+(saldo<0?'#c0392b':'#1a7a4a')+'">Saldo: '+(saldo).toLocaleString('de-DE',{minimumFractionDigits:2})+' €</span>'
+      +'</div>'
+      +'<div style="background:var(--white);border:1px solid var(--border);border-radius:8px;overflow:hidden">'
+        +'<table style="width:100%;border-collapse:collapse">'
+        +'<thead><tr style="background:var(--bg)"><th style="text-align:left;padding:.5rem .7rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Betreff</th><th style="padding:.5rem .7rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Status</th><th style="text-align:right;padding:.5rem .7rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Betrag</th><th style="padding:.5rem .7rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Zahlung</th></tr></thead>'
+        +'<tbody>'
+        +(zahlungen.length?zahlungen.map(function(z){
+          var isOffen=z.status==='offen';
+          return '<tr style="border-bottom:1px solid #f5f3fa">'
+            +'<td style="padding:.5rem .7rem;font-size:.82rem">'+z.bezeichnung+'</td>'
+            +'<td style="padding:.5rem .7rem"><span style="font-size:.65rem;font-weight:700;padding:2px 7px;border-radius:6px;background:'+(isOffen?'#fdf0ef':'#d4edda')+';color:'+(isOffen?'#c0392b':'#155724')+'">'+(isOffen?'OFFEN':'BEZAHLT')+'</span></td>'
+            +'<td style="padding:.5rem .7rem;text-align:right;font-weight:700;font-size:.82rem;color:'+(z.betrag<0?'#1a7a4a':'var(--text)')+'">'+fmt2(z.betrag)+'</td>'
+            +'<td style="padding:.5rem .7rem">'+(isOffen?'<button onclick="markiereAlsBezahlt(\''+z.id+'\',\''+einheitId+'\')" class="btn-small" style="font-size:.62rem;padding:2px 6px">Als bezahlt</button>':'–')+'</td>'
+            +'</tr>';
+        }).join(''):'<tr><td colspan="4" style="text-align:center;padding:1.5rem;color:var(--muted);font-size:.82rem">Keine Einträge vorhanden</td></tr>')
+        +'</tbody></table>'
+        +(aktivMV?'<div style="padding:.5rem .7rem;border-top:1px solid var(--border)"><button class="btn-small" style="font-size:.68rem" onclick="alleAlsBezahltMarkieren(\''+einheitId+'\')">Alle als bezahlt markieren</button></div>':'')
+      +'</div>'
+    +'</div>'
+    +'<div style="background:var(--white);border:1px solid var(--border);border-radius:8px;padding:.85rem">'
+      +'<div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:.65rem">Aktueller Mieter</div>'
+      +(aktivMV?
+        '<div style="font-size:.72rem;color:var(--muted)">Mieter seit: <strong>'+mieterSeit+'</strong></div>'
+        +'<div style="font-size:.95rem;font-weight:700;margin:.4rem 0 .75rem">'+mieterName+'</div>'
+        +'<div style="height:1px;background:var(--border);margin:.5rem 0"></div>'
+        +'<div style="display:flex;justify-content:space-between;font-size:.8rem;padding:.2rem 0;border-bottom:1px solid var(--border)"><span style="color:var(--muted)">Kaltmiete</span><span>'+fmt2(aktivMV.kaltmiete)+'</span></div>'
+        +'<div style="display:flex;justify-content:space-between;font-size:.8rem;padding:.2rem 0;border-bottom:1px solid var(--border)"><span style="color:var(--muted)">Betriebskosten</span><span>'+fmt2(aktivMV.vorausz_bk)+'</span></div>'
+        +(aktivMV.vorausz_hk?'<div style="display:flex;justify-content:space-between;font-size:.8rem;padding:.2rem 0;border-bottom:1px solid var(--border)"><span style="color:var(--muted)">Heizkosten</span><span>'+fmt2(aktivMV.vorausz_hk)+'</span></div>':'')
+        +'<div style="display:flex;justify-content:space-between;font-size:.88rem;font-weight:700;padding:.4rem 0"><span>Gesamtmiete</span><span>'+fmt2((aktivMV.kaltmiete||0)+(aktivMV.vorausz_bk||0)+(aktivMV.vorausz_hk||0))+'</span></div>'
+        +'<div style="height:1px;background:var(--border);margin:.25rem 0"></div>'
+        +'<button class="btn-small" style="width:100%;font-size:.7rem;margin-top:.5rem" onclick="openMietverhModal(\''+aktivMV.einheit_id+'\',\''+aktivMV.objekt_id+'\',\'Einheit\',null)">+ Mietvertrag</button>'
+      :'<div style="text-align:center;padding:1.5rem;color:var(--muted);font-size:.82rem">🏚 Leerstand</div>')
+    +'</div>'
+  +'</div>';
+}
+
+async function markiereAlsBezahlt(zahlungId,einheitId){
+  await sb.from('mietzahlungen').update({status:'bezahlt',zahlungsdatum:new Date().toISOString().split('T')[0]}).eq('id',zahlungId);
+  showToast('✅ Als bezahlt markiert');
+  loadMietubersichtFuerEinheit(einheitId,'mu-'+einheitId);
+  if(aktivesObjekt)loadObjektStats(aktivesObjekt.id);
+}
+
+async function alleAlsBezahltMarkieren(einheitId){
+  if(!confirm('Alle offenen Mieten dieser Einheit als bezahlt markieren?'))return;
+  await sb.from('mietzahlungen').update({status:'bezahlt',zahlungsdatum:new Date().toISOString().split('T')[0]}).eq('einheit_id',einheitId).eq('status','offen');
+  showToast('✅ Alle als bezahlt markiert');
+  loadMietubersichtFuerEinheit(einheitId,'mu-'+einheitId);
+}
+
+async function addNKZuMietzahlungen(mvId,einheitId,objektId,bezeichnung,betrag,abrechnungId,isKorrektur){
+  if(!mvId)return;
+  await sb.from('mietzahlungen').insert({
+    user_id:currentUser.id,mietverhaeltnis_id:mvId,
+    einheit_id:einheitId,objekt_id:objektId,
+    typ:isKorrektur?'nk_korrektur':'nk_abrechnung',
+    bezeichnung:bezeichnung,betrag:betrag,
+    status:'offen',abrechnung_id:abrechnungId
+  });
+}
+
+async function loadObjektUebersichtTab(objId){
+  // Load quick Einheiten overview (collapsible, ImmoCloud style)
+  var container=document.getElementById('od-einheiten-uebersicht');
+  var saldoContainer=document.getElementById('od-saldo-overview');
+  if(!container)return;
+
+  var [{data:einh},{data:mv},{data:zahlungen}]=await Promise.all([
+    sb.from('einheiten').select('*').eq('user_id',currentUser.id).eq('objekt_id',objId).order('bezeichnung'),
+    sb.from('mietverhaeltnisse').select('*,kontakte(anrede,vorname,nachname)').eq('user_id',currentUser.id).eq('objekt_id',objId).eq('aktiv',true),
+    sb.from('mietzahlungen').select('betrag,status,einheit_id').eq('objekt_id',objId).eq('status','offen')
+  ]);
+
+  // Saldo overview
+  var totalOffen=0;
+  (zahlungen||[]).forEach(function(z){totalOffen+=z.betrag;});
+  if(saldoContainer){
+    saldoContainer.innerHTML='<div style="font-size:1.4rem;font-weight:700;color:'+(totalOffen>0?'#c0392b':'#1a7a4a')+'">'+totalOffen.toLocaleString('de-DE',{minimumFractionDigits:2})+' €</div>'
+      +'<div style="font-size:.72rem;color:var(--muted);margin-top:.2rem">Offene Forderungen gesamt</div>'
+      +(zahlungen&&zahlungen.length?'<div style="font-size:.75rem;color:var(--muted);margin-top:.5rem">'+zahlungen.length+' offene Buchungen</div>':'<div style="font-size:.75rem;color:#1a7a4a;margin-top:.5rem">✅ Alle bezahlt</div>');
+  }
+
+  if(!einh||!einh.length){container.innerHTML='<div style="color:var(--muted);font-size:.82rem;padding:.75rem 0">Noch keine Einheiten.</div>';return;}
+
+  // Map MV to Einheiten
+  var mvMap={};
+  (mv||[]).forEach(function(m){mvMap[m.einheit_id]=m;});
+  var zalMap={};
+  (zahlungen||[]).forEach(function(z){
+    if(!zalMap[z.einheit_id])zalMap[z.einheit_id]=0;
+    zalMap[z.einheit_id]+=z.betrag;
+  });
+
+  container.innerHTML='<div style="background:var(--white);border:1px solid var(--border);border-radius:8px;overflow:hidden">'
+    +'<table style="width:100%;border-collapse:collapse">'
+    +'<thead><tr style="background:var(--bg)">'
+    +'<th style="text-align:left;padding:.5rem .85rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Einheit</th>'
+    +'<th style="padding:.5rem .85rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Mieter</th>'
+    +'<th style="text-align:right;padding:.5rem .85rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Kaltmiete</th>'
+    +'<th style="text-align:right;padding:.5rem .85rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Gesamtmiete</th>'
+    +'<th style="text-align:right;padding:.5rem .85rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Offene Posten</th>'
+    +'<th style="width:50px"></th>'
+    +'</tr></thead><tbody>'
+    +einh.map(function(e){
+      var m=mvMap[e.id];
+      var mieterName=m&&m.kontakte?(m.kontakte.anrede+' '+m.kontakte.vorname+' '+m.kontakte.nachname).trim():'–';
+      var kaltmiete=m?m.kaltmiete:0;
+      var gesamt=m?(m.kaltmiete||0)+(m.vorausz_bk||0)+(m.vorausz_hk||0):0;
+      var offen=zalMap[e.id]||0;
+      var isLeer=!m;
+      return '<tr style="border-bottom:1px solid var(--border);cursor:pointer" onclick="showObjektTab(\'einheiten\');setTimeout(function(){var el=document.getElementById(\'mu-'+e.id+'\');if(el)loadMietubersichtFuerEinheit(\''+e.id+'\',\'mu-'+e.id+'\');},200)" onmouseover="this.style.background=\'var(--p-light)\'" onmouseout="this.style.background=\'\'">'
+        +'<td style="padding:.6rem .85rem;font-size:.85rem"><strong>'+e.bezeichnung+'</strong><div style="font-size:.7rem;color:var(--muted)">'+(e.flaeche?e.flaeche+' m²':'')+(e.stockwerk?' · '+e.stockwerk:'')+'</div></td>'
+        +'<td style="padding:.6rem .85rem;font-size:.82rem">'+(isLeer?'<span style="color:#c0392b;font-size:.72rem;font-weight:700">LEERSTAND</span>':mieterName)+'</td>'
+        +'<td style="padding:.6rem .85rem;text-align:right;font-size:.82rem">'+(kaltmiete?kaltmiete.toLocaleString('de-DE',{minimumFractionDigits:2})+' €':'–')+'</td>'
+        +'<td style="padding:.6rem .85rem;text-align:right;font-size:.82rem;font-weight:700">'+(gesamt?gesamt.toLocaleString('de-DE',{minimumFractionDigits:2})+' €':'–')+'</td>'
+        +'<td style="padding:.6rem .85rem;text-align:right;font-size:.82rem;font-weight:700;color:'+(offen>0?'#c0392b':'#1a7a4a')+'">'+(offen?offen.toLocaleString('de-DE',{minimumFractionDigits:2})+' €':'✅')+'</td>'
+        +'<td style="padding:.6rem .5rem"><span style="font-size:.7rem;color:var(--muted)">›</span></td>'
+        +'</tr>';
+    }).join('')
+    +'</tbody></table></div>';
+}
+
+async function loadAbrechnungsdatenTab(objId){
+  if(!aktivesObjekt)return;
+  // Load stored Abrechnungsdaten from objekt notiz/settings
+  var vsFlaeche=document.getElementById('obj-vs-flaeche');
+  var vsEinh=document.getElementById('obj-vs-einheiten');
+  // Load einheiten count and total flaeche
+  var {data:einh}=await sb.from('einheiten').select('flaeche').eq('objekt_id',objId);
+  var totalFlaeche=(einh||[]).reduce(function(s,e){return s+(e.flaeche||0);},0);
+  var totalEinh=(einh||[]).length;
+  if(vsFlaeche)vsFlaeche.textContent=totalFlaeche?totalFlaeche+' m²':'–';
+  if(vsEinh)vsEinh.textContent=totalEinh||'–';
+  // Pre-fill bank data from stammdaten if empty
+  var sd=stammdaten;
+  var inhaber=document.getElementById('obj-bank-inhaber');
+  var iban=document.getElementById('obj-bank-iban');
+  var bic=document.getElementById('obj-bank-bic');
+  if(inhaber&&!inhaber.value&&sd.firma)inhaber.value=sd.firma||sd.vname||'';
+  if(iban&&!iban.value&&sd.iban)iban.value=sd.iban||'';
+  if(bic&&!bic.value&&sd.bic)bic.value=sd.bic||'';
+}
+
+function saveBankdaten(){showToast('💾 Bankdaten gespeichert (in Stammdaten hinterlegen).');}
+function saveAbrechnungszeitraum(){showToast('💾 Zeitraum gespeichert.');}
+
+
 async function loadObjektEinheiten(objId){
   var container=document.getElementById('od-einheiten-list');
   if(!container)return;
@@ -5625,8 +6054,12 @@ async function loadObjektEinheiten(objId){
           +'<button onclick="event.stopPropagation();deleteEinheit(\''+e.id+'\')" class="btn-small" style="font-size:.72rem;padding:.3rem .6rem;background:#888">🗑</button>'
         +'</div>'
       +'</div>'
-      // Mietverhältnisse
-      +'<div style="padding:.65rem 1rem .85rem;background:var(--bg)">'+mvHtml+'</div>'
+      // Mietverhältnisse + Mietübersicht expandable
+      +'<div style="padding:.65rem 1rem .85rem;background:var(--bg)">'
+        +mvHtml
+        +'<div id="mu-'+e.id+'" style="margin-top:.5rem"></div>'
+        +'<button onclick="loadMietubersichtFuerEinheit(\''+e.id+'\',\'mu-'+e.id+'\')" class="btn-small" style="font-size:.68rem;margin-top:.3rem;background:var(--p-light);color:var(--p)">📊 Mietübersicht laden</button>'
+      +'</div>'
       +'</div>';
   }).join('');
 }

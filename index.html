@@ -2865,8 +2865,11 @@ function renderVoraus(e){
 // ── PDF AUFBAU ──
 async function checkIsFree(){
   if(isAdmin)return true;
-  try{const {count}=await sb.from('abrechnungen').select('*',{count:'exact',head:true}).eq('created_by',currentUser.id);return (count||0)<1;}
-  catch(e){return true;}
+  try{
+    var chkR=await sb.from('abrechnungen').select('*',{count:'exact',head:true}).eq('created_by',currentUser.id);
+    return (chkR.count||0)<3;
+  }catch(e){return true;}
+}
 }
 
 // ── PDF CORE: writes period content into existing doc ──

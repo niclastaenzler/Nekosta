@@ -706,7 +706,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
     </div>
 
     <!-- OBJEKT DASHBOARD (ImmoCloud-Stil) -->
-    <div id="page-objekt-detail" style="display:none;position:relative">
+    <div id="page-objekt-detail" style="display:none">
       <div style="display:flex;height:calc(100vh - 52px);overflow:hidden">
 
         <!-- LEFT SIDEBAR -->
@@ -759,7 +759,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
             <button type="button" id="tab-uebersicht" onclick="showObjektTab('uebersicht')" style="background:none;border:none;border-bottom:2px solid var(--p);margin-bottom:-2px;padding:.75rem 1.25rem;cursor:pointer;font-size:.88rem;font-weight:700;color:var(--p);font-family:Arial,sans-serif">Übersicht</button>
             <button type="button" id="tab-abrechnungsdaten" onclick="showObjektTab('abrechnungsdaten')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.75rem 1.25rem;cursor:pointer;font-size:.88rem;color:var(--muted);font-family:Arial,sans-serif">Abrechnungsdaten</button>
             <button type="button" id="tab-einheiten-tab" onclick="showObjektTab('einheiten')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.75rem 1.25rem;cursor:pointer;font-size:.88rem;color:var(--muted);font-family:Arial,sans-serif">Einheiten</button>
-            <button type="button" id="tab-mieter-tab" onclick="showObjektTab('mieterlist')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.75rem 1.25rem;cursor:pointer;font-size:.88rem;color:var(--muted);font-family:Arial,sans-serif">Mieter</button>
+
             <button type="button" id="tab-mietverh-tab" onclick="showObjektTab('mietverhaeltnisse')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.75rem 1.25rem;cursor:pointer;font-size:.88rem;color:var(--muted);font-family:Arial,sans-serif">Mietverhältnisse</button>
           </div>
 
@@ -981,10 +981,10 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
             <div class="field" style="grid-column:1/-1"><label>Straße &amp; Nr.</label><input type="text" id="obj-strasse" placeholder="Musterstraße 10"></div>
             <div class="field"><label>PLZ</label><input type="text" id="obj-plz" placeholder="53881"></div>
             <div class="field"><label>Ort</label><input type="text" id="obj-ort" placeholder="Euskirchen"></div>
-            <div class="field"><label>Gesamtwohnfläche (m²)</label><input type="number" id="obj-flaeche" placeholder="215" step="0.01"></div>
-            <div class="field"><label>Anzahl Einheiten</label><input type="number" id="obj-einheiten" placeholder="3" min="1"></div>
-            <div class="field" style="grid-column:1/-1"><label>Baujahr</label><input type="number" id="obj-baujahr" placeholder="1985" min="1800" max="2030"></div>
             <div class="field" style="grid-column:1/-1"><label>Notiz (optional)</label><textarea id="obj-notiz" rows="2" style="border:1px solid var(--border);border-radius:8px;padding:.5rem .75rem;font-size:.86rem;font-family:Arial,sans-serif;width:100%;resize:vertical;outline:none;background:var(--bg);box-sizing:border-box" placeholder="Interne Anmerkungen..."></textarea></div>
+          </div>
+          <div style="background:var(--p-light);border-radius:8px;padding:.6rem .85rem;font-size:.78rem;color:var(--p);margin-bottom:.75rem">
+            💡 Fläche und Einheiten-Anzahl werden automatisch aus den angelegten Einheiten berechnet.
           </div>
           <div id="obj-msg" style="display:none;margin-bottom:.75rem;font-size:.8rem;padding:.5rem .75rem;border-radius:8px"></div>
           <div style="display:flex;gap:.75rem">
@@ -1688,6 +1688,13 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
             <input type="text" id="kontakte-search" placeholder="Kontakte durchsuchen..." oninput="renderKontakte()"
               style="width:100%;border:1px solid var(--border);border-radius:8px;padding:.55rem .75rem .55rem 2.2rem;font-size:.88rem;font-family:Arial,sans-serif;outline:none;background:var(--white);box-sizing:border-box">
           </div>
+          <!-- Typ Filter -->
+          <div style="display:flex;gap:.4rem;align-items:center;background:var(--white);border:1px solid var(--border);border-radius:8px;padding:.25rem">
+            <button type="button" id="ktyp-alle" onclick="setKontaktTypFilter('')" style="background:var(--p);color:#fff;border:none;border-radius:6px;padding:.35rem .75rem;cursor:pointer;font-size:.8rem;font-family:Arial,sans-serif">Alle</button>
+            <button type="button" id="ktyp-mieter" onclick="setKontaktTypFilter('Mieter')" style="background:none;color:var(--muted);border:none;border-radius:6px;padding:.35rem .75rem;cursor:pointer;font-size:.8rem;font-family:Arial,sans-serif">👤 Mieter</button>
+            <button type="button" id="ktyp-eigentuemer" onclick="setKontaktTypFilter('Eigentümer')" style="background:none;color:var(--muted);border:none;border-radius:6px;padding:.35rem .75rem;cursor:pointer;font-size:.8rem;font-family:Arial,sans-serif">🏠 Eigentümer</button>
+            <button type="button" id="ktyp-sonstiges" onclick="setKontaktTypFilter('Sonstiges')" style="background:none;color:var(--muted);border:none;border-radius:6px;padding:.35rem .75rem;cursor:pointer;font-size:.8rem;font-family:Arial,sans-serif">Sonstiges</button>
+          </div>
           <div style="display:flex;gap:.5rem;align-items:center">
             <button type="button" id="kontakt-view-grid" onclick="setKontakteView('grid')" style="background:var(--p);color:#fff;border:none;border-radius:6px;padding:.5rem .75rem;cursor:pointer;font-size:.8rem">⊞</button>
             <button type="button" id="kontakt-view-list" onclick="setKontakteView('list')" style="background:var(--white);color:var(--muted);border:1px solid var(--border);border-radius:6px;padding:.5rem .75rem;cursor:pointer;font-size:.8rem">☰</button>
@@ -1729,7 +1736,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
       <div style="background:var(--white);border-radius:14px;padding:1.75rem;width:100%;max-width:560px;margin:auto">
         <h3 style="font-size:.95rem;font-weight:700;margin-bottom:1rem" id="kontakt-modal-title">Kontakt anlegen</h3>
         <input type="hidden" id="kontakt-edit-id">
-        <div style="display:grid;grid-template-columns:100px 1fr 1fr;gap:.6rem;margin-bottom:.6rem">
+        <div style="display:grid;grid-template-columns:110px 1fr 1fr 120px;gap:.6rem;margin-bottom:.6rem">
           <div class="field"><label>Anrede</label>
             <select id="k-anrede" style="border:1px solid var(--border);border-radius:var(--r);padding:.48rem .5rem;font-size:.86rem;font-family:Arial,sans-serif;background:var(--bg);outline:none;width:100%">
               <option>Herr</option><option>Frau</option><option>Eheleute</option><option>Firma</option><option>Divers</option>
@@ -1737,6 +1744,13 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
           </div>
           <div class="field"><label>Vorname</label><input type="text" id="k-vorname" placeholder="Max"></div>
           <div class="field"><label>Nachname *</label><input type="text" id="k-nachname" placeholder="Mustermann"></div>
+          <div class="field"><label>Typ *</label>
+            <select id="k-typ" style="border:1px solid var(--border);border-radius:var(--r);padding:.48rem .5rem;font-size:.86rem;font-family:Arial,sans-serif;background:var(--bg);outline:none;width:100%">
+              <option value="Mieter">Mieter</option>
+              <option value="Eigentümer">Eigentümer</option>
+              <option value="Sonstiges">Sonstiges</option>
+            </select>
+          </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.6rem">
           <div class="field"><label>E-Mail</label><input type="email" id="k-email" placeholder="max@email.de"></div>
@@ -5043,7 +5057,7 @@ async function legeTestobjektAn(){
 
   var {data:obj,error:e1}=await sb.from('objekte').insert({
     user_id:currentUser.id,name:'Musterstraße 10',strasse:'Musterstraße 10',
-    plz:'53881',ort:'Euskirchen',gesamtflaeche:215,einheiten_anzahl:3,
+    plz:'53881',ort:'Euskirchen',
     kategorie:'wgh',notiz:'Testobjekt – bitte anpassen'
   }).select().single();
   if(e1){showToast('Objekt-Fehler: '+e1.message);return;}
@@ -5055,11 +5069,13 @@ async function legeTestobjektAn(){
     {user_id:currentUser.id,objekt_id:obj.id,bezeichnung:'Whg. OG',       typ:'Wohnung',flaeche:80,stockwerk:'1. OG'},
   ]).select();
   if(e2){showToast('Einheiten-Fehler: '+e2.message);return;}
+  // Auto-berechne Gesamtfläche aus Einheiten
+  await aktualisierObjektFlaeche(obj.id);
 
   var {data:kontakte,error:e3}=await sb.from('kontakte').insert([
-    {user_id:currentUser.id,anrede:'Herr',    vorname:'Max',          nachname:'Mustermann',email:'max@example.de',  telefon:'0151 12345678'},
-    {user_id:currentUser.id,anrede:'Frau',    vorname:'Anna',         nachname:'Schmidt',   email:'anna@example.de', telefon:'0152 98765432'},
-    {user_id:currentUser.id,anrede:'Eheleute',vorname:'Klaus & Maria',nachname:'Weber',     email:'weber@example.de',telefon:'0153 11223344'},
+    {user_id:currentUser.id,anrede:'Herr',    vorname:'Max',          nachname:'Mustermann',email:'max@example.de',  telefon:'0151 12345678',notiz:'[Mieter]'},
+    {user_id:currentUser.id,anrede:'Frau',    vorname:'Anna',         nachname:'Schmidt',   email:'anna@example.de', telefon:'0152 98765432',notiz:'[Mieter]'},
+    {user_id:currentUser.id,anrede:'Eheleute',vorname:'Klaus & Maria',nachname:'Weber',     email:'weber@example.de',telefon:'0153 11223344',notiz:'[Mieter]'},
   ]).select();
   if(e3){showToast('Kontakte-Fehler: '+e3.message);return;}
 
@@ -5271,9 +5287,6 @@ function openObjektModal(data){
     document.getElementById('obj-strasse').value=data.strasse||'';
     document.getElementById('obj-plz').value=data.plz||'';
     document.getElementById('obj-ort').value=data.ort||'';
-    document.getElementById('obj-flaeche').value=data.gesamtflaeche||'';
-    document.getElementById('obj-einheiten').value=data.einheiten_anzahl||'';
-    document.getElementById('obj-baujahr').value=data.baujahr||'';
     document.getElementById('obj-notiz').value=data.notiz||'';
   } else {
     // New: show type selection
@@ -5320,8 +5333,6 @@ async function saveObjekt(){
     strasse:document.getElementById('obj-strasse').value.trim()||null,
     plz:document.getElementById('obj-plz').value.trim()||null,
     ort:document.getElementById('obj-ort').value.trim()||null,
-    gesamtflaeche:parseFloat(document.getElementById('obj-flaeche').value)||null,
-    einheiten_anzahl:parseInt(document.getElementById('obj-einheiten').value)||null,
     kategorie:selectedObjektTyp||'wgh',
     notiz:document.getElementById('obj-notiz').value.trim()||null
   };
@@ -5417,17 +5428,41 @@ function setKontakteView(v){
   renderKontakte();
 }
 
+function setKontaktTypFilter(typ){
+  window._kontaktTypFilter=typ;
+  // Update button styles
+  var btns={'':'ktyp-alle','Mieter':'ktyp-mieter','Eigentümer':'ktyp-eigentuemer','Sonstiges':'ktyp-sonstiges'};
+  Object.keys(btns).forEach(function(t){
+    var btn=document.getElementById(btns[t]);
+    if(!btn)return;
+    btn.style.background=t===typ?'var(--p)':'none';
+    btn.style.color=t===typ?'#fff':'var(--muted)';
+  });
+  renderKontakte();
+}
 function renderKontakte(){
   var countEl=document.getElementById('kontakte-count');
   var search=(document.getElementById('kontakte-search')||{value:''}).value.toLowerCase();
+  var typFilter=window._kontaktTypFilter||'';
   var filtered=alleKontakte.filter(function(k){
-    return !search||
+    var matchSearch=!search||
       (k.nachname||'').toLowerCase().includes(search)||
       (k.vorname||'').toLowerCase().includes(search)||
       (k.email||'').toLowerCase().includes(search)||
       (k.ort||'').toLowerCase().includes(search);
+    if(!matchSearch)return false;
+    if(!typFilter)return true;
+    // Parse typ from notiz
+    var rawNotiz=k.notiz||'';
+    var typMatch=rawNotiz.match(/^\[([^\]]+)\]/);
+    var kTyp=typMatch?typMatch[1]:'Mieter';
+    return kTyp===typFilter;
   });
   if(countEl)countEl.textContent=filtered.length+' Kontakt'+(filtered.length===1?'':'e');
+
+  // Helper: get typ from notiz
+  function getTyp(k){var m=(k.notiz||'').match(/^\[([^\]]+)\]/);return m?m[1]:'Mieter';}
+  var typColors={'Mieter':'#e8f5e9,#2e7d32','Eigentümer':'#e8eaf6,#3949ab','Sonstiges':'#f3f3f3,#666'};
 
   // Farb-Palette für Avatare
   var colors=['#6a2d9f','#1a7a4a','#e67e22','#c0392b','#2980b9','#8e44ad','#16a085','#d35400'];
@@ -5441,6 +5476,9 @@ function renderKontakte(){
       var initials=((k.vorname?k.vorname[0]:'')+k.nachname[0]).toUpperCase();
       var adresse=[k.strasse,(k.plz||'')+(k.ort?' '+k.ort:'')].filter(Boolean).join(', ');
       var einheiten=k._einheiten&&k._einheiten.length?k._einheiten.slice(0,2).join(', ')+(k._einheiten.length>2?' +mehr':''):'';
+      var typ=getTyp(k);var tc=(typColors[typ]||typColors.Sonstiges).split(',');
+      return '<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:box-shadow .15s;cursor:pointer" '
+        +'onmouseover="this.style.boxShadow=\'0 4px 16px rgba(0,0,0,.1)\'" onmouseout="this.style.boxShadow=\'none\'" onclick="
       return '<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:box-shadow .15s;cursor:pointer" '
         +'onmouseover="this.style.boxShadow=\'0 4px 16px rgba(0,0,0,.1)\'" onmouseout="this.style.boxShadow=\'none\'" onclick="editKontakt(\''+k.id+'\')">'
         // Farbiger Header
@@ -5451,7 +5489,7 @@ function renderKontakte(){
           +'<div style="width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.25);border:3px solid rgba(255,255,255,.5);display:flex;align-items:center;justify-content:center;font-size:1.35rem;font-weight:700;color:#fff;margin:0 auto">'+initials+'</div>'
         +'</div>'
         // Info
-        +'<div style="padding:1rem">'
+        +'<div style="padding:1rem"><span style="font-size:.65rem;font-weight:700;padding:1px 8px;border-radius:8px;background:'+tc[0]+';color:'+tc[1]+'">'+typ+'</span>'
           +'<div style="text-align:center;margin-bottom:.75rem">'
             +'<div style="font-weight:700;font-size:.95rem">'+k.anrede+' '+k.vorname+' '+k.nachname+'</div>'
             +(einheiten?'<div style="font-size:.72rem;color:var(--p);margin-top:2px;font-weight:600">'+einheiten+'</div>':'<div style="font-size:.72rem;color:var(--muted);margin-top:2px">Kein Mietverhältnis</div>')
@@ -5498,8 +5536,15 @@ function renderKontakte(){
 function openKontaktModal(data){
   document.getElementById('kontakt-modal-title').textContent=data?'Kontakt bearbeiten':'Kontakt anlegen';
   document.getElementById('kontakt-edit-id').value=data?data.id:'';
-  var fields={anrede:'k-anrede',vorname:'k-vorname',nachname:'k-nachname',email:'k-email',telefon:'k-telefon',mobil:'k-mobil',strasse:'k-strasse',plz:'k-plz',ort:'k-ort',notiz:'k-notiz'};
+  var fields={anrede:'k-anrede',vorname:'k-vorname',nachname:'k-nachname',email:'k-email',telefon:'k-telefon',mobil:'k-mobil',strasse:'k-strasse',plz:'k-plz',ort:'k-ort'};
   Object.keys(fields).forEach(function(f){var el=document.getElementById(fields[f]);if(el)el.value=data?data[f]||'':'';});
+  // Parse Typ + Notiz from notiz field: "[Mieter] text" format
+  var rawNotiz=data&&data.notiz?data.notiz:'';
+  var typMatch=rawNotiz.match(/^\[([^\]]+)\]/);
+  var typSel=document.getElementById('k-typ');
+  if(typSel)typSel.value=typMatch?typMatch[1]:'Mieter';
+  var kNotizVal=typMatch?rawNotiz.replace(typMatch[0],'').trim():rawNotiz;
+  document.getElementById('k-notiz').value=kNotizVal;
   document.getElementById('kontakt-msg').style.display='none';
   document.getElementById('kontakt-modal').style.display='flex';
 }
@@ -5515,6 +5560,10 @@ async function saveKontakt(){
   var nachname=document.getElementById('k-nachname').value.trim();
   var msg=document.getElementById('kontakt-msg');msg.style.display='none';
   if(!nachname){msg.textContent='Bitte Nachname eingeben.';msg.style.background='#fdf0ef';msg.style.color='#c0392b';msg.style.display='block';return;}
+  var kTyp=document.getElementById('k-typ')?document.getElementById('k-typ').value:'Mieter';
+  var kNotiz=document.getElementById('k-notiz').value.trim();
+  // Store typ as prefix in notiz: "[Mieter] Notiztext"
+  var notizMitTyp='['+kTyp+']'+(kNotiz?' '+kNotiz:'');
   var d={user_id:currentUser.id,anrede:document.getElementById('k-anrede').value,
     vorname:document.getElementById('k-vorname').value.trim(),nachname:nachname,
     email:document.getElementById('k-email').value.trim()||null,
@@ -5523,7 +5572,7 @@ async function saveKontakt(){
     strasse:document.getElementById('k-strasse').value.trim()||null,
     plz:document.getElementById('k-plz').value.trim()||null,
     ort:document.getElementById('k-ort').value.trim()||null,
-    notiz:document.getElementById('k-notiz').value.trim()||null};
+    notiz:notizMitTyp};
   var r=id?await sb.from('kontakte').update(d).eq('id',id):await sb.from('kontakte').insert(d);
   if(r.error){msg.textContent='Fehler: '+r.error.message;msg.style.background='#fdf0ef';msg.style.color='#c0392b';msg.style.display='block';}
   else{closeKontaktModal();showToast('✅ Kontakt gespeichert!');loadKontakte();}
@@ -5724,7 +5773,6 @@ function showObjektTab(tab){
     'uebersicht':'tab-uebersicht',
     'abrechnungsdaten':'tab-abrechnungsdaten',
     'einheiten':'tab-einheiten-tab',
-    'mieterlist':'tab-mieter-tab',
     'mietverhaeltnisse':'tab-mietverh-tab'
   };
   Object.keys(tabMap).forEach(function(t){
@@ -6215,7 +6263,12 @@ function editAktivesObjekt(){
 }
 function openMieterFuerAktivesObjekt(){
   if(!aktivesObjekt)return;
-  openMieterModalFuerObjekt(aktivesObjekt.id,aktivesObjekt.name);
+  showObjektTab('mietverhaeltnisse');
+}
+function openMieterModalFuerObjekt(objId,objName){
+  // Redirect to Mietverhältnisse tab - Einheiten zuerst anlegen
+  showObjektTab('einheiten');
+  showToast('💡 Mietverhältnisse bitte über eine Einheit anlegen (+ Mietverhältnis Button)');
 }
 
 // ── EINHEITEN ──
@@ -6241,7 +6294,7 @@ async function deleteEinheit(id){
   if(!confirm('Einheit wirklich löschen?'))return;
   await sb.from('einheiten').delete().eq('id',id);
   showToast('🗑 Einheit gelöscht');
-  if(aktivesObjekt)loadObjektEinheiten(aktivesObjekt.id);
+  if(aktivesObjekt){await aktualisierObjektFlaeche(aktivesObjekt.id);loadObjektEinheiten(aktivesObjekt.id);loadObjektStats(aktivesObjekt.id);loadObjektSidebar(aktivesObjekt.id);}
 }
 async function saveEinheit(){
   var id=document.getElementById('einheit-edit-id').value;
@@ -6257,7 +6310,28 @@ async function saveEinheit(){
     sollmiete:parseFloat(document.getElementById('ein-sollmiete').value)||null};
   var r=id?await sb.from('einheiten').update(d).eq('id',id):await sb.from('einheiten').insert(d);
   if(r.error){msg.textContent='Fehler: '+r.error.message;msg.style.background='#fdf0ef';msg.style.color='#c0392b';msg.style.display='block';}
-  else{closeEinheitModal();showToast('✅ Einheit gespeichert!');if(aktivesObjekt){loadObjektEinheiten(aktivesObjekt.id);loadObjektStats(aktivesObjekt.id);}}
+  else{
+    closeEinheitModal();showToast('✅ Einheit gespeichert!');
+    if(aktivesObjekt){
+      await aktualisierObjektFlaeche(aktivesObjekt.id);
+      loadObjektEinheiten(aktivesObjekt.id);loadObjektStats(aktivesObjekt.id);loadObjektSidebar(aktivesObjekt.id);
+    }
+  }
+}
+async function aktualisierObjektFlaeche(objId){
+  // Berechne Gesamtfläche + Anzahl Einheiten automatisch aus einheiten-Tabelle
+  var {data:einh}=await sb.from('einheiten').select('flaeche').eq('objekt_id',objId);
+  var totalFlaeche=(einh||[]).reduce(function(s,e){return s+(parseFloat(e.flaeche)||0);},0);
+  var anzahl=(einh||[]).length;
+  await sb.from('objekte').update({
+    gesamtflaeche:totalFlaeche||null,
+    einheiten_anzahl:anzahl
+  }).eq('id',objId);
+  // Update local aktivesObjekt cache
+  if(aktivesObjekt&&aktivesObjekt.id===objId){
+    aktivesObjekt.gesamtflaeche=totalFlaeche||null;
+    aktivesObjekt.einheiten_anzahl=anzahl;
+  }
 }
 async function loadMieter(){
   var container=document.getElementById('mieter-list');

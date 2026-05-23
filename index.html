@@ -1067,6 +1067,43 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
       </div>
     </div>
 
+
+    <!-- ABRECHNUNG TYP MODAL -->
+    <div id="abr-typ-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:700;align-items:center;justify-content:center;padding:1.5rem">
+      <div style="background:var(--white);border-radius:16px;width:100%;max-width:560px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.2)">
+        <div style="background:var(--p);color:#fff;padding:1.25rem 1.5rem;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:1rem;font-weight:700">Neue Nebenkostenabrechnung</div>
+            <div style="font-size:.78rem;opacity:.75;margin-top:2px">Wie möchten Sie abrechnen?</div>
+          </div>
+          <button onclick="document.getElementById('abr-typ-modal').style.display='none'" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:6px 10px;cursor:pointer">✕</button>
+        </div>
+        <div style="padding:1.5rem">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+
+            <!-- Objekt-basiert -->
+            <div onclick="startAbrechnungObjektbasiert()" style="border:2px solid var(--border);border-radius:12px;padding:1.25rem;cursor:pointer;transition:.15s"
+              onmouseover="this.style.borderColor='var(--p)';this.style.background='var(--p-light)'"
+              onmouseout="this.style.borderColor='var(--border)';this.style.background=''">
+              <div style="font-size:2rem;margin-bottom:.6rem">🏢</div>
+              <div style="font-size:.95rem;font-weight:700;margin-bottom:.3rem">Objekt-Abrechnung</div>
+              <div style="font-size:.75rem;color:var(--muted);line-height:1.4">Objekt aus Ihrer Verwaltung wählen – Einheiten und Mieter werden automatisch übernommen.</div>
+              <div style="margin-top:.85rem;display:inline-block;background:var(--p);color:#fff;font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:8px">Empfohlen</div>
+            </div>
+
+            <!-- Manuell -->
+            <div onclick="startAbrechnungManuell()" style="border:2px solid var(--border);border-radius:12px;padding:1.25rem;cursor:pointer;transition:.15s"
+              onmouseover="this.style.borderColor='var(--p)';this.style.background='var(--p-light)'"
+              onmouseout="this.style.borderColor='var(--border)';this.style.background=''">
+              <div style="font-size:2rem;margin-bottom:.6rem">✏️</div>
+              <div style="font-size:.95rem;font-weight:700;margin-bottom:.3rem">Manuelle Abrechnung</div>
+              <div style="font-size:.75rem;color:var(--muted);line-height:1.4">Alle Daten manuell eingeben – für Objekte außerhalb der Verwaltung oder individuelle Abrechnungen.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- ══ TOOL ══ -->
     <!-- ══ TOOL ══ -->
     <div id="page-tool" style="display:none">
@@ -2321,9 +2358,25 @@ function showPage(name){
     name='dashboard';
   }
 
-  // If leaving the tool page - auto-save silently, no confirm needed
+  // If leaving the tool page - ask whether to save as draft or discard
   if(currentPageName==='tool' && name!=='tool' && (hasUnsavedChanges||currentStep>1)){
-    autoSaveEntwurf(); // Fire and forget - saves in background
+    var oVal=(document.getElementById('objekt')||{}).value||'';
+    if(oVal.trim()){
+      var saveDraft=confirm('Abrechnung speichern?\n\nOK = Als Entwurf speichern\nAbbrechen = Verwerfen (unwiderruflich)');
+      if(saveDraft){
+        autoSaveEntwurf();
+      }else{
+        // Discard - delete existing draft if any
+        if(currentDraftId){
+          sb.from('abrechnungen').update({deleted_at:new Date().toISOString()}).eq('id',currentDraftId);
+        }
+        clearUnsaved();
+        currentDraftId=null;
+      }
+    }else{
+      // No objekt entered - discard silently
+      clearUnsaved();
+    }
   }
 
   currentPageName=name;
@@ -4385,20 +4438,48 @@ function closeDirekt(){document.getElementById('direkt-modal').style.display='no
 
 
 function startNeueAbrechnung(){
+  // Zeige Auswahl-Modal: Objekt-basiert oder Manuell
+  document.getElementById('abr-typ-modal').style.display='flex';
+}
+
+function startAbrechnungObjektbasiert(){
+  document.getElementById('abr-typ-modal').style.display='none';
+  _initWizard();
+  // Fokus auf Objekt-Dropdown setzen
+  var sel=document.getElementById('objekt-select');
+  if(sel){
+    sel.focus();
+    // Scrolle zur Objekt-Auswahl
+    sel.scrollIntoView({behavior:'smooth',block:'center'});
+  }
+  showPage('tool');currentStep=1;goStep(1);
+  // Info-Hinweis anzeigen
+  showToast('💡 Bitte zuerst ein Objekt aus der Liste wählen');
+}
+
+function startAbrechnungManuell(){
+  document.getElementById('abr-typ-modal').style.display='none';
+  _initWizard();
+  // Objekt-Dropdown verstecken, manuelle Eingabe hervorheben
+  var importCard=document.querySelector('#step1 .card:first-child');
+  var sel=document.getElementById('objekt-select');
+  if(sel)sel.value='';
+  showPage('tool');currentStep=1;goStep(1);
+  // Fokus auf manuelle Objekteingabe
+  var ob=document.getElementById('objekt');
+  if(ob){setTimeout(function(){ob.focus();},200);}
+}
+
+function _initWizard(){
   currentDraftId=null;clearUnsaved();
   importiertesObjekt=null;
   currentStep=1;
-  // Hide the chip - fresh start
   var chip=document.getElementById('abrechnung-active-chip');
   if(chip)chip.style.display='none';
-  // Reset all step buttons to active state
   [1,2,3,4].forEach(function(n){var ws=document.getElementById('ws'+n);if(ws){ws.style.pointerEvents='';ws.style.opacity='';}});
   var bwEl=document.getElementById('btn-weiter');if(bwEl){bwEl.style.display='block';bwEl.style.visibility='visible';}
-  
-  var info=document.getElementById('objekt-import-info');
-  if(info)info.style.display='none';
-  var sel=document.getElementById('objekt-select');
-  if(sel)sel.value='';
+  var info=document.getElementById('objekt-import-info');if(info)info.style.display='none';
+  var sel=document.getElementById('objekt-select');if(sel)sel.value='';
   var jr=document.getElementById('jahr');if(jr)jr.value=defaultJahr();
   var ob=document.getElementById('objekt');if(ob)ob.value='';
   var of2=document.getElementById('objekt-flaeche');if(of2)of2.value='';
@@ -4415,7 +4496,7 @@ function startNeueAbrechnung(){
   addWohn();addWohn();
   var abr=document.getElementById('abrechnen-bar');if(abr)abr.style.display='none';
   var erg=document.getElementById('ergebnis');if(erg)erg.style.display='none';
-  showPage('tool');currentStep=1;goStep(1);
+  var bvw=document.getElementById('btn-vorschau-wizard');if(bvw)bvw.style.display='none';
 }
 
 // ── BEARBEITUNGSNOTIZEN ──
@@ -5136,7 +5217,7 @@ async function loadDashboard(){
   try{
     var results=await Promise.all([
       sb.from('objekte').select('*',{count:'exact',head:true}).eq('user_id',currentUser.id),
-      sb.from('mieter').select('*',{count:'exact',head:true}).eq('user_id',currentUser.id).eq('aktiv',true),
+      sb.from('mietverhaeltnisse').select('*',{count:'exact',head:true}).eq('user_id',currentUser.id).eq('aktiv',true),
       sb.from('nekosta_tokens').select('balance').eq('user_id',currentUser.id).maybeSingle(),
       sb.from('abrechnungen').select('titel,created_at,objekt').eq('created_by',currentUser.id).order('created_at',{ascending:false}).limit(5),
       sb.from('objekte').select('name,ort,einheiten_anzahl').eq('user_id',currentUser.id).limit(5),
@@ -5517,39 +5598,14 @@ async function saveObjekt(){
     plz:document.getElementById('obj-plz').value.trim()||null,
     ort:document.getElementById('obj-ort').value.trim()||null,
     kategorie:selectedObjektTyp||'wgh',
-    notiz:document.getElementById('obj-notiz').value.trim()||null
+    notiz:(document.getElementById('obj-notiz')||{value:''}).value.trim()||null
   };
   var r=id?await sb.from('objekte').update(d).eq('id',id):await sb.from('objekte').insert(d).select();
   if(r.error){
     if(msg){msg.textContent='Fehler: '+r.error.message;msg.style.background='#fdf0ef';msg.style.color='#c0392b';msg.style.display='block';}
   }else{
-    // Bei neuem Objekt: Mustereinheiten automatisch anlegen
-    if(!id&&r.data&&r.data[0]){
-      var newObjId=r.data[0].id;
-      var anzahl=parseInt(document.getElementById('obj-einheiten').value)||0;
-      var typ=selectedObjektTyp||'wgh';
-      if(anzahl>0&&anzahl<=20){
-        var musterEinheiten=[];
-        var stockwerke=['EG','1.OG','2.OG','3.OG','4.OG','DG'];
-        var typLabels={wgh:'Wohnung',wohnung:'Wohnung',efh:'Haus',garage:'Garage'};
-        var einLabel=typLabels[typ]||'Einheit';
-        for(var ei=0;ei<anzahl;ei++){
-          var stw=stockwerke[Math.floor(ei/2)]||((Math.floor(ei/2))+'.'+'OG');
-          var seite=ei%2===0?'links':'rechts';
-          var bez=(anzahl===1&&typ==='efh')?'Gesamtobjekt':(einLabel+' '+(ei+1)+' ('+stw+(anzahl>1?' '+seite:'')+')');
-          musterEinheiten.push({
-            objekt_id:newObjId,user_id:currentUser.id,
-            bezeichnung:bez,typ:(typ==='garage'?'Garage':'Wohnung'),
-            stockwerk:stw,flaeche:null,kaltmiete:null,sollmiete:null
-          });
-        }
-        await sb.from('einheiten').insert(musterEinheiten);
-        // Einheiten-Anzahl in Objekt aktualisieren
-        await sb.from('objekte').update({einheiten_anzahl:anzahl}).eq('id',newObjId);
-      }
-    }
     closeObjektModal();
-    showToast('✅ Objekt gespeichert!'+((!id&&parseInt(document.getElementById('obj-einheiten').value)>0)?' '+parseInt(document.getElementById('obj-einheiten').value)+' Einheiten angelegt.':''));
+    showToast('✅ Objekt gespeichert!');
     loadObjekte();fillObjektDropdown();
   }
 }
@@ -5567,7 +5623,9 @@ async function startAbrechnungFuerAktivesObjektById(objId){
   startAbrechnungFuerAktivesObjekt();
 }
 function startAbrechnungFuerObjekt(name,flaeche,objId,adresse){
-  startNeueAbrechnung();
+  // Direkt starten ohne Modal (kommt vom Objekt-Detail)
+  _initWizard();
+  showPage('tool');currentStep=1;goStep(1);
   setTimeout(function(){
     var fullName=name+(adresse?', '+adresse:'');
     var ob=document.getElementById('objekt');if(ob)ob.value=fullName;

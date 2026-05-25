@@ -766,115 +766,59 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
           <div style="padding:1.75rem 2rem">
             <!-- TAB: ÜBERSICHT -->
             <div id="tab-content-uebersicht">
-              <!-- TOP ROW: Eckdaten + Einheiten-Schnellübersicht -->
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem">
-                <!-- Eckdaten -->
-                <div style="background:var(--bg);border-radius:10px;padding:1.1rem">
-                  <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.85rem">Eckdaten</div>
-                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:.65rem">
-                    <div><div style="font-size:1.25rem;font-weight:700;color:var(--p)" id="od-kaltmiete-total">–</div><div style="font-size:.7rem;color:var(--muted)">€ Kaltmiete/Mon.</div></div>
-                    <div><div style="font-size:1.25rem;font-weight:700" id="od-preis-qm">–</div><div style="font-size:.7rem;color:var(--muted)">€/m² Kaltmiete</div></div>
-                    <div><div style="font-size:1.25rem;font-weight:700" id="od-flaeche-total">–</div><div style="font-size:.7rem;color:var(--muted)">m² Gesamtfläche</div></div>
-                    <div><div style="font-size:1.25rem;font-weight:700" id="od-bk-total">–</div><div style="font-size:.7rem;color:var(--muted)">€ BK-VZ/Mon.</div></div>
-                    <div><div style="font-size:1.25rem;font-weight:700;color:#c0392b" id="od-leerstand-count">–</div><div style="font-size:.7rem;color:var(--muted)">Leerstand</div></div>
-                  </div>
+
+              <!-- KPI KACHELN: 4 Stück -->
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.85rem;margin-bottom:1.5rem">
+                <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:1rem;border-top:3px solid var(--p)">
+                  <div style="font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.35rem">Kaltmiete/Mon.</div>
+                  <div style="font-size:1.4rem;font-weight:700;color:var(--p)" id="od-kaltmiete-total">–</div>
                 </div>
-                <!-- Abrechnungssaldo -->
-                <div style="background:var(--bg);border-radius:10px;padding:1.1rem">
-                  <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.85rem">Offene Forderungen</div>
+                <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:1rem;border-top:3px solid #1a7a4a">
+                  <div style="font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.35rem">Gesamtfläche</div>
+                  <div style="font-size:1.4rem;font-weight:700;color:#1a7a4a" id="od-flaeche-total">–</div>
+                </div>
+                <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:1rem;border-top:3px solid #e67e22">
+                  <div style="font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.35rem">BK-Vorauszahlung</div>
+                  <div style="font-size:1.4rem;font-weight:700;color:#e67e22" id="od-bk-total">–</div>
+                </div>
+                <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:1rem;border-top:3px solid #c0392b">
+                  <div style="font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.35rem">Leerstand</div>
+                  <div style="font-size:1.4rem;font-weight:700;color:#c0392b" id="od-leerstand-count">–</div>
+                </div>
+              </div>
+
+              <!-- 2-SPALTEN: Zahlungsstatus + Letzte Abrechnung -->
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem">
+
+                <!-- Zahlungsstatus Ampel -->
+                <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:1.25rem">
+                  <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.85rem">Zahlungsstatus (lfd. Monat)</div>
                   <div id="od-saldo-overview"><div style="color:var(--muted);font-size:.82rem">Wird geladen...</div></div>
                 </div>
-              </div>
 
-              <!-- EINHEITEN LISTE (aufklappbar, wie ImmoCloud) -->
-              <div style="margin-bottom:1.25rem">
-                <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.65rem">Einheiten</div>
-                <div id="od-einheiten-uebersicht"><div style="color:var(--muted);font-size:.82rem">Wird geladen...</div></div>
-              </div>
-
-              <!-- NOTIZEN + LETZTE ABRECHNUNGEN -->
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem">
-                <div>
-                  <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.65rem">Notizen</div>
-                  <textarea id="od-notiz-input" placeholder="Notiz zum Objekt..." style="border:1px solid var(--border);border-radius:8px;padding:.65rem .85rem;font-size:.85rem;font-family:Arial,sans-serif;width:100%;min-height:70px;resize:vertical;outline:none;background:var(--bg);box-sizing:border-box"></textarea>
-                  <button class="btn-small" onclick="saveObjektNotiz()" style="margin-top:.4rem">💾 Speichern</button>
-                  <span id="od-notiz-saved" style="display:none;font-size:.72rem;color:var(--success);margin-left:.6rem">✅ Gespeichert</span>
-                </div>
-                <div>
-                  <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.65rem">Letzte Abrechnungen</div>
+                <!-- Letzte Abrechnung + Aktion -->
+                <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:1.25rem">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.85rem">
+                    <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Abrechnungen</div>
+                    <button onclick="showPage('archiv')" style="font-size:.72rem;color:var(--p);background:none;border:none;cursor:pointer;font-family:Arial,sans-serif">Alle →</button>
+                  </div>
                   <div id="od-abr-list"><div style="color:var(--muted);font-size:.82rem">Wird geladen...</div></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- TAB: ABRECHNUNGSDATEN -->
-            <div id="tab-content-abrechnungsdaten" style="display:none">
-              <!-- Abrechnungszeitraum -->
-              <div style="background:var(--bg);border-radius:10px;padding:1.1rem;margin-bottom:1rem">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
-                  <div style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Abrechnungszeitraum für Betriebskosten</div>
-                  <button class="btn-small" onclick="saveAbrechnungszeitraum()">Ändern</button>
-                </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
-                  <div><div style="font-size:.72rem;color:var(--muted);margin-bottom:.2rem">ANFANG</div><input type="text" id="abr-zeitraum-anfang" value="01.01." style="border:none;background:none;font-size:.88rem;font-weight:600;width:100%;outline:none"></div>
-                  <div><div style="font-size:.72rem;color:var(--muted);margin-bottom:.2rem">ENDE</div><input type="text" id="abr-zeitraum-ende" value="31.12." style="border:none;background:none;font-size:.88rem;font-weight:600;width:100%;outline:none"></div>
+                  <button onclick="startAbrechnungFuerAktivesObjekt()" class="btn-primary" style="width:100%;margin-top:.85rem;font-size:.82rem;padding:.5rem">
+                    📄 Neue Abrechnung erstellen
+                  </button>
                 </div>
               </div>
 
-              <!-- Bankkonto -->
-              <div style="background:var(--bg);border-radius:10px;padding:1.1rem;margin-bottom:1rem">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
-                  <div style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Bankkonto des Objekts</div>
-                  <button class="btn-small" onclick="saveBankdaten()">+ Bankkonto hinzufügen</button>
-                </div>
-                <div style="display:grid;grid-template-columns:1fr 2fr 1fr;gap:.75rem">
-                  <div><div style="font-size:.65rem;color:var(--muted);margin-bottom:.2rem">KONTOINHABER</div><input type="text" id="obj-bank-inhaber" placeholder="–" style="border:none;border-bottom:1px solid var(--border);background:none;font-size:.85rem;width:100%;outline:none;padding:.2rem 0"></div>
-                  <div><div style="font-size:.65rem;color:var(--muted);margin-bottom:.2rem">IBAN</div><input type="text" id="obj-bank-iban" placeholder="DE00 0000 0000 0000 0000 00" style="border:none;border-bottom:1px solid var(--border);background:none;font-size:.85rem;width:100%;outline:none;padding:.2rem 0"></div>
-                  <div><div style="font-size:.65rem;color:var(--muted);margin-bottom:.2rem">BIC</div><input type="text" id="obj-bank-bic" placeholder="–" style="border:none;border-bottom:1px solid var(--border);background:none;font-size:.85rem;width:100%;outline:none;padding:.2rem 0"></div>
+              <!-- NOTIZ (volle Breite) -->
+              <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:1.25rem">
+                <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.65rem">Notiz</div>
+                <textarea id="od-notiz-input" placeholder="Interne Anmerkungen zum Objekt..." style="border:1px solid var(--border);border-radius:8px;padding:.6rem .75rem;font-size:.84rem;font-family:Arial,sans-serif;width:100%;min-height:80px;resize:vertical;outline:none;background:var(--bg);box-sizing:border-box"></textarea>
+                <div style="display:flex;align-items:center;gap:.6rem;margin-top:.5rem">
+                  <button class="btn-small" onclick="saveObjektNotiz()">💾 Speichern</button>
+                  <span id="od-notiz-saved" style="display:none;font-size:.72rem;color:var(--success)">✅ Gespeichert</span>
                 </div>
               </div>
 
-              <!-- Verteilerschlüssel -->
-              <div style="background:var(--bg);border-radius:10px;padding:1.1rem;margin-bottom:1rem">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
-                  <div style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Verteilerschlüssel</div>
-                  <button class="btn-small">+ Verteilerschlüssel hinzufügen</button>
-                </div>
-                <table style="width:100%;border-collapse:collapse;font-size:.82rem">
-                  <thead><tr style="border-bottom:1px solid var(--border)">
-                    <th style="text-align:left;padding:.4rem .5rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Beschreibung</th>
-                    <th style="text-align:left;padding:.4rem .5rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Hinweis</th>
-                    <th style="text-align:right;padding:.4rem .5rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Gesamtanteil</th>
-                    <th style="width:60px"></th>
-                  </tr></thead>
-                  <tbody id="obj-verteilschluessel-tbody">
-                    <tr style="border-bottom:1px solid var(--border)">
-                      <td style="padding:.5rem">Wohnfläche</td>
-                      <td style="padding:.5rem;color:var(--muted)">–</td>
-                      <td style="padding:.5rem;text-align:right" id="obj-vs-flaeche">–</td>
-                      <td style="padding:.5rem"><button class="btn-small" style="font-size:.62rem">Ändern</button></td>
-                    </tr>
-                    <tr>
-                      <td style="padding:.5rem">Einheiten</td>
-                      <td style="padding:.5rem;color:var(--muted)">–</td>
-                      <td style="padding:.5rem;text-align:right" id="obj-vs-einheiten">–</td>
-                      <td style="padding:.5rem"><button class="btn-small" style="font-size:.62rem">Ändern</button></td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <!-- Kostenkategorien -->
-              <div style="background:var(--bg);border-radius:10px;padding:1.1rem">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
-                  <div style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Kostenkategorien und Verteilerschlüssel</div>
-                  <button class="btn-small" onclick="startAbrechnungFuerAktivesObjekt()">+ Neue Abrechnung</button>
-                </div>
-                <div id="obj-kostenkategorien"><div style="color:var(--muted);font-size:.82rem;font-style:italic">Kostenkategorien werden aus den Abrechnungen übernommen.</div></div>
-              </div>
-            </div>
-
-            <!-- TAB: EINHEITEN -->
             <div id="tab-content-einheiten" style="display:none">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
                 <h3 style="font-size:.9rem;font-weight:700">Einheiten &amp; Mietverhältnisse</h3>
@@ -5776,10 +5720,26 @@ async function editMietverhaeltnis(mvId,einheitId,objektId,einheitBez){
   if(data)openMietverhModal(einheitId,objektId,einheitBez,data);
 }
 async function deleteMietverhaeltnis(id){
-  if(!confirm('Mietverhältnis beenden/löschen?'))return;
-  await sb.from('mietverhaeltnisse').update({aktiv:false,auszug:new Date().toISOString().split('T')[0]}).eq('id',id);
-  showToast('✅ Mietverhältnis beendet');
-  if(aktivesObjekt){loadObjektEinheiten(aktivesObjekt.id);loadObjektStats(aktivesObjekt.id);loadObjektSidebar(aktivesObjekt.id);}
+  // Schritt 1: Was soll passieren?
+  var wahl=confirm('Mietverhältnis beenden (OK) oder dauerhaft löschen (Abbrechen)?');
+  if(wahl){
+    // Beenden
+    var {error}=await sb.from('mietverhaeltnisse').update({aktiv:false,auszug:new Date().toISOString().split('T')[0]}).eq('id',id);
+    if(error){showToast('❌ '+error.message);return;}
+    showToast('✅ Mietverhältnis beendet');
+  }else{
+    // Schritt 2: Wirklich dauerhaft löschen?
+    var sure=confirm('⚠️ DAUERHAFT löschen? Alle Zahlungsdaten werden ebenfalls gelöscht. Nicht rückgängig machbar!');
+    if(!sure)return;
+    // Zweite Bestätigung
+    var sure2=confirm('Letzte Bestätigung: Mietverhältnis und alle Zahlungsdaten wirklich löschen?');
+    if(!sure2)return;
+    await sb.from('mietzahlungen').delete().eq('mietverhaeltnis_id',id);
+    var {error}=await sb.from('mietverhaeltnisse').delete().eq('id',id);
+    if(error){showToast('❌ '+error.message);return;}
+    showToast('🗑 Mietverhältnis dauerhaft gelöscht');
+  }
+  if(aktivesObjekt){loadObjektEinheiten(aktivesObjekt.id);loadObjektStats(aktivesObjekt.id);loadObjektSidebar(aktivesObjekt.id);loadMietverhaeltnisse(aktivesObjekt.id);}
 }
 async function loadMietverhaeltnisse(objId){
   var container=document.getElementById('od-mietverh-list');
@@ -6073,65 +6033,113 @@ async function addNKZuMietzahlungen(mvId,einheitId,objektId,bezeichnung,betrag,a
 }
 
 async function loadObjektUebersichtTab(objId){
-  // Load quick Einheiten overview (collapsible, ImmoCloud style)
-  var container=document.getElementById('od-einheiten-uebersicht');
-  var saldoContainer=document.getElementById('od-saldo-overview');
-  if(!container)return;
+  if(!aktivesObjekt)return;
 
-  var [{data:einh},{data:mv},{data:zahlungen}]=await Promise.all([
-    sb.from('einheiten').select('*').eq('user_id',currentUser.id).eq('objekt_id',objId).order('bezeichnung'),
-    sb.from('mietverhaeltnisse').select('*,kontakte(anrede,vorname,nachname)').eq('user_id',currentUser.id).eq('objekt_id',objId).eq('aktiv',true),
-    sb.from('mietzahlungen').select('betrag,status,einheit_id').eq('objekt_id',objId).eq('status','offen')
+  var [{data:einh},{data:mv},{data:abr},{data:zahlungen}]=await Promise.all([
+    sb.from('einheiten').select('id,flaeche').eq('user_id',currentUser.id).eq('objekt_id',objId),
+    sb.from('mietverhaeltnisse').select('*,kontakte(vorname,nachname),einheiten(bezeichnung)')
+      .eq('user_id',currentUser.id).eq('objekt_id',objId).eq('aktiv',true),
+    sb.from('abrechnungen').select('id,titel,objekt,created_at,data')
+      .eq('created_by',currentUser.id).is('deleted_at',null)
+      .order('created_at',{ascending:false}).limit(4),
+    sb.from('mietzahlungen').select('betrag,status,monat')
+      .eq('user_id',currentUser.id).eq('objekt_id',objId)
+      .gte('monat',new Date(new Date().getFullYear(),new Date().getMonth()-2,1).toISOString().split('T')[0])
+      .order('monat',{ascending:false})
   ]);
 
-  // Saldo overview
-  var totalOffen=0;
-  (zahlungen||[]).forEach(function(z){totalOffen+=z.betrag;});
-  if(saldoContainer){
-    saldoContainer.innerHTML='<div style="font-size:1.4rem;font-weight:700;color:'+(totalOffen>0?'#c0392b':'#1a7a4a')+'">'+totalOffen.toLocaleString('de-DE',{minimumFractionDigits:2})+' €</div>'
-      +'<div style="font-size:.72rem;color:var(--muted);margin-top:.2rem">Offene Forderungen gesamt</div>'
-      +(zahlungen&&zahlungen.length?'<div style="font-size:.75rem;color:var(--muted);margin-top:.5rem">'+zahlungen.length+' offene Buchungen</div>':'<div style="font-size:.75rem;color:#1a7a4a;margin-top:.5rem">✅ Alle bezahlt</div>');
+  einh=einh||[]; mv=mv||[];
+
+  // KPIs
+  var totalKalt=mv.reduce(function(s,m){return s+(parseFloat(m.kaltmiete)||0);},0);
+  var totalBK=mv.reduce(function(s,m){return s+(parseFloat(m.vorausz_bk)||0);},0);
+  var totalFlaeche=einh.reduce(function(s,e){return s+(parseFloat(e.flaeche)||0);},0);
+  var leerstand=einh.filter(function(e){return !mv.find(function(m){return m.einheit_id===e.id;});}).length;
+
+  var fmt=function(n){return n.toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';};
+  var kEl=document.getElementById('od-kaltmiete-total');if(kEl)kEl.textContent=totalKalt>0?fmt(totalKalt):'–';
+  var fEl=document.getElementById('od-flaeche-total');if(fEl)fEl.textContent=totalFlaeche>0?totalFlaeche.toLocaleString('de-DE')+' m²':'–';
+  var bEl=document.getElementById('od-bk-total');if(bEl)bEl.textContent=totalBK>0?fmt(totalBK):'–';
+  var lEl=document.getElementById('od-leerstand-count');
+  if(lEl){
+    lEl.textContent=leerstand+' / '+einh.length;
+    lEl.style.color=leerstand===0?'#1a7a4a':leerstand===einh.length?'#c0392b':'#e67e22';
   }
 
-  if(!einh||!einh.length){container.innerHTML='<div style="color:var(--muted);font-size:.82rem;padding:.75rem 0">Noch keine Einheiten.</div>';return;}
+  // Zahlungsstatus (letzte 3 Monate)
+  var saldoEl=document.getElementById('od-saldo-overview');
+  if(saldoEl){
+    var z=zahlungen||[];
+    var offen=z.filter(function(z){return z.status==='offen';});
+    var gemahnt=z.filter(function(z){return z.status==='gemahnt';});
+    var bezahlt=z.filter(function(z){return z.status==='bezahlt';});
+    var totalOffen=offen.reduce(function(s,z){return s+(parseFloat(z.betrag)||0);},0);
+    var totalGemahnt=gemahnt.reduce(function(s,z){return s+(parseFloat(z.betrag)||0);},0);
+    if(!z.length){
+      saldoEl.innerHTML='<div style="color:var(--muted);font-size:.82rem;font-style:italic">Keine Zahlungsdaten vorhanden.<br><button onclick="showObjektTab(\'einheiten\')" class="btn-small" style="margin-top:.35rem;font-size:.72rem">→ Einheiten verwalten</button></div>';
+    }else{
+      saldoEl.innerHTML=
+        '<div style="display:flex;flex-direction:column;gap:.5rem">'
+        // Ampel-Reihe
+        +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem">'
+          +'<div style="text-align:center;background:#d4edda;border-radius:8px;padding:.6rem .25rem">'
+            +'<div style="font-size:1rem;font-weight:700;color:#155724">'+bezahlt.length+'</div>'
+            +'<div style="font-size:.62rem;color:#155724;margin-top:1px">✅ Bezahlt</div>'
+          +'</div>'
+          +'<div style="text-align:center;background:#fff3cd;border-radius:8px;padding:.6rem .25rem">'
+            +'<div style="font-size:1rem;font-weight:700;color:#856404">'+offen.length+'</div>'
+            +'<div style="font-size:.62rem;color:#856404;margin-top:1px">⏳ Offen</div>'
+          +'</div>'
+          +'<div style="text-align:center;background:'+(gemahnt.length?'#fdf0ef':'#f5f5f5')+';border-radius:8px;padding:.6rem .25rem">'
+            +'<div style="font-size:1rem;font-weight:700;color:'+(gemahnt.length?'#c0392b':'#888')+'">'+gemahnt.length+'</div>'
+            +'<div style="font-size:.62rem;color:'+(gemahnt.length?'#c0392b':'#888')+';margin-top:1px">⚠️ Gemahnt</div>'
+          +'</div>'
+        +'</div>'
+        +(totalOffen+totalGemahnt>0
+          ?'<div style="font-size:.78rem;color:#856404;background:#fff3cd;border-radius:6px;padding:.4rem .65rem;margin-top:.25rem">'
+            +'Offene Beträge: <strong>'+fmt(totalOffen+totalGemahnt)+'</strong>'
+            +' <button onclick="showObjektTab(\'einheiten\')" style="font-size:.7rem;color:var(--p);background:none;border:none;cursor:pointer;font-family:Arial,sans-serif;float:right">Details →</button>'
+          +'</div>'
+          :'<div style="font-size:.75rem;color:#155724;background:#d4edda;border-radius:6px;padding:.4rem .65rem;margin-top:.25rem">✅ Alle Zahlungen aktuell</div>'
+        )
+        +'</div>';
+    }
+  }
 
-  // Map MV to Einheiten
-  var mvMap={};
-  (mv||[]).forEach(function(m){mvMap[m.einheit_id]=m;});
-  var zalMap={};
-  (zahlungen||[]).forEach(function(z){
-    if(!zalMap[z.einheit_id])zalMap[z.einheit_id]=0;
-    zalMap[z.einheit_id]+=z.betrag;
-  });
+  // Letzte Abrechnungen
+  var abrEl=document.getElementById('od-abr-list');
+  if(abrEl){
+    var objAbr=(abr||[]).filter(function(a){
+      return !a.titel||(a.objekt===aktivesObjekt.name||(a.data&&a.data.objekt===aktivesObjekt.name));
+    }).slice(0,3);
+    if(!objAbr.length){
+      abrEl.innerHTML='<div style="color:var(--muted);font-size:.82rem;font-style:italic">Noch keine Abrechnung für dieses Objekt.</div>';
+    }else{
+      abrEl.innerHTML=objAbr.map(function(a){
+        var isAbg=a.titel&&a.titel.includes('[Abgerechnet]');
+        var clean=(a.titel||'').replace('[Abgerechnet]','').replace('[Entwurf]','').trim();
+        var datum=new Date(a.created_at).toLocaleDateString('de-DE');
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem 0;border-bottom:1px solid var(--border)">'
+          +'<div><div style="font-size:.82rem;font-weight:600">'+clean+'</div>'
+          +'<div style="font-size:.7rem;color:var(--muted)">'+datum+'</div></div>'
+          +'<span style="font-size:.65rem;font-weight:700;padding:2px 7px;border-radius:8px;background:'+(isAbg?'#d4edda':'#fff3cd')+';color:'+(isAbg?'#155724':'#856404')+'">'+(isAbg?'Final':'Entwurf')+'</span>'
+          +'</div>';
+      }).join('');
+    }
+  }
 
-  container.innerHTML='<div style="background:var(--white);border:1px solid var(--border);border-radius:8px;overflow:hidden">'
-    +'<table style="width:100%;border-collapse:collapse">'
-    +'<thead><tr style="background:var(--bg)">'
-    +'<th style="text-align:left;padding:.5rem .85rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Einheit</th>'
-    +'<th style="padding:.5rem .85rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Mieter</th>'
-    +'<th style="text-align:right;padding:.5rem .85rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Kaltmiete</th>'
-    +'<th style="text-align:right;padding:.5rem .85rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Gesamtmiete</th>'
-    +'<th style="text-align:right;padding:.5rem .85rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Offene Posten</th>'
-    +'<th style="width:50px"></th>'
-    +'</tr></thead><tbody>'
-    +einh.map(function(e){
-      var m=mvMap[e.id];
-      var mieterName=m&&m.kontakte?(m.kontakte.anrede+' '+m.kontakte.vorname+' '+m.kontakte.nachname).trim():'–';
-      var kaltmiete=m?m.kaltmiete:0;
-      var gesamt=m?(m.kaltmiete||0)+(m.vorausz_bk||0)+(m.vorausz_hk||0):0;
-      var offen=zalMap[e.id]||0;
-      var isLeer=!m;
-      return '<tr style="border-bottom:1px solid var(--border);cursor:pointer" onclick="showObjektTab(\'einheiten\');setTimeout(function(){var el=document.getElementById(\'mu-'+e.id+'\');if(el)loadMietubersichtFuerEinheit(\''+e.id+'\',\'mu-'+e.id+'\');},200)" onmouseover="this.style.background=\'var(--p-light)\'" onmouseout="this.style.background=\'\'">'
-        +'<td style="padding:.6rem .85rem;font-size:.85rem"><strong>'+e.bezeichnung+'</strong><div style="font-size:.7rem;color:var(--muted)">'+(e.flaeche?e.flaeche+' m²':'')+(e.stockwerk?' · '+e.stockwerk:'')+'</div></td>'
-        +'<td style="padding:.6rem .85rem;font-size:.82rem">'+(isLeer?'<span style="color:#c0392b;font-size:.72rem;font-weight:700">LEERSTAND</span>':mieterName)+'</td>'
-        +'<td style="padding:.6rem .85rem;text-align:right;font-size:.82rem">'+(kaltmiete?kaltmiete.toLocaleString('de-DE',{minimumFractionDigits:2})+' €':'–')+'</td>'
-        +'<td style="padding:.6rem .85rem;text-align:right;font-size:.82rem;font-weight:700">'+(gesamt?gesamt.toLocaleString('de-DE',{minimumFractionDigits:2})+' €':'–')+'</td>'
-        +'<td style="padding:.6rem .85rem;text-align:right;font-size:.82rem;font-weight:700;color:'+(offen>0?'#c0392b':'#1a7a4a')+'">'+(offen?offen.toLocaleString('de-DE',{minimumFractionDigits:2})+' €':'✅')+'</td>'
-        +'<td style="padding:.6rem .5rem"><span style="font-size:.7rem;color:var(--muted)">›</span></td>'
-        +'</tr>';
-    }).join('')
-    +'</tbody></table></div>';
+  // Notiz aus DB
+  var notizEl=document.getElementById('od-notiz-input');
+  if(notizEl&&aktivesObjekt.notiz){
+    try{var parsed=JSON.parse(aktivesObjekt.notiz);notizEl.value=parsed._notiz||'';}
+    catch(e){notizEl.value=aktivesObjekt.notiz||'';}
+  }
+
+  // Abrechnungsdaten Tab Werte
+  var vf=document.getElementById('obj-vs-flaeche');if(vf)vf.textContent=totalFlaeche?totalFlaeche.toLocaleString('de-DE')+' m²':'–';
+  var ve=document.getElementById('obj-vs-einheiten');if(ve)ve.textContent=einh.length+' Einheit'+(einh.length!==1?'en':'');
 }
+
 
 async function loadAbrechnungsdatenTab(objId){
   if(!aktivesObjekt)return;

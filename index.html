@@ -118,8 +118,8 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--tex
 .btn-remove-wohn{background:none;border:none;cursor:pointer;color:#bbb;font-size:.95rem;padding:3px 6px;border-radius:4px;transition:color .15s;margin-left:auto}
 .btn-remove-wohn:hover{color:var(--danger)}
 .mieter-table-wrap{padding:.4rem .8rem .5rem}
-.mieter-header-row{display:grid;grid-template-columns:70px 1fr 1.2fr 90px 90px 45px 75px 75px 26px;gap:.3rem;font-size:.6rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:.15rem 0 .3rem;border-bottom:1px solid var(--border);margin-bottom:.3rem}
-.mieter-row{display:grid;grid-template-columns:70px 1fr 1.2fr 90px 90px 45px 75px 75px 26px;gap:.3rem;align-items:center;padding:.28rem 0;border-bottom:1px dashed #ede9f5}
+.mieter-header-row{display:grid;grid-template-columns:65px .85fr .85fr 110px 110px 38px 70px 70px 72px 24px;gap:.3rem;font-size:.6rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:.15rem 0 .3rem;border-bottom:1px solid var(--border);margin-bottom:.3rem}
+.mieter-row{display:grid;grid-template-columns:65px .85fr .85fr 110px 110px 38px 70px 70px 72px 24px;gap:.3rem;align-items:center;padding:.35rem 0;border-bottom:1px dashed #ede9f5}
 .mieter-row:last-child{border-bottom:none}
 .mieter-row input{border:1px solid var(--border);border-radius:5px;padding:.26rem .42rem;font-size:.78rem;font-family:Arial,sans-serif;background:#fff;outline:none;width:100%}
 .mieter-row input:focus{border-color:var(--p-mid)}
@@ -1139,12 +1139,33 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
 
       <!-- STEP 3: KOSTEN -->
       <div id="step3" class="wizard-content" style="display:none">
-        <div class="page-header"><div class="page-title">Kostenaufstellung</div><div class="page-sub">Heiz- und Betriebskosten des Objektes eintragen.</div></div>
+        <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:.75rem">
+          <div>
+            <div class="page-title">Kostenaufstellung</div>
+            <div class="page-sub">Heiz- und Betriebskosten des Objektes eintragen.</div>
+          </div>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+            <button type="button" onclick="importKostenVorjahr()" class="btn-secondary" style="font-size:.8rem;display:flex;align-items:center;gap:.3rem" title="Kosten aus der letzten Abrechnung dieses Objekts übernehmen">
+              📅 Kosten aus Vorjahr
+            </button>
+            <button type="button" onclick="pruefeKosten()" class="btn-secondary" style="font-size:.8rem;display:flex;align-items:center;gap:.3rem" title="Eingaben auf Plausibilität prüfen">
+              ✅ Prüfen
+            </button>
+          </div>
+        </div>
         <div class="card">
           <!-- HEIZKOSTEN ZUERST -->
           <div class="kosten-section" id="hk-section">
-            <div class="kosten-section-header">
-              <div class="kosten-section-title">🔥 Heizkosten</div>
+            <div class="kosten-section-header" style="display:flex;justify-content:space-between;align-items:center">
+              <div style="display:flex;align-items:center;gap:1rem">
+                <div class="kosten-section-title">🔥 Heizkosten</div>
+                <span style="font-size:.75rem;color:var(--muted)">Summe: <strong id="hk-summe-live" style="color:#e67e22">0,00 €</strong></span>
+              </div>
+              <div style="display:flex;gap:.5rem;align-items:center">
+                <button type="button" onclick="importKostenVorlage('hk')" class="btn-small" style="font-size:.72rem" title="Vorlage laden">📂 Vorlage</button>
+                <button type="button" onclick="saveKostenVorlage('hk')" class="btn-small" style="font-size:.72rem" title="Als Vorlage speichern">💾 Speichern</button>
+              </div>
+              <label class="hk-toggle"><input type="checkbox" id="keine-hk" onchange="toggleHK()"> Keine Heizkosten</label>
               <label class="hk-toggle"><input type="checkbox" id="keine-hk" onchange="toggleHK()"> Keine Heizkosten</label>
             </div>
             <div id="hk-content">
@@ -1159,8 +1180,15 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
           </div>
           <!-- BETRIEBSKOSTEN -->
           <div class="kosten-section" style="margin-top:1.25rem;padding-top:1.1rem;border-top:1px solid var(--border)">
-            <div class="kosten-section-header">
-              <div class="kosten-section-title">📋 Betriebskosten</div>
+            <div class="kosten-section-header" style="display:flex;justify-content:space-between;align-items:center">
+              <div style="display:flex;align-items:center;gap:1rem">
+                <div class="kosten-section-title">📋 Betriebskosten</div>
+                <span style="font-size:.75rem;color:var(--muted)">Summe: <strong id="bk-summe-live" style="color:var(--p)">0,00 €</strong></span>
+              </div>
+              <div style="display:flex;gap:.5rem;align-items:center">
+                <button type="button" onclick="importKostenVorlage('bk')" class="btn-small" style="font-size:.72rem" title="Gespeicherte Vorlage laden">📂 Vorlage</button>
+                <button type="button" onclick="saveKostenVorlage('bk')" class="btn-small" style="font-size:.72rem" title="Aktuelle Kosten als Vorlage speichern">💾 Speichern</button>
+              </div>
             </div>
             <div style="overflow-x:auto">
             <table class="kosten-table">
@@ -1176,6 +1204,27 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
       <!-- STEP 4: ERGEBNIS -->
       <div id="step4" style="display:none">
         <div class="ergebnis-section">
+          <!-- ZUSAMMENFASSUNGS-TABELLE -->
+          <div id="ergebnis-summary-card" style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:1.25rem;margin-bottom:1.25rem;display:none">
+            <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.85rem">📊 Zusammenfassung</div>
+            <div style="overflow-x:auto">
+              <table style="width:100%;border-collapse:collapse;font-size:.82rem" id="ergebnis-summary-table">
+                <thead><tr style="border-bottom:2px solid var(--border)">
+                  <th style="text-align:left;padding:.4rem .5rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Einheit / Mieter</th>
+                  <th style="text-align:right;padding:.4rem .5rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Zeitraum</th>
+                  <th style="text-align:right;padding:.4rem .5rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Vorauszahlung</th>
+                  <th style="text-align:right;padding:.4rem .5rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Abrechnung</th>
+                  <th style="text-align:right;padding:.4rem .5rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Differenz</th>
+                  <th style="text-align:center;padding:.4rem .5rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Status</th>
+                </tr></thead>
+                <tbody id="ergebnis-summary-tbody"></tbody>
+                <tfoot id="ergebnis-summary-tfoot"></tfoot>
+              </table>
+            </div>
+          </div>
+          <!-- VORJAHRESVERGLEICH -->
+          <div id="vorjahres-vergleich-card" style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:1.25rem;margin-bottom:1.25rem;display:none"></div>
+
           <!-- HEADER -->
           <div class="ergebnis-header">
             <div class="eh-left">
@@ -2702,7 +2751,7 @@ function addKostenRow(tbodyId,name='',schluessel='flaeche',notiz='',direktWerte=
       <button class="reorder-btn" onclick="moveKosten(this,1)">▼</button>
     </div></td>
     <td><input type="text" placeholder="Kostenart" class="k-name" value="${name}" style="min-width:115px"></td>
-    <td><input type="number" placeholder="0.00" step="0.01" min="0" class="k-betrag"></td>
+    <td style="position:relative"><input type="number" placeholder="0.00" step="0.01" class="k-betrag" title="💡 Negativer Betrag = Erstattung/Rückzahlung" oninput="this.value=this.value.replace(/(\.\d{2})\d+/,'$1');updateKostenSumme(this)"></td>
     <td><select class="k-schluessel" onchange="handleSchluesselChange(this)">
       <option value="flaeche" ${schluessel==='flaeche'?'selected':''}>Nach Wohnfläche</option>
       <option value="person"  ${schluessel==='person'?'selected':''}>Nach Personenanzahl</option>
@@ -2935,6 +2984,8 @@ async function renderErgebnis(){
     document.getElementById('btn-gesamt-dl').style.display='block';
   }
 
+  buildErgebnisSummary(e);
+  ladeVorjahresvergleich(e);
   var rw=document.getElementById('res-wohnungen');rw.innerHTML='';
 
   // Summary bar totals
@@ -6950,6 +7001,360 @@ async function loadAbrLanding(){
       +'</div>'
     +'</div>';
   }).join('');
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// KOSTEN LIVE-SUMME
+// ═══════════════════════════════════════════════════════════════
+function updateKostenSumme(input){
+  var tbody=input?input.closest('tbody'):null;
+  // Update both sums regardless
+  ['bkRows','hkRows'].forEach(function(id){
+    var tb=document.getElementById(id);
+    if(!tb)return;
+    var sum=0;
+    tb.querySelectorAll('.k-betrag').forEach(function(inp){
+      sum+=parseFloat(inp.value)||0;
+    });
+    var liveEl=document.getElementById(id==='bkRows'?'bk-summe-live':'hk-summe-live');
+    if(!liveEl)return;
+    var fmt=sum.toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
+    liveEl.textContent=fmt;
+    liveEl.style.color=sum<0?'#c0392b':sum===0?'var(--muted)':'var(--p)';
+    if(id==='hkRows')liveEl.style.color=sum<0?'#c0392b':'#e67e22';
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// KOSTEN VORLAGEN (localStorage)
+// ═══════════════════════════════════════════════════════════════
+function saveKostenVorlage(typ){
+  var kosten=getKosten(typ==='bk'?'bkRows':'hkRows');
+  if(!kosten.length){showToast('⚠️ Keine Kosten zum Speichern.');return;}
+  var name=prompt('Vorlagenname:', (typ==='bk'?'BK-Vorlage':'HK-Vorlage')+' '+new Date().getFullYear());
+  if(!name)return;
+  var vorlagen=JSON.parse(localStorage.getItem('nekosta-vorlagen-'+typ)||'[]');
+  vorlagen.unshift({name:name,kosten:kosten,datum:new Date().toISOString()});
+  vorlagen=vorlagen.slice(0,5); // max 5 Vorlagen
+  localStorage.setItem('nekosta-vorlagen-'+typ,JSON.stringify(vorlagen));
+  showToast('✅ Vorlage "'+name+'" gespeichert!');
+}
+
+function importKostenVorlage(typ){
+  var vorlagen=JSON.parse(localStorage.getItem('nekosta-vorlagen-'+typ)||'[]');
+  if(!vorlagen.length){
+    showToast('Keine Vorlagen gespeichert. Zuerst Kosten eingeben und auf 💾 Speichern klicken.');
+    return;
+  }
+  // Show selection
+  var liste=vorlagen.map(function(v,i){return (i+1)+'. '+v.name+' ('+new Date(v.datum).toLocaleDateString('de-DE')+')'}).join('\n');
+  var idx=parseInt(prompt('Vorlage auswählen:\n\n'+liste+'\n\nNummer eingeben:'))-1;
+  if(isNaN(idx)||idx<0||idx>=vorlagen.length)return;
+  var v=vorlagen[idx];
+  var tbodyId=typ==='bk'?'bkRows':'hkRows';
+  var tbody=document.getElementById(tbodyId);
+  if(!tbody)return;
+  tbody.innerHTML='';
+  v.kosten.forEach(function(k){
+    addKostenRow(tbodyId,k.name,k.schluessel||'flaeche',k.notiz||'');
+    var rows=tbody.querySelectorAll('tr');
+    if(rows.length){
+      var last=rows[rows.length-1];
+      var betragEl=last.querySelector('.k-betrag');
+      if(betragEl){betragEl.value=k.betrag||0;}
+    }
+  });
+  updateKostenSumme(null);
+  showToast('✅ Vorlage "'+v.name+'" geladen!');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// KOSTEN AUS VORJAHR LADEN
+// ═══════════════════════════════════════════════════════════════
+async function importKostenVorjahr(){
+  if(!currentUser)return;
+  var objekt=document.getElementById('objekt')?document.getElementById('objekt').value:'';
+  var jahr=parseInt(document.getElementById('jahr')?document.getElementById('jahr').value:0)||new Date().getFullYear();
+
+  showToast('🔍 Suche letzte Abrechnung...');
+
+  // Suche letzte finalisierte Abrechnung für dieses Objekt
+  var q=sb.from('abrechnungen').select('id,titel,objekt,data,jahr')
+    .eq('created_by',currentUser.id).is('deleted_at',null)
+    .ilike('titel','%[Abgerechnet]%')
+    .order('jahr',{ascending:false}).limit(20);
+
+  var {data:abrList}=await q;
+  if(!abrList||!abrList.length){showToast('⚠️ Keine finalisierte Abrechnung gefunden.');return;}
+
+  // Filtere nach Objekt wenn angegeben
+  var match=abrList.filter(function(a){
+    return !objekt||a.objekt===objekt||(a.data&&(a.data.objekt===objekt));
+  });
+  // Ältere Jahreszahl bevorzugen (Vorjahr)
+  var vorjahr=match.filter(function(a){return !a.jahr||a.jahr<jahr;});
+  var chosen=(vorjahr.length?vorjahr:match)[0];
+
+  if(!chosen||!chosen.data){showToast('⚠️ Keine passende Vorjahres-Abrechnung gefunden.');return;}
+
+  var d=chosen.data;
+  var bk=d.bkKosten||[];
+  var hk=d.hkKosten||[];
+
+  if(!bk.length&&!hk.length){showToast('⚠️ Keine Kostendaten in der Vorjahres-Abrechnung.');return;}
+
+  var confirm1=confirm('Kosten aus "'+chosen.titel.replace('[Abgerechnet]','').trim()+'" übernehmen?\n\n'+bk.length+' BK-Positionen, '+hk.length+' HK-Positionen\n\nAktuelle Eingaben werden überschrieben.');
+  if(!confirm1)return;
+
+  // BK importieren
+  if(bk.length){
+    var bkTbody=document.getElementById('bkRows');
+    bkTbody.innerHTML='';
+    bk.forEach(function(k){
+      addKostenRow('bkRows',k.name,k.schluessel||'flaeche',k.notiz||'');
+      var rows=bkTbody.querySelectorAll('tr');
+      if(rows.length){
+        var betragEl=rows[rows.length-1].querySelector('.k-betrag');
+        if(betragEl)betragEl.value=k.betrag||0;
+      }
+    });
+  }
+  // HK importieren
+  if(hk.length){
+    var hkTbody=document.getElementById('hkRows');
+    hkTbody.innerHTML='';
+    hk.forEach(function(k){
+      addKostenRow('hkRows',k.name,k.schluessel||'flaeche',k.notiz||'');
+      var rows=hkTbody.querySelectorAll('tr');
+      if(rows.length){
+        var betragEl=rows[rows.length-1].querySelector('.k-betrag');
+        if(betragEl)betragEl.value=k.betrag||0;
+      }
+    });
+    if(hk.length)document.getElementById('keine-hk').checked=false;
+  }
+
+  updateKostenSumme(null);
+  showToast('✅ Kostendaten aus '+((chosen.jahr||'Vorjahr'))+' übernommen! Bitte Beträge aktualisieren.');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PLAUSIBILITÄTSPRÜFUNG
+// ═══════════════════════════════════════════════════════════════
+function pruefeKosten(){
+  var meldungen=[];
+  var warnungen=[];
+  var ok=true;
+
+  // 1. Wohnflächen prüfen
+  var objektFlaeche=parseFloat((document.getElementById('objekt-flaeche')||{}).value)||0;
+  var sumFlaeche=0;
+  document.querySelectorAll('.w-flaeche').forEach(function(el){
+    sumFlaeche+=parseFloat(el.value)||0;
+  });
+  if(objektFlaeche>0&&Math.abs(sumFlaeche-objektFlaeche)>1){
+    warnungen.push('⚠️ Wohnflächen stimmen nicht überein: '+sumFlaeche.toFixed(0)+' m² eingegeben, '+objektFlaeche.toFixed(0)+' m² im Objekt hinterlegt');
+  }
+
+  // 2. Leere Beträge
+  var leerePosten=0;
+  document.querySelectorAll('.k-betrag').forEach(function(el){
+    if(!el.value||parseFloat(el.value)===0)leerePosten++;
+  });
+  if(leerePosten>0){
+    warnungen.push('⚠️ '+leerePosten+' Kostenpositionen haben Betrag 0,00 € – bitte prüfen');
+  }
+
+  // 3. Sehr hohe Einzelposten
+  document.querySelectorAll('.k-betrag').forEach(function(el){
+    var v=parseFloat(el.value)||0;
+    if(v>50000){
+      var name=el.closest('tr')&&el.closest('tr').querySelector('.k-name')?el.closest('tr').querySelector('.k-name').value:'Unbekannt';
+      warnungen.push('⚠️ Sehr hoher Betrag bei "'+name+'": '+v.toLocaleString('de-DE')+' €');
+    }
+  });
+
+  // 4. Vorauszahlungen geprüft
+  var ohneVZ=0;
+  document.querySelectorAll('.mieter-row').forEach(function(row){
+    var ls=row.querySelector('.m-leerstand-cb');
+    if(ls&&ls.checked)return;
+    var bk=parseFloat((row.querySelector('.m-vbk')||{}).value)||0;
+    if(bk===0)ohneVZ++;
+  });
+  if(ohneVZ>0){
+    warnungen.push('⚠️ '+ohneVZ+' Mieter ohne BK-Vorauszahlung');
+  }
+
+  // 5. Zeiträume prüfen
+  var mieterRows=Array.from(document.querySelectorAll('.mieter-row')).filter(function(r){
+    var ls=r.querySelector('.m-leerstand-cb');
+    return !ls||!ls.checked;
+  });
+  mieterRows.forEach(function(row){
+    var von=(row.querySelector('.m-von')||{}).value;
+    var bis=(row.querySelector('.m-bis')||{}).value;
+    if(von&&bis&&von>bis){
+      meldungen.push('❌ Einzugsdatum nach Auszugsdatum bei einem Mieter');
+    }
+  });
+
+  // Ergebnis anzeigen
+  var allMsgs=[...meldungen,...warnungen];
+  if(!allMsgs.length){
+    showToast('✅ Alle Prüfungen bestanden! Keine Auffälligkeiten.');
+    return;
+  }
+
+  // Zeige Ergebnis in Modal-ähnlichem Toast
+  var modal=document.createElement('div');
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:900;display:flex;align-items:center;justify-content:center;padding:1.5rem';
+  modal.innerHTML='<div style="background:var(--white);border-radius:14px;padding:1.5rem;max-width:500px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.2)">'
+    +'<div style="font-size:1rem;font-weight:700;margin-bottom:1rem">🔍 Prüfungsergebnis</div>'
+    +'<div style="display:flex;flex-direction:column;gap:.5rem;margin-bottom:1.25rem">'
+    +allMsgs.map(function(m){
+      var isErr=m.startsWith('❌');
+      return '<div style="padding:.5rem .75rem;border-radius:8px;font-size:.82rem;background:'+(isErr?'#fdf0ef':'#fff3cd')+';color:'+(isErr?'#c0392b':'#856404')+'">'+m+'</div>';
+    }).join('')
+    +'</div>'
+    +(meldungen.length?'<div style="font-size:.75rem;color:#c0392b;margin-bottom:.75rem">❌ = Fehler müssen vor der Berechnung behoben werden.</div>':'')
+    +'<div style="display:flex;gap:.5rem;justify-content:flex-end">'
+      +'<button onclick="this.closest(\'div[style*=fixed]\').remove()" class="btn-secondary" style="font-size:.82rem">Schließen</button>'
+      +(meldungen.length===0?'<button onclick="this.closest(\'div[style*=fixed]\').remove();goStep(4);berechnen();" class="btn-primary" style="font-size:.82rem">Trotzdem berechnen →</button>':'')
+    +'</div>'
+    +'</div>';
+  document.body.appendChild(modal);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ERGEBNIS ZUSAMMENFASSUNG (Step 4)
+// ═══════════════════════════════════════════════════════════════
+function buildErgebnisSummary(ergebnis){
+  var card=document.getElementById('ergebnis-summary-card');
+  var tbody=document.getElementById('ergebnis-summary-tbody');
+  var tfoot=document.getElementById('ergebnis-summary-tfoot');
+  if(!card||!tbody||!tfoot)return;
+
+  var fmt=function(n){return n.toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';};
+  var fmtDate=function(d){return d?new Date(d).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'2-digit'}):'-';};
+
+  var totalVorausz=0,totalAbr=0;
+  var rows=[];
+
+  ergebnis.ergebnisse.forEach(function(we){
+    we.perioden.forEach(function(pe){
+      var p=pe.periode;
+      var vorausz=p.vorauszBK+(ergebnis.hasHK?p.vorauszHK:0);
+      var abr=pe.bkGes+(ergebnis.hasHK?pe.hkGes:0);
+      var diff=vorausz-abr;
+      var isNachz=diff<0;
+      totalVorausz+=vorausz;totalAbr+=abr;
+      rows.push({
+        einheit:we.wohnung.bez,
+        mieter:p.isLeerstand?'📭 Leerstand':p.name,
+        von:p.von,bis:p.bis,
+        vorausz:vorausz,abr:abr,diff:diff,
+        isLeerstand:p.isLeerstand
+      });
+    });
+  });
+
+  tbody.innerHTML=rows.map(function(r){
+    var diffColor=r.diff>0?'#155724':r.diff<0?'#c0392b':'#666';
+    var diffBg=r.diff>0?'#d4edda':r.diff<0?'#fdf0ef':'#f5f5f5';
+    return '<tr style="border-bottom:1px solid var(--border)'+(r.isLeerstand?';opacity:.6':'')+'">'
+      +'<td style="padding:.45rem .5rem"><div style="font-weight:600;font-size:.82rem">'+r.einheit+'</div><div style="font-size:.72rem;color:var(--muted)">'+r.mieter+'</div></td>'
+      +'<td style="padding:.45rem .5rem;text-align:right;font-size:.75rem;color:var(--muted);white-space:nowrap">'+fmtDate(r.von)+' – '+fmtDate(r.bis)+'</td>'
+      +'<td style="padding:.45rem .5rem;text-align:right;font-size:.82rem">'+fmt(r.vorausz)+'</td>'
+      +'<td style="padding:.45rem .5rem;text-align:right;font-size:.82rem;font-weight:600">'+fmt(r.abr)+'</td>'
+      +'<td style="padding:.45rem .5rem;text-align:right">'
+        +'<span style="font-size:.78rem;font-weight:700;padding:2px 8px;border-radius:7px;background:'+diffBg+';color:'+diffColor+'">'
+          +(r.diff>=0?'+':'')+fmt(r.diff)
+        +'</span>'
+      +'</td>'
+      +'<td style="padding:.45rem .5rem;text-align:center">'
+        +'<span style="font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:7px;background:'+(r.diff>0?'#d4edda':r.diff<0?'#fdf0ef':'#f5f5f5')+';color:'+(r.diff>0?'#155724':r.diff<0?'#c0392b':'#666')+'">'
+          +(r.diff>0?'✅ Erstattung':r.diff<0?'⚠️ Nachzahlung':'Ausgeglichen')
+        +'</span>'
+      +'</td>'
+    +'</tr>';
+  }).join('');
+
+  var totalDiff=totalVorausz-totalAbr;
+  tfoot.innerHTML='<tr style="border-top:2px solid var(--border);background:var(--bg)">'
+    +'<td style="padding:.5rem .5rem;font-weight:700;font-size:.82rem" colspan="2">Gesamt ('+rows.length+' Abrechnungen)</td>'
+    +'<td style="padding:.5rem .5rem;text-align:right;font-weight:700">'+fmt(totalVorausz)+'</td>'
+    +'<td style="padding:.5rem .5rem;text-align:right;font-weight:700">'+fmt(totalAbr)+'</td>'
+    +'<td style="padding:.5rem .5rem;text-align:right">'
+      +'<span style="font-size:.82rem;font-weight:700;color:'+(totalDiff>=0?'#155724':'#c0392b')+'">'
+        +(totalDiff>=0?'+':'')+fmt(totalDiff)
+      +'</span>'
+    +'</td>'
+    +'<td></td>'
+  +'</tr>';
+
+  card.style.display='block';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// VORJAHRESVERGLEICH (Step 4)
+// ═══════════════════════════════════════════════════════════════
+async function ladeVorjahresvergleich(ergebnis){
+  var container=document.getElementById('vorjahres-vergleich-card');
+  if(!container)return;
+
+  var objekt=ergebnis.objekt||'';
+  var jahr=ergebnis.jahr||new Date().getFullYear();
+
+  var {data:abrList}=await sb.from('abrechnungen')
+    .select('id,titel,objekt,data,jahr')
+    .eq('created_by',currentUser.id).is('deleted_at',null)
+    .ilike('titel','%[Abgerechnet]%')
+    .order('jahr',{ascending:false}).limit(20);
+
+  var vorjahrAbr=(abrList||[]).filter(function(a){
+    return (a.objekt===objekt||(a.data&&a.data.objekt===objekt))&&(a.jahr||(a.data&&a.data.jahr))<jahr;
+  })[0];
+
+  if(!vorjahrAbr||!vorjahrAbr.data){
+    container.style.display='none';
+    return;
+  }
+
+  var vd=vorjahrAbr.data;
+  var vjBK=(vd.bkKosten||[]).reduce(function(s,k){return s+(parseFloat(k.betrag)||0);},0);
+  var vjHK=(vd.hkKosten||[]).reduce(function(s,k){return s+(parseFloat(k.betrag)||0);},0);
+  var vjGes=vjBK+vjHK;
+
+  var akBK=ergebnis.bkKosten.reduce(function(s,k){return s+(parseFloat(k.betrag)||0);},0);
+  var akHK=ergebnis.hkKosten.reduce(function(s,k){return s+(parseFloat(k.betrag)||0);},0);
+  var akGes=akBK+akHK;
+
+  var diff=akGes-vjGes;
+  var diffPct=vjGes>0?((diff/vjGes)*100).toFixed(1):0;
+  var fmt=function(n){return n.toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';};
+
+  container.style.display='block';
+  container.innerHTML='<div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.85rem">📈 Vorjahresvergleich ('+((vorjahrAbr.jahr||'Vorjahr'))+'→'+jahr+')</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem">'
+      +'<div style="background:var(--bg);border-radius:8px;padding:.85rem">'
+        +'<div style="font-size:.62rem;color:var(--muted);margin-bottom:.2rem">Betriebskosten</div>'
+        +'<div style="font-size:.9rem;font-weight:700">'+fmt(akBK)+'</div>'
+        +'<div style="font-size:.7rem;color:var(--muted)">Vorjahr: '+fmt(vjBK)+'</div>'
+      +'</div>'
+      +'<div style="background:var(--bg);border-radius:8px;padding:.85rem">'
+        +'<div style="font-size:.62rem;color:var(--muted);margin-bottom:.2rem">Heizkosten</div>'
+        +'<div style="font-size:.9rem;font-weight:700">'+fmt(akHK)+'</div>'
+        +'<div style="font-size:.7rem;color:var(--muted)">Vorjahr: '+fmt(vjHK)+'</div>'
+      +'</div>'
+      +'<div style="background:'+(diff>0?'#fdf0ef':'#d4edda')+';border-radius:8px;padding:.85rem">'
+        +'<div style="font-size:.62rem;color:var(--muted);margin-bottom:.2rem">Veränderung</div>'
+        +'<div style="font-size:.9rem;font-weight:700;color:'+(diff>0?'#c0392b':'#155724')+'">'+(diff>0?'+':'')+fmt(diff)+'</div>'
+        +'<div style="font-size:.7rem;color:'+(diff>0?'#c0392b':'#155724')+'">'+(diff>0?'+':'')+diffPct+' %</div>'
+      +'</div>'
+    +'</div>'
+    +'<div style="margin-top:.85rem;font-size:.72rem;color:var(--muted);font-style:italic">Basiert auf: '+vorjahrAbr.titel.replace('[Abgerechnet]','').trim()+'</div>';
 }
 
 // Init sidebar groups

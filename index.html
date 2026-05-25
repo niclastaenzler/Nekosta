@@ -5382,7 +5382,7 @@ function openObjektModal(data){
     document.getElementById('obj-strasse').value=data.strasse||'';
     document.getElementById('obj-plz').value=data.plz||'';
     document.getElementById('obj-ort').value=data.ort||'';
-    document.getElementById('obj-notiz').value=data.notiz||'';
+    var notizEdit=document.getElementById('obj-notiz');if(notizEdit)notizEdit.value=data.notiz||'';
   } else {
     // New: show type selection
     document.getElementById('obj-step1').style.display='block';
@@ -5391,10 +5391,10 @@ function openObjektModal(data){
     document.getElementById('obj-strasse').value='';
     document.getElementById('obj-plz').value='';
     document.getElementById('obj-ort').value='';
-    document.getElementById('obj-flaeche').value='';
-    document.getElementById('obj-einheiten').value='';
-    document.getElementById('obj-baujahr').value='';
-    document.getElementById('obj-notiz').value='';
+    var f1=document.getElementById('obj-flaeche');if(f1)f1.value='';
+    var f2=document.getElementById('obj-einheiten');if(f2)f2.value='';
+    var f3=document.getElementById('obj-baujahr');if(f3)f3.value='';
+    var notizNew=document.getElementById('obj-notiz');if(notizNew)notizNew.value='';
     document.querySelectorAll('.obj-typ-card').forEach(function(card){card.style.borderColor='var(--border)';card.style.background='var(--white)';});
   }
   var msg=document.getElementById('obj-msg');if(msg)msg.style.display='none';

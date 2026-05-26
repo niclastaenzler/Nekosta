@@ -884,6 +884,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
         </div>
       </div>
     </div>
+    </div>
 
     <!-- EINHEIT MODAL -->
     <div id="einheit-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:650;align-items:center;justify-content:center;padding:1rem">
@@ -1337,6 +1338,8 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
       </div>
     </div>
 
+
+    </div>
     <!-- ARCHIV -->
     <div id="page-archiv" style="display:none">
       <div style="padding:2rem">
@@ -7418,5 +7421,52 @@ document.addEventListener('DOMContentLoaded',function(){
   document.querySelectorAll('[id^="arr-"]').forEach(function(el){el.style.transition='transform .2s';});
 });
 </script>
+
+    <!-- EINHEIT DETAIL MODAL -->
+    <div id="einheit-detail-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:660;align-items:flex-start;justify-content:center;padding:1.5rem;overflow-y:auto">
+      <div style="background:var(--white);border-radius:14px;width:100%;max-width:700px;margin:auto;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.2)">
+        <div style="background:var(--p);color:#fff;padding:1.1rem 1.5rem;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:1rem;font-weight:700" id="ed-title">Einheit</div>
+            <div style="font-size:.75rem;opacity:.8;margin-top:1px" id="ed-sub"></div>
+          </div>
+          <button onclick="document.getElementById('einheit-detail-modal').style.display='none'" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:6px 10px;cursor:pointer">✕</button>
+        </div>
+        <div style="display:flex;border-bottom:2px solid var(--border);background:var(--white)">
+          <button type="button" id="edtab-zahlungen" onclick="showEinheitDetailTab('zahlungen')" style="background:none;border:none;border-bottom:2px solid var(--p);margin-bottom:-2px;padding:.65rem 1.25rem;cursor:pointer;font-size:.85rem;font-weight:700;color:var(--p);font-family:Arial,sans-serif">💳 Zahlungen</button>
+          <button type="button" id="edtab-notiz" onclick="showEinheitDetailTab('notiz')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.65rem 1.25rem;cursor:pointer;font-size:.85rem;color:var(--muted);font-family:Arial,sans-serif">📝 Notiz</button>
+          <button type="button" id="edtab-info" onclick="showEinheitDetailTab('info')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.65rem 1.25rem;cursor:pointer;font-size:.85rem;color:var(--muted);font-family:Arial,sans-serif">ℹ️ Info</button>
+        </div>
+        <div style="padding:1.25rem 1.5rem">
+          <div id="edtab-content-zahlungen">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.85rem">
+              <div style="font-size:.8rem;font-weight:700">Monatliche Mietzahlungen</div>
+              <div style="display:flex;gap:.35rem">
+                <button onclick="filterEinheitZahlungen('alle')" class="btn-small" id="ezf-alle" style="background:var(--p);color:#fff;font-size:.72rem">Alle</button>
+                <button onclick="filterEinheitZahlungen('offen')" class="btn-small" id="ezf-offen" style="font-size:.72rem">Offen</button>
+                <button onclick="filterEinheitZahlungen('gemahnt')" class="btn-small" id="ezf-gemahnt" style="font-size:.72rem">Gemahnt</button>
+              </div>
+            </div>
+            <div id="ed-zahlungen-list"><div style="color:var(--muted);text-align:center;padding:2rem">Wird geladen...</div></div>
+          </div>
+          <div id="edtab-content-notiz" style="display:none">
+            <div style="font-size:.78rem;color:var(--muted);margin-bottom:.5rem">Interne Notiz zur Einheit:</div>
+            <textarea id="ed-notiz-input" rows="5" style="border:1px solid var(--border);border-radius:8px;padding:.65rem .85rem;font-size:.85rem;font-family:Arial,sans-serif;width:100%;resize:vertical;outline:none;background:var(--bg);box-sizing:border-box" placeholder="Notizen, Besonderheiten, Mängel..."></textarea>
+            <div style="display:flex;align-items:center;gap:.6rem;margin-top:.6rem">
+              <button class="btn-primary" onclick="saveEinheitNotiz()" style="font-size:.82rem;padding:.5rem 1rem">💾 Speichern</button>
+              <span id="ed-notiz-saved" style="display:none;font-size:.72rem;color:var(--success)">✅ Gespeichert</span>
+            </div>
+          </div>
+          <div id="edtab-content-info" style="display:none">
+            <div id="ed-info-content"><div style="color:var(--muted);font-size:.82rem">Wird geladen...</div></div>
+            <div style="margin-top:1rem">
+              <button class="btn-secondary" onclick="editEinheitFromDetail()" style="font-size:.82rem">✏️ Einheit bearbeiten</button>
+            </div>
+          </div>
+        </div>
+        <input type="hidden" id="ed-einheit-id">
+      </div>
+    </div>
+
 </body>
 </html>

@@ -75,6 +75,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--tex
 /* ── WIZARD ── */
 .wizard-bar{background:var(--white);border-bottom:2px solid var(--border);padding:.65rem 1.5rem;align-items:center;gap:0;position:fixed;top:52px;left:var(--sidebar);right:0;z-index:149;box-shadow:0 2px 8px rgba(0,0,0,.06);display:none}
 #page-tool .wizard-bar{display:flex}
+#page-tool .wizard-bar{display:flex}
 .wizard-step{display:flex;align-items:center;gap:.5rem;padding:1rem .75rem;font-size:.82rem;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;transition:color .2s,border-color .2s;white-space:nowrap}
 .wizard-step.active{color:var(--p);border-bottom-color:var(--p);font-weight:700}
 .wizard-step.done{color:var(--success)}
@@ -1088,7 +1089,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
 
     <!-- ══ TOOL ══ -->
     <!-- ══ TOOL ══ -->
-    <div id="page-tool" style="display:none">
+        <div id="page-tool" style="display:none">
       <!-- WIZARD BAR -->
       <div class="wizard-bar">
         <div class="wizard-step active" id="ws1" onclick="goStep(1)"><span class="ws-num">1</span>Grunddaten</div>
@@ -1098,12 +1099,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
         <div class="wizard-step" id="ws3" onclick="goStep(3)"><span class="ws-num">3</span>Kosten</div>
         <div class="wizard-arrow">›</div>
         <div class="wizard-step" id="ws4" onclick="goStep(4)"><span class="ws-num">4</span>Ergebnis &amp; PDF</div>
-
-
-            <!-- STEPS WRAPPER -->
-      <!-- /steps-wrapper -->
-
-      <!-- WIZARD FOOTER -->
+      </div>
 
       <div id="steps-wrapper" style="padding-top:60px">
 <!-- STEP 1: GRUNDDATEN -->
@@ -1307,8 +1303,19 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
       </div>
     </div>
 
+      <div class="wizard-footer">
+        <button class="btn-secondary" id="btn-zurueck" onclick="goStep(currentStep-1)" style="visibility:hidden">← Zurück</button>
+        <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
+          <div id="stammdaten-warn" style="display:none;background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:.3rem .75rem;font-size:.75rem;color:#856404">
+            ⚠️ <strong>Stammdaten fehlen!</strong> <a href="#" onclick="showPage('stammdaten');return false" style="color:#856404;text-decoration:underline">Jetzt ausfüllen</a> – sonst fehlt der Absender im PDF.
+          </div>
+          <button class="btn-success" onclick="zwischenspeichern()">💾 Zwischenspeichern</button>
+          <button class="btn-secondary" id="btn-probe" onclick="ladeProbeabrechnung()" style="font-size:.78rem;padding:.5rem 1rem;display:none">🧪 Probe</button>
+          <span id="wizard-step-label" style="font-size:.82rem;color:var(--muted)">Schritt 1 von 4</span>
+        </div>
+        <button class="btn-primary" id="btn-weiter" onclick="wizardWeiter()">Weiter →</button>
+      </div>
 
-    </div>
     </div>
     <!-- ARCHIV -->
     <div id="page-archiv" style="display:none">

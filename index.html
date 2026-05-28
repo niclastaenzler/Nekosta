@@ -534,85 +534,138 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
     <!-- ══ WELCOME ══ -->
     <!-- DASHBOARD -->
     <div id="page-dashboard" style="display:none">
-      <div style="padding:2rem;max-width:1100px">
-        <div class="page-header"><div class="page-title">📊 Dashboard</div><div class="page-sub">Ihre Übersicht auf einen Blick</div></div>
+      <div style="padding:2rem 2.25rem;max-width:1300px">
 
-        <!-- STATS KACHELN -->
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1rem;margin-bottom:1.75rem">
-          <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:1.25rem;border-left:4px solid var(--p)">
-            <div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem">Objekte</div>
-            <div style="font-size:2rem;font-weight:700;color:var(--p)" id="dash-objekte">–</div>
-            <div style="font-size:.78rem;color:var(--muted);margin-top:.25rem">verwaltet</div>
+        <!-- ── HERO ROW ── -->
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2rem;gap:1rem;flex-wrap:wrap">
+          <div>
+            <div id="dash-greeting" style="font-size:1.55rem;font-weight:800;letter-spacing:-.02em;color:var(--text)">Guten Tag</div>
+            <div style="font-size:.85rem;color:var(--muted);margin-top:.25rem" id="dash-date"></div>
           </div>
-          <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:1.25rem;border-left:4px solid #1a7a4a">
-            <div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem">Aktive Mieter</div>
-            <div style="font-size:2rem;font-weight:700;color:#1a7a4a" id="dash-mieter">–</div>
-            <div style="font-size:.78rem;color:var(--muted);margin-top:.25rem">Mieter (aktiv)</div>
-          </div>
-          <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:1.25rem;border-left:4px solid #ffd700">
-            <div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem">Token Guthaben</div>
-            <div style="font-size:2rem;font-weight:700;color:#b8860b" id="dash-tokens">–</div>
-            <div style="font-size:.78rem;color:var(--muted);margin-top:.25rem">Shop</div>
-          </div>
-          <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:1.25rem;border-left:4px solid #c0392b">
-            <div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem">Entwürfe</div>
-            <div style="font-size:2rem;font-weight:700;color:#c0392b" id="dash-entwuerfe">–</div>
-            <div style="font-size:.78rem;color:var(--muted);margin-top:.25rem">nicht abgerechnet</div>
-          </div>
-          <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:1.25rem;border-left:4px solid #8e44d0">
-            <div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem">Abgerechnet</div>
-            <div style="font-size:2rem;font-weight:700;color:#8e44d0" id="dash-abgerechnet">–</div>
-            <div style="font-size:.78rem;color:var(--muted);margin-top:.25rem">finalisiert</div>
+          <div style="display:flex;gap:.65rem;flex-wrap:wrap">
+            <button onclick="startNeueAbrechnung()" class="btn-primary"
+              style="display:flex;align-items:center;gap:.5rem;padding:.65rem 1.25rem;font-size:.88rem;font-weight:700;border-radius:10px;box-shadow:0 4px 14px rgba(106,45,159,.25)">
+              <span style="font-size:1rem">📄</span> Neue Abrechnung
+            </button>
+            <button onclick="showPage('objekte')" class="btn-secondary"
+              style="display:flex;align-items:center;gap:.5rem;padding:.65rem 1.25rem;font-size:.88rem;font-weight:600;border-radius:10px">
+              <span style="font-size:1rem">🏢</span> Objekte verwalten
+            </button>
           </div>
         </div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem">
-          <!-- LETZTE ABRECHNUNGEN -->
-          <div class="card">
-            <div class="card-title" style="display:flex;justify-content:space-between">
-              <span>📄 Letzte Abrechnungen</span>
-              <button class="btn-small" style="font-size:.7rem" onclick="showPage('archiv')">Alle anzeigen</button>
-            </div>
-            <div id="dash-letzte-abr"><div style="color:var(--muted);font-size:.85rem;text-align:center;padding:1rem">Wird geladen...</div></div>
+        <!-- ── KPI ROW ── -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.75rem">
+
+          <div style="background:var(--white);border-radius:14px;padding:1.35rem 1.5rem;border:1px solid var(--border);position:relative;overflow:hidden;cursor:pointer"
+            onclick="showPage('objekte')"
+            onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,.09)'"
+            onmouseout="this.style.transform='';this.style.boxShadow=''">
+            <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--p),#a855f7)"></div>
+            <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.6rem">Objekte</div>
+            <div style="font-size:2.1rem;font-weight:800;color:var(--text);line-height:1" id="dash-kpi-objekte">–</div>
+            <div style="font-size:.72rem;color:var(--muted);margin-top:.35rem" id="dash-kpi-objekte-sub">wird geladen</div>
           </div>
-          <!-- OBJEKTE ÜBERSICHT -->
-          <div class="card">
-            <div class="card-title" style="display:flex;justify-content:space-between">
-              <span>🏢 Meine Objekte</span>
-              <button class="btn-small" style="font-size:.7rem" onclick="showPage('objekte')">Verwalten</button>
-            </div>
-            <div id="dash-objekte-list"><div style="color:var(--muted);font-size:.85rem;text-align:center;padding:1rem">Wird geladen...</div></div>
+
+          <div style="background:var(--white);border-radius:14px;padding:1.35rem 1.5rem;border:1px solid var(--border);position:relative;overflow:hidden;cursor:pointer"
+            onclick="showPage('objekte')"
+            onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,.09)'"
+            onmouseout="this.style.transform='';this.style.boxShadow=''">
+            <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#10b981,#34d399)"></div>
+            <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.6rem">Aktive Mieter</div>
+            <div style="font-size:2.1rem;font-weight:800;color:var(--text);line-height:1" id="dash-kpi-mieter">–</div>
+            <div style="font-size:.72rem;color:var(--muted);margin-top:.35rem" id="dash-kpi-mieter-sub">Mietverhältnisse</div>
           </div>
-          <!-- SCHNELLZUGRIFF -->
-          <div class="card">
-            <div class="card-title">⚡ Schnellzugriff</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
-              <button onclick="showPage('stammdaten')" style="background:var(--p-light);color:var(--p);border:1px solid rgba(106,45,159,.2);border-radius:10px;padding:1rem;cursor:pointer;text-align:left;font-family:Arial,sans-serif;transition:.15s" onmouseover="this.style.background='var(--p)';this.style.color='#fff'" onmouseout="this.style.background='var(--p-light)';this.style.color='var(--p)'">
-                <div style="font-size:1.25rem;margin-bottom:.3rem">👤</div>
-                <div style="font-size:.85rem;font-weight:700">Stammdaten verwalten</div>
-                <div style="font-size:.72rem;opacity:.75;margin-top:2px">Vermieter &amp; Bankdaten</div>
-              </button>
-              <button onclick="startNeueAbrechnung()" style="background:var(--p);color:#fff;border:none;border-radius:10px;padding:1rem;cursor:pointer;text-align:left;font-family:Arial,sans-serif;transition:.15s" onmouseover="this.style.opacity='.9'" onmouseout="this.style.opacity='1'">
-                <div style="font-size:1.25rem;margin-bottom:.3rem">📄</div>
-                <div style="font-size:.85rem;font-weight:700">Neue Abrechnung</div>
-                <div style="font-size:.72rem;opacity:.8;margin-top:2px">Betriebskosten abrechnen</div>
-              </button>
-              <button onclick="openObjektModal()" style="background:var(--p-light);color:var(--p);border:1px solid rgba(106,45,159,.2);border-radius:10px;padding:1rem;cursor:pointer;text-align:left;font-family:Arial,sans-serif;transition:.15s" onmouseover="this.style.background='var(--p)';this.style.color='#fff'" onmouseout="this.style.background='var(--p-light)';this.style.color='var(--p)'">
-                <div style="font-size:1.25rem;margin-bottom:.3rem">🏢</div>
-                <div style="font-size:.85rem;font-weight:700">Objekt anlegen</div>
-                <div style="font-size:.72rem;opacity:.75;margin-top:2px">Neues Mietobjekt erfassen</div>
-              </button>
-              <button onclick="showPage('tokens')" style="background:#fffbf0;color:#b8860b;border:1px solid #ffd700;border-radius:10px;padding:1rem;cursor:pointer;text-align:left;font-family:Arial,sans-serif;transition:.15s" onmouseover="this.style.background='#ffd700';this.style.color='#333'" onmouseout="this.style.background='#fffbf0';this.style.color='#b8860b'">
-                <div style="font-size:1.25rem;margin-bottom:.3rem">🪙</div>
-                <div style="font-size:.85rem;font-weight:700">Token kaufen</div>
-                <div style="font-size:.72rem;opacity:.75;margin-top:2px">PDFs freischalten</div>
-              </button>
+
+          <div style="background:var(--white);border-radius:14px;padding:1.35rem 1.5rem;border:1px solid var(--border);position:relative;overflow:hidden"
+            onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,.09)'"
+            onmouseout="this.style.transform='';this.style.boxShadow=''">
+            <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#f59e0b,#fbbf24)"></div>
+            <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.6rem">Monatliche Einnahmen</div>
+            <div style="font-size:2.1rem;font-weight:800;color:var(--text);line-height:1" id="dash-kpi-einnahmen">–</div>
+            <div style="font-size:.72rem;color:var(--muted);margin-top:.35rem">Kaltmiete gesamt</div>
+          </div>
+
+          <div style="background:var(--white);border-radius:14px;padding:1.35rem 1.5rem;border:1px solid var(--border);position:relative;overflow:hidden;cursor:pointer"
+            onclick="showPage('objekte')"
+            onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,.09)'"
+            onmouseout="this.style.transform='';this.style.boxShadow=''">
+            <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#ef4444,#f87171)" id="dash-kpi-forder-bar"></div>
+            <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.6rem">Offene Forderungen</div>
+            <div style="font-size:2.1rem;font-weight:800;line-height:1" id="dash-kpi-forder" style="color:var(--text)">–</div>
+            <div style="font-size:.72rem;color:var(--muted);margin-top:.35rem" id="dash-kpi-forder-sub">wird geladen</div>
+          </div>
+
+        </div>
+
+        <!-- ── MAIN GRID ── -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 340px;gap:1.25rem;align-items:start">
+
+          <!-- Objekte -->
+          <div style="background:var(--white);border-radius:14px;border:1px solid var(--border);overflow:hidden">
+            <div style="padding:1.1rem 1.35rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+              <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Meine Objekte</div>
+              <button onclick="showPage('objekte')" style="font-size:.75rem;color:var(--p);background:none;border:none;cursor:pointer;font-weight:600;font-family:Arial,sans-serif">Alle →</button>
+            </div>
+            <div id="dash-objekte-list" style="padding:.5rem 0">
+              <div style="padding:1.5rem;text-align:center;color:var(--muted);font-size:.82rem">Wird geladen...</div>
             </div>
           </div>
-          <!-- STAMMDATEN STATUS -->
-          <div class="card">
-            <div class="card-title">✅ Status</div>
-            <div id="dash-status-list"><div style="color:var(--muted);font-size:.85rem;text-align:center;padding:1rem">Wird geladen...</div></div>
+
+          <!-- Zahlungsstatus -->
+          <div style="background:var(--white);border-radius:14px;border:1px solid var(--border);overflow:hidden">
+            <div style="padding:1.1rem 1.35rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+              <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Zahlungsstatus</div>
+              <span style="font-size:.7rem;color:var(--muted)" id="dash-payment-period">letzte 3 Monate</span>
+            </div>
+            <div id="dash-zahlungen" style="padding:1rem 1.35rem">
+              <div style="text-align:center;color:var(--muted);font-size:.82rem">Wird geladen...</div>
+            </div>
+          </div>
+
+          <!-- Letzte Abrechnungen + Schnellaktionen -->
+          <div style="display:flex;flex-direction:column;gap:1.25rem">
+
+            <!-- Letzte Abrechnungen -->
+            <div style="background:var(--white);border-radius:14px;border:1px solid var(--border);overflow:hidden">
+              <div style="padding:1.1rem 1.35rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+                <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Abrechnungen</div>
+                <button onclick="showPage('archiv')" style="font-size:.75rem;color:var(--p);background:none;border:none;cursor:pointer;font-weight:600;font-family:Arial,sans-serif">Archiv →</button>
+              </div>
+              <div id="dash-abr-list" style="padding:.5rem 0">
+                <div style="padding:1rem 1.35rem;text-align:center;color:var(--muted);font-size:.82rem">Wird geladen...</div>
+              </div>
+            </div>
+
+            <!-- Schnellaktionen -->
+            <div style="background:var(--white);border-radius:14px;border:1px solid var(--border);overflow:hidden">
+              <div style="padding:1.1rem 1.35rem;border-bottom:1px solid var(--border)">
+                <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Schnellzugriff</div>
+              </div>
+              <div style="padding:.65rem .75rem;display:flex;flex-direction:column;gap:.35rem">
+                <button onclick="openObjektModal()" style="display:flex;align-items:center;gap:.65rem;width:100%;background:none;border:1px solid var(--border);border-radius:9px;padding:.55rem .85rem;cursor:pointer;font-family:Arial,sans-serif;font-size:.82rem;color:var(--text);text-align:left;transition:.12s"
+                  onmouseover="this.style.background='var(--bg)';this.style.borderColor='var(--p)'"
+                  onmouseout="this.style.background='none';this.style.borderColor='var(--border)'">
+                  <span style="font-size:1rem">🏢</span><span>Objekt anlegen</span>
+                </button>
+                <button onclick="showPage('kontakte');setTimeout(function(){openKontaktModal();},200)" style="display:flex;align-items:center;gap:.65rem;width:100%;background:none;border:1px solid var(--border);border-radius:9px;padding:.55rem .85rem;cursor:pointer;font-family:Arial,sans-serif;font-size:.82rem;color:var(--text);text-align:left;transition:.12s"
+                  onmouseover="this.style.background='var(--bg)';this.style.borderColor='var(--p)'"
+                  onmouseout="this.style.background='none';this.style.borderColor='var(--border)'">
+                  <span style="font-size:1rem">👤</span><span>Kontakt anlegen</span>
+                </button>
+                <button onclick="showPage('stammdaten')" style="display:flex;align-items:center;gap:.65rem;width:100%;background:none;border:1px solid var(--border);border-radius:9px;padding:.55rem .85rem;cursor:pointer;font-family:Arial,sans-serif;font-size:.82rem;color:var(--text);text-align:left;transition:.12s"
+                  onmouseover="this.style.background='var(--bg)';this.style.borderColor='var(--p)'"
+                  onmouseout="this.style.background='none';this.style.borderColor='var(--border)'">
+                  <span style="font-size:1rem">✏️</span><span>Stammdaten</span>
+                </button>
+                <button onclick="showPage('einstellungen')" style="display:flex;align-items:center;gap:.65rem;width:100%;background:none;border:1px solid var(--border);border-radius:9px;padding:.55rem .85rem;cursor:pointer;font-family:Arial,sans-serif;font-size:.82rem;color:var(--text);text-align:left;transition:.12s"
+                  onmouseover="this.style.background='var(--bg)';this.style.borderColor='var(--p)'"
+                  onmouseout="this.style.background='none';this.style.borderColor='var(--border)'">
+                  <span style="font-size:1rem">⚙️</span><span>Einstellungen</span>
+                </button>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
@@ -1302,20 +1355,6 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
         <button class="btn-primary" id="btn-weiter" onclick="wizardWeiter()">Weiter →</button>
       </div>
     </div>
-
-      <div class="wizard-footer">
-        <button class="btn-secondary" id="btn-zurueck" onclick="goStep(currentStep-1)" style="visibility:hidden">← Zurück</button>
-        <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
-          <div id="stammdaten-warn" style="display:none;background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:.3rem .75rem;font-size:.75rem;color:#856404">
-            ⚠️ <strong>Stammdaten fehlen!</strong> <a href="#" onclick="showPage('stammdaten');return false" style="color:#856404;text-decoration:underline">Jetzt ausfüllen</a> – sonst fehlt der Absender im PDF.
-          </div>
-          <button class="btn-success" onclick="zwischenspeichern()">💾 Zwischenspeichern</button>
-          <button class="btn-secondary" id="btn-probe" onclick="ladeProbeabrechnung()" style="font-size:.78rem;padding:.5rem 1rem;display:none">🧪 Probe</button>
-          <span id="wizard-step-label" style="font-size:.82rem;color:var(--muted)">Schritt 1 von 4</span>
-        </div>
-        <button class="btn-primary" id="btn-weiter" onclick="wizardWeiter()">Weiter →</button>
-      </div>
-
     </div>
     <!-- ARCHIV -->
     <div id="page-archiv" style="display:none">
@@ -5085,78 +5124,135 @@ async function loadAdminStats(){
 // ── DASHBOARD ──
 async function loadDashboard(){
   try{
+    // Date + greeting
+    var hour=new Date().getHours();
+    var greet=hour<5?'Gute Nacht':hour<12?'Guten Morgen':hour<18?'Guten Tag':'Guten Abend';
+    var sName=stammdaten&&(stammdaten.vname||stammdaten.firma)?(', '+(stammdaten.vname||stammdaten.firma)):'';
+    var grEl=document.getElementById('dash-greeting');
+    if(grEl)grEl.textContent=greet+sName+'!';
+    var dateEl=document.getElementById('dash-date');
+    if(dateEl)dateEl.textContent=new Date().toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+    // Load all data in parallel
     var results=await Promise.all([
-      sb.from('objekte').select('*',{count:'exact',head:true}).eq('user_id',currentUser.id),
-      sb.from('mieter').select('*',{count:'exact',head:true}).eq('user_id',currentUser.id).eq('aktiv',true),
-      sb.from('nekosta_tokens').select('balance').eq('user_id',currentUser.id).maybeSingle(),
-      sb.from('abrechnungen').select('titel,created_at,objekt').eq('created_by',currentUser.id).order('created_at',{ascending:false}).limit(5),
-      sb.from('objekte').select('name,ort,einheiten_anzahl').eq('user_id',currentUser.id).limit(5),
+      sb.from('objekte').select('id,name,ort,kategorie,einheiten_anzahl').eq('user_id',currentUser.id).order('created_at',{ascending:false}),
+      sb.from('mietverhaeltnisse').select('id,kaltmiete,vorausz_bk,einheit_id,aktiv').eq('user_id',currentUser.id).eq('aktiv',true),
+      sb.from('abrechnungen').select('id,titel,objekt,created_at').eq('created_by',currentUser.id).is('deleted_at',null).ilike('titel','%[Abgerechnet]%').order('created_at',{ascending:false}).limit(4),
+      sb.from('mietzahlungen').select('betrag,status').eq('user_id',currentUser.id).gte('monat',new Date(new Date().getFullYear(),new Date().getMonth()-2,1).toISOString().split('T')[0]),
     ]);
-    var objCount=results[0].count||0;
-    var mietCount=results[1].count||0;
-    var tokens=(results[2].data&&results[2].data.balance)?results[2].data.balance:0;
-    var letzteAbr=results[3].data||[];
-    var objekte=results[4].data||[];
 
-    document.getElementById('dash-objekte').textContent=objCount;
-    document.getElementById('dash-mieter').textContent=mietCount;
-    // Tokens: admin shows actual balance (not infinite in dashboard)
-    document.getElementById('dash-tokens').textContent=tokens;
+    var objekte=results[0].data||[];
+    var mvList=results[1].data||[];
+    var abrList=results[2].data||[];
+    var zahlungen=results[3].data||[];
 
-    // Entwürfe & Abgerechnet - only user's own, only valid (with objekt)
-    var {data:alle}=await sb.from('abrechnungen').select('titel,objekt').eq('created_by',currentUser.id);
-    var entwuerfe=(alle||[]).filter(function(a){return a.titel&&a.titel.includes('[Entwurf]')&&a.objekt&&a.objekt.trim()!=='';}).length;
-    var abgerechnet=(alle||[]).filter(function(a){return a.titel&&a.titel.includes('[Abgerechnet]');}).length;
-    document.getElementById('dash-entwuerfe').textContent=entwuerfe;
-    document.getElementById('dash-abgerechnet').textContent=abgerechnet;
+    // ── KPIs ──
+    var totalKalt=mvList.reduce(function(s,m){return s+(parseFloat(m.kaltmiete)||0);},0);
+    var offen=zahlungen.filter(function(z){return z.status==='offen'||z.status==='gemahnt';});
+    var totalOffen=offen.reduce(function(s,z){return s+(parseFloat(z.betrag)||0);},0);
+    var fmt=function(n){return n.toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';};
 
-    // Letzte Abrechnungen - ONLY own data, ONLY finalized (no drafts in dashboard)
-    var laEl=document.getElementById('dash-letzte-abr');
-    var nurAbgerechnet=(letzteAbr||[]).filter(function(a){return a.titel&&a.titel.includes('[Abgerechnet]');});
-    if(!nurAbgerechnet.length){
-      laEl.innerHTML='<div style="color:var(--muted);text-align:center;padding:.75rem;font-size:.85rem">Noch keine finalen Abrechnungen.</div>';
-    }else{
-      laEl.innerHTML=nurAbgerechnet.map(function(a){
-        var clean=(a.titel||'').replace('[Abgerechnet]','').trim();
-        return [
-          '<div style="border-bottom:1px solid var(--border);padding:.45rem .25rem;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-size:.82rem" ',
-          'onclick="viewAbgerechnet(\''+a.id+'\')">',
-          '<div><div style="font-weight:600">'+clean+'</div><div style="font-size:.7rem;color:var(--muted)">'+(a.objekt||'')+'</div></div>',
-          '<span style="font-size:.68rem;padding:2px 7px;border-radius:10px;font-weight:700;background:#d4edda;color:#155724">Abgerechnet</span>',
-          '</div>'
-        ].join('');
-      }).join('');
-    }
+    var setKpi=function(id,val){var el=document.getElementById(id);if(el)el.textContent=val;};
+    setKpi('dash-kpi-objekte',objekte.length);
+    setKpi('dash-kpi-objekte-sub',objekte.length===1?'Objekt':'Objekte');
+    setKpi('dash-kpi-mieter',mvList.length);
+    setKpi('dash-kpi-einnahmen',totalKalt>0?fmt(totalKalt):'–');
+    setKpi('dash-kpi-forder',totalOffen>0?fmt(totalOffen):'0,00 €');
+    setKpi('dash-kpi-forder-sub',totalOffen>0?(offen.length+' offen/gemahnt'):'Alles bezahlt ✅');
 
+    // Color forder KPI based on value
+    var forderEl=document.getElementById('dash-kpi-forder');
+    var forderBar=document.getElementById('dash-kpi-forder-bar');
+    if(forderEl){forderEl.style.color=totalOffen>0?'#ef4444':'#10b981';}
+    if(forderBar){forderBar.style.background=totalOffen>0?'linear-gradient(90deg,#ef4444,#f87171)':'linear-gradient(90deg,#10b981,#34d399)';}
+
+    // ── OBJEKTE LIST ──
     var olEl=document.getElementById('dash-objekte-list');
-    if(!objekte.length){
-      olEl.innerHTML='<div style="color:var(--muted);text-align:center;padding:.75rem;font-size:.85rem">Noch keine Objekte.</div>';
-    }else{
-      olEl.innerHTML=objekte.map(function(o){
-        return [
-          '<div style="border-bottom:1px solid var(--border);padding:.45rem .25rem;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-size:.82rem" ',
-          'onclick="openObjektDetail(\''+o.id+'\')">',
-          '<div><div style="font-weight:700">'+o.name+'</div><div style="font-size:.72rem;color:var(--muted)">'+(o.ort||'')+'</div></div>',
-          '<span style="font-size:.72rem;color:var(--muted)">'+(o.einheiten_anzahl||'–')+' Einh.</span>',
-          '</div>'
-        ].join('');
-      }).join('');
+    if(olEl){
+      if(!objekte.length){
+        olEl.innerHTML='<div style="padding:1.5rem 1.35rem;text-align:center"><div style="font-size:1.5rem;margin-bottom:.5rem">🏢</div><div style="font-size:.82rem;color:var(--muted);margin-bottom:.75rem">Noch keine Objekte angelegt.</div><button onclick="openObjektModal()" class="btn-primary" style="font-size:.78rem;padding:.45rem .9rem">+ Objekt anlegen</button></div>';
+      }else{
+        var katLabels={wgh:'Wohnhaus',efh:'Einfamilienhaus',garage:'Garage',gewerbe:'Gewerbe'};
+        var katColors={wgh:'var(--p-light),var(--p)',efh:'#e8f5e9,#2e7d32',garage:'#fff3e0,#e65100',gewerbe:'#e8eaf6,#3949ab'};
+        olEl.innerHTML=objekte.slice(0,6).map(function(o){
+          var kc=(katColors[o.kategorie]||'var(--bg),var(--muted)').split(',');
+          var initials=(o.name||'?').slice(0,2).toUpperCase();
+          return '<div class="dash-obj-row" onclick="openObjektDetail(\''+o.id+'\')" style="display:flex;align-items:center;gap:.85rem;padding:.7rem 1.35rem;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s" onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'\'">'
+            +'<div style="width:36px;height:36px;border-radius:9px;background:'+kc[0]+';color:'+kc[1]+';display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;flex-shrink:0">'+initials+'</div>'
+            +'<div style="flex:1;min-width:0">'
+              +'<div style="font-size:.85rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+o.name+'</div>'
+              +'<div style="font-size:.7rem;color:var(--muted)">'+[o.ort,o.einheiten_anzahl?(o.einheiten_anzahl+' Einh.'):null].filter(Boolean).join(' · ')+'</div>'
+            +'</div>'
+            +'<div style="font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:7px;background:'+kc[0]+';color:'+kc[1]+';white-space:nowrap">'+(katLabels[o.kategorie]||'Objekt')+'</div>'
+          +'</div>';
+        }).join('');
+      }
     }
-    // Status Checks
-    var sm=stammdaten;
-    var checks=[
-      {label:'Stammdaten ausgefüllt',ok:!!(sm.vname||sm.firma),link:'stammdaten'},
-      {label:'IBAN hinterlegt',ok:!!sm.iban,link:'stammdaten'},
-      {label:'Mindestens 1 Objekt',ok:objCount>0,link:'objekte'},
-      {label:'Token verfügbar',ok:isAdmin||(tokens>0),link:'tokens'},
-    ];
-    document.getElementById('dash-status-list').innerHTML=checks.map(function(c){
-      return '<div style="display:flex;align-items:center;gap:.6rem;padding:.4rem 0;font-size:.85rem;border-bottom:1px solid var(--border)">'
-        +'<span style="font-size:.9rem">'+(c.ok?'✅':'⚪')+'</span>'
-        +'<span>'+(c.ok?c.label:'<a href="#" onclick="showPage(\''+c.link+'\');return false" style="color:var(--p)">'+c.label+' fehlt →</a>')+'</span>'
-        +'</div>';
-    }).join('');
-  }catch(e){console.error('Dashboard error:',e);}
+
+    // ── ZAHLUNGSSTATUS ──
+    var zEl=document.getElementById('dash-zahlungen');
+    if(zEl){
+      var bezahlt=zahlungen.filter(function(z){return z.status==='bezahlt';}).length;
+      var offenCount=zahlungen.filter(function(z){return z.status==='offen';}).length;
+      var gemahnt=zahlungen.filter(function(z){return z.status==='gemahnt';}).length;
+      var total=zahlungen.length;
+
+      if(!total){
+        zEl.innerHTML='<div style="text-align:center;padding:1rem 0;color:var(--muted);font-size:.82rem;font-style:italic">Keine Zahlungsdaten vorhanden.</div>';
+      }else{
+        var pBez=total?Math.round(bezahlt/total*100):0;
+        zEl.innerHTML=
+          // Progress bar
+          '<div style="display:flex;height:8px;border-radius:8px;overflow:hidden;gap:2px;margin-bottom:1rem">'
+            +'<div style="background:#10b981;flex:'+bezahlt+';border-radius:4px;transition:flex .4s"></div>'
+            +'<div style="background:#f59e0b;flex:'+offenCount+';border-radius:4px;transition:flex .4s"></div>'
+            +'<div style="background:#ef4444;flex:'+gemahnt+';border-radius:4px;transition:flex .4s"></div>'
+          +'</div>'
+          // Stats row
+          +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem">'
+            +'<div style="background:#f0fdf4;border-radius:10px;padding:.75rem .5rem;text-align:center">'
+              +'<div style="font-size:1.35rem;font-weight:800;color:#10b981">'+bezahlt+'</div>'
+              +'<div style="font-size:.65rem;color:#10b981;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-top:1px">Bezahlt</div>'
+            +'</div>'
+            +'<div style="background:#fffbeb;border-radius:10px;padding:.75rem .5rem;text-align:center">'
+              +'<div style="font-size:1.35rem;font-weight:800;color:#f59e0b">'+offenCount+'</div>'
+              +'<div style="font-size:.65rem;color:#f59e0b;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-top:1px">Offen</div>'
+            +'</div>'
+            +'<div style="background:'+(gemahnt?'#fef2f2':'#f5f5f5')
+              +';border-radius:10px;padding:.75rem .5rem;text-align:center">'
+              +'<div style="font-size:1.35rem;font-weight:800;color:'+(gemahnt?'#ef4444':'#aaa')+'">'+gemahnt+'</div>'
+              +'<div style="font-size:.65rem;color:'+(gemahnt?'#ef4444':'#aaa')+';font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-top:1px">Gemahnt</div>'
+            +'</div>'
+          +'</div>'
+          +(totalOffen>0
+            ?'<div style="margin-top:.85rem;background:#fef2f2;border-radius:9px;padding:.6rem .85rem;display:flex;justify-content:space-between;align-items:center">'
+              +'<span style="font-size:.78rem;color:#ef4444;font-weight:700">⚠️ Offen: '+fmt(totalOffen)+'</span>'
+              +'<button onclick="showPage(\'objekte\')" style="font-size:.72rem;color:#ef4444;background:none;border:none;cursor:pointer;font-weight:700;font-family:Arial,sans-serif">Details →</button>'
+            +'</div>'
+            :'<div style="margin-top:.85rem;background:#f0fdf4;border-radius:9px;padding:.6rem .85rem;font-size:.78rem;color:#10b981;font-weight:700;text-align:center">✅ Alle Zahlungen aktuell</div>'
+          );
+      }
+    }
+
+    // ── LETZTE ABRECHNUNGEN ──
+    var aEl=document.getElementById('dash-abr-list');
+    if(aEl){
+      if(!abrList.length){
+        aEl.innerHTML='<div style="padding:1rem 1.35rem;text-align:center"><div style="font-size:.82rem;color:var(--muted);margin-bottom:.5rem">Noch keine Abrechnungen.</div><button onclick="startNeueAbrechnung()" class="btn-primary" style="font-size:.75rem;padding:.4rem .85rem">📄 Erstellen</button></div>';
+      }else{
+        aEl.innerHTML=abrList.map(function(a){
+          var clean=(a.titel||'').replace('[Abgerechnet]','').replace('[Entwurf]','').trim();
+          var datum=new Date(a.created_at).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'2-digit'});
+          return '<div style="display:flex;justify-content:space-between;align-items:center;padding:.6rem 1.35rem;border-bottom:1px solid var(--border)">'
+            +'<div><div style="font-size:.82rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">'+clean+'</div>'
+            +'<div style="font-size:.7rem;color:var(--muted)">'+datum+'</div></div>'
+            +'<span style="font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:7px;background:#f0fdf4;color:#10b981;white-space:nowrap;flex-shrink:0">Final</span>'
+          +'</div>';
+        }).join('');
+      }
+    }
+
+  }catch(e){console.error('Dashboard Fehler:',e);}
 }
 
 

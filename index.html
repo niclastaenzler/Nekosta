@@ -1101,11 +1101,14 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
 
 
             <!-- STEPS WRAPPER -->
+      <!-- /steps-wrapper -->
+
+      <!-- WIZARD FOOTER -->
+
       <div id="steps-wrapper" style="padding-top:60px">
 <!-- STEP 1: GRUNDDATEN -->
       <div id="step1" class="wizard-content">
-        <div class="page-header"><div class="page-title">Grunddaten der Abrechnung</div><div class="page-sub">Bitte wählen Sie zunächst die Art der Abrechnung.</div></div>
-
+        <div class="page-header"><div class="page-title">Grunddaten der Abrechnung</div><div class="page-sub">Objekt auswählen oder manuell eingeben.</div></div>
         <!-- MODUS-TOGGLE -->
         <div style="display:flex;gap:0;margin-bottom:1.5rem;border:2px solid var(--p);border-radius:10px;overflow:hidden">
           <button type="button" id="abr-modus-objekt" onclick="setAbrModus('objekt')"
@@ -1124,19 +1127,17 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
           <div style="display:flex;align-items:flex-end;gap:.75rem;margin-bottom:1rem;flex-wrap:wrap">
             <div class="field" style="flex:1;min-width:200px">
               <label>Aus gespeicherten Objekten laden</label>
-              <select id="objekt-select" onchange="ladeObjektInWizard()" style="border:1px solid var(--border);border-radius:var(--r);padding:.48rem .72rem;font-size:.86rem;font-family:Arial,sans-serif;background:var(--bg);outline:none;width:100%">
-                <option value="">– Objekt wählen oder manuell eingeben –</option>
+              <select id="objekt-select" onchange="ladeObjektInWizard()" style="border:1px solid var(--border);border-radius:8px;padding:.45rem .7rem;font-size:.85rem;font-family:Arial,sans-serif;width:100%;outline:none">
+                <option value="">– Objekt wählen –</option>
               </select>
             </div>
-            <button class="btn-secondary" onclick="ladeObjektInWizard()" style="white-space:nowrap;padding:.48rem 1rem">📥 Mieter &amp; m² übernehmen</button>
+            <button class="btn-secondary" onclick="ladeObjektInWizard()" style="white-space:nowrap;padding:.45rem .9rem;font-size:.82rem">🔄 Laden</button>
           </div>
-          <div id="objekt-import-info" style="display:none;background:var(--success-bg);border:1px solid rgba(26,122,74,.2);border-radius:8px;padding:.65rem 1rem;font-size:.82rem;color:var(--success);margin-bottom:.85rem">
+          <div id="objekt-import-info" style="display:none;background:var(--success-bg);border:1px solid rgba(26,122,74,.2);border-radius:8px;padding:.65rem 1rem;font-size:.82rem;color:var(--success);margin-bottom:.5rem">
             ✅ <strong id="objekt-import-text"></strong> – Wohneinheiten und Mieter werden in Schritt 2 automatisch geladen.
           </div>
-          <div style="background:var(--p-light);border-radius:8px;padding:.65rem 1rem;font-size:.8rem;color:var(--p)">
-            💡 Objekt wählen – Einheiten und Mieter werden in Schritt 2 automatisch übernommen.
-          </div>
-        </div><!-- /abr-sektion-objekt -->
+          <div style="background:var(--p-light);border-radius:8px;padding:.55rem .85rem;font-size:.78rem;color:var(--p)">💡 Objekt wählen – Einheiten und Mieter werden automatisch übernommen.</div>
+        </div>
 
         <!-- TRENNLINIE -->
         <div style="display:flex;align-items:center;gap:.75rem;margin:.85rem 0">
@@ -1150,15 +1151,15 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
 
         <!-- SEKTION: MANUELL -->
         <div id="abr-sektion-manuell" class="card" style="opacity:.45;pointer-events:none">
-          <div class="card-title">Grunddaten</div>
+          <div class="card-title">Grunddaten manuell</div>
           <div class="meta-grid">
             <div class="field"><label>Abrechnungsjahr *</label><input type="number" id="jahr" min="2000" max="2100"></div>
-            <div class="field"><label>Objekt / Adresse *</label><input type="text" id="objekt" placeholder="z. B. Musterstr. 10, Euskirchen"></div>
-            <div class="field"><label>Gesamtwohnfläche Objekt m² *</label><input type="number" id="objekt-flaeche" placeholder="z. B. 215" step="0.01" min="0.01"></div>
+            <div class="field"><label>Objekt / Adresse *</label><input type="text" id="objekt" placeholder="z.B. Musterstr. 1, 53881 Euskirchen"></div>
+            <div class="field"><label>Gesamtwohnfläche m² *</label><input type="number" id="objekt-flaeche" placeholder="z.B. 215"></div>
             <div class="field"><label>Erstellt am</label><input type="date" id="datum"></div>
             <div class="field" id="f-kunde"><label>Kunde (E-Mail)</label><input type="text" id="kunde-email" placeholder="mieter@email.de"></div>
           </div>
-        </div><!-- /abr-sektion-manuell -->
+        </div>
       </div>
 
       <!-- STEP 2: WOHNEINHEITEN -->
@@ -1176,35 +1177,14 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
 
       <!-- STEP 3: KOSTEN -->
       <div id="step3" class="wizard-content" style="display:none">
-        <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:.75rem">
-          <div>
-            <div class="page-title">Kostenaufstellung</div>
-            <div class="page-sub">Heiz- und Betriebskosten des Objektes eintragen.</div>
-          </div>
-          <div style="display:flex;gap:.5rem;flex-wrap:wrap">
-            <button type="button" onclick="importKostenVorjahr()" class="btn-secondary" style="font-size:.8rem;display:flex;align-items:center;gap:.3rem" title="Kosten aus der letzten Abrechnung dieses Objekts übernehmen">
-              📅 Kosten aus Vorjahr
-            </button>
-            <button type="button" onclick="pruefeKosten()" class="btn-secondary" style="font-size:.8rem;display:flex;align-items:center;gap:.3rem" title="Eingaben auf Plausibilität prüfen">
-              ✅ Prüfen
-            </button>
-          </div>
-        </div>
+        <div class="page-header"><div class="page-title">Kostenaufstellung</div><div class="page-sub">Heiz- und Betriebskosten des Objektes eintragen.</div></div>
         <div class="card">
           <!-- HEIZKOSTEN ZUERST -->
           <div class="kosten-section" id="hk-section">
             <div class="kosten-section-header" style="display:flex;justify-content:space-between;align-items:center">
-              <div style="display:flex;align-items:center;gap:1rem">
-                <div class="kosten-section-title">🔥 Heizkosten</div>
-                <span style="font-size:.75rem;color:var(--muted)">Summe: <strong id="hk-summe-live" style="color:#e67e22">0,00 €</strong></span>
-              </div>
-              <div style="display:flex;gap:.5rem;align-items:center">
-                <button type="button" onclick="importKostenVorlage('hk')" class="btn-small" style="font-size:.72rem" title="Vorlage laden">📂 Vorlage</button>
-                <button type="button" onclick="saveKostenVorlage('hk')" class="btn-small" style="font-size:.72rem" title="Als Vorlage speichern">💾 Speichern</button>
-              </div>
-              <label class="hk-toggle"><input type="checkbox" id="keine-hk" onchange="toggleHK()"> Keine Heizkosten</label>
-              <label class="hk-toggle"><input type="checkbox" id="keine-hk" onchange="toggleHK()"> Keine Heizkosten</label>
-            </div>
+              <div style="display:flex;align-items:center;gap:.75rem"><div class="kosten-section-title">🔥 Heizkosten</div><span style="font-size:.75rem;color:var(--muted)">Summe: <strong id="hk-summe-live" style="color:#e67e22">0,00 €</strong></span></div>
+              <div style="display:flex;gap:.4rem;align-items:center"><button type="button" onclick="importKostenVorlage('hk')" class="btn-small" style="font-size:.7rem">📂 Vorlage</button><button type="button" onclick="saveKostenVorlage('hk')" class="btn-small" style="font-size:.7rem">💾 Speichern</button>
+              <label class="hk-toggle"><input type="checkbox" id="keine-hk" onchange="toggleHK()"> Keine Heizkosten</label></div>
             <div id="hk-content">
               <div style="overflow-x:auto">
               <table class="kosten-table">
@@ -1218,14 +1198,8 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
           <!-- BETRIEBSKOSTEN -->
           <div class="kosten-section" style="margin-top:1.25rem;padding-top:1.1rem;border-top:1px solid var(--border)">
             <div class="kosten-section-header" style="display:flex;justify-content:space-between;align-items:center">
-              <div style="display:flex;align-items:center;gap:1rem">
-                <div class="kosten-section-title">📋 Betriebskosten</div>
-                <span style="font-size:.75rem;color:var(--muted)">Summe: <strong id="bk-summe-live" style="color:var(--p)">0,00 €</strong></span>
-              </div>
-              <div style="display:flex;gap:.5rem;align-items:center">
-                <button type="button" onclick="importKostenVorlage('bk')" class="btn-small" style="font-size:.72rem" title="Gespeicherte Vorlage laden">📂 Vorlage</button>
-                <button type="button" onclick="saveKostenVorlage('bk')" class="btn-small" style="font-size:.72rem" title="Aktuelle Kosten als Vorlage speichern">💾 Speichern</button>
-              </div>
+              <div style="display:flex;align-items:center;gap:.75rem"><div class="kosten-section-title">📋 Betriebskosten</div><span style="font-size:.75rem;color:var(--muted)">Summe: <strong id="bk-summe-live" style="color:var(--p)">0,00 €</strong></span></div>
+              <div style="display:flex;gap:.4rem"><button type="button" onclick="importKostenVorlage('bk')" class="btn-small" style="font-size:.7rem">📂 Vorlage</button><button type="button" onclick="saveKostenVorlage('bk')" class="btn-small" style="font-size:.7rem">💾 Speichern</button></div>
             </div>
             <div style="overflow-x:auto">
             <table class="kosten-table">
@@ -1241,27 +1215,24 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
       <!-- STEP 4: ERGEBNIS -->
       <div id="step4" style="display:none">
         <div class="ergebnis-section">
-          <!-- ZUSAMMENFASSUNGS-TABELLE -->
+          <!-- ZUSAMMENFASSUNG -->
           <div id="ergebnis-summary-card" style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:1.25rem;margin-bottom:1.25rem;display:none">
-            <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.85rem">📊 Zusammenfassung</div>
-            <div style="overflow-x:auto">
-              <table style="width:100%;border-collapse:collapse;font-size:.82rem" id="ergebnis-summary-table">
-                <thead><tr style="border-bottom:2px solid var(--border)">
-                  <th style="text-align:left;padding:.4rem .5rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Einheit / Mieter</th>
-                  <th style="text-align:right;padding:.4rem .5rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Zeitraum</th>
-                  <th style="text-align:right;padding:.4rem .5rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Vorauszahlung</th>
-                  <th style="text-align:right;padding:.4rem .5rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Abrechnung</th>
-                  <th style="text-align:right;padding:.4rem .5rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Differenz</th>
-                  <th style="text-align:center;padding:.4rem .5rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Status</th>
-                </tr></thead>
-                <tbody id="ergebnis-summary-tbody"></tbody>
-                <tfoot id="ergebnis-summary-tfoot"></tfoot>
-              </table>
-            </div>
+            <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.85rem">📊 Zusammenfassung aller Abrechnungen</div>
+            <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.82rem" id="ergebnis-summary-table">
+              <thead><tr style="border-bottom:2px solid var(--border)">
+                <th style="text-align:left;padding:.4rem .5rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Einheit / Mieter</th>
+                <th style="text-align:right;padding:.4rem .5rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Zeitraum</th>
+                <th style="text-align:right;padding:.4rem .5rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Vorauszahlung</th>
+                <th style="text-align:right;padding:.4rem .5rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Abrechnung</th>
+                <th style="text-align:right;padding:.4rem .5rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Differenz</th>
+                <th style="text-align:center;padding:.4rem .5rem;font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Status</th>
+              </tr></thead>
+              <tbody id="ergebnis-summary-tbody"></tbody>
+              <tfoot id="ergebnis-summary-tfoot"></tfoot>
+            </table></div>
           </div>
           <!-- VORJAHRESVERGLEICH -->
           <div id="vorjahres-vergleich-card" style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:1.25rem;margin-bottom:1.25rem;display:none"></div>
-
           <!-- HEADER -->
           <div class="ergebnis-header">
             <div class="eh-left">
@@ -1276,18 +1247,17 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
           </div>
 
           <!-- PDF AKTIONEN -->
-          <div class="pdf-actions-bar">
-            <!-- LAYOUT AUSWAHL -->
-            <div style="display:flex;align-items:center;gap:.5rem;padding:.5rem .75rem;background:var(--bg);border-radius:8px;border:1px solid var(--border);margin-bottom:.5rem;width:100%;box-sizing:border-box">
-              <span style="font-size:.75rem;font-weight:700;color:var(--muted);white-space:nowrap">📄 Layout:</span>
-              <div style="display:flex;gap:.3rem;flex-wrap:wrap">
-                <button type="button" onclick="setPdfLayout('standard')" id="wiz-layout-standard" style="border:2px solid var(--p);border-radius:7px;padding:.3rem .7rem;cursor:pointer;font-size:.72rem;font-weight:700;background:var(--p);color:#fff;font-family:Arial,sans-serif">Standard</button>
-                <button type="button" onclick="setPdfLayout('minimal')" id="wiz-layout-minimal" style="border:2px solid var(--border);border-radius:7px;padding:.3rem .7rem;cursor:pointer;font-size:.72rem;font-weight:600;background:var(--white);color:var(--muted);font-family:Arial,sans-serif">Minimal</button>
-                <button type="button" onclick="setPdfLayout('modern')" id="wiz-layout-modern" style="border:2px solid var(--border);border-radius:7px;padding:.3rem .7rem;cursor:pointer;font-size:.72rem;font-weight:600;background:var(--white);color:var(--muted);font-family:Arial,sans-serif">Modern</button>
-                <button type="button" onclick="setPdfLayout('compact')" id="wiz-layout-compact" style="border:2px solid var(--border);border-radius:7px;padding:.3rem .7rem;cursor:pointer;font-size:.72rem;font-weight:600;background:var(--white);color:var(--muted);font-family:Arial,sans-serif">Kompakt</button>
-              </div>
-              <button onclick="vorschauAktuellesLayout()" class="btn-small" style="margin-left:auto;font-size:.7rem;white-space:nowrap">👁 Vorschau</button>
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:.75rem 1rem;margin-bottom:.75rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
+            <span style="font-size:.75rem;font-weight:700;color:var(--muted);white-space:nowrap">📄 PDF-Layout:</span>
+            <div style="display:flex;gap:.3rem;flex-wrap:wrap">
+              <button type="button" onclick="setPdfLayout('standard')" id="wiz-layout-standard" style="border:2px solid var(--p);border-radius:7px;padding:.3rem .8rem;cursor:pointer;font-size:.72rem;font-weight:700;background:var(--p);color:#fff;font-family:Arial,sans-serif">Standard</button>
+              <button type="button" onclick="setPdfLayout('minimal')" id="wiz-layout-minimal" style="border:2px solid var(--border);border-radius:7px;padding:.3rem .8rem;cursor:pointer;font-size:.72rem;font-weight:600;background:var(--white);color:var(--muted);font-family:Arial,sans-serif">Minimal</button>
+              <button type="button" onclick="setPdfLayout('modern')" id="wiz-layout-modern" style="border:2px solid var(--border);border-radius:7px;padding:.3rem .8rem;cursor:pointer;font-size:.72rem;font-weight:600;background:var(--white);color:var(--muted);font-family:Arial,sans-serif">Modern</button>
+              <button type="button" onclick="setPdfLayout('compact')" id="wiz-layout-compact" style="border:2px solid var(--border);border-radius:7px;padding:.3rem .8rem;cursor:pointer;font-size:.72rem;font-weight:600;background:var(--white);color:var(--muted);font-family:Arial,sans-serif">Kompakt</button>
             </div>
+            <button onclick="vorschauPdfLayout(currentPdfLayout||'standard')" class="btn-small" style="margin-left:auto;font-size:.7rem;white-space:nowrap">👁 Vorschau</button>
+          </div>
+          <div class="pdf-actions-bar">
             <div><div class="pa-label">📥 PDF Gesamtpaket</div><div class="pa-sub">Alle Wohnungen in einem Dokument</div></div>
             <button class="btn-small grau" onclick="handleGesamtPDF(true,'vorschau')">👁 Demo-Vorschau</button>
             <button class="btn-small grau" onclick="handleGesamtPDF(true,'download')">⬇️ Demo-PDF</button>
@@ -1321,9 +1291,8 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
         </div>
       </div>
 
-            </div><!-- /steps-wrapper -->
+            </div>
 
-      <!-- WIZARD FOOTER -->
       <div class="wizard-footer">
         <button class="btn-secondary" id="btn-zurueck" onclick="goStep(currentStep-1)" style="visibility:hidden">← Zurück</button>
         <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
@@ -1339,6 +1308,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
     </div>
 
 
+    </div>
     </div>
     <!-- ARCHIV -->
     <div id="page-archiv" style="display:none">

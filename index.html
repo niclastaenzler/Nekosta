@@ -5935,6 +5935,8 @@ async function deleteMietverhaeltnis(id){
   if(aktivesObjekt){loadObjektEinheiten(aktivesObjekt.id);loadObjektStats(aktivesObjekt.id);loadObjektSidebar(aktivesObjekt.id);loadMietverhaeltnisse(aktivesObjekt.id);}
 }
 async function loadMietverhaeltnisse(objId){
+  try{
+
   var container=document.getElementById('od-mietverh-list');
   if(!container)return;
   container.innerHTML='<div style="color:var(--muted);font-size:.85rem;text-align:center;padding:1.5rem">Wird geladen...</div>';
@@ -5993,31 +5995,62 @@ async function loadMietverhaeltnisse(objId){
 
   container.innerHTML=renderGroup(aktive,'Aktive Mietverhältnisse','#155724')
     +renderGroup(beendet,'Beendete Mietverhältnisse','var(--muted)');
+
+  }catch(e){
+    console.error('loadMietverhaeltnisse error:',e);
+    var c=document.getElementById('od-mietverh-list');
+    if(c)c.innerHTML='<div style="color:#c0392b;padding:1rem">Fehler: '+e.message+'</div>';
+  }
 }
 var aktivesObjekt=null;
 
 async function openObjektDetail(objId){
-  var {data,error}=await sb.from('objekte').select('*').eq('id',objId).maybeSingle();
-  if(error||!data){showToast('Fehler beim Laden');return;}
-  aktivesObjekt=data;
+  try{
+    var {data,error}=await sb.from('objekte').select('*').eq('id',objId).maybeSingle();
+    if(error||!data){showToast('Fehler beim Laden des Objekts');return;}
+    aktivesObjekt=data;
 
-  // Populate header/sidebar
-  var name=data.name||'Objekt';
-  var adresse=[data.strasse,data.plz&&data.ort?data.plz+' '+data.ort:data.ort].filter(Boolean).join(', ');
-  ['od-sidebar-name','od-main-name'].forEach(function(id){var el=document.getElementById(id);if(el)el.textContent=name;});
-  var sAddr=document.getElementById('od-sidebar-adresse');if(sAddr)sAddr.textContent=adresse;
-  var notEl=document.getElementById('od-notiz-input');if(notEl)notEl.value=data.notiz||'';
+    // Populate header
+    var name=data.name||'Objekt';
+    var adresse=[data.strasse,data.plz&&data.ort?data.plz+' '+data.ort:data.ort].filter(Boolean).join(', ');
+    ['od-sidebar-name','od-main-name'].forEach(function(id){
+      var el=document.getElementById(id);if(el)el.textContent=name;
+    });
+    var sAddr=document.getElementById('od-sidebar-adresse');if(sAddr)sAddr.textContent=adresse;
+    var notEl=document.getElementById('od-notiz-input');
+    if(notEl){
+      try{var meta=JSON.parse(data.notiz||'{}');notEl.value=meta._notiz||'';}
+      catch(e){notEl.value=data.notiz||'';}
+    }
 
-  // Show page
-  var allPages=['tool','abrechnung','archiv','stammdaten','anschreiben','kunden','tokens',
-    'einstellungen','heizkostenerstellen','impressum','welcome','bearbeitungsnotizen',
-    'adminpanel','dashboard','objekte','mieter','objekt-detail','kontakte'];
-  allPages.forEach(function(p){var el=document.getElementById('page-'+p);if(el)el.style.display=p==='objekt-detail'?'block':'none';});
+    // Show page - use global showPage
+    currentPageName='objekt-detail';
+    var allP=['tool','abrechnung','archiv','stammdaten','anschreiben','kunden','tokens',
+      'einstellungen','heizkostenerstellen','impressum','welcome','bearbeitungsnotizen',
+      'adminpanel','dashboard','objekte','mieter','objekt-detail','kontakte'];
+    allP.forEach(function(p){
+      var el=document.getElementById('page-'+p);
+      if(el)el.style.display=p==='objekt-detail'?'block':'none';
+    });
+    // Update nav
+    document.querySelectorAll('.nav-item').forEach(function(el){el.classList.remove('active');});
 
-  // Load data
-  showObjektTab('uebersicht');
-  await Promise.all([loadObjektSidebar(objId),loadObjektStats(objId),loadObjektEinheiten(objId),loadObjektMieter(objId),loadObjektAbrechnungen(objId)]);
-  loadObjektUebersichtTab(objId);
+    // Load sidebar and stats first (fast)
+    showObjektTab('uebersicht');
+    try{await loadObjektSidebar(objId);}catch(e){console.warn('sidebar:',e);}
+    try{await loadObjektStats(objId);}catch(e){console.warn('stats:',e);}
+    // Load all tabs in parallel - each wrapped so one failure doesn't break others
+    await Promise.all([
+      loadObjektEinheiten(objId).catch(function(e){console.warn('einheiten:',e);}),
+      loadObjektMieter(objId).catch(function(e){console.warn('mieter:',e);}),
+      loadObjektAbrechnungen(objId).catch(function(e){console.warn('abr:',e);}),
+    ]);
+    try{loadObjektUebersichtTab(objId);}catch(e){console.warn('uebersicht:',e);}
+
+  }catch(e){
+    console.error('openObjektDetail error:',e);
+    showToast('❌ Fehler beim Laden: '+e.message);
+  }
 }
 
 function showObjektTab(tab){
@@ -6105,23 +6138,26 @@ async function loadObjektSidebar(objId){
 
 
 async function loadObjektStats(objId){
-  var {data:mieterData}=await sb.from('mieter').select('*').eq('user_id',currentUser.id).eq('objekt_id',objId);
-  var {data:einheitenData}=await sb.from('einheiten').select('*').eq('user_id',currentUser.id).eq('objekt_id',objId);
-  var aktive=(mieterData||[]).filter(function(m){return m.aktiv&&!m.auszug;});
-  var totalKaltmiete=aktive.reduce(function(s,m){return s+(m.kaltmiete||0);},0);
-  var totalBK=aktive.reduce(function(s,m){return s+(m.vorausz_bk||0);},0);
-  var einh=einheitenData||[];
-  var leerstandCount=Math.max(0,einh.length-aktive.length);
-  var flaeche=aktivesObjekt.gesamtflaeche||0;
-  var preisQm=totalKaltmiete>0&&flaeche>0?(totalKaltmiete/flaeche).toFixed(2):0;
-
-  var fmtE=function(v){return v?v.toLocaleString('de-DE',{minimumFractionDigits:2})+' €':'–';};
-  var el=function(id){return document.getElementById(id);};
-  if(el('od-kaltmiete-total'))el('od-kaltmiete-total').textContent=fmtE(totalKaltmiete);
-  if(el('od-preis-qm'))el('od-preis-qm').textContent=preisQm?preisQm+' €':'–';
-  if(el('od-flaeche-total'))el('od-flaeche-total').textContent=flaeche?flaeche.toLocaleString('de-DE')+' m²':'–';
-  if(el('od-bk-total'))el('od-bk-total').textContent=fmtE(totalBK);
-  if(el('od-leerstand-count'))el('od-leerstand-count').textContent=leerstandCount+' Einh.';
+  try{
+    var [{data:mvData},{data:einheitenData}]=await Promise.all([
+      sb.from('mietverhaeltnisse').select('kaltmiete,vorausz_bk,aktiv').eq('user_id',currentUser.id).eq('objekt_id',objId),
+      sb.from('einheiten').select('id,flaeche').eq('user_id',currentUser.id).eq('objekt_id',objId)
+    ]);
+    var aktive=(mvData||[]).filter(function(m){return m.aktiv;});
+    var totalKaltmiete=aktive.reduce(function(s,m){return s+(parseFloat(m.kaltmiete)||0);},0);
+    var totalBK=aktive.reduce(function(s,m){return s+(parseFloat(m.vorausz_bk)||0);},0);
+    var einh=einheitenData||[];
+    var leerstandCount=Math.max(0,einh.length-aktive.length);
+    var flaeche=einh.reduce(function(s,e){return s+(parseFloat(e.flaeche)||0);},0)||(aktivesObjekt&&aktivesObjekt.gesamtflaeche)||0;
+    var preisQm=totalKaltmiete>0&&flaeche>0?(totalKaltmiete/flaeche).toFixed(2):0;
+    var fmtE=function(v){return v?v.toLocaleString('de-DE',{minimumFractionDigits:2})+' €':'–';};
+    var el=function(id){return document.getElementById(id);};
+    if(el('od-kaltmiete-total'))el('od-kaltmiete-total').textContent=fmtE(totalKaltmiete);
+    if(el('od-preis-qm'))el('od-preis-qm').textContent=preisQm?preisQm+' €/m²':'–';
+    if(el('od-flaeche-total'))el('od-flaeche-total').textContent=flaeche?flaeche.toLocaleString('de-DE')+' m²':'–';
+    if(el('od-bk-total'))el('od-bk-total').textContent=fmtE(totalBK);
+    if(el('od-leerstand-count'))el('od-leerstand-count').textContent=leerstandCount+'/'+einh.length+' Leerstand';
+  }catch(e){console.warn('loadObjektStats error:',e);}
 }
 
 // ── MIETZAHLUNGEN ──
@@ -6408,6 +6444,8 @@ function saveAbrechnungszeitraum(){showToast('💾 Zeitraum gespeichert.');}
 
 
 async function loadObjektEinheiten(objId){
+  try{
+
   var container=document.getElementById('od-einheiten-list');
   if(!container)return;
 
@@ -6493,6 +6531,12 @@ async function loadObjektEinheiten(objId){
       +'</div>'
       +'</div>';
   }).join('');
+
+  }catch(e){
+    console.error('loadObjektEinheiten error:',e);
+    var c=document.getElementById('od-einheiten-list');
+    if(c)c.innerHTML='<div style="color:#c0392b;padding:1rem">Fehler beim Laden: '+e.message+'</div>';
+  }
 }
 async function loadObjektMieter(objId){
   var container=document.getElementById('od-mieter-list');

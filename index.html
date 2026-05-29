@@ -69,7 +69,7 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--tex
  .nav-badge{margin-left:auto;background:var(--p-light);color:var(--p);font-size:.58rem;font-weight:700;padding:1px 5px;border-radius:8px}
  .sidebar-divider{height:1px;background:var(--border);margin:.35rem .85rem}
 .main-content{flex:1;min-width:0;overflow-x:hidden}
-#page-objekt-detail{position:fixed;top:52px;left:var(--sidebar);right:0;bottom:0;background:var(--bg);z-index:10;overflow:hidden;display:none}
+#page-objekt-detail{background:var(--bg);display:none;min-height:100%}
 .page-wrap{padding:2rem;max-width:900px;box-sizing:border-box;width:100%}
 
 /* ── WIZARD ── */
@@ -598,6 +598,17 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
 
         </div>
 
+        <!-- ── WARNUNGEN: Auslaufende Mietverhältnisse ── -->
+        <div id="dash-warnungen-wrap" style="display:none;margin-bottom:1.25rem">
+          <div style="background:#fffaf0;border:1px solid #f0d9a8;border-radius:14px;overflow:hidden">
+            <div style="padding:.9rem 1.35rem;border-bottom:1px solid #f0d9a8;display:flex;align-items:center;gap:.5rem">
+              <span style="font-size:1.1rem">⏰</span>
+              <span style="font-size:.8rem;font-weight:700;color:#856404">Auslaufende Mietverhältnisse</span>
+            </div>
+            <div id="dash-warnungen-list" style="padding:.5rem 0"></div>
+          </div>
+        </div>
+
         <!-- ── MAIN GRID ── -->
         <div style="display:grid;grid-template-columns:1fr 1fr 340px;gap:1.25rem;align-items:start">
 
@@ -761,10 +772,10 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
 
     <!-- OBJEKT DASHBOARD (ImmoCloud-Stil) -->
     <div id="page-objekt-detail" style="display:none">
-      <div style="display:flex;height:calc(100vh - 52px);overflow:hidden">
+      <div style="display:flex;min-height:calc(100vh - 52px)">
 
         <!-- LEFT SIDEBAR -->
-        <div style="width:300px;min-width:280px;background:var(--white);border-right:1px solid var(--border);padding:1.25rem;overflow-y:auto;flex-shrink:0">
+        <div style="width:300px;min-width:280px;flex-shrink:0;background:var(--white);border-right:1px solid var(--border);padding:1rem;position:sticky;top:52px;height:calc(100vh - 52px);overflow-y:auto;box-sizing:border-box">
           <!-- Back -->
           <button onclick="showPage('objekte')" style="display:flex;align-items:center;gap:.4rem;background:none;border:none;cursor:pointer;font-size:.82rem;color:var(--muted);padding:0;margin-bottom:1rem;font-family:Arial,sans-serif">← Zurück zur Objektübersicht</button>
 
@@ -794,7 +805,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
         </div>
 
         <!-- MAIN CONTENT -->
-        <div style="flex:1;overflow-y:auto;min-width:0">
+        <div style="flex:1;min-width:0;overflow-x:hidden">
           <!-- Object Header -->
           <div style="background:var(--white);border-bottom:1px solid var(--border);padding:1.25rem 2rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem;position:sticky;top:0;z-index:50">
             <div>
@@ -804,6 +815,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
             <div style="display:flex;gap:.5rem;flex-wrap:wrap">
               <button class="btn-secondary" style="font-size:.82rem;padding:.5rem 1rem" onclick="startAbrechnungFuerAktivesObjekt()">📄 Abrechnen</button>
               <button class="btn-secondary" style="font-size:.82rem;padding:.5rem 1rem" onclick="editAktivesObjekt()">✏️ Ändern</button>
+              <button class="btn-secondary" style="font-size:.82rem;padding:.5rem 1rem" onclick="dupliziereObjekt()">📋 Duplizieren</button>
               <button style="background:none;border:1px solid var(--border);border-radius:8px;padding:.5rem .75rem;cursor:pointer;font-size:.82rem;color:var(--danger)" onclick="deleteObjekt(aktivesObjekt.id).then(function(){showPage('objekte')})">Löschen</button>
             </div>
           </div>
@@ -815,6 +827,9 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
             <button type="button" id="tab-einheiten-tab" onclick="showObjektTab('einheiten')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.75rem 1.25rem;cursor:pointer;font-size:.88rem;color:var(--muted);font-family:Arial,sans-serif">Einheiten</button>
 
             <button type="button" id="tab-mietverh-tab" onclick="showObjektTab('mietverhaeltnisse')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.75rem 1.25rem;cursor:pointer;font-size:.88rem;color:var(--muted);font-family:Arial,sans-serif">Mietverhältnisse</button>
+            <button type="button" id="tab-weg-eigentuemer-tab" onclick="showObjektTab('weg-eigentuemer')" style="display:none;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.75rem 1.25rem;cursor:pointer;font-size:.88rem;color:var(--muted);font-family:Arial,sans-serif">Eigentümer</button>
+            <button type="button" id="tab-weg-einheiten-tab" onclick="showObjektTab('weg-einheiten')" style="display:none;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.75rem 1.25rem;cursor:pointer;font-size:.88rem;color:var(--muted);font-family:Arial,sans-serif">WEG-Einheiten</button>
+            <button type="button" id="tab-buchhaltung-tab" onclick="showObjektTab('buchhaltung')" style="display:none;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.75rem 1.25rem;cursor:pointer;font-size:.88rem;color:var(--muted);font-family:Arial,sans-serif">Buchhaltung</button>
           </div>
 
           <div style="padding:1.75rem 2rem">
@@ -844,23 +859,33 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
               <!-- 2-SPALTEN: Zahlungsstatus + Letzte Abrechnung -->
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem">
 
-                <!-- Zahlungsstatus Ampel -->
-                <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:1.25rem">
-                  <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.85rem">Zahlungsstatus (lfd. Monat)</div>
+                <!-- Vermietungsquote + Zahlungsstatus -->
+                <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:1.1rem">
+                  <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:.85rem">Vermietung & Zahlungen</div>
+                  <div id="od-vermiet-quote" style="margin-bottom:1rem"><div style="color:var(--muted);font-size:.82rem">Wird geladen...</div></div>
+                  <div style="height:1px;background:var(--border);margin:.85rem 0"></div>
                   <div id="od-saldo-overview"><div style="color:var(--muted);font-size:.82rem">Wird geladen...</div></div>
                 </div>
 
                 <!-- Letzte Abrechnung + Aktion -->
-                <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:1.25rem">
+                <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:1.1rem">
                   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.85rem">
-                    <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Abrechnungen</div>
-                    <button onclick="showPage('archiv')" style="font-size:.72rem;color:var(--p);background:none;border:none;cursor:pointer;font-family:Arial,sans-serif">Alle →</button>
+                    <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Letzte Abrechnungen</div>
+                    <button onclick="showPage('archiv')" style="font-size:.72rem;color:var(--p);background:none;border:none;cursor:pointer">Alle →</button>
                   </div>
                   <div id="od-abr-list"><div style="color:var(--muted);font-size:.82rem">Wird geladen...</div></div>
-                  <button onclick="startAbrechnungFuerAktivesObjekt()" class="btn-primary" style="width:100%;margin-top:.85rem;font-size:.82rem;padding:.5rem">
+                  <button onclick="startAbrechnungFuerAktivesObjekt()" class="btn-primary" style="width:100%;margin-top:.85rem;font-size:.82rem">
                     📄 Neue Abrechnung erstellen
                   </button>
                 </div>
+              </div>
+
+              <!-- SOLL/IST JAHRESÜBERSICHT -->
+              <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:1.1rem;margin-bottom:1.25rem">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.85rem">
+                  <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Soll/Ist Mieteinnahmen (letzte 12 Monate)</div>
+                </div>
+                <div id="od-soll-ist-chart"><div style="color:var(--muted);font-size:.82rem">Wird geladen...</div></div>
               </div>
 
               <!-- NOTIZ (volle Breite) -->
@@ -873,8 +898,6 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
                 </div>
               </div>
 
-            </div>
-            </div>
             </div>
 
             <!-- ── ABRECHNUNGSDATEN ── -->
@@ -942,6 +965,30 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
               </div>
               <div id="od-mietverh-list"><div style="color:var(--muted);font-size:.85rem;text-align:center;padding:2rem">Wird geladen...</div></div>
             </div>
+
+            <!-- ── WEG: EIGENTÜMER ── -->
+            <div id="tab-content-weg-eigentuemer" style="display:none">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+                <h3 style="font-size:.9rem;font-weight:700">Eigentümer</h3>
+                <button class="btn-primary" style="font-size:.82rem;padding:.5rem 1rem" onclick="openWegEigentuemerModal()">+ Eigentümer hinzufügen</button>
+              </div>
+              <div id="weg-mea-summe" style="margin-bottom:1rem"></div>
+              <div id="od-weg-eigentuemer-list"><div style="color:var(--muted);font-size:.85rem">Wird geladen...</div></div>
+            </div>
+
+            <!-- ── WEG: EINHEITEN ── -->
+            <div id="tab-content-weg-einheiten" style="display:none">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+                <h3 style="font-size:.9rem;font-weight:700">WEG-Einheiten (Sondereigentum)</h3>
+                <button class="btn-primary" style="font-size:.82rem;padding:.5rem 1rem" onclick="openWegEinheitModal()">+ Einheit hinzufügen</button>
+              </div>
+              <div id="od-weg-einheiten-list"><div style="color:var(--muted);font-size:.85rem">Wird geladen...</div></div>
+            </div>
+
+            <!-- ── WEG: BUCHHALTUNG ── -->
+            <div id="tab-content-buchhaltung" style="display:none">
+              <div id="buch-content"><div style="color:var(--muted);font-size:.85rem">Wird geladen...</div></div>
+            </div>
           </div>
         </div>
       </div>
@@ -1008,7 +1055,13 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
             <div onclick="selectObjektTyp('garage')" id="obj-typ-garage" class="obj-typ-card" style="border:2px solid var(--border);border-radius:10px;padding:1.1rem;cursor:pointer;transition:.15s">
               <div style="font-size:1.5rem;margin-bottom:.4rem">🚗</div>
               <div style="font-size:.88rem;font-weight:700">Garagenanlage</div>
-              <div style="font-size:.72rem;color:var(--muted);margin-top:.25rem">Garage, Stellplatz oder Tiefgaragenanlage</div>
+              <div style="font-size:.72rem;color:var(--muted);margin-top:.25rem">Garage, Stellplatz oder Tiefgarage</div>
+            </div>
+            <div onclick="selectObjektTyp('weg')" id="obj-typ-weg" class="obj-typ-card" style="border:2px solid var(--border);border-radius:10px;padding:1.1rem;cursor:pointer;transition:.15s;grid-column:1/-1;background:linear-gradient(135deg,var(--p-light),var(--white))">
+              <div style="font-size:1.5rem;margin-bottom:.4rem">🏛️</div>
+              <div style="font-size:.88rem;font-weight:700">WEG-Verwaltung</div>
+              <div style="font-size:.72rem;color:var(--muted);margin-top:.25rem">Wohnungseigentümergemeinschaft mit Eigentümern, Miteigentumsanteilen (MEA), Hausgeld &amp; doppelter Buchführung</div>
+            </div>iefgaragenanlage</div>
             </div>
           </div>
         </div>
@@ -5159,6 +5212,7 @@ async function loadDashboard(){
     var mvList=results[1].data||[];
     var abrList=results[2].data||[];
     var zahlungen=results[3].data||[];
+    loadAuslaufendeMV();
 
     // ── KPIs ──
     var totalKalt=mvList.reduce(function(s,m){return s+(parseFloat(m.kaltmiete)||0);},0);
@@ -5494,7 +5548,7 @@ async function loadObjekteFilter(){
 }
 
 var selectedObjektTyp='wgh';
-var objTypLabels={wgh:'🏢 Wohn- & Geschäftshaus',wohnung:'🏠 Wohnungen / Gewerbe',efh:'🏡 Einfamilienhaus',garage:'🚗 Garagenanlage'};
+var objTypLabels={wgh:'🏢 Wohn- & Geschäftshaus',wohnung:'🏠 Wohnungen / Gewerbe',efh:'🏡 Einfamilienhaus',garage:'🚗 Garagenanlage',weg:'🏛️ WEG-Verwaltung'};
 
 function selectObjektTyp(typ){
   selectedObjektTyp=typ;
@@ -6049,6 +6103,7 @@ async function openObjektDetail(objId){
       loadObjektAbrechnungen(objId).catch(function(e){console.warn('abr:',e);}),
     ]);
     try{loadObjektUebersichtTab(objId);}catch(e){console.warn('uebersicht:',e);}
+    try{loadSollIstChart(objId);}catch(e){console.warn('sollist:',e);}
 
   }catch(e){
     console.error('openObjektDetail error:',e);
@@ -6057,7 +6112,7 @@ async function openObjektDetail(objId){
 }
 
 function showObjektTab(tab){
-  ['uebersicht','abrechnungsdaten','einheiten','mieterlist','mietverhaeltnisse'].forEach(function(t){
+  ['uebersicht','abrechnungsdaten','einheiten','mieterlist','mietverhaeltnisse','weg-eigentuemer','weg-einheiten','buchhaltung'].forEach(function(t){
     var content=document.getElementById('tab-content-'+t);
     if(content)content.style.display=t===tab?'block':'none';
   });
@@ -6065,7 +6120,10 @@ function showObjektTab(tab){
     'uebersicht':'tab-uebersicht',
     'abrechnungsdaten':'tab-abrechnungsdaten',
     'einheiten':'tab-einheiten-tab',
-    'mietverhaeltnisse':'tab-mietverh-tab'
+    'mietverhaeltnisse':'tab-mietverh-tab',
+    'weg-eigentuemer':'tab-weg-eigentuemer-tab',
+    'weg-einheiten':'tab-weg-einheiten-tab',
+    'buchhaltung':'tab-buchhaltung-tab'
   };
   Object.keys(tabMap).forEach(function(t){
     var btn=document.getElementById(tabMap[t]);
@@ -6076,7 +6134,23 @@ function showObjektTab(tab){
   if(tab==='mietverhaeltnisse'&&aktivesObjekt)loadMietverhaeltnisse(aktivesObjekt.id);
   if(tab==='abrechnungsdaten'&&aktivesObjekt)loadAbrechnungsdatenTab(aktivesObjekt.id);
   if(tab==='einheiten'&&aktivesObjekt)loadObjektEinheiten(aktivesObjekt.id);
-  if(tab==='uebersicht'&&aktivesObjekt){loadObjektUebersichtTab(aktivesObjekt.id);}
+  if(tab==='uebersicht'&&aktivesObjekt){loadObjektUebersichtTab(aktivesObjekt.id);loadSollIstChart(aktivesObjekt.id);}
+  if(tab==='weg-eigentuemer'&&aktivesObjekt)loadWegEigentuemer(aktivesObjekt.id);
+  if(tab==='weg-einheiten'&&aktivesObjekt)loadWegEinheiten(aktivesObjekt.id);
+  if(tab==='buchhaltung'&&aktivesObjekt)loadBuchhaltung(aktivesObjekt.id);
+}
+
+// Toggle which tabs are visible based on object category (WEG vs Miet)
+function applyObjektTypTabs(){
+  var isWeg=aktivesObjekt&&aktivesObjekt.kategorie==='weg';
+  // Miet-Tabs
+  ['tab-einheiten-tab','tab-mietverh-tab'].forEach(function(id){
+    var el=document.getElementById(id);if(el)el.style.display=isWeg?'none':'';
+  });
+  // WEG-Tabs
+  ['tab-weg-eigentuemer-tab','tab-weg-einheiten-tab','tab-buchhaltung-tab'].forEach(function(id){
+    var el=document.getElementById(id);if(el)el.style.display=isWeg?'':'none';
+  });
 }
 
 async function loadObjektSidebar(objId){
@@ -6140,6 +6214,129 @@ async function loadObjektSidebar(objId){
 }
 
 
+// ── SOLL/IST JAHRESÜBERSICHT ──
+async function loadSollIstChart(objId){
+  var container=document.getElementById('od-soll-ist-chart');
+  if(!container)return;
+  var since=new Date();since.setMonth(since.getMonth()-12);
+  var sinceStr=since.toISOString().split('T')[0];
+  var {data:zahlungen}=await sb.from('mietzahlungen')
+    .select('monat,betrag,status,typ')
+    .eq('objekt_id',objId)
+    .eq('typ','miete')
+    .gte('monat',sinceStr)
+    .order('monat');
+  if(!zahlungen||!zahlungen.length){
+    container.innerHTML='<div style="color:var(--muted);font-size:.82rem;padding:1rem 0">Noch keine Mietdaten vorhanden.</div>';
+    return;
+  }
+  // Group by month
+  var monate={};
+  zahlungen.forEach(function(z){
+    var key=z.monat.substring(0,7); // YYYY-MM
+    if(!monate[key])monate[key]={soll:0,ist:0};
+    monate[key].soll+=parseFloat(z.betrag)||0;
+    if(z.status==='bezahlt')monate[key].ist+=parseFloat(z.betrag)||0;
+  });
+  var keys=Object.keys(monate).sort();
+  var maxVal=Math.max.apply(null,keys.map(function(k){return monate[k].soll;}))||1;
+  var monthNames=['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+  var bars=keys.map(function(k){
+    var m=monate[k];
+    var parts=k.split('-');
+    var label=monthNames[parseInt(parts[1])-1]+' '+parts[0].substring(2);
+    var sollH=Math.round((m.soll/maxVal)*100);
+    var istH=Math.round((m.ist/maxVal)*100);
+    var quote=m.soll>0?Math.round((m.ist/m.soll)*100):0;
+    return '<div style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:.3rem">'
+      +'<div style="width:100%;height:120px;display:flex;align-items:flex-end;justify-content:center;gap:2px">'
+        +'<div title="Soll: '+m.soll.toLocaleString('de-DE',{minimumFractionDigits:2})+' €" style="width:45%;height:'+sollH+'%;background:#d0c4e8;border-radius:3px 3px 0 0;min-height:2px"></div>'
+        +'<div title="Ist (bezahlt): '+m.ist.toLocaleString('de-DE',{minimumFractionDigits:2})+' €" style="width:45%;height:'+istH+'%;background:'+(quote>=90?'#1a7a4a':quote>=50?'#e67e22':'#c0392b')+';border-radius:3px 3px 0 0;min-height:2px"></div>'
+      +'</div>'
+      +'<div style="font-size:.6rem;color:var(--muted);white-space:nowrap;transform:rotate(-45deg);transform-origin:center;height:18px">'+label+'</div>'
+    +'</div>';
+  }).join('');
+  container.innerHTML='<div style="display:flex;gap:1.25rem;margin-bottom:.75rem;font-size:.72rem">'
+    +'<span style="display:flex;align-items:center;gap:.35rem"><span style="width:12px;height:12px;background:#d0c4e8;border-radius:2px;display:inline-block"></span>Soll</span>'
+    +'<span style="display:flex;align-items:center;gap:.35rem"><span style="width:12px;height:12px;background:#1a7a4a;border-radius:2px;display:inline-block"></span>Ist (bezahlt)</span>'
+    +'</div>'
+    +'<div style="display:flex;gap:4px;align-items:flex-end;overflow-x:auto;padding-bottom:1rem">'+bars+'</div>';
+}
+
+// ── MAHNWESEN: Färbt offene Posten nach Alter ──
+function mahnStufeColor(monatStr,status){
+  if(status==='bezahlt')return null;
+  var monat=new Date(monatStr);
+  var heute=new Date();
+  var tageOffen=Math.floor((heute-monat)/(1000*60*60*24));
+  if(tageOffen>=90)return {bg:'#8b0000',col:'#fff',label:'3. Mahnung',stufe:3,tage:tageOffen};
+  if(tageOffen>=60)return {bg:'#c0392b',col:'#fff',label:'2. Mahnung',stufe:2,tage:tageOffen};
+  if(tageOffen>=30)return {bg:'#e67e22',col:'#fff',label:'1. Mahnung',stufe:1,tage:tageOffen};
+  if(tageOffen>=14)return {bg:'#fff3cd',col:'#856404',label:'Überfällig',stufe:0,tage:tageOffen};
+  return null;
+}
+
+// ── AUSLAUFENDE MIETVERHÄLTNISSE (Dashboard-Warnung) ──
+async function loadAuslaufendeMV(){
+  var wrap=document.getElementById('dash-warnungen-wrap');
+  var list=document.getElementById('dash-warnungen-list');
+  if(!wrap||!list)return;
+  var heute=new Date();
+  var in90=new Date();in90.setDate(in90.getDate()+90);
+  var {data}=await sb.from('mietverhaeltnisse')
+    .select('id,auszug,einheit_id,objekt_id,kontakte(anrede,vorname,nachname),einheiten(bezeichnung),objekte(name)')
+    .eq('user_id',currentUser.id)
+    .eq('aktiv',true)
+    .not('auszug','is',null)
+    .gte('auszug',heute.toISOString().split('T')[0])
+    .lte('auszug',in90.toISOString().split('T')[0])
+    .order('auszug');
+  if(!data||!data.length){wrap.style.display='none';return;}
+  list.innerHTML=data.map(function(mv){
+    var auszug=new Date(mv.auszug);
+    var tage=Math.ceil((auszug-heute)/(1000*60*60*24));
+    var mieter=mv.kontakte?(mv.kontakte.vorname+' '+mv.kontakte.nachname).trim():'Unbekannt';
+    var einheit=mv.einheiten?mv.einheiten.bezeichnung:'';
+    var objekt=mv.objekte?mv.objekte.name:'';
+    var dringend=tage<=30;
+    return '<div onclick="openObjektDetail(\''+mv.objekt_id+'\')" style="padding:.65rem 1.35rem;border-bottom:1px solid #f0d9a8;cursor:pointer;display:flex;justify-content:space-between;align-items:center" onmouseover="this.style.background=\'#fff5e6\'" onmouseout="this.style.background=\'\'">'
+      +'<div><div style="font-weight:600;font-size:.85rem">'+mieter+'</div>'
+      +'<div style="font-size:.72rem;color:var(--muted)">'+objekt+(einheit?' · '+einheit:'')+'</div></div>'
+      +'<div style="text-align:right"><div style="font-weight:700;font-size:.85rem;color:'+(dringend?'#c0392b':'#e67e22')+'">'+auszug.toLocaleDateString('de-DE')+'</div>'
+      +'<div style="font-size:.72rem;color:var(--muted)">in '+tage+' Tag'+(tage!==1?'en':'')+'</div></div>'
+      +'</div>';
+  }).join('');
+  wrap.style.display='block';
+}
+
+// ── OBJEKT DUPLIZIEREN ──
+async function dupliziereObjekt(){
+  if(!aktivesObjekt)return;
+  if(!confirm('Objekt "'+aktivesObjekt.name+'" duplizieren?\n\nKopiert werden: Objektdaten + alle Einheiten (OHNE Mieter/Mietverhältnisse).'))return;
+  showToast('Objekt wird dupliziert...');
+  // 1. Copy object
+  var neuObj={
+    user_id:currentUser.id,
+    name:aktivesObjekt.name+' (Kopie)',
+    strasse:aktivesObjekt.strasse,plz:aktivesObjekt.plz,ort:aktivesObjekt.ort,
+    gesamtflaeche:aktivesObjekt.gesamtflaeche,einheiten_anzahl:aktivesObjekt.einheiten_anzahl,
+    kategorie:aktivesObjekt.kategorie,baujahr:aktivesObjekt.baujahr,notiz:aktivesObjekt.notiz
+  };
+  var {data:obj,error:e1}=await sb.from('objekte').insert(neuObj).select().single();
+  if(e1){showToast('Fehler: '+e1.message);return;}
+  // 2. Copy units (without tenants)
+  var {data:einheiten}=await sb.from('einheiten').select('*').eq('objekt_id',aktivesObjekt.id);
+  if(einheiten&&einheiten.length){
+    var neueEinheiten=einheiten.map(function(e){
+      return {user_id:currentUser.id,objekt_id:obj.id,bezeichnung:e.bezeichnung,
+        typ:e.typ,flaeche:e.flaeche,stockwerk:e.stockwerk};
+    });
+    await sb.from('einheiten').insert(neueEinheiten);
+  }
+  showToast('✅ Objekt dupliziert! ('+(einheiten?einheiten.length:0)+' Einheiten kopiert)');
+  openObjektDetail(obj.id);
+}
+
 async function loadObjektStats(objId){
   try{
     var [{data:mvData},{data:einheitenData}]=await Promise.all([
@@ -6159,7 +6356,12 @@ async function loadObjektStats(objId){
     if(el('od-preis-qm'))el('od-preis-qm').textContent=preisQm?preisQm+' €/m²':'–';
     if(el('od-flaeche-total'))el('od-flaeche-total').textContent=flaeche?flaeche.toLocaleString('de-DE')+' m²':'–';
     if(el('od-bk-total'))el('od-bk-total').textContent=fmtE(totalBK);
-    if(el('od-leerstand-count'))el('od-leerstand-count').textContent=leerstandCount+'/'+einh.length+' Leerstand';
+    var leerstandQuote=einh.length>0?Math.round((leerstandCount/einh.length)*100):0;
+    var vermietQuote=100-leerstandQuote;
+    if(el('od-leerstand-count'))el('od-leerstand-count').textContent=leerstandCount+'/'+einh.length+' ('+leerstandQuote+'%)';
+    if(el('od-vermiet-quote')){
+      el('od-vermiet-quote').innerHTML='<div style="display:flex;justify-content:space-between;font-size:.78rem;margin-bottom:.35rem"><span style="color:var(--muted)">Vermietungsquote</span><strong style="color:'+(vermietQuote>=80?'#1a7a4a':vermietQuote>=50?'#e67e22':'#c0392b')+'">'+vermietQuote+'%</strong></div><div style="height:8px;background:#eee;border-radius:4px;overflow:hidden"><div style="height:100%;width:'+vermietQuote+'%;background:'+(vermietQuote>=80?'#1a7a4a':vermietQuote>=50?'#e67e22':'#c0392b')+'"></div></div><div style="font-size:.72rem;color:var(--muted);margin-top:.35rem">'+aktive.length+' von '+einh.length+' Einheiten vermietet</div>';
+    }
   }catch(e){console.warn('loadObjektStats error:',e);}
 }
 
@@ -6217,9 +6419,11 @@ async function loadMietubersichtFuerEinheit(einheitId,containerId){
         +'<tbody>'
         +(zahlungen.length?zahlungen.map(function(z){
           var isOffen=z.status==='offen';
-          return '<tr style="border-bottom:1px solid #f5f3fa">'
+          var mahn=z.typ==='miete'?mahnStufeColor(z.monat,z.status):null;
+          var rowBg=mahn?(mahn.stufe>=2?'#fff5f5':mahn.stufe>=1?'#fffaf0':'#fffef5'):'';
+          return '<tr style="border-bottom:1px solid #f5f3fa;background:'+rowBg+'">'
             +'<td style="padding:.5rem .7rem;font-size:.82rem">'+z.bezeichnung+'</td>'
-            +'<td style="padding:.5rem .7rem"><span style="font-size:.65rem;font-weight:700;padding:2px 7px;border-radius:6px;background:'+(isOffen?'#fdf0ef':'#d4edda')+';color:'+(isOffen?'#c0392b':'#155724')+'">'+(isOffen?'OFFEN':'BEZAHLT')+'</span></td>'
+            +'<td style="padding:.5rem .7rem">'+(mahn?'<span style="font-size:.62rem;font-weight:700;padding:2px 7px;border-radius:6px;background:'+mahn.bg+';color:'+mahn.col+'" title="'+mahn.tage+' Tage offen">'+mahn.label+'</span>':'<span style="font-size:.65rem;font-weight:700;padding:2px 7px;border-radius:6px;background:'+(isOffen?'#fff3cd':'#d4edda')+';color:'+(isOffen?'#856404':'#155724')+'">'+(isOffen?'OFFEN':'BEZAHLT')+'</span>')+'</td>'
             +'<td style="padding:.5rem .7rem;text-align:right;font-weight:700;font-size:.82rem;color:'+(z.betrag<0?'#1a7a4a':'var(--text)')+'">'+fmt2(z.betrag)+'</td>'
             +'<td style="padding:.5rem .7rem">'+(isOffen?'<button onclick="markiereAlsBezahlt(\''+z.id+'\',\''+einheitId+'\')" class="btn-small" style="font-size:.62rem;padding:2px 6px">Als bezahlt</button>':'–')+'</td>'
             +'</tr>';

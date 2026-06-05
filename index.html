@@ -1464,6 +1464,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
               <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:1.1rem;flex-wrap:wrap">
                 <button type="button" id="buha-tab-buchen" onclick="buhaTab('buchen')" style="background:none;border:none;border-bottom:2px solid var(--p);margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;font-weight:700;color:var(--p);font-family:Arial,sans-serif">📝 Buchungen</button>
                 <button type="button" id="buha-tab-konten" onclick="buhaTab('konten')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:Arial,sans-serif">📚 Kontenrahmen</button>
+                <button type="button" id="buha-tab-ausw" onclick="buhaTab('ausw')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:Arial,sans-serif">📊 Auswertungen</button>
                 <button type="button" id="buha-tab-audit" onclick="buhaTab('audit')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:Arial,sans-serif">🛡️ Audit</button>
               </div>
               <!-- TAB: BUCHEN -->
@@ -1513,6 +1514,22 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                   <span id="buha-konten-count" style="font-size:.78rem;color:var(--muted);margin-left:auto"></span>
                 </div>
                 <div id="buha-konten" style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow-x:auto"></div>
+              </div>
+              <!-- TAB: AUSWERTUNGEN -->
+              <div id="buha-pane-ausw" style="display:none">
+                <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:.9rem">
+                  <select id="ausw-typ" onchange="renderAuswertungen()" style="border:1px solid var(--border);border-radius:8px;padding:.45rem .7rem;font-size:.84rem;font-family:Arial,sans-serif;background:var(--white);outline:none">
+                    <option value="salden">Summen- &amp; Saldenliste</option>
+                    <option value="euer">Einnahmen-Ausgaben-Rechnung (EÜR)</option>
+                    <option value="kontenblatt">Kontenblatt</option>
+                  </select>
+                  <select id="ausw-konto" onchange="renderAuswertungen()" style="display:none;border:1px solid var(--border);border-radius:8px;padding:.45rem .7rem;font-size:.84rem;font-family:Arial,sans-serif;background:var(--white);outline:none"></select>
+                  <span style="margin-left:auto;display:flex;gap:.4rem">
+                    <button class="btn-small" onclick="buhaAuswCsv()">📊 CSV</button>
+                    <button class="btn-small" onclick="buhaAuswPrint()">🖨️ Drucken/PDF</button>
+                  </span>
+                </div>
+                <div id="ausw-content" style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow-x:auto"></div>
               </div>
               <!-- TAB: AUDIT -->
               <div id="buha-pane-audit" style="display:none">
@@ -7621,12 +7638,13 @@ async function buhaReload(){
 }
 
 function buhaTab(t){
-  ['buchen','konten','audit'].forEach(function(x){
+  ['buchen','konten','ausw','audit'].forEach(function(x){
     var pane=document.getElementById('buha-pane-'+x); if(pane)pane.style.display=(x===t?'block':'none');
     var btn=document.getElementById('buha-tab-'+x);
     if(btn){var on=x===t;btn.style.color=on?'var(--p)':'var(--muted)';btn.style.fontWeight=on?'700':'400';btn.style.borderBottomColor=on?'var(--p)':'transparent';}
   });
   if(t==='audit')renderBuhaAudit();
+  if(t==='ausw')renderAuswertungen();
 }
 
 // ── BUCHUNGSSCHLÜSSEL (DATEV-Stil, konfigurierbar via weg_steuerschluessel) ──
@@ -8044,6 +8062,118 @@ async function renderBuhaAudit(){
         +'<td style="padding:.4rem .7rem;color:var(--muted);font-size:.74rem">'+escapeHtml(JSON.stringify(a.detail||{}))+'</td></tr>';
       }).join('')+'</tbody></table>';
   }catch(e){c.innerHTML='<div style="padding:1.5rem;color:#c0392b">Fehler: '+(e.message||e)+'</div>';}
+}
+
+// ── AUSWERTUNGEN (Saldenliste, EÜR, Kontenblatt) ──
+function buhaScopeLabel(){return ' · '+(buha.ug?((buha.ugListe.find(function(u){return u.id===buha.ug;})||{}).name||'Untergemeinschaft'):'Gesamt-WEG');}
+function buhaKontoAgg(){
+  var agg={}; // nummer -> {soll,haben}
+  buha.buchungen.forEach(function(b){
+    var bt=parseFloat(b.betrag)||0;
+    if(b.soll_konto){(agg[b.soll_konto]=agg[b.soll_konto]||{soll:0,haben:0}).soll+=bt;}
+    if(b.haben_konto){(agg[b.haben_konto]=agg[b.haben_konto]||{soll:0,haben:0}).haben+=bt;}
+  });
+  return agg;
+}
+function _auswEmpty(msg){buha._auswRows=null;return '<div style="padding:2rem;text-align:center;color:var(--muted)">'+(msg||'Keine Buchungen im gewählten Zeitraum.')+'</div>';}
+function renderAuswertungen(){
+  var typ=(document.getElementById('ausw-typ')||{value:'salden'}).value;
+  var ks=document.getElementById('ausw-konto');
+  if(ks){
+    ks.style.display=(typ==='kontenblatt')?'inline-block':'none';
+    if(typ==='kontenblatt'){
+      var cur=ks.value;
+      var nums=buha.konten.slice().sort(function(a,b){return a.nummer.localeCompare(b.nummer,undefined,{numeric:true});});
+      ks.innerHTML=nums.map(function(k){return '<option value="'+escapeHtml(k.nummer)+'">'+escapeHtml(k.nummer+' · '+k.name)+'</option>';}).join('');
+      if(cur&&nums.some(function(k){return k.nummer===cur;}))ks.value=cur;
+    }
+  }
+  var c=document.getElementById('ausw-content'); if(!c)return;
+  if(typ==='salden')c.innerHTML=buhaSaldenlisteHtml();
+  else if(typ==='euer')c.innerHTML=buhaEurHtml();
+  else c.innerHTML=buhaKontenblattHtml(ks?ks.value:'');
+}
+function buhaSaldenlisteHtml(){
+  var agg=buhaKontoAgg(); var nmName={}; buha.konten.forEach(function(k){nmName[k.nummer]=k.name;});
+  var nums=Object.keys(agg).sort(function(a,b){return a.localeCompare(b,undefined,{numeric:true});});
+  if(!nums.length)return _auswEmpty();
+  var sumS=0,sumH=0;
+  var body=nums.map(function(nr){var a=agg[nr];sumS+=a.soll;sumH+=a.haben;var saldo=a.soll-a.haben;
+    return '<tr style="border-bottom:1px solid var(--border)">'
+      +'<td style="padding:.4rem .7rem;font-weight:700;font-variant-numeric:tabular-nums">'+escapeHtml(nr)+'</td>'
+      +'<td style="padding:.4rem .7rem">'+escapeHtml(nmName[nr]||'(unbekannt)')+'</td>'
+      +'<td style="padding:.4rem .7rem;text-align:right;font-variant-numeric:tabular-nums">'+buhaEuro(a.soll)+'</td>'
+      +'<td style="padding:.4rem .7rem;text-align:right;font-variant-numeric:tabular-nums">'+buhaEuro(a.haben)+'</td>'
+      +'<td style="padding:.4rem .7rem;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;color:'+(saldo>=0?'#1a7a4a':'#c0392b')+'">'+buhaEuro(saldo)+'</td></tr>';
+  }).join('');
+  buha._auswTitle='Summen- und Saldenliste '+buha.jahr+buhaScopeLabel();
+  buha._auswRows={head:['Konto','Bezeichnung','Soll','Haben','Saldo'],rows:nums.map(function(nr){var a=agg[nr];return [nr,nmName[nr]||'',a.soll.toFixed(2),a.haben.toFixed(2),(a.soll-a.haben).toFixed(2)];})};
+  return '<div style="padding:.6rem .8rem;font-weight:700;border-bottom:1px solid var(--border)">'+escapeHtml(buha._auswTitle)+'</div>'
+    +'<table style="width:100%;border-collapse:collapse;font-size:.82rem;min-width:560px"><thead><tr style="border-bottom:2px solid var(--border)">'
+    +['Konto','Bezeichnung','Soll','Haben','Saldo'].map(function(h,i){return '<th style="text-align:'+(i>=2?'right':'left')+';padding:.5rem .7rem;font-size:.64rem;text-transform:uppercase;color:var(--muted)">'+h+'</th>';}).join('')
+    +'</tr></thead><tbody>'+body+'</tbody>'
+    +'<tfoot><tr style="border-top:2px solid var(--border);font-weight:800"><td style="padding:.5rem .7rem" colspan="2">Summe</td>'
+    +'<td style="padding:.5rem .7rem;text-align:right;font-variant-numeric:tabular-nums">'+buhaEuro(sumS)+'</td>'
+    +'<td style="padding:.5rem .7rem;text-align:right;font-variant-numeric:tabular-nums">'+buhaEuro(sumH)+'</td>'
+    +'<td style="padding:.5rem .7rem;text-align:right;font-variant-numeric:tabular-nums">'+buhaEuro(sumS-sumH)+'</td></tr></tfoot></table>';
+}
+function buhaEurHtml(){
+  var agg=buhaKontoAgg(); var typByNr={},nmName={}; buha.konten.forEach(function(k){typByNr[k.nummer]=k.typ;nmName[k.nummer]=k.name;});
+  var ein=[],aus=[],sumEin=0,sumAus=0;
+  Object.keys(agg).sort(function(a,b){return a.localeCompare(b,undefined,{numeric:true});}).forEach(function(nr){
+    var a=agg[nr],t=typByNr[nr];
+    if(t==='ertrag'){var v=a.haben-a.soll;sumEin+=v;ein.push([nr,nmName[nr]||'',v]);}
+    else if(t==='aufwand'){var v2=a.soll-a.haben;sumAus+=v2;aus.push([nr,nmName[nr]||'',v2]);}
+  });
+  if(!ein.length&&!aus.length)return _auswEmpty();
+  var sect=function(title,rows,col){return '<div style="padding:.5rem .8rem;font-weight:700;color:'+col+';background:var(--bg)">'+title+'</div>'
+    +(rows.length?rows.map(function(r){return '<div style="display:flex;justify-content:space-between;padding:.35rem .9rem;border-bottom:1px solid var(--border);font-size:.83rem"><span><strong style="font-variant-numeric:tabular-nums">'+escapeHtml(r[0])+'</strong> · '+escapeHtml(r[1])+'</span><span style="font-variant-numeric:tabular-nums">'+buhaEuro(r[2])+'</span></div>';}).join(''):'<div style="padding:.5rem .9rem;color:var(--muted);font-size:.8rem">keine</div>');};
+  var ergebnis=sumEin-sumAus;
+  buha._auswTitle='Einnahmen-Ausgaben-Rechnung '+buha.jahr+buhaScopeLabel();
+  buha._auswRows={head:['Typ','Konto','Bezeichnung','Betrag'],rows:ein.map(function(r){return ['Einnahme',r[0],r[1],r[2].toFixed(2)];}).concat(aus.map(function(r){return ['Ausgabe',r[0],r[1],r[2].toFixed(2)];})).concat([['Ergebnis','','',ergebnis.toFixed(2)]])};
+  return '<div style="padding:.6rem .8rem;font-weight:700;border-bottom:1px solid var(--border)">'+escapeHtml(buha._auswTitle)+'</div>'
+    +sect('Einnahmen',ein,'#1a7a4a')+'<div style="display:flex;justify-content:space-between;padding:.45rem .9rem;font-weight:700;border-bottom:2px solid var(--border)"><span>Summe Einnahmen</span><span style="font-variant-numeric:tabular-nums">'+buhaEuro(sumEin)+'</span></div>'
+    +sect('Ausgaben',aus,'#c0392b')+'<div style="display:flex;justify-content:space-between;padding:.45rem .9rem;font-weight:700;border-bottom:2px solid var(--border)"><span>Summe Ausgaben</span><span style="font-variant-numeric:tabular-nums">'+buhaEuro(sumAus)+'</span></div>'
+    +'<div style="display:flex;justify-content:space-between;padding:.7rem .9rem;font-weight:800;font-size:1rem;background:var(--p-light)"><span>Ergebnis</span><span style="font-variant-numeric:tabular-nums;color:'+(ergebnis>=0?'#1a7a4a':'#c0392b')+'">'+buhaEuro(ergebnis)+'</span></div>';
+}
+function buhaKontenblattHtml(nr){
+  if(!nr)return _auswEmpty('Bitte oben ein Konto wählen.');
+  var nmName={}; buha.konten.forEach(function(k){nmName[k.nummer]=k.name;});
+  var list=buha.buchungen.filter(function(b){return b.soll_konto===nr||b.haben_konto===nr;})
+    .sort(function(a,b){return (a.buchungsdatum||'').localeCompare(b.buchungsdatum||'');});
+  if(!list.length)return _auswEmpty('Keine Buchungen auf Konto '+nr+'.');
+  var saldo=0;
+  var body=list.map(function(b){var bt=parseFloat(b.betrag)||0;var soll=b.soll_konto===nr?bt:0;var haben=b.haben_konto===nr?bt:0;saldo+=soll-haben;
+    var gegen=(b.soll_konto===nr)?b.haben_konto:b.soll_konto;
+    return '<tr style="border-bottom:1px solid var(--border)">'
+      +'<td style="padding:.4rem .7rem;white-space:nowrap">'+fmtDatum(b.buchungsdatum)+'</td>'
+      +'<td style="padding:.4rem .7rem;color:var(--muted)">'+escapeHtml(b.belegnr||'–')+'</td>'
+      +'<td style="padding:.4rem .7rem">'+escapeHtml(b.text||'')+'</td>'
+      +'<td style="padding:.4rem .7rem;color:var(--muted);font-variant-numeric:tabular-nums">'+escapeHtml(gegen||'–')+(nmName[gegen]?' · '+escapeHtml(nmName[gegen]):'')+'</td>'
+      +'<td style="padding:.4rem .7rem;text-align:right;font-variant-numeric:tabular-nums">'+(soll?buhaEuro(soll):'')+'</td>'
+      +'<td style="padding:.4rem .7rem;text-align:right;font-variant-numeric:tabular-nums">'+(haben?buhaEuro(haben):'')+'</td>'
+      +'<td style="padding:.4rem .7rem;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;color:'+(saldo>=0?'#1a7a4a':'#c0392b')+'">'+buhaEuro(saldo)+'</td></tr>';
+  }).join('');
+  buha._auswTitle='Kontenblatt '+nr+' · '+(nmName[nr]||'')+' · '+buha.jahr+buhaScopeLabel();
+  var s2=0; buha._auswRows={head:['Datum','Beleg','Text','Gegenkonto','Soll','Haben','Saldo'],rows:list.map(function(b){var bt=parseFloat(b.betrag)||0;var soll=b.soll_konto===nr?bt:0;var haben=b.haben_konto===nr?bt:0;s2+=soll-haben;return [b.buchungsdatum,b.belegnr||'',b.text||'',(b.soll_konto===nr?b.haben_konto:b.soll_konto)||'',soll.toFixed(2),haben.toFixed(2),s2.toFixed(2)];})};
+  return '<div style="padding:.6rem .8rem;font-weight:700;border-bottom:1px solid var(--border)">'+escapeHtml(buha._auswTitle)+'</div>'
+    +'<table style="width:100%;border-collapse:collapse;font-size:.81rem;min-width:720px"><thead><tr style="border-bottom:2px solid var(--border)">'
+    +['Datum','Beleg','Text','Gegenkonto','Soll','Haben','Saldo'].map(function(h,i){return '<th style="text-align:'+(i>=4?'right':'left')+';padding:.5rem .7rem;font-size:.62rem;text-transform:uppercase;color:var(--muted)">'+h+'</th>';}).join('')
+    +'</tr></thead><tbody>'+body+'</tbody></table>';
+}
+function buhaAuswCsv(){
+  if(!buha._auswRows){showToast('Nichts zu exportieren.');return;}
+  var esc=function(v){v=(v==null?'':''+v);return /[";\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
+  var csv='﻿'+buha._auswRows.head.join(';')+'\n'+buha._auswRows.rows.map(function(r){return r.map(esc).join(';');}).join('\n');
+  var blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');a.href=url;a.download=(buha._auswTitle||'Auswertung').replace(/[^a-zA-Z0-9]+/g,'_')+'.csv';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+  showToast('📊 Exportiert');
+}
+function buhaAuswPrint(){
+  var content=document.getElementById('ausw-content'); if(!content){return;}
+  var w=window.open('','_blank'); if(!w){showToast('Pop-up-Blocker?');return;}
+  w.document.write('<html><head><title>'+(buha._auswTitle||'Auswertung')+'</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#222}table{width:100%;border-collapse:collapse}th,td{padding:5px 8px;border-bottom:1px solid #ddd;font-size:12px;text-align:left}th{text-transform:uppercase;font-size:10px;color:#666}</style></head><body>'+content.innerHTML+'</body></html>');
+  w.document.close(); w.focus(); setTimeout(function(){w.print();},250);
 }
 
 // ── DASHBOARD ──

@@ -81,6 +81,10 @@ body{font-family:var(--ff);background:var(--bg);color:var(--text);font-size:15px
  .dash-kpi-ic svg{width:22px;height:22px;display:block;stroke-width:2}
  .mini-ic{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;flex-shrink:0}
  .mini-ic svg{width:16px;height:16px;display:block;stroke-width:2}
+ .h1-ic{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;flex-shrink:0;color:var(--p)}
+ .h1-ic svg{width:24px;height:24px;display:block;stroke-width:2}
+ .btn-ic{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;flex-shrink:0;vertical-align:-2px}
+ .btn-ic svg{width:16px;height:16px;display:block;stroke-width:2}
  .nav-badge{margin-left:auto;background:var(--p-light);color:var(--p);font-size:.58rem;font-weight:700;padding:1px 5px;border-radius:8px}
  .sidebar-divider{height:1px;background:var(--border);margin:.35rem .85rem}
 .main-content{flex:1;min-width:0;overflow-x:hidden;background:#f9fafb}
@@ -1032,7 +1036,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:.75rem">
           <h1 style="font-size:1.5rem;font-weight:700">Objekte</h1>
           <button class="btn-primary" onclick="openObjektModal()" style="display:flex;align-items:center;gap:.4rem">
-            <span style="font-size:1rem">+</span> Objekt hinzufügen
+            <span class="btn-ic" data-icon="plus"></span> Objekt hinzufügen
           </button>
         </div>
 
@@ -1042,7 +1046,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
         <!-- SUCHE + FILTER -->
         <div style="display:flex;gap:.75rem;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap">
           <div style="position:relative;flex:1;min-width:200px">
-            <span style="position:absolute;left:.75rem;top:50%;transform:translateY(-50%);color:var(--muted);font-size:.9rem">🔍</span>
+            <span class="mini-ic" data-icon="search" style="position:absolute;left:.7rem;top:50%;transform:translateY(-50%);color:#9ca3af"></span>
             <input type="text" id="objekte-search" placeholder="Objekte durchsuchen..." oninput="filterObjekte()"
               style="width:100%;border:1px solid var(--border);border-radius:8px;padding:.5rem .75rem .5rem 2.2rem;font-size:.88rem;font-family:var(--ff);outline:none;background:var(--white)">
           </div>
@@ -1056,8 +1060,8 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
           </select>
           <!-- ANSICHT-UMSCHALTER -->
           <div style="display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--white)">
-            <button id="objview-table" onclick="setObjekteView('table')" title="Tabelle" style="border:none;background:var(--p);color:#fff;padding:.5rem .7rem;cursor:pointer;font-size:.9rem;font-family:var(--ff)">▤</button>
-            <button id="objview-cards" onclick="setObjekteView('cards')" title="Karten" style="border:none;background:var(--white);color:var(--p);padding:.5rem .7rem;cursor:pointer;font-size:.9rem;font-family:var(--ff)">▦</button>
+            <button id="objview-table" onclick="setObjekteView('table')" title="Tabelle" style="border:none;background:var(--p);color:#fff;padding:.5rem .7rem;cursor:pointer;display:flex;align-items:center;font-family:var(--ff)"><span class="mini-ic" data-icon="list"></span></button>
+            <button id="objview-cards" onclick="setObjekteView('cards')" title="Karten" style="border:none;background:var(--white);color:var(--p);padding:.5rem .7rem;cursor:pointer;display:flex;align-items:center;font-family:var(--ff)"><span class="mini-ic" data-icon="grid"></span></button>
           </div>
           <button onclick="filterObjekte('reset')" style="font-size:.82rem;color:var(--p);background:none;border:none;cursor:pointer;padding:.5rem">Filter zurücksetzen</button>
         </div>
@@ -1066,9 +1070,9 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
         <div id="obj-bulk-bar" style="display:none;align-items:center;gap:1rem;background:var(--p-light);border:1px solid var(--p);border-radius:10px;padding:.55rem 1rem;margin-bottom:.85rem">
           <span style="font-size:.85rem;font-weight:700;color:var(--p)" id="obj-bulk-count">0 ausgewählt</span>
           <div style="margin-left:auto;display:flex;gap:.5rem;flex-wrap:wrap">
-            <button class="btn-small" onclick="bulkExportObjekte()">📊 CSV-Export</button>
-            <button class="btn-small" style="background:#fbe9e7;color:#c0392b" onclick="bulkDeleteObjekte()">🗑 Löschen</button>
-            <button class="btn-small" style="background:var(--bg);color:var(--muted)" onclick="clearObjektSelection()">✕ Aufheben</button>
+            <button class="btn-small" onclick="bulkExportObjekte()"><span class="btn-ic" data-icon="download"></span> CSV-Export</button>
+            <button class="btn-small" style="background:#fbe9e7;color:#c0392b" onclick="bulkDeleteObjekte()"><span class="btn-ic" data-icon="trash"></span> Löschen</button>
+            <button class="btn-small" style="background:var(--bg);color:var(--muted)" onclick="clearObjektSelection()"><span class="btn-ic" data-icon="x"></span> Aufheben</button>
           </div>
         </div>
 
@@ -1113,7 +1117,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
         <!-- TESTOBJEKT BUTTON (nur wenn leer) -->
         <div id="objekte-empty-hint" style="display:none;text-align:center;padding:1.5rem">
           <div style="font-size:.88rem;color:var(--muted);margin-bottom:.75rem">Noch keine Objekte angelegt.</div>
-          <button class="btn-secondary" onclick="legeTestobjektAn()">🧪 Testobjekt anlegen</button>
+          <button class="btn-secondary" onclick="legeTestobjektAn()"><span class="btn-ic" data-icon="flask"></span> Testobjekt anlegen</button>
         </div>
       </div>
     </div>
@@ -1123,10 +1127,10 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
       <div style="padding:2rem">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem">
           <div>
-            <h1 style="font-size:1.5rem;font-weight:700">🏛️ WEG-Verwaltung</h1>
+            <h1 style="font-size:1.5rem;font-weight:700;display:flex;align-items:center;gap:.5rem"><span class="h1-ic" data-icon="landmark"></span>WEG-Verwaltung</h1>
             <div style="font-size:.82rem;color:var(--muted);margin-top:2px">Wohnungseigentümergemeinschaften – getrennt von der Mietverwaltung</div>
           </div>
-          <button class="btn-primary" onclick="openWegModal()" style="display:flex;align-items:center;gap:.4rem"><span style="font-size:1rem">+</span> WEG anlegen</button>
+          <button class="btn-primary" onclick="openWegModal()" style="display:flex;align-items:center;gap:.4rem"><span class="btn-ic" data-icon="plus"></span> WEG anlegen</button>
         </div>
         <div id="weg-kpis" style="display:none;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.75rem;margin-bottom:1.25rem"></div>
         <div id="weg-cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem"></div>
@@ -1143,7 +1147,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
       <div style="padding:2rem;max-width:1100px">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem">
           <div>
-            <h1 style="font-size:1.5rem;font-weight:700">⚠️ Offene Posten &amp; Mahnwesen</h1>
+            <h1 style="font-size:1.5rem;font-weight:700;display:flex;align-items:center;gap:.5rem"><span class="h1-ic" data-icon="alerttriangle"></span>Offene Posten &amp; Mahnwesen</h1>
             <div style="font-size:.82rem;color:var(--muted);margin-top:2px">Überfällige Mietzahlungen über alle Objekte – mit Mahnstufen</div>
           </div>
           <div style="display:flex;gap:.5rem;align-items:center">
@@ -2331,7 +2335,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
       <div style="padding:2rem;max-width:1200px;margin:0 auto">
         <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:.75rem;margin-bottom:1.5rem">
           <div>
-            <h1 style="font-size:1.5rem;font-weight:800;letter-spacing:-.01em">🛠 Aufträge</h1>
+            <h1 style="font-size:1.5rem;font-weight:800;letter-spacing:-.01em;display:flex;align-items:center;gap:.5rem"><span class="h1-ic" data-icon="clipboard"></span>Aufträge</h1>
             <div style="font-size:.85rem;color:var(--muted);margin-top:.25rem">Aufgaben für den Arbeitsalltag – objektbezogen oder allgemein.</div>
           </div>
           <button class="btn-primary" onclick="openAuftragModal()" style="display:flex;align-items:center;gap:.45rem;padding:.65rem 1.25rem;border-radius:10px;box-shadow:0 4px 14px rgba(106,45,159,.25)"><span style="font-size:1.05rem">+</span> Neuer Auftrag</button>
@@ -2676,7 +2680,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
       <div style="padding:2rem;max-width:1150px">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.25rem;flex-wrap:wrap;gap:1rem">
           <div>
-            <h1 style="font-size:1.5rem;font-weight:700">📁 Dokumente</h1>
+            <h1 style="font-size:1.5rem;font-weight:700;display:flex;align-items:center;gap:.5rem"><span class="h1-ic" data-icon="folder"></span>Dokumente</h1>
             <div style="font-size:.82rem;color:var(--muted);margin-top:2px">Verträge, Abrechnungen &amp; Unterlagen – sicher pro Objekt abgelegt</div>
           </div>
           <!-- Speicheranzeige -->
@@ -2787,7 +2791,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
         <!-- HEADER -->
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:.75rem">
           <div>
-            <h1 style="font-size:1.5rem;font-weight:700">👤 Kontakte</h1>
+            <h1 style="font-size:1.5rem;font-weight:700;display:flex;align-items:center;gap:.5rem"><span class="h1-ic" data-icon="users"></span>Kontakte</h1>
             <div style="font-size:.82rem;color:var(--muted);margin-top:2px">Verwalten Sie Ihre Mieter und Ansprechpartner</div>
           </div>
           <button class="btn-primary" onclick="openKontaktModal()" style="display:flex;align-items:center;gap:.4rem"><span>+</span> Kontakt hinzufügen</button>
@@ -8359,12 +8363,45 @@ var LICON={
  dooropen:_ic('<path d="M13 4h3a2 2 0 0 1 2 2v14"/><path d="M2 20h3"/><path d="M13 20h9"/><path d="M10 12v.01"/><path d="M13 4.562v16.157a1 1 0 0 1-1.242.97L5 20V5.562a2 2 0 0 1 1.515-1.94l4-1A2 2 0 0 1 13 4.561Z"/>'),
  euro:_ic('<path d="M4 10h12"/><path d="M4 14h9"/><path d="M19 6a7.7 7.7 0 0 0-5.2-2A7.9 7.9 0 0 0 6 12c0 4.4 3.5 8 7.8 8 2 0 3.8-.8 5.2-2"/>'),
  trendingup:_ic('<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>'),
- arrowright:_ic('<line x1="5" x2="19" y1="12" y2="12"/><polyline points="12 5 19 12 12 19"/>')
+ arrowright:_ic('<line x1="5" x2="19" y1="12" y2="12"/><polyline points="12 5 19 12 12 19"/>'),
+ plus:_ic('<path d="M5 12h14"/><path d="M12 5v14"/>'),
+ search:_ic('<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>'),
+ trash:_ic('<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>'),
+ download:_ic('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>'),
+ checkcircle:_ic('<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>'),
+ folder:_ic('<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>'),
+ clock:_ic('<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>'),
+ pin:_ic('<line x1="12" x2="12" y1="17" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/>'),
+ lightbulb:_ic('<path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/>'),
+ barchart:_ic('<path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>'),
+ x:_ic('<path d="M18 6 6 18"/><path d="m6 6 12 12"/>'),
+ pencil:_ic('<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>'),
+ eye:_ic('<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>'),
+ alerttriangle:_ic('<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/>'),
+ wrench:_ic('<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76Z"/>'),
+ flask:_ic('<path d="M10 2v7.31"/><path d="M14 9.3V1.99"/><path d="M8.5 2h7"/><path d="M14 9.3a6.5 6.5 0 1 1-4 0"/><path d="M5.52 16h12.96"/>'),
+ mappin:_ic('<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>'),
+ calendar:_ic('<rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/>'),
+ bank:_ic('<line x1="3" x2="21" y1="22" y2="22"/><line x1="6" x2="6" y1="18" y2="11"/><line x1="10" x2="10" y1="18" y2="11"/><line x1="14" x2="14" y1="18" y2="11"/><line x1="18" x2="18" y1="18" y2="11"/><polygon points="12 2 20 7 4 7"/>'),
+ list:_ic('<line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/>'),
+ grid:_ic('<rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/>'),
+ file:_ic('<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/>')
 };
 function applyIcons(root){
   try{(root||document).querySelectorAll('[data-icon]').forEach(function(el){var n=el.getAttribute('data-icon');if(LICON[n]&&!el.firstChild){el.innerHTML=LICON[n];}});}catch(e){}
 }
 if(document.readyState!=='loading'){applyIcons();}else{document.addEventListener('DOMContentLoaded',function(){applyIcons();});}
+// Auto-fill icons in dynamically injected HTML (Karten, Listen, Modals, Toasts …)
+try{
+  var _iconObs=new MutationObserver(function(muts){
+    for(var i=0;i<muts.length;i++){var an=muts[i].addedNodes;for(var j=0;j<an.length;j++){var n=an[j];if(!n||n.nodeType!==1)continue;
+      if(n.hasAttribute&&n.hasAttribute('data-icon')&&!n.firstChild){var nm=n.getAttribute('data-icon');if(LICON[nm])n.innerHTML=LICON[nm];}
+      if(n.querySelectorAll){var kids=n.querySelectorAll('[data-icon]');for(var k=0;k<kids.length;k++){var el=kids[k];if(!el.firstChild){var kn=el.getAttribute('data-icon');if(LICON[kn])el.innerHTML=LICON[kn];}}}
+    }}
+  });
+  document.addEventListener('DOMContentLoaded',function(){try{_iconObs.observe(document.body,{childList:true,subtree:true});}catch(e){}});
+  if(document.body){try{_iconObs.observe(document.body,{childList:true,subtree:true});}catch(e){}}
+}catch(e){}
 // Mieteinnahmen-Diagramm (Soll/Ist) der letzten 6 Monate
 async function loadDashboardChart(){
   var el=document.getElementById('dash-chart');if(!el)return;

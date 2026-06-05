@@ -833,7 +833,6 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
       <div class="sg-content" id="sg-verwaltung">
         <div class="nav-item" onclick="showPage('objekte')" id="nav-objekte"><span class="ni-icon">🏢</span>Objekte</div>
         <div class="nav-item" onclick="showPage('weg')" id="nav-weg"><span class="ni-icon">🏛️</span>WEG-Verwaltung</div>
-        <div class="nav-item" onclick="showPage('buchhaltung')" id="nav-buchhaltung"><span class="ni-icon">📒</span>Buchhaltung<span class="nav-badge" style="background:#e0f4f3;color:#0e7c7b">Neu</span></div>
         <div class="nav-item" onclick="showPage('kontakte')" id="nav-kontakte"><span class="ni-icon">👥</span>Kontakte</div>
         <div class="nav-item" onclick="showPage('dokumente')" id="nav-dokumente"><span class="ni-icon">📁</span>Dokumente</div>
       </div>
@@ -862,7 +861,6 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
       <div class="sidebar-section" role="button" onclick="toggleSidebarGroup('sg-k-verw')">VERWALTUNG <span class="sg-arrow open" id="arr-k-verw">▾</span></div>
       <div class="sg-content" id="sg-k-verw">
         <div class="nav-item" onclick="showPage('objekte')" id="nav-objekte-k"><span class="ni-icon">🏢</span>Objekte</div>
-        <div class="nav-item" onclick="showPage('buchhaltung')" id="nav-buchhaltung-k"><span class="ni-icon">📒</span>Buchhaltung<span class="nav-badge" style="background:#e0f4f3;color:#0e7c7b">Neu</span></div>
         <div class="nav-item" onclick="showPage('kontakte')" id="nav-kontakte-k"><span class="ni-icon">👥</span>Kontakte</div>
         <div class="nav-item" onclick="showPage('dokumente')" id="nav-dokumente-k"><span class="ni-icon">📁</span>Dokumente</div>
       </div>
@@ -1448,9 +1446,60 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
               <div id="od-weg-einheiten-list"><div style="color:var(--muted);font-size:.85rem">Wird geladen...</div></div>
             </div>
 
-            <!-- ── WEG: BUCHHALTUNG ── -->
+            <!-- ── WEG: BUCHHALTUNG (pro WEG + Untergemeinschaft) ── -->
             <div id="tab-content-buchhaltung" style="display:none">
-              <div id="buch-content"><div style="color:var(--muted);font-size:.85rem">Wird geladen...</div></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:.75rem;flex-wrap:wrap;margin-bottom:1rem">
+                <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+                  <span style="font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)">Buchungskreis</span>
+                  <select id="buha-ug" onchange="buhaReload()" style="border:1px solid var(--border);border-radius:8px;padding:.45rem .7rem;font-size:.84rem;font-family:Arial,sans-serif;background:var(--white);outline:none"></select>
+                  <button class="btn-small" onclick="openUgModal()" title="Untergemeinschaften anlegen/verwalten" style="font-size:.72rem">⚙ Untergemeinschaften</button>
+                </div>
+                <select id="buha-jahr" onchange="buhaReload()" style="border:1px solid var(--border);border-radius:8px;padding:.45rem .7rem;font-size:.84rem;font-family:Arial,sans-serif;background:var(--white);outline:none"></select>
+              </div>
+              <!-- Tabs -->
+              <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:1.1rem;flex-wrap:wrap">
+                <button type="button" id="buha-tab-buchen" onclick="buhaTab('buchen')" style="background:none;border:none;border-bottom:2px solid var(--p);margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;font-weight:700;color:var(--p);font-family:Arial,sans-serif">📝 Buchungen</button>
+                <button type="button" id="buha-tab-konten" onclick="buhaTab('konten')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:Arial,sans-serif">📚 Kontenrahmen</button>
+                <button type="button" id="buha-tab-audit" onclick="buhaTab('audit')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:Arial,sans-serif">🛡️ Audit</button>
+              </div>
+              <!-- TAB: BUCHEN -->
+              <div id="buha-pane-buchen">
+                <div id="buha-kpis" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.6rem;margin-bottom:1rem"></div>
+                <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:1rem">
+                  <div style="font-size:.78rem;font-weight:700;color:var(--p);margin-bottom:.7rem">➕ Neue Buchung <span style="font-weight:400;color:var(--muted);font-size:.7rem">· Enter = speichern / nächstes Feld</span></div>
+                  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.55rem;align-items:end" id="buha-maske">
+                    <div><label style="font-size:.64rem;font-weight:700;color:var(--muted);text-transform:uppercase">Buchungsdatum</label><input type="date" id="bu-datum" class="buha-inp"></div>
+                    <div><label style="font-size:.64rem;font-weight:700;color:var(--muted);text-transform:uppercase">Belegdatum</label><input type="date" id="bu-belegdatum" class="buha-inp"></div>
+                    <div><label style="font-size:.64rem;font-weight:700;color:var(--muted);text-transform:uppercase">Beleg-Nr.</label><input type="text" id="bu-belegnr" class="buha-inp" placeholder="2025-001"></div>
+                    <div style="grid-column:span 2"><label style="font-size:.64rem;font-weight:700;color:var(--muted);text-transform:uppercase">Buchungstext</label><input type="text" id="bu-text" class="buha-inp" placeholder="z. B. Gebäudeversicherung Q1"></div>
+                    <div><label style="font-size:.64rem;font-weight:700;color:var(--muted);text-transform:uppercase">Soll-Konto</label><select id="bu-soll" class="buha-inp"></select></div>
+                    <div><label style="font-size:.64rem;font-weight:700;color:var(--muted);text-transform:uppercase">Haben-Konto</label><select id="bu-haben" class="buha-inp"></select></div>
+                    <div><label style="font-size:.64rem;font-weight:700;color:var(--muted);text-transform:uppercase">Betrag (€)</label><input type="text" inputmode="decimal" id="bu-betrag" class="buha-inp" placeholder="0,00" oninput="sanitizeNumInput(this)"></div>
+                    <div><label style="font-size:.64rem;font-weight:700;color:var(--muted);text-transform:uppercase">USt %</label><select id="bu-ust" class="buha-inp"><option value="0">0 %</option><option value="7">7 %</option><option value="19">19 %</option></select></div>
+                    <div><button class="btn-primary" style="white-space:nowrap" onclick="buhaSaveBuchung()">✓ Buchen</button></div>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.6rem">
+                  <span style="font-size:.88rem;font-weight:700">📓 Journal</span>
+                  <input type="text" id="buha-suche" oninput="renderBuhaJournal()" placeholder="🔍 Suche …" style="border:1px solid var(--border);border-radius:8px;padding:.4rem .7rem;font-size:.82rem;font-family:Arial,sans-serif;outline:none;flex:1;min-width:180px">
+                  <button class="btn-small" onclick="buhaExportCsv()">📊 CSV</button>
+                </div>
+                <div id="buha-journal" style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow-x:auto"></div>
+              </div>
+              <!-- TAB: KONTENRAHMEN -->
+              <div id="buha-pane-konten" style="display:none">
+                <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.8rem">
+                  <button class="btn-primary" onclick="openKontoModal()">➕ Konto anlegen</button>
+                  <button class="btn-secondary" onclick="seedKontenrahmen('skr03')">📥 SKR03-Vorlage</button>
+                  <button class="btn-secondary" onclick="seedKontenrahmen('skr04')">📥 SKR04-Vorlage</button>
+                  <span id="buha-konten-count" style="font-size:.78rem;color:var(--muted);margin-left:auto"></span>
+                </div>
+                <div id="buha-konten" style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow-x:auto"></div>
+              </div>
+              <!-- TAB: AUDIT -->
+              <div id="buha-pane-audit" style="display:none">
+                <div id="buha-audit" style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow-x:auto"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -2659,76 +2708,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
       </div>
     </div>
 
-    <!-- ══ BUCHHALTUNG (WEG) ══ -->
-    <div id="page-buchhaltung" style="display:none">
-      <div style="padding:1.75rem 2rem;max-width:1280px">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;margin-bottom:1rem">
-          <div>
-            <h1 style="font-size:1.5rem;font-weight:700">📒 Buchhaltung</h1>
-            <div style="font-size:.82rem;color:var(--muted);margin-top:2px">WEG-Buchführung: Kontenrahmen, Buchungsmaske &amp; Journal (revisionssicher)</div>
-          </div>
-          <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap">
-            <select id="buha-objekt" onchange="buhaReload()" style="border:1px solid var(--border);border-radius:8px;padding:.5rem .7rem;font-size:.85rem;font-family:Arial,sans-serif;background:var(--white);outline:none"></select>
-            <select id="buha-jahr" onchange="buhaReload()" style="border:1px solid var(--border);border-radius:8px;padding:.5rem .7rem;font-size:.85rem;font-family:Arial,sans-serif;background:var(--white);outline:none"></select>
-          </div>
-        </div>
-
-        <!-- Tabs -->
-        <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:1.1rem;flex-wrap:wrap">
-          <button type="button" id="buha-tab-buchen" onclick="buhaTab('buchen')" style="background:none;border:none;border-bottom:2px solid var(--p);margin-bottom:-2px;padding:.6rem 1.1rem;cursor:pointer;font-size:.86rem;font-weight:700;color:var(--p);font-family:Arial,sans-serif">📝 Buchungen</button>
-          <button type="button" id="buha-tab-konten" onclick="buhaTab('konten')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.6rem 1.1rem;cursor:pointer;font-size:.86rem;color:var(--muted);font-family:Arial,sans-serif">📚 Kontenrahmen</button>
-          <button type="button" id="buha-tab-audit" onclick="buhaTab('audit')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.6rem 1.1rem;cursor:pointer;font-size:.86rem;color:var(--muted);font-family:Arial,sans-serif">🛡️ Audit-Log</button>
-        </div>
-
-        <div id="buha-empty" style="display:none;text-align:center;color:var(--muted);padding:3rem;border:2px dashed var(--border);border-radius:14px">
-          Bitte zuerst ein <strong>WEG-Objekt</strong> anlegen (unter „WEG-Verwaltung"), dann hier auswählen.
-        </div>
-
-        <!-- TAB: BUCHEN -->
-        <div id="buha-pane-buchen">
-          <!-- KPI-Leiste -->
-          <div id="buha-kpis" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.75rem;margin-bottom:1rem"></div>
-          <!-- Buchungsmaske -->
-          <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:1rem">
-            <div style="font-size:.8rem;font-weight:700;color:var(--p);margin-bottom:.7rem">➕ Neue Buchung <span style="font-weight:400;color:var(--muted);font-size:.72rem">· Enter speichert &amp; springt zum nächsten Feld</span></div>
-            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.55rem;align-items:end" id="buha-maske">
-              <div><label style="font-size:.66rem;font-weight:700;color:var(--muted);text-transform:uppercase">Buchungsdatum</label><input type="date" id="bu-datum" class="buha-inp"></div>
-              <div><label style="font-size:.66rem;font-weight:700;color:var(--muted);text-transform:uppercase">Belegdatum</label><input type="date" id="bu-belegdatum" class="buha-inp"></div>
-              <div><label style="font-size:.66rem;font-weight:700;color:var(--muted);text-transform:uppercase">Beleg-Nr.</label><input type="text" id="bu-belegnr" class="buha-inp" placeholder="z. B. 2025-001"></div>
-              <div style="grid-column:span 2"><label style="font-size:.66rem;font-weight:700;color:var(--muted);text-transform:uppercase">Buchungstext</label><input type="text" id="bu-text" class="buha-inp" placeholder="z. B. Gebäudeversicherung Q1"></div>
-              <div><label style="font-size:.66rem;font-weight:700;color:var(--muted);text-transform:uppercase">Soll-Konto</label><select id="bu-soll" class="buha-inp"></select></div>
-              <div><label style="font-size:.66rem;font-weight:700;color:var(--muted);text-transform:uppercase">Haben-Konto</label><select id="bu-haben" class="buha-inp"></select></div>
-              <div><label style="font-size:.66rem;font-weight:700;color:var(--muted);text-transform:uppercase">Betrag (€)</label><input type="text" inputmode="decimal" id="bu-betrag" class="buha-inp" placeholder="0,00" oninput="sanitizeNumInput(this)"></div>
-              <div><label style="font-size:.66rem;font-weight:700;color:var(--muted);text-transform:uppercase">USt %</label><select id="bu-ust" class="buha-inp"><option value="0">0 %</option><option value="7">7 %</option><option value="19">19 %</option></select></div>
-              <div style="display:flex;gap:.4rem"><button class="btn-primary" style="white-space:nowrap" onclick="buhaSaveBuchung()">✓ Buchen</button></div>
-            </div>
-          </div>
-          <!-- Journal -->
-          <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.6rem">
-            <span style="font-size:.9rem;font-weight:700">📓 Buchungsjournal</span>
-            <input type="text" id="buha-suche" oninput="renderBuhaJournal()" placeholder="🔍 Suche (Text, Konto, Beleg) …" style="border:1px solid var(--border);border-radius:8px;padding:.45rem .7rem;font-size:.82rem;font-family:Arial,sans-serif;outline:none;flex:1;min-width:200px">
-            <button class="btn-small" onclick="buhaExportCsv()">📊 CSV</button>
-          </div>
-          <div id="buha-journal" style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow-x:auto"></div>
-        </div>
-
-        <!-- TAB: KONTENRAHMEN -->
-        <div id="buha-pane-konten" style="display:none">
-          <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.8rem">
-            <button class="btn-primary" onclick="openKontoModal()">➕ Konto anlegen</button>
-            <button class="btn-secondary" onclick="seedKontenrahmen('skr03')">📥 SKR03-WEG-Vorlage</button>
-            <button class="btn-secondary" onclick="seedKontenrahmen('skr04')">📥 SKR04-WEG-Vorlage</button>
-            <span id="buha-konten-count" style="font-size:.78rem;color:var(--muted);margin-left:auto"></span>
-          </div>
-          <div id="buha-konten" style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow-x:auto"></div>
-        </div>
-
-        <!-- TAB: AUDIT -->
-        <div id="buha-pane-audit" style="display:none">
-          <div id="buha-audit" style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow-x:auto"></div>
-        </div>
-      </div>
-    </div>
+    <!-- (Buchhaltung ist jetzt in den Objekt-/WEG-Detail-Tab integriert) -->
 
     <!-- KONTO ANLEGEN/BEARBEITEN MODAL -->
     <div id="konto-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:700;align-items:center;justify-content:center;padding:1rem">
@@ -2745,6 +2725,20 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
         </div>
         <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;margin-bottom:1rem;cursor:pointer"><input type="checkbox" id="konto-umlage" checked> umlagefähig (auf Eigentümer/Mieter umlegbar)</label>
         <div style="display:flex;gap:.65rem"><button class="btn-primary" style="flex:1" onclick="saveKonto()">✓ Speichern</button><button class="btn-secondary" style="flex:1" onclick="closeKontoModal()">Abbrechen</button></div>
+      </div>
+    </div>
+
+    <!-- UNTERGEMEINSCHAFTEN MODAL -->
+    <div id="ug-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:700;align-items:center;justify-content:center;padding:1rem">
+      <div style="background:#fff;border-radius:14px;padding:1.6rem;width:100%;max-width:460px;max-height:90vh;overflow-y:auto">
+        <h3 style="font-size:.98rem;font-weight:700;margin-bottom:.3rem">👥 Untergemeinschaften</h3>
+        <p style="font-size:.8rem;color:var(--muted);margin-bottom:1rem">Untergliedere die WEG (z. B. Mehrhausanlage „Haus A / Haus B"). Jede Untergemeinschaft hat eine <strong>eigene Buchhaltung</strong>; „Gesamt-WEG" bleibt für gemeinschaftliche Kosten.</p>
+        <div style="display:flex;gap:.5rem;margin-bottom:1rem">
+          <input type="text" id="ug-name" placeholder="Name, z. B. Haus A" onkeydown="if(event.key==='Enter')addUg()" style="flex:1;border:1px solid var(--border);border-radius:7px;padding:.5rem .7rem;font-size:.88rem;font-family:Arial,sans-serif;outline:none">
+          <button class="btn-primary" onclick="addUg()">+ Anlegen</button>
+        </div>
+        <div id="ug-list"></div>
+        <div style="display:flex;gap:.65rem;margin-top:1.2rem"><button class="btn-secondary" style="flex:1" onclick="closeUgModal()">Schließen</button></div>
       </div>
     </div>
 
@@ -3527,7 +3521,6 @@ function showPage(name){
   }
   if(name==='auftraege'){loadAuftraege();}
   if(name==='dokumente'){loadDokumente();}
-  if(name==='buchhaltung'){ladeBuchhaltung();}
 }
 
 // Check if there's unsaved work in the wizard
@@ -7559,10 +7552,10 @@ async function deleteFeedback(id){
 }
 
 // ════════════ WEG-BUCHHALTUNG (Phase 1) ════════════
-var buha={objektId:null, jahr:null, konten:[], buchungen:[]};
+var buha={objektId:null, jahr:null, ug:'', ugListe:[], konten:[], buchungen:[]};
 function buhaEuro(n){return (parseFloat(n)||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';}
 
-async function ladeBuchhaltung(){
+async function ladeBuchhaltung(objId){
   if(!currentUser)return;
   // Tastatursteuerung (einmalig): Enter speichert (Betragsfeld) bzw. springt zum nächsten Feld
   if(!buha._kbReady){buha._kbReady=true;
@@ -7576,27 +7569,22 @@ async function ladeBuchhaltung(){
       var i=all.indexOf(inp); if(i>-1&&i<all.length-1)all[i+1].focus();
     });
   }
-  // Objekt-Dropdown (WEG zuerst, sonst alle Objekte)
-  var sel=document.getElementById('buha-objekt');
+  // Auf das aktuelle (WEG-)Objekt eingrenzen
+  buha.objektId = objId || (aktivesObjekt&&aktivesObjekt.id) || buha.objektId;
+  if(!buha.objektId)return;
   var jsel=document.getElementById('buha-jahr');
   try{
-    var {data:objs}=await sb.from('objekte').select('id,name,kategorie').eq('user_id',currentUser.id).order('name');
-    objs=objs||[];
-    // WEG-Objekte priorisieren, aber alle zulassen (Buchhaltung auch für Miet-Objekte sinnvoll)
-    var weg=objs.filter(function(o){return (o.kategorie||'')==='weg';});
-    var rest=objs.filter(function(o){return (o.kategorie||'')!=='weg';});
-    var ordered=weg.concat(rest);
-    if(!ordered.length){
-      document.getElementById('buha-empty').style.display='block';
-      document.getElementById('buha-pane-buchen').style.display='none';
-      document.getElementById('buha-pane-konten').style.display='none';
-      document.getElementById('buha-pane-audit').style.display='none';
-      sel.innerHTML='';return;
+    // Untergemeinschaften dieses Objekts laden → Buchungskreis-Dropdown
+    var ugr=await sb.from('weg_untergemeinschaften').select('*').eq('user_id',currentUser.id).eq('objekt_id',buha.objektId).order('sortierung').order('name');
+    buha.ugListe=ugr.data||[];
+    var ugSel=document.getElementById('buha-ug');
+    if(ugSel){
+      var prev=buha.ug||'';
+      ugSel.innerHTML='<option value="">🏛️ Gesamt-WEG (gemeinschaftlich)</option>'
+        +buha.ugListe.map(function(u){return '<option value="'+u.id+'">👥 '+escapeHtml(u.name)+'</option>';}).join('');
+      if(prev&&!buha.ugListe.some(function(u){return u.id===prev;}))prev='';
+      ugSel.value=prev; buha.ug=prev;
     }
-    document.getElementById('buha-empty').style.display='none';
-    sel.innerHTML=ordered.map(function(o){return '<option value="'+o.id+'">'+(o.kategorie==='weg'?'🏛️ ':'🏢 ')+escapeHtml(o.name)+'</option>';}).join('');
-    if(!buha.objektId||!ordered.some(function(o){return o.id===buha.objektId;}))buha.objektId=ordered[0].id;
-    sel.value=buha.objektId;
     // Jahr-Dropdown (aktuelles + 4 zurück)
     var jahrNow=new Date().getFullYear();
     if(!buha.jahr)buha.jahr=jahrNow;
@@ -7608,20 +7596,22 @@ async function ladeBuchhaltung(){
 }
 
 async function buhaReload(){
-  buha.objektId=document.getElementById('buha-objekt').value||buha.objektId;
-  buha.jahr=parseInt(document.getElementById('buha-jahr').value)||buha.jahr;
+  var ugSel=document.getElementById('buha-ug'); if(ugSel)buha.ug=ugSel.value||'';
+  buha.jahr=parseInt((document.getElementById('buha-jahr')||{}).value)||buha.jahr;
   if(!buha.objektId)return;
   try{
     var kr=await sb.from('weg_konten').select('*').eq('user_id',currentUser.id).order('nummer');
     buha.konten=kr.data||[];
-    var br=await sb.from('weg_buchungen').select('*').eq('user_id',currentUser.id).eq('objekt_id',buha.objektId).eq('wirtschaftsjahr',buha.jahr).order('buchungsdatum',{ascending:false}).order('created_at',{ascending:false});
+    var q=sb.from('weg_buchungen').select('*').eq('user_id',currentUser.id).eq('objekt_id',buha.objektId).eq('wirtschaftsjahr',buha.jahr);
+    // Buchungskreis: Gesamt-WEG = ohne Untergemeinschaft (null); sonst die gewählte UG
+    q = buha.ug ? q.eq('untergemeinschaft_id',buha.ug) : q.is('untergemeinschaft_id',null);
+    var br=await q.order('buchungsdatum',{ascending:false}).order('created_at',{ascending:false});
     buha.buchungen=br.data||[];
   }catch(e){showToast('❌ '+(e.message||e));}
   fillKontoSelects();
   renderKonten();
   renderBuhaJournal();
   renderBuhaKpis();
-  // Datum vorbefüllen
   var d=document.getElementById('bu-datum'); if(d&&!d.value)d.value=todayStr();
 }
 
@@ -7756,6 +7746,7 @@ async function buhaSaveBuchung(){
   if(soll===haben){showToast('Soll- und Haben-Konto müssen verschieden sein.');return;}
   if(!(betrag>0)){showToast('Bitte einen Betrag > 0 eingeben.');return;}
   var row={user_id:currentUser.id,objekt_id:buha.objektId,wirtschaftsjahr:buha.jahr,
+    untergemeinschaft_id:buha.ug||null,
     buchungsdatum:v('bu-datum')||todayStr(),belegdatum:v('bu-belegdatum')||null,belegnr:v('bu-belegnr')||null,
     text:v('bu-text')||null,soll_konto:soll,haben_konto:haben,betrag:betrag,ust_satz:parseFloat(v('bu-ust'))||0};
   var ins=await sb.from('weg_buchungen').insert(row).select().single();
@@ -7811,7 +7802,7 @@ function buhaStorno(id){
   var b=buha.buchungen.find(function(x){return x.id===id;}); if(!b)return;
   appConfirm({icon:'↺',title:'Buchung stornieren?',message:'Es wird eine <strong>Gegenbuchung</strong> erstellt (Soll/Haben getauscht) und die Originalbuchung als storniert markiert. Revisionssicher – nichts wird gelöscht.',
     buttons:[{label:'↺ Stornieren',style:'background:#9a6700;color:#fff',onClick:async function(){
-      var storno={user_id:currentUser.id,objekt_id:b.objekt_id,wirtschaftsjahr:b.wirtschaftsjahr,
+      var storno={user_id:currentUser.id,objekt_id:b.objekt_id,wirtschaftsjahr:b.wirtschaftsjahr,untergemeinschaft_id:b.untergemeinschaft_id||null,
         buchungsdatum:todayStr(),belegdatum:b.belegdatum,belegnr:b.belegnr,
         text:'Storno: '+(b.text||''),soll_konto:b.haben_konto,haben_konto:b.soll_konto,betrag:b.betrag,ust_satz:b.ust_satz,ist_storno:true,storno_buchung_id:b.id};
       var ins=await sb.from('weg_buchungen').insert(storno).select().single();
@@ -7834,6 +7825,41 @@ function buhaExportCsv(){
 }
 async function logAudit(aktion,entity,entityId,detail){
   try{await sb.from('weg_audit').insert({user_id:currentUser.id,objekt_id:buha.objektId,aktion:aktion,entity:entity,entity_id:entityId,detail:detail||{}});}catch(e){}
+}
+
+// ── UNTERGEMEINSCHAFTEN ──
+function openUgModal(){ if(!buha.objektId){showToast('Bitte zuerst eine WEG öffnen.');return;} document.getElementById('ug-name').value=''; renderUgList(); document.getElementById('ug-modal').style.display='flex'; }
+function closeUgModal(){document.getElementById('ug-modal').style.display='none';}
+function renderUgList(){
+  var c=document.getElementById('ug-list'); if(!c)return;
+  if(!buha.ugListe.length){c.innerHTML='<div style="font-size:.8rem;color:var(--muted);font-style:italic;padding:.4rem 0">Noch keine Untergemeinschaften. „Gesamt-WEG" steht immer zur Verfügung.</div>';return;}
+  c.innerHTML=buha.ugListe.map(function(u){
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem .7rem;border:1px solid var(--border);border-radius:9px;margin-bottom:.45rem">'
+      +'<span style="font-weight:600;font-size:.86rem">👥 '+escapeHtml(u.name)+'</span>'
+      +'<button class="btn-small" style="font-size:.64rem;background:#fbe9e7;color:#c0392b" onclick="deleteUg(\''+u.id+'\')">🗑</button></div>';
+  }).join('');
+}
+async function addUg(){
+  var name=(document.getElementById('ug-name').value||'').trim();
+  if(!name){showToast('Bitte einen Namen eingeben.');return;}
+  var {error}=await sb.from('weg_untergemeinschaften').insert({user_id:currentUser.id,objekt_id:buha.objektId,name:name});
+  if(error){showToast('❌ '+error.message);return;}
+  await logAudit('untergemeinschaft_erstellt','untergemeinschaft',null,{name:name});
+  document.getElementById('ug-name').value='';
+  await ladeBuchhaltung(buha.objektId); renderUgList(); showToast('✅ Untergemeinschaft angelegt');
+}
+function deleteUg(id){
+  var u=buha.ugListe.find(function(x){return x.id===id;}); if(!u)return;
+  appConfirm({icon:'🗑',title:'Untergemeinschaft löschen?',message:'„'+escapeHtml(u.name)+'" löschen? Bereits erfasste Buchungen bleiben erhalten und werden dem <strong>Gesamt-WEG</strong> zugeordnet.',
+    buttons:[{label:'🗑 Löschen',style:'background:#c0392b;color:#fff',onClick:async function(){
+      // Buchungen erhalten → Zuordnung auf Gesamt-WEG (null) umhängen (nichts verschwindet)
+      try{await sb.from('weg_buchungen').update({untergemeinschaft_id:null}).eq('untergemeinschaft_id',id);}catch(e){}
+      var {error}=await sb.from('weg_untergemeinschaften').delete().eq('id',id);
+      if(error){showToast('❌ '+error.message);return;}
+      await logAudit('untergemeinschaft_geloescht','untergemeinschaft',id,{name:u.name});
+      if(buha.ug===id)buha.ug='';
+      await ladeBuchhaltung(buha.objektId); renderUgList(); showToast('🗑 Gelöscht');
+    }},{label:'Abbrechen',style:'background:var(--bg);color:var(--muted)',onClick:function(){}}]});
 }
 async function renderBuhaAudit(){
   var c=document.getElementById('buha-audit'); if(!c)return;
@@ -9164,7 +9190,7 @@ function showObjektTab(tab){
   if(tab==='uebersicht'&&aktivesObjekt){loadObjektUebersichtTab(aktivesObjekt.id);loadSollIstChart(aktivesObjekt.id);}
   if(tab==='weg-eigentuemer'&&aktivesObjekt)loadWegEigentuemer(aktivesObjekt.id);
   if(tab==='weg-einheiten'&&aktivesObjekt)loadWegEinheiten(aktivesObjekt.id);
-  if(tab==='buchhaltung'&&aktivesObjekt)loadBuchhaltung(aktivesObjekt.id);
+  if(tab==='buchhaltung'&&aktivesObjekt)ladeBuchhaltung(aktivesObjekt.id);
 }
 
 // Toggle which tabs are visible based on object category (WEG vs Miet)

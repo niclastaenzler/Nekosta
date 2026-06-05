@@ -1463,6 +1463,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
               <!-- Tabs -->
               <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:1.1rem;flex-wrap:wrap">
                 <button type="button" id="buha-tab-buchen" onclick="buhaTab('buchen')" style="background:none;border:none;border-bottom:2px solid var(--p);margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;font-weight:700;color:var(--p);font-family:Arial,sans-serif">📝 Buchungen</button>
+                <button type="button" id="buha-tab-hausgeld" onclick="buhaTab('hausgeld')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:Arial,sans-serif">💶 Hausgeld</button>
                 <button type="button" id="buha-tab-konten" onclick="buhaTab('konten')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:Arial,sans-serif">📚 Kontenrahmen</button>
                 <button type="button" id="buha-tab-ausw" onclick="buhaTab('ausw')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:Arial,sans-serif">📊 Auswertungen</button>
                 <button type="button" id="buha-tab-audit" onclick="buhaTab('audit')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:Arial,sans-serif">🛡️ Audit</button>
@@ -1503,6 +1504,19 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                   <div id="bu-steuer-info" style="font-size:.72rem;color:var(--muted);margin-top:.45rem;min-height:1em"></div>
                   <datalist id="buha-konten-dl"></datalist>
                 </div>
+              </div>
+              <!-- TAB: HAUSGELD & OFFENE POSTEN -->
+              <div id="buha-pane-hausgeld" style="display:none">
+                <div id="hg-kpis" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.6rem;margin-bottom:1rem"></div>
+                <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.8rem">
+                  <button class="btn-primary" onclick="generiereSollstellungen()">📋 Sollstellungen für <span id="hg-jahr-lbl"></span> erzeugen</button>
+                  <select id="hg-filter" onchange="renderHausgeld()" style="border:1px solid var(--border);border-radius:8px;padding:.45rem .7rem;font-size:.82rem;font-family:Arial,sans-serif;background:var(--white);outline:none">
+                    <option value="alle">Alle Posten</option><option value="offen">Nur offene</option><option value="ueberfaellig">Nur überfällige</option><option value="bezahlt">Nur bezahlte</option>
+                  </select>
+                  <span style="margin-left:auto"><button class="btn-small" onclick="hausgeldCsv()">📊 CSV</button></span>
+                </div>
+                <div id="hg-content" style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow-x:auto"></div>
+                <div style="font-size:.72rem;color:var(--muted);margin-top:.6rem">💡 Das monatliche Hausgeld stammt aus dem Feld „Hausgeld" je Eigentümer (Reiter „Eigentümer"). Sollstellungen werden monatlich für das gewählte Wirtschaftsjahr erzeugt; bezahlte Posten kannst du als Zahlungseingang markieren.</div>
               </div>
               <!-- TAB: KONTENRAHMEN -->
               <div id="buha-pane-konten" style="display:none">
@@ -7638,13 +7652,14 @@ async function buhaReload(){
 }
 
 function buhaTab(t){
-  ['buchen','konten','ausw','audit'].forEach(function(x){
+  ['buchen','hausgeld','konten','ausw','audit'].forEach(function(x){
     var pane=document.getElementById('buha-pane-'+x); if(pane)pane.style.display=(x===t?'block':'none');
     var btn=document.getElementById('buha-tab-'+x);
     if(btn){var on=x===t;btn.style.color=on?'var(--p)':'var(--muted)';btn.style.fontWeight=on?'700':'400';btn.style.borderBottomColor=on?'var(--p)':'transparent';}
   });
   if(t==='audit')renderBuhaAudit();
   if(t==='ausw')renderAuswertungen();
+  if(t==='hausgeld')ladeHausgeld();
 }
 
 // ── BUCHUNGSSCHLÜSSEL (DATEV-Stil, konfigurierbar via weg_steuerschluessel) ──
@@ -8174,6 +8189,101 @@ function buhaAuswPrint(){
   var w=window.open('','_blank'); if(!w){showToast('Pop-up-Blocker?');return;}
   w.document.write('<html><head><title>'+(buha._auswTitle||'Auswertung')+'</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#222}table{width:100%;border-collapse:collapse}th,td{padding:5px 8px;border-bottom:1px solid #ddd;font-size:12px;text-align:left}th{text-transform:uppercase;font-size:10px;color:#666}</style></head><body>'+content.innerHTML+'</body></html>');
   w.document.close(); w.focus(); setTimeout(function(){w.print();},250);
+}
+
+// ── HAUSGELD & OFFENE POSTEN ──
+function hgEigName(e){return e&&e.kontakte?((e.kontakte.anrede?e.kontakte.anrede+' ':'')+(e.kontakte.vorname||'')+' '+(e.kontakte.nachname||'')).trim():'Eigentümer';}
+async function ladeHausgeld(){
+  if(!buha.objektId)return;
+  var jl=document.getElementById('hg-jahr-lbl'); if(jl)jl.textContent=buha.jahr;
+  try{
+    var er=await sb.from('weg_eigentuemer').select('id,hausgeld_soll,weg_einheit_id,kontakte(anrede,vorname,nachname),weg_einheiten(bezeichnung)').eq('user_id',currentUser.id).eq('objekt_id',buha.objektId).eq('aktiv',true);
+    buha._hgEig=er.data||[];
+    var sr=await sb.from('weg_sollstellung').select('*').eq('user_id',currentUser.id).eq('objekt_id',buha.objektId).eq('jahr',buha.jahr);
+    buha._hgSoll=sr.data||[];
+  }catch(e){showToast('❌ '+(e.message||e));}
+  renderHausgeld();
+}
+function generiereSollstellungen(){
+  if(!buha._hgEig||!buha._hgEig.length){showToast('Keine Eigentümer mit Hausgeld vorhanden (Reiter „Eigentümer").');return;}
+  var jahr=buha.jahr;
+  var exist={}; (buha._hgSoll||[]).forEach(function(s){exist[s.eigentuemer_id+'-'+s.monat]=true;});
+  var rows=[];
+  buha._hgEig.forEach(function(e){
+    var betrag=parseFloat(e.hausgeld_soll)||0; if(betrag<=0)return;
+    for(var m=1;m<=12;m++){ if(exist[e.id+'-'+m])continue;
+      rows.push({user_id:currentUser.id,objekt_id:buha.objektId,eigentuemer_id:e.id,einheit_id:e.weg_einheit_id||null,jahr:jahr,monat:m,betrag:betrag,status:'offen',faellig_am:jahr+'-'+('0'+m).slice(-2)+'-03'});
+    }
+  });
+  if(!rows.length){showToast('Alle Sollstellungen für '+jahr+' sind bereits vorhanden.');return;}
+  appConfirm({icon:'📋',title:'Sollstellungen erzeugen?',message:'<strong>'+rows.length+'</strong> monatliche Hausgeld-Forderungen für '+jahr+' anlegen (fällig jeweils zum 3. des Monats)?',
+    buttons:[{label:'📋 Erzeugen',style:'background:linear-gradient(135deg,#0e7c7b,#0a5f5e);color:#fff',onClick:async function(){
+      var {error}=await sb.from('weg_sollstellung').insert(rows);
+      if(error){showToast('❌ '+error.message);return;}
+      await logAudit('sollstellungen_erzeugt','sollstellung',null,{jahr:jahr,anzahl:rows.length});
+      showToast('✅ '+rows.length+' Sollstellungen erzeugt'); await ladeHausgeld();
+    }},{label:'Abbrechen',style:'background:var(--bg);color:var(--muted)',onClick:function(){}}]});
+}
+function _hgUeberfaellig(s){ return s.status!=='bezahlt' && s.faellig_am && s.faellig_am < todayStr(); }
+function _hgMahnstufe(s){
+  if(s.status==='bezahlt'||!s.faellig_am)return 0;
+  var tage=Math.floor((Date.now()-new Date(s.faellig_am).getTime())/86400000);
+  if(tage<=0)return 0; if(tage<=14)return 1; if(tage<=42)return 2; return 3;
+}
+function renderHausgeld(){
+  var c=document.getElementById('hg-content'); if(!c)return;
+  var eigById={}; (buha._hgEig||[]).forEach(function(e){eigById[e.id]=e;});
+  var soll=buha._hgSoll||[];
+  // KPIs
+  var sumSoll=0,sumBez=0,sumOffen=0,sumUeber=0;
+  soll.forEach(function(s){var b=parseFloat(s.betrag)||0;sumSoll+=b;if(s.status==='bezahlt')sumBez+=b;else{sumOffen+=b;if(_hgUeberfaellig(s))sumUeber+=b;}});
+  var kc=document.getElementById('hg-kpis');
+  if(kc){var card=function(l,v,col){return '<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:.8rem 1rem"><div style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)">'+l+'</div><div style="font-size:1.2rem;font-weight:800;margin-top:.25rem;color:'+col+';font-variant-numeric:tabular-nums">'+v+'</div></div>';};
+    kc.innerHTML=card('Soll '+buha.jahr,buhaEuro(sumSoll),'var(--text)')+card('Bezahlt',buhaEuro(sumBez),'#1a7a4a')+card('Offen',buhaEuro(sumOffen),'#9a6700')+card('Überfällig',buhaEuro(sumUeber),'#c0392b');
+  }
+  if(!soll.length){c.innerHTML='<div style="padding:2rem;text-align:center;color:var(--muted)">Noch keine Sollstellungen für '+buha.jahr+'. Klicke oben auf „Sollstellungen erzeugen".</div>';return;}
+  var filt=(document.getElementById('hg-filter')||{value:'alle'}).value;
+  var list=soll.filter(function(s){ if(filt==='offen')return s.status!=='bezahlt'; if(filt==='bezahlt')return s.status==='bezahlt'; if(filt==='ueberfaellig')return _hgUeberfaellig(s); return true; });
+  list.sort(function(a,b){return (a.faellig_am||'').localeCompare(b.faellig_am||'')|| (hgEigName(eigById[a.eigentuemer_id])).localeCompare(hgEigName(eigById[b.eigentuemer_id]));});
+  var mLbl=['','1. Mahnung','2. Mahnung','Inkasso/3.'];
+  c.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:.82rem;min-width:680px"><thead><tr style="border-bottom:2px solid var(--border)">'
+    +['Fällig','Monat','Eigentümer','Einheit','Betrag','Status',''].map(function(h,i){return '<th style="text-align:'+(i===4?'right':'left')+';padding:.5rem .7rem;font-size:.62rem;text-transform:uppercase;color:var(--muted)">'+h+'</th>';}).join('')
+    +'</tr></thead><tbody>'
+    +list.map(function(s){
+      var e=eigById[s.eigentuemer_id]; var ms=_hgMahnstufe(s); var bez=s.status==='bezahlt';
+      var statusHtml=bez?'<span style="font-size:.62rem;font-weight:700;padding:1px 7px;border-radius:6px;background:#e9f9f0;color:#1a7a4a">bezahlt'+(s.bezahlt_am?' '+fmtDatum(s.bezahlt_am):'')+'</span>'
+        :(ms>0?'<span style="font-size:.62rem;font-weight:700;padding:1px 7px;border-radius:6px;background:#fdecea;color:#c0392b">überfällig'+(ms>1?' · '+mLbl[ms]:'')+'</span>':'<span style="font-size:.62rem;font-weight:700;padding:1px 7px;border-radius:6px;background:#fff3cd;color:#9a6700">offen</span>');
+      return '<tr style="border-bottom:1px solid var(--border);'+(bez?'opacity:.7':'')+'">'
+        +'<td style="padding:.4rem .7rem;white-space:nowrap">'+(s.faellig_am?fmtDatum(s.faellig_am):'–')+'</td>'
+        +'<td style="padding:.4rem .7rem">'+('0'+s.monat).slice(-2)+'/'+s.jahr+'</td>'
+        +'<td style="padding:.4rem .7rem">'+escapeHtml(hgEigName(e))+'</td>'
+        +'<td style="padding:.4rem .7rem;color:var(--muted)">'+escapeHtml(e&&e.weg_einheiten?e.weg_einheiten.bezeichnung:'–')+'</td>'
+        +'<td style="padding:.4rem .7rem;text-align:right;font-weight:700;font-variant-numeric:tabular-nums">'+buhaEuro(s.betrag)+'</td>'
+        +'<td style="padding:.4rem .7rem">'+statusHtml+'</td>'
+        +'<td style="padding:.4rem .7rem;text-align:right;white-space:nowrap">'+(bez
+            ?'<button class="btn-small" style="font-size:.6rem;padding:2px 7px" onclick="setSollStatus(\''+s.id+'\',\'offen\')">↺ offen</button>'
+            :'<button class="btn-small gruen" style="font-size:.6rem;padding:2px 7px" onclick="setSollStatus(\''+s.id+'\',\'bezahlt\')">✓ bezahlt</button>')+'</td>'
+      +'</tr>';
+    }).join('')+'</tbody></table>';
+}
+async function setSollStatus(id,status){
+  var upd={status:status, bezahlt_am: status==='bezahlt'?todayStr():null};
+  var {error}=await sb.from('weg_sollstellung').update(upd).eq('id',id);
+  if(error){showToast('❌ '+error.message);return;}
+  showToast(status==='bezahlt'?'✓ Zahlungseingang verbucht':'↺ Auf offen gesetzt');
+  await ladeHausgeld();
+}
+function hausgeldCsv(){
+  var soll=buha._hgSoll||[]; if(!soll.length){showToast('Keine Sollstellungen.');return;}
+  var eigById={}; (buha._hgEig||[]).forEach(function(e){eigById[e.id]=e;});
+  var esc=function(v){v=(v==null?'':''+v);return /[";\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
+  var head=['Faellig','Monat','Jahr','Eigentuemer','Einheit','Betrag','Status','BezahltAm'];
+  var rows=soll.slice().sort(function(a,b){return (a.faellig_am||'').localeCompare(b.faellig_am||'');}).map(function(s){var e=eigById[s.eigentuemer_id];
+    return [s.faellig_am||'',s.monat,s.jahr,hgEigName(e),(e&&e.weg_einheiten?e.weg_einheiten.bezeichnung:''),(parseFloat(s.betrag)||0).toFixed(2).replace('.',','),s.status,s.bezahlt_am||''].map(esc).join(';');});
+  var csv='﻿'+head.join(';')+'\n'+rows.join('\n');
+  var blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');a.href=url;a.download='OffenePosten_Hausgeld_'+buha.jahr+'.csv';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+  showToast('📊 Exportiert');
 }
 
 // ── DASHBOARD ──

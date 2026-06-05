@@ -251,7 +251,7 @@ body.sidebar-open #sidebar-backdrop{display:block;opacity:1}
 .erg-kpi-grid{display:grid;gap:1rem;grid-template-columns:repeat(2,minmax(0,1fr));margin-bottom:1.25rem}
 @media(min-width:1600px){.erg-kpi-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
 /* Dashboard-KPIs: 2×2 schmal, 4-spaltig ab 1280px */
-.dash-kpi-grid{display:grid;gap:1rem;grid-template-columns:repeat(2,minmax(0,1fr));margin-bottom:1.75rem}
+.dash-kpi-grid{display:grid;gap:1rem;grid-template-columns:repeat(2,minmax(0,1fr));margin-bottom:1.5rem}
 @media(min-width:1280px){.dash-kpi-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
 
 /* Einheiten-Zeile */
@@ -422,7 +422,7 @@ body.theme-lila{--p:#7c3aed;--p-mid:#6d28d9;--p-light:#ede9fe;--p-accent:#a78bfa
 .oa-btn:hover{background:var(--p-light);border-color:var(--p-accent);color:var(--p)}
 /* Dashboard: Animationen & moderne Karten */
 @keyframes dashUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
-.dash-kpi-ic{width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:1.25rem;flex-shrink:0}
+.dash-kpi-ic{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0}
 .dash-kpi{transition:transform .22s cubic-bezier(.2,.7,.2,1),box-shadow .22s}
 .dash-kpi:hover{transform:translateY(-4px);box-shadow:0 14px 34px rgba(106,45,159,.13)}
 .dash-panel{transition:box-shadow .22s,border-color .22s;box-shadow:0 1px 2px rgba(16,24,40,.05)}
@@ -898,21 +898,21 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
     <!-- ══ WELCOME ══ -->
     <!-- DASHBOARD -->
     <div id="page-dashboard" style="display:none">
-      <div style="padding:2rem 2.25rem;max-width:1300px">
+      <div style="padding:1.5rem;max-width:1400px;margin:0 auto">
 
         <!-- ── HERO ROW ── -->
-        <div class="dash-anim" style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2rem;gap:1rem;flex-wrap:wrap">
+        <div class="dash-anim" style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.5rem;gap:1rem;flex-wrap:wrap">
           <div>
-            <div id="dash-greeting" style="font-size:1.55rem;font-weight:800;letter-spacing:-.02em;color:var(--text)">Guten Tag</div>
-            <div style="font-size:.85rem;color:var(--muted);margin-top:.25rem" id="dash-date"></div>
+            <div id="dash-greeting" style="font-size:1.875rem;font-weight:700;letter-spacing:-.01em;color:#111827;line-height:1.2">Guten Tag</div>
+            <div style="font-size:.875rem;color:#6b7280;margin-top:.25rem" id="dash-date"></div>
           </div>
-          <div style="display:flex;gap:.65rem;flex-wrap:wrap">
-            <button onclick="startNeueAbrechnung()" class="btn-primary"
-              style="display:flex;align-items:center;gap:.5rem;padding:.65rem 1.25rem;font-size:.88rem;font-weight:700;border-radius:10px;box-shadow:0 4px 14px rgba(106,45,159,.25)">
+          <div style="display:flex;gap:.75rem;flex-wrap:wrap">
+            <button onclick="startNeueAbrechnung()"
+              style="display:flex;align-items:center;gap:.5rem;padding:.5rem 1rem;font-size:.875rem;font-weight:500;border-radius:8px;background:#7c3aed;color:#fff;border:none;cursor:pointer;font-family:var(--ff)">
               <span style="font-size:1rem">📄</span> Neue Abrechnung
             </button>
-            <button onclick="showPage('objekte')" class="btn-secondary"
-              style="display:flex;align-items:center;gap:.5rem;padding:.65rem 1.25rem;font-size:.88rem;font-weight:600;border-radius:10px">
+            <button onclick="showPage('objekte')"
+              style="display:flex;align-items:center;gap:.5rem;padding:.5rem 1rem;font-size:.875rem;font-weight:500;border-radius:8px;background:#f3f4f6;color:#374151;border:none;cursor:pointer;font-family:var(--ff)">
               <span style="font-size:1rem">🏢</span> Objekte verwalten
             </button>
           </div>
@@ -921,49 +921,49 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
         <!-- ── KPI ROW ── -->
         <div class="dash-kpi-grid">
 
-          <div class="dash-kpi dash-anim" style="background:var(--white);border-radius:12px;padding:1.35rem 1.4rem;border:1px solid #eef0f4;box-shadow:0 1px 2px rgba(16,24,40,.05);position:relative;overflow:hidden;cursor:pointer" onclick="showPage('objekte')">
+          <div class="dash-kpi dash-anim" style="background:var(--white);border-radius:10px;padding:1rem;border:1px solid #f0f0f2;box-shadow:0 1px 2px rgba(16,24,40,.05);position:relative;overflow:hidden;cursor:pointer" onclick="showPage('objekte')">
             <div style="position:absolute;top:0;left:0;right:0;height:4px;background:var(--p)"></div>
             <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">
               <div>
-                <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.55rem">Objekte</div>
-                <div style="font-size:2.1rem;font-weight:800;color:var(--text);line-height:1" id="dash-kpi-objekte">–</div>
-                <div style="font-size:.72rem;color:var(--muted);margin-top:.35rem" id="dash-kpi-objekte-sub">wird geladen</div>
+                <div style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.02em;color:#6b7280;margin-bottom:.35rem">Objekte</div>
+                <div style="font-size:1.875rem;font-weight:700;color:#111827;line-height:1.2" id="dash-kpi-objekte">–</div>
+                <div style="font-size:.75rem;color:#6b7280;margin-top:.25rem" id="dash-kpi-objekte-sub">wird geladen</div>
               </div>
               <div class="dash-kpi-ic" style="background:var(--p-light);color:var(--p)">🏢</div>
             </div>
           </div>
 
-          <div class="dash-kpi dash-anim" style="background:var(--white);border-radius:12px;padding:1.35rem 1.4rem;border:1px solid #eef0f4;box-shadow:0 1px 2px rgba(16,24,40,.05);position:relative;overflow:hidden;cursor:pointer" onclick="showPage('objekte')">
+          <div class="dash-kpi dash-anim" style="background:var(--white);border-radius:10px;padding:1rem;border:1px solid #f0f0f2;box-shadow:0 1px 2px rgba(16,24,40,.05);position:relative;overflow:hidden;cursor:pointer" onclick="showPage('objekte')">
             <div style="position:absolute;top:0;left:0;right:0;height:4px;background:#10b981"></div>
             <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">
               <div>
-                <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.55rem">Einheiten</div>
-                <div style="font-size:2.1rem;font-weight:800;color:var(--text);line-height:1" id="dash-kpi-einheiten">–</div>
-                <div style="font-size:.72rem;color:var(--muted);margin-top:.35rem" id="dash-kpi-einheiten-sub">wird geladen</div>
+                <div style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.02em;color:#6b7280;margin-bottom:.35rem">Einheiten</div>
+                <div style="font-size:1.875rem;font-weight:700;color:#111827;line-height:1.2" id="dash-kpi-einheiten">–</div>
+                <div style="font-size:.75rem;color:#6b7280;margin-top:.25rem" id="dash-kpi-einheiten-sub">wird geladen</div>
               </div>
               <div class="dash-kpi-ic" style="background:#e4f7ee;color:#10b981">🚪</div>
             </div>
           </div>
 
-          <div class="dash-kpi dash-anim" style="background:var(--white);border-radius:12px;padding:1.35rem 1.4rem;border:1px solid #eef0f4;box-shadow:0 1px 2px rgba(16,24,40,.05);position:relative;overflow:hidden">
+          <div class="dash-kpi dash-anim" style="background:var(--white);border-radius:10px;padding:1rem;border:1px solid #f0f0f2;box-shadow:0 1px 2px rgba(16,24,40,.05);position:relative;overflow:hidden">
             <div style="position:absolute;top:0;left:0;right:0;height:4px;background:#f59e0b"></div>
             <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">
               <div style="min-width:0">
-                <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.55rem">Monatliche Kaltmiete</div>
-                <div style="font-size:1.85rem;font-weight:800;color:var(--text);line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="dash-kpi-kaltmiete">–</div>
-                <div style="font-size:.72rem;color:var(--muted);margin-top:.35rem" id="dash-kpi-kaltmiete-sub">aktive Mietverhältnisse</div>
+                <div style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.02em;color:#6b7280;margin-bottom:.35rem">Monatliche Kaltmiete</div>
+                <div style="font-size:1.625rem;font-weight:700;color:#111827;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="dash-kpi-kaltmiete">–</div>
+                <div style="font-size:.75rem;color:#6b7280;margin-top:.25rem" id="dash-kpi-kaltmiete-sub">aktive Mietverhältnisse</div>
               </div>
               <div class="dash-kpi-ic" style="background:#fef3da;color:#e0900b">💶</div>
             </div>
           </div>
 
-          <div class="dash-kpi dash-anim" style="background:var(--white);border-radius:12px;padding:1.35rem 1.4rem;border:1px solid #eef0f4;box-shadow:0 1px 2px rgba(16,24,40,.05);position:relative;overflow:hidden;cursor:pointer" onclick="showPage('weg')">
+          <div class="dash-kpi dash-anim" style="background:var(--white);border-radius:10px;padding:1rem;border:1px solid #f0f0f2;box-shadow:0 1px 2px rgba(16,24,40,.05);position:relative;overflow:hidden;cursor:pointer" onclick="showPage('weg')">
             <div style="position:absolute;top:0;left:0;right:0;height:4px;background:var(--p)"></div>
             <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">
               <div>
-                <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.55rem">WEG-Objekte</div>
-                <div style="font-size:2.1rem;font-weight:800;line-height:1;color:var(--text)" id="dash-kpi-weg">–</div>
-                <div style="font-size:.72rem;color:var(--muted);margin-top:.35rem" id="dash-kpi-weg-sub">in Verwaltung</div>
+                <div style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.02em;color:#6b7280;margin-bottom:.35rem">WEG-Objekte</div>
+                <div style="font-size:1.875rem;font-weight:700;line-height:1.2;color:#111827" id="dash-kpi-weg">–</div>
+                <div style="font-size:.75rem;color:#6b7280;margin-top:.25rem" id="dash-kpi-weg-sub">in Verwaltung</div>
               </div>
               <div class="dash-kpi-ic" style="background:var(--p-light);color:var(--p)">🏛️</div>
             </div>
@@ -972,15 +972,15 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
         </div>
 
         <!-- ── MIETEINNAHMEN-DIAGRAMM ── -->
-        <div class="dash-anim dash-panel" style="background:var(--white);border-radius:12px;border:1px solid #eef0f4;overflow:hidden;margin-bottom:1.25rem">
-          <div style="padding:1.1rem 1.35rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem">
-            <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Kaltmieten · letzte 6 Monate</div>
+        <div class="dash-anim dash-panel" style="background:var(--white);border-radius:10px;border:1px solid #f0f0f2;overflow:hidden;margin-bottom:1.25rem">
+          <div style="padding:1.25rem 1.25rem .75rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem">
+            <div style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.03em;color:#6b7280">Kaltmieten · letzte 6 Monate</div>
             <div style="display:flex;gap:1rem;font-size:.72rem;color:var(--muted)">
               <span style="display:flex;align-items:center;gap:.35rem"><span style="width:11px;height:11px;border-radius:3px;background:#e5e7eb;display:inline-block"></span> Soll</span>
               <span style="display:flex;align-items:center;gap:.35rem"><span style="width:11px;height:11px;border-radius:3px;background:var(--p);display:inline-block"></span> Bezahlt</span>
             </div>
           </div>
-          <div id="dash-chart" style="padding:1.25rem 1.35rem">
+          <div id="dash-chart" style="padding:0 1.25rem 1.25rem">
             <div style="text-align:center;color:var(--muted);font-size:.82rem;padding:2rem">Wird geladen...</div>
           </div>
         </div>
@@ -998,21 +998,21 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
 
         <!-- ── 2-SPALTIG: Vermietungsstand + Abrechnungs-Status ── -->
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.25rem;align-items:start;margin-bottom:1.25rem">
-          <div class="dash-anim dash-panel" style="background:var(--white);border-radius:12px;border:1px solid #eef0f4;overflow:hidden">
-            <div style="padding:1.1rem 1.35rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
-              <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Vermietungsstand</div>
+          <div class="dash-anim dash-panel" style="background:var(--white);border-radius:10px;border:1px solid #f0f0f2;overflow:hidden">
+            <div style="padding:1.25rem 1.25rem .75rem;display:flex;justify-content:space-between;align-items:center">
+              <div style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.03em;color:#6b7280">Vermietungsstand</div>
               <button onclick="showPage('objekte')" style="font-size:.75rem;color:var(--p);background:none;border:none;cursor:pointer;font-weight:600;font-family:var(--ff)">Objekte →</button>
             </div>
-            <div id="dash-belegung" style="padding:1.25rem 1.35rem">
+            <div id="dash-belegung" style="padding:0 1.25rem 1.25rem">
               <div style="text-align:center;color:var(--muted);font-size:.82rem">Wird geladen...</div>
             </div>
           </div>
-          <div class="dash-anim dash-panel" style="background:var(--white);border-radius:12px;border:1px solid #eef0f4;overflow:hidden">
-            <div style="padding:1.1rem 1.35rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
-              <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Abrechnungs-Status <span id="dash-abr-jahr" style="color:var(--p)"></span></div>
+          <div class="dash-anim dash-panel" style="background:var(--white);border-radius:10px;border:1px solid #f0f0f2;overflow:hidden">
+            <div style="padding:1.25rem 1.25rem .75rem;display:flex;justify-content:space-between;align-items:center">
+              <div style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.03em;color:#6b7280">Abrechnungs-Status <span id="dash-abr-jahr" style="color:var(--p)"></span></div>
               <button onclick="startNeueAbrechnung()" style="font-size:.75rem;color:var(--p);background:none;border:none;cursor:pointer;font-weight:600;font-family:var(--ff)">+ Neu</button>
             </div>
-            <div id="dash-abr-status" style="padding:1.25rem 1.35rem">
+            <div id="dash-abr-status" style="padding:0 1.25rem 1.25rem">
               <div style="text-align:center;color:var(--muted);font-size:.82rem">Wird geladen...</div>
             </div>
           </div>
@@ -8365,21 +8365,30 @@ async function loadDashboardChart(){
   var hasData=months.some(function(m){return (soll[m.key]||0)>0||(ist[m.key]||0)>0;});
   if(!hasData){el.innerHTML='<div style="text-align:center;color:var(--muted);font-size:.82rem;padding:1.5rem">Noch keine Mietverhältnisse mit Kaltmiete – lege welche an, um den Verlauf zu sehen.</div>';return;}
   var fmt=function(v){return Math.round(v).toLocaleString('de-DE')+' €';};
-  el.innerHTML='<div style="display:flex;align-items:flex-end;justify-content:space-between;gap:.6rem;height:172px">'
-    +months.map(function(m){
-      var s=soll[m.key]||0,ii=ist[m.key]||0;
-      var sH=Math.max(s>0?4:0,Math.round((s/max)*150)),iH=Math.max(ii>0?4:0,Math.round((ii/max)*150));
-      return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:.45rem;min-width:0">'
-        +'<div style="font-size:.62rem;font-weight:700;color:var(--text)">'+(s>0?fmt(s):'')+'</div>'
-        +'<div style="position:relative;width:100%;max-width:48px;height:150px;display:flex;align-items:flex-end;justify-content:center">'
-          +'<div class="dchart-bar" style="position:absolute;bottom:0;width:100%;background:#e5e7eb;border-radius:6px 6px 0 0;height:0" data-h="'+sH+'" title="Soll: '+fmt(s)+'"></div>'
-          +'<div class="dchart-bar" style="position:absolute;bottom:0;width:100%;background:var(--p);border-radius:6px 6px 0 0;height:0" data-h="'+iH+'" title="Bezahlt: '+fmt(ii)+'"></div>'
-        +'</div>'
-        +'<div style="font-size:.68rem;color:var(--muted);font-weight:600;text-transform:capitalize">'+m.label+'</div>'
-      +'</div>';
-    }).join('')+'</div>';
+  el.innerHTML=
+    '<div style="position:relative;height:200px">'
+      +'<div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;pointer-events:none">'
+        +'<div style="border-top:1px dashed #f0f0f0"></div><div style="border-top:1px dashed #f0f0f0"></div><div style="border-top:1px dashed #f0f0f0"></div><div style="border-top:1px dashed #f0f0f0"></div><div style="border-top:1px dashed #f0f0f0"></div>'
+      +'</div>'
+      +'<div style="position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:space-around">'
+      +months.map(function(m){
+        var s=soll[m.key]||0,ii=ist[m.key]||0;
+        var sH=Math.max(s>0?3:0,Math.round((s/max)*190)),iH=Math.max(ii>0?3:0,Math.round((ii/max)*190));
+        return '<div style="flex:1;display:flex;align-items:flex-end;justify-content:center;gap:3px;height:100%">'
+          +'<div class="dchart-bar" style="width:18px;background:#e5e7eb;border-radius:4px 4px 0 0;height:0" data-h="'+sH+'" title="Soll: '+fmt(s)+'"></div>'
+          +'<div class="dchart-bar" style="width:18px;background:#7c3aed;border-radius:4px 4px 0 0;height:0" data-h="'+iH+'" title="Bezahlt: '+fmt(ii)+'"></div>'
+        +'</div>';
+      }).join('')
+      +'</div>'
+    +'</div>'
+    +'<div style="display:flex;margin-top:8px">'
+    +months.map(function(m){return '<div style="flex:1;text-align:center;font-size:12px;color:#6b7280;text-transform:capitalize">'+m.label+'</div>';}).join('')
+    +'</div>'
+    +'<div style="display:flex;margin-top:4px">'
+    +months.map(function(m){var ii=ist[m.key]||0;return '<div style="flex:1;text-align:center;font-size:12px;color:#4b5563">'+(ii>0?fmt(ii):'')+'</div>';}).join('')
+    +'</div>';
   var bars=el.querySelectorAll('.dchart-bar');
-  bars.forEach(function(b,i){b.style.transitionDelay=(Math.floor(i/2)*0.05)+'s';});
+  bars.forEach(function(b,i){b.style.transitionDelay=(Math.floor(i/2)*0.04)+'s';});
   requestAnimationFrame(function(){requestAnimationFrame(function(){bars.forEach(function(b){b.style.height=b.getAttribute('data-h')+'px';});});});
 }
 async function loadDashboard(){
@@ -8435,20 +8444,18 @@ async function loadDashboard(){
         belEl.innerHTML='<div style="text-align:center;padding:1rem 0"><div style="font-size:1.5rem;margin-bottom:.4rem">🚪</div><div style="font-size:.82rem;color:var(--muted);margin-bottom:.75rem">Noch keine Einheiten angelegt.</div><button onclick="showPage(\'objekte\')" class="btn-primary" style="font-size:.78rem;padding:.45rem .9rem">Objekte verwalten</button></div>';
       }else{
         belEl.innerHTML=
-          '<div style="display:flex;align-items:center;gap:1.75rem;flex-wrap:wrap">'
-            +'<div style="text-align:center;min-width:96px">'
-              +'<div style="font-size:2.4rem;font-weight:800;color:'+(quote>=80?'#10b981':quote>=50?'#f59e0b':'#ef4444')+';line-height:1">'+quote+'%</div>'
-              +'<div style="font-size:.66rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:.3rem">Vermietet</div>'
+          '<div style="height:12px;background:#f3f4f6;border-radius:999px;overflow:hidden;margin-bottom:1.5rem">'
+            +'<div style="height:100%;background:linear-gradient(90deg,#7c3aed,#a78bfa);width:'+quote+'%;border-radius:999px;transition:width .6s cubic-bezier(.2,.7,.2,1)"></div>'
+          +'</div>'
+          +'<div style="display:flex;align-items:center;justify-content:center;gap:2rem;flex-wrap:wrap">'
+            +'<div style="text-align:center">'
+              +'<div style="font-size:3rem;font-weight:700;color:#7c3aed;line-height:1;margin-bottom:.25rem">'+quote+'%</div>'
+              +'<div style="font-size:.75rem;color:#6b7280;text-transform:uppercase">Vermietet</div>'
             +'</div>'
-            +'<div style="flex:1;min-width:240px">'
-              +'<div style="display:flex;height:12px;border-radius:8px;overflow:hidden;background:#eee;margin-bottom:.95rem">'
-                +'<div style="background:linear-gradient(90deg,#10b981,#34d399);width:'+quote+'%;transition:width .6s cubic-bezier(.2,.7,.2,1)"></div>'
-              +'</div>'
-              +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem">'
-                +'<div style="background:var(--bg);border-radius:10px;padding:.7rem .5rem;text-align:center"><div style="font-size:1.4rem;font-weight:800;color:var(--text)">'+einheitenCount+'</div><div style="font-size:.63rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-top:2px">Einheiten</div></div>'
-                +'<div style="background:#f0fdf4;border-radius:10px;padding:.7rem .5rem;text-align:center"><div style="font-size:1.4rem;font-weight:800;color:#10b981">'+vermietet+'</div><div style="font-size:.63rem;color:#10b981;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-top:2px">Vermietet</div></div>'
-                +'<div style="background:'+(leerstand?'#fffbeb':'#f5f5f5')+';border-radius:10px;padding:.7rem .5rem;text-align:center"><div style="font-size:1.4rem;font-weight:800;color:'+(leerstand?'#f59e0b':'#aaa')+'">'+leerstand+'</div><div style="font-size:.63rem;color:'+(leerstand?'#f59e0b':'#aaa')+';font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-top:2px">Leerstand</div></div>'
-              +'</div>'
+            +'<div style="display:flex;gap:1.5rem">'
+              +'<div style="text-align:center"><div style="font-size:1.5rem;font-weight:700;color:#111827">'+einheitenCount+'</div><div style="font-size:10px;color:#6b7280;text-transform:uppercase">Einheiten</div></div>'
+              +'<div style="text-align:center"><div style="font-size:1.5rem;font-weight:700;color:#7c3aed">'+vermietet+'</div><div style="font-size:10px;color:#6b7280;text-transform:uppercase">Vermietet</div></div>'
+              +'<div style="text-align:center"><div style="font-size:1.5rem;font-weight:700;color:#a78bfa">'+leerstand+'</div><div style="font-size:10px;color:#6b7280;text-transform:uppercase">Leerstand</div></div>'
             +'</div>'
           +'</div>';
       }
@@ -8469,12 +8476,18 @@ async function loadDashboard(){
         absEl.innerHTML='<div style="text-align:center;padding:1rem 0"><div style="font-size:1.5rem;margin-bottom:.4rem">📄</div><div style="font-size:.82rem;color:var(--muted);margin-bottom:.75rem">Noch keine Objekte zum Abrechnen.</div><button onclick="showPage(\'objekte\')" class="btn-primary" style="font-size:.78rem;padding:.45rem .9rem">Objekt anlegen</button></div>';
       }else{
         absEl.innerHTML=
-          '<div style="display:flex;align-items:baseline;gap:.5rem;margin-bottom:.55rem"><span style="font-size:2rem;font-weight:800;color:var(--text);line-height:1">'+done+'</span><span style="font-size:.88rem;color:var(--muted)">von '+objAnz+' Objekten abgerechnet</span></div>'
-          +'<div style="display:flex;height:10px;border-radius:8px;overflow:hidden;background:#eee;margin-bottom:.9rem"><div style="background:linear-gradient(90deg,#6a2d9f,#a855f7);width:'+quote+'%;transition:width .6s cubic-bezier(.2,.7,.2,1)"></div></div>'
+          '<div style="display:flex;align-items:center;gap:.75rem;padding:.75rem 0;border-bottom:1px solid #f0f0f2;margin-bottom:1rem">'
+            +'<span style="font-size:1.875rem;font-weight:700;color:#111827;line-height:1">'+done+'</span>'
+            +'<span style="font-size:.875rem;color:#4b5563">von '+objAnz+' Objekten abgerechnet</span>'
+          +'</div>'
           +(offen>0
-            ?'<div style="display:flex;justify-content:space-between;align-items:center;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:.6rem .85rem"><span style="font-size:.82rem;color:#9a3412;font-weight:600">📌 '+offen+' Objekt'+(offen===1?'':'e')+' offen für '+vj+'</span><button onclick="startNeueAbrechnung()" style="font-size:.74rem;color:#9a3412;background:none;border:none;cursor:pointer;font-weight:700;font-family:var(--ff)">Erstellen →</button></div>'
-            :'<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:.6rem .85rem;font-size:.82rem;color:#166534;font-weight:600;text-align:center">✅ Alle Objekte für '+vj+' abgerechnet</div>')
-          +'<div style="font-size:.72rem;color:var(--muted);margin-top:.75rem">Gesamt '+abrList.length+' abgeschlossene Abrechnung'+(abrList.length===1?'':'en')+'</div>';
+            ?'<div style="background:#fdf2f8;border:1px solid #fce7f3;border-radius:8px;padding:.75rem;display:flex;align-items:flex-start;gap:.5rem;margin-bottom:1rem">'
+               +'<span style="color:#ec4899;flex-shrink:0;line-height:1.2">📈</span>'
+               +'<div style="flex:1;font-size:.875rem;color:#831843;font-weight:500">'+offen+' Objekt'+(offen===1?'':'e')+' offen für '+vj+'</div>'
+               +'<button onclick="startNeueAbrechnung()" style="font-size:.75rem;color:#be185d;background:none;border:none;cursor:pointer;white-space:nowrap;font-family:var(--ff)">Erstellen →</button>'
+             +'</div>'
+            :'<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:.75rem;font-size:.875rem;color:#166534;font-weight:500;text-align:center;margin-bottom:1rem">✅ Alle Objekte für '+vj+' abgerechnet</div>')
+          +'<div style="font-size:.75rem;color:#6b7280">Gesamt '+abrList.length+' abgeschlossene Abrechnung'+(abrList.length===1?'':'en')+'</div>';
       }
     }
 
@@ -10100,7 +10113,7 @@ async function loadObjektStats(objId){
     var vermietQuote=100-leerstandQuote;
     if(el('od-leerstand-count'))el('od-leerstand-count').textContent=leerstandCount+'/'+einh.length+' ('+leerstandQuote+'%)';
     if(el('od-vermiet-quote')){
-      el('od-vermiet-quote').innerHTML='<div style="display:flex;justify-content:space-between;font-size:.78rem;margin-bottom:.35rem"><span style="color:var(--muted)">Vermietungsquote</span><strong style="color:'+(vermietQuote>=80?'#1a7a4a':vermietQuote>=50?'#e67e22':'#c0392b')+'">'+vermietQuote+'%</strong></div><div style="height:8px;background:#eee;border-radius:4px;overflow:hidden"><div style="height:100%;width:'+vermietQuote+'%;background:'+(vermietQuote>=80?'#1a7a4a':vermietQuote>=50?'#e67e22':'#c0392b')+'"></div></div><div style="font-size:.72rem;color:var(--muted);margin-top:.35rem">'+aktive.length+' von '+einh.length+' Einheiten vermietet</div>';
+      el('od-vermiet-quote').innerHTML='<div style="display:flex;justify-content:space-between;font-size:.78rem;margin-bottom:.35rem"><span style="color:var(--muted)">Vermietungsquote</span><strong style="color:'+(vermietQuote>=80?'#1a7a4a':vermietQuote>=50?'#e67e22':'#c0392b')+'">'+vermietQuote+'%</strong></div><div style="height:8px;background:#eee;border-radius:4px;overflow:hidden"><div style="height:100%;width:'+vermietQuote+'%;background:'+(vermietQuote>=80?'#1a7a4a':vermietQuote>=50?'#e67e22':'#c0392b')+'"></div></div><div style="font-size:.75rem;color:#6b7280;margin-top:.25rem">'+aktive.length+' von '+einh.length+' Einheiten vermietet</div>';
     }
   }catch(e){console.warn('loadObjektStats error:',e);}
 }

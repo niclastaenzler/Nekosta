@@ -1509,6 +1509,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                   <button class="btn-primary" onclick="openKontoModal()">➕ Konto anlegen</button>
                   <button class="btn-secondary" onclick="seedKontenrahmen('skr03')">📥 SKR03-Vorlage</button>
                   <button class="btn-secondary" onclick="seedKontenrahmen('skr04')">📥 SKR04-Vorlage</button>
+                  <button class="btn-secondary" onclick="openBksModal()">⚙ Buchungsschlüssel</button>
                   <span id="buha-konten-count" style="font-size:.78rem;color:var(--muted);margin-left:auto"></span>
                 </div>
                 <div id="buha-konten" style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow-x:auto"></div>
@@ -2756,6 +2757,24 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
         </div>
         <div id="ug-list"></div>
         <div style="display:flex;gap:.65rem;margin-top:1.2rem"><button class="btn-secondary" style="flex:1" onclick="closeUgModal()">Schließen</button></div>
+      </div>
+    </div>
+
+    <!-- BUCHUNGSSCHLÜSSEL MODAL -->
+    <div id="bks-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:700;align-items:center;justify-content:center;padding:1rem">
+      <div style="background:#fff;border-radius:14px;padding:1.6rem;width:100%;max-width:560px;max-height:90vh;overflow-y:auto">
+        <h3 style="font-size:.98rem;font-weight:700;margin-bottom:.3rem">⚙ Buchungsschlüssel</h3>
+        <p style="font-size:.8rem;color:var(--muted);margin-bottom:1rem">Steuer-/Buchungsschlüssel steuern automatisch USt/Vorsteuer-Satz und das Steuerkonto. Standard-Schlüssel kannst du überschreiben oder eigene anlegen.</p>
+        <div style="display:grid;grid-template-columns:60px 1fr 110px 70px 90px auto;gap:.4rem;align-items:end;margin-bottom:.8rem">
+          <div><label style="font-size:.62rem;font-weight:700;color:var(--muted);text-transform:uppercase">Nr.</label><input type="text" id="bks-nr" placeholder="1" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:7px;padding:.4rem;font-size:.85rem;font-family:Arial,sans-serif;outline:none"></div>
+          <div><label style="font-size:.62rem;font-weight:700;color:var(--muted);text-transform:uppercase">Bezeichnung</label><input type="text" id="bks-bez" placeholder="z. B. Vorsteuer 19 %" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:7px;padding:.4rem;font-size:.85rem;font-family:Arial,sans-serif;outline:none"></div>
+          <div><label style="font-size:.62rem;font-weight:700;color:var(--muted);text-transform:uppercase">Art</label><select id="bks-art" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:7px;padding:.4rem;font-size:.82rem;font-family:Arial,sans-serif;outline:none"><option value="none">ohne</option><option value="vorsteuer">Vorsteuer</option><option value="umsatzsteuer">Umsatzsteuer</option></select></div>
+          <div><label style="font-size:.62rem;font-weight:700;color:var(--muted);text-transform:uppercase">Satz %</label><input type="text" inputmode="decimal" id="bks-satz" placeholder="19" oninput="sanitizeNumInput(this)" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:7px;padding:.4rem;font-size:.85rem;font-family:Arial,sans-serif;outline:none"></div>
+          <div><label style="font-size:.62rem;font-weight:700;color:var(--muted);text-transform:uppercase">Steuerkonto</label><input type="text" id="bks-konto" placeholder="1576" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:7px;padding:.4rem;font-size:.85rem;font-family:Arial,sans-serif;outline:none"></div>
+          <div><button class="btn-primary" style="padding:.45rem .7rem" onclick="saveBks()">+ Speichern</button></div>
+        </div>
+        <div id="bks-list"></div>
+        <div style="display:flex;gap:.65rem;margin-top:1.2rem"><button class="btn-secondary" style="flex:1" onclick="closeBksModal()">Schließen</button></div>
       </div>
     </div>
 
@@ -8004,6 +8023,60 @@ function deleteUg(id){
       await logAudit('untergemeinschaft_geloescht','untergemeinschaft',id,{name:u.name});
       if(buha.ug===id)buha.ug='';
       await ladeBuchhaltung(buha.objektId); renderUgList(); showToast('🗑 Gelöscht');
+    }},{label:'Abbrechen',style:'background:var(--bg);color:var(--muted)',onClick:function(){}}]});
+}
+
+// ── BUCHUNGSSCHLÜSSEL-VERWALTUNG (frei konfigurierbar) ──
+function openBksModal(){ renderBksList(); document.getElementById('bks-modal').style.display='flex'; }
+function closeBksModal(){document.getElementById('bks-modal').style.display='none';}
+function renderBksList(){
+  var c=document.getElementById('bks-list'); if(!c)return;
+  var custom={}; (buha.steuer||[]).forEach(function(s){custom[s.schluessel]=s;});
+  var artLbl={none:'ohne',vorsteuer:'Vorsteuer',umsatzsteuer:'Umsatzsteuer'};
+  c.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:.82rem"><thead><tr style="border-bottom:2px solid var(--border)">'
+    +['Schlüssel','Bezeichnung','Art','Satz','Steuerkonto','Quelle',''].map(function(h){return '<th style="text-align:left;padding:.4rem .5rem;font-size:.62rem;text-transform:uppercase;color:var(--muted)">'+h+'</th>';}).join('')
+    +'</tr></thead><tbody>'+buhaSchluesselListe().map(function(s){
+      var isCustom=!!custom[s.schluessel];
+      return '<tr style="border-bottom:1px solid var(--border)">'
+        +'<td style="padding:.4rem .5rem;font-weight:700">'+escapeHtml(s.schluessel)+'</td>'
+        +'<td style="padding:.4rem .5rem">'+escapeHtml(s.bezeichnung)+'</td>'
+        +'<td style="padding:.4rem .5rem">'+(artLbl[s.art]||s.art)+'</td>'
+        +'<td style="padding:.4rem .5rem">'+(s.satz>0?s.satz+' %':'–')+'</td>'
+        +'<td style="padding:.4rem .5rem;font-variant-numeric:tabular-nums">'+escapeHtml(s.steuerkonto||'–')+'</td>'
+        +'<td style="padding:.4rem .5rem"><span style="font-size:.62rem;font-weight:700;padding:1px 6px;border-radius:6px;background:'+(isCustom?'#e9f9f0;color:#1a7a4a':'#eef2ff;color:#1565c0')+'">'+(isCustom?'eigen':'Standard')+'</span></td>'
+        +'<td style="padding:.4rem .5rem;text-align:right">'+(isCustom?'<button class="btn-small" style="font-size:.62rem;padding:2px 7px;background:#fbe9e7;color:#c0392b" onclick="deleteBks(\''+custom[s.schluessel].id+'\')">🗑</button>':'<button class="btn-small" style="font-size:.62rem;padding:2px 7px" onclick="bksEditDefault(\''+escapeHtml(s.schluessel)+'\')">✏️</button>')+'</td>'
+      +'</tr>';
+    }).join('')+'</tbody></table>';
+}
+function bksEditDefault(sl){ // Standard in Eingabefelder laden, um ihn zu überschreiben
+  var s=buhaSchluesselDef(sl);
+  document.getElementById('bks-nr').value=s.schluessel;
+  document.getElementById('bks-bez').value=s.bezeichnung;
+  document.getElementById('bks-art').value=s.art;
+  document.getElementById('bks-satz').value=s.satz||'';
+  document.getElementById('bks-konto').value=s.steuerkonto||'';
+  document.getElementById('bks-nr').focus();
+}
+async function saveBks(){
+  var nr=(document.getElementById('bks-nr').value||'').trim();
+  if(!nr){showToast('Bitte eine Schlüssel-Nummer angeben.');return;}
+  var row={schluessel:nr,bezeichnung:(document.getElementById('bks-bez').value||'').trim()||('Schlüssel '+nr),
+    art:document.getElementById('bks-art').value,satz:parseNum(document.getElementById('bks-satz').value),
+    steuerkonto:(document.getElementById('bks-konto').value||'').trim()||null};
+  // existierenden eigenen Schlüssel mit gleicher Nummer aktualisieren, sonst neu
+  var ex=(buha.steuer||[]).find(function(s){return s.schluessel===nr;});
+  var res = ex ? await sb.from('weg_steuerschluessel').update(row).eq('id',ex.id)
+              : await sb.from('weg_steuerschluessel').insert(Object.assign({user_id:currentUser.id},row));
+  if(res.error){showToast('❌ '+res.error.message);return;}
+  ['bks-nr','bks-bez','bks-satz','bks-konto'].forEach(function(id){document.getElementById(id).value='';});
+  await buhaReload(); renderBksList(); showToast('✅ Buchungsschlüssel gespeichert');
+}
+function deleteBks(id){
+  appConfirm({icon:'🗑',title:'Schlüssel löschen?',message:'Eigenen Buchungsschlüssel entfernen? Der Standard (falls vorhanden) gilt dann wieder.',
+    buttons:[{label:'🗑 Löschen',style:'background:#c0392b;color:#fff',onClick:async function(){
+      var {error}=await sb.from('weg_steuerschluessel').delete().eq('id',id);
+      if(error){showToast('❌ '+error.message);return;}
+      await buhaReload(); renderBksList(); showToast('🗑 Gelöscht');
     }},{label:'Abbrechen',style:'background:var(--bg);color:var(--muted)',onClick:function(){}}]});
 }
 async function renderBuhaAudit(){

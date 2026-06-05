@@ -3527,7 +3527,7 @@ function showPage(name){
   }
   if(name==='auftraege'){loadAuftraege();}
   if(name==='dokumente'){loadDokumente();}
-  if(name==='buchhaltung'){loadBuchhaltung();}
+  if(name==='buchhaltung'){ladeBuchhaltung();}
 }
 
 // Check if there's unsaved work in the wizard
@@ -7562,7 +7562,7 @@ async function deleteFeedback(id){
 var buha={objektId:null, jahr:null, konten:[], buchungen:[]};
 function buhaEuro(n){return (parseFloat(n)||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';}
 
-async function loadBuchhaltung(){
+async function ladeBuchhaltung(){
   if(!currentUser)return;
   // Tastatursteuerung (einmalig): Enter speichert (Betragsfeld) bzw. springt zum nächsten Feld
   if(!buha._kbReady){buha._kbReady=true;

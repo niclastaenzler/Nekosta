@@ -10,7 +10,7 @@
   --p:#7c3aed;--p-mid:#6d28d9;--p-light:#ede9fe;--p-accent:#a78bfa;
   --bg:#f8f5fc;--white:#fff;--text:#1a1a1f;--muted:#6b6570;--border:#ddd8e8;
   --danger:#c0392b;--danger-bg:#fdf0ef;--success:#1a7a4a;--success-bg:#eaf7ef;
-  --warn:#e67e22;--warn-bg:#fef5ec;--r:8px;--sidebar:220px;--header-h:52px;
+  --warn:#e67e22;--warn-bg:#fef5ec;--r:8px;--sidebar:200px;--header-h:52px;
   --ff:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
 }
 body{font-family:var(--ff);background:var(--bg);color:var(--text);font-size:15px;line-height:1.5;min-height:100vh;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
@@ -65,17 +65,22 @@ body{font-family:var(--ff);background:var(--bg);color:var(--text);font-size:15px
  .sidebar{width:var(--sidebar);background:#f8f7fc;border-right:1px solid var(--border);padding:1.25rem 0 0;position:fixed;top:var(--header-h);left:0;height:calc(100vh - var(--header-h));overflow:hidden;z-index:100;flex-shrink:0;transition:width .2s;display:flex;flex-direction:column}
  #admin-menu,#kunden-menu{flex:1 1 auto;min-height:0;overflow-y:auto;padding-bottom:.5rem}
  .sidebar-footer{flex:0 0 auto;border-top:1px solid var(--border);padding:.4rem 0 .6rem;background:inherit}
- .sidebar-section{font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);padding:.6rem 1rem .2rem;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;margin-top:.2rem}
+ .sidebar-section{font-size:.625rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280;padding:.7rem .9rem .35rem;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;margin-top:.2rem}
  .sidebar-section:hover{color:var(--p)}
  .sg-arrow{font-size:.58rem;transition:transform .2s;opacity:.4;flex-shrink:0}
  .sg-arrow.open{transform:rotate(0deg)}
  .sg-arrow.closed{transform:rotate(-90deg)}
  .sg-content{overflow:hidden;max-height:500px;transition:max-height .2s ease,overflow .2s}
- .nav-item{display:flex;align-items:center;gap:.6rem;margin:1px .55rem;padding:.5rem .7rem;font-size:.83rem;font-weight:500;color:#4b4762;cursor:pointer;transition:background .12s,color .12s;border-radius:9px;user-select:none;white-space:nowrap}
- .nav-item:hover{background:#eceaf6;color:var(--p)}
- .nav-item.active{background:var(--p);color:#fff;font-weight:700;box-shadow:0 4px 12px rgba(124,58,237,.28)}
+ .nav-item{display:flex;align-items:center;gap:.6rem;margin:1px .5rem;padding:.5rem .65rem;font-size:.875rem;font-weight:500;color:#374151;cursor:pointer;transition:background .12s,color .12s;border-radius:8px;user-select:none;line-height:1.25}
+ .nav-item:hover{background:#f3f4f6;color:#374151}
+ .nav-item.active{background:var(--p);color:#fff;font-weight:500}
  .nav-item.active .ni-icon{color:#fff}
- .nav-item .ni-icon{font-size:.88rem;width:17px;text-align:center;flex-shrink:0}
+ .nav-item .ni-icon{color:#6b7280}
+ .ni-icon{width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+ .ni-icon svg{width:18px;height:18px;display:block;stroke-width:2}
+ .dash-kpi-ic svg{width:22px;height:22px;display:block;stroke-width:2}
+ .mini-ic{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;flex-shrink:0}
+ .mini-ic svg{width:16px;height:16px;display:block;stroke-width:2}
  .nav-badge{margin-left:auto;background:var(--p-light);color:var(--p);font-size:.58rem;font-weight:700;padding:1px 5px;border-radius:8px}
  .sidebar-divider{height:1px;background:var(--border);margin:.35rem .85rem}
 .main-content{flex:1;min-width:0;overflow-x:hidden;background:#f9fafb}
@@ -831,63 +836,63 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
   <div class="sidebar">
     <div id="admin-menu" style="display:none">
       <!-- Dashboard -->
-      <div class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard" style="padding:.65rem 1rem;margin:.25rem .5rem;border-radius:8px;border-left:none"><span class="ni-icon">📊</span><strong>Dashboard</strong></div>
+      <div class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard"><span class="ni-icon" data-icon="home"></span>Dashboard</div>
       <div class="sidebar-divider"></div>
 
       <!-- VERWALTUNG -->
       <div class="sidebar-section" role="button" onclick="toggleSidebarGroup('sg-verwaltung')">VERWALTUNG <span class="sg-arrow open" id="arr-verwaltung">▾</span></div>
       <div class="sg-content" id="sg-verwaltung">
-        <div class="nav-item" onclick="showPage('objekte')" id="nav-objekte"><span class="ni-icon">🏢</span>Objekte</div>
-        <div class="nav-item" onclick="showPage('weg')" id="nav-weg"><span class="ni-icon">🏛️</span>WEG-Verwaltung</div>
-        <div class="nav-item" onclick="showPage('kontakte')" id="nav-kontakte"><span class="ni-icon">👥</span>Kontakte</div>
-        <div class="nav-item" onclick="showPage('dokumente')" id="nav-dokumente"><span class="ni-icon">📁</span>Dokumente</div>
+        <div class="nav-item" onclick="showPage('objekte')" id="nav-objekte"><span class="ni-icon" data-icon="building2"></span>Objekte</div>
+        <div class="nav-item" onclick="showPage('weg')" id="nav-weg"><span class="ni-icon" data-icon="landmark"></span>WEG-Verwaltung</div>
+        <div class="nav-item" onclick="showPage('kontakte')" id="nav-kontakte"><span class="ni-icon" data-icon="users"></span>Kontakte</div>
+        <div class="nav-item" onclick="showPage('dokumente')" id="nav-dokumente"><span class="ni-icon" data-icon="filetext"></span>Dokumente</div>
       </div>
       <div class="sidebar-divider"></div>
 
       <!-- ABRECHNUNG (Erstellen + Verwalten) -->
       <div class="sidebar-section" role="button" onclick="toggleSidebarGroup('sg-erstellen')">ABRECHNUNG <span class="sg-arrow open" id="arr-erstellen">▾</span></div>
       <div class="sg-content" id="sg-erstellen">
-        <div class="nav-item" onclick="showPage('archiv')" id="nav-archiv"><span class="ni-icon">📄</span>Abrechnung</div>
-        <div class="nav-item" onclick="showPage('anschreiben')" id="nav-anschreiben"><span class="ni-icon">✉️</span>Anschreiben</div>
-        <div class="nav-item" onclick="showPage('auftraege')" id="nav-auftraege"><span class="ni-icon">🛠</span>Aufträge</div>
-        <div class="nav-item" onclick="showPage('mahnwesen')" id="nav-mahnwesen"><span class="ni-icon">⚠️</span>Offene Posten <span style="font-size:.58rem;font-weight:700;background:#fff3cd;color:#856404;padding:1px 6px;border-radius:7px;margin-left:.35rem">Test</span></div>
+        <div class="nav-item" onclick="showPage('archiv')" id="nav-archiv"><span class="ni-icon" data-icon="receipt"></span>Abrechnung</div>
+        <div class="nav-item" onclick="showPage('anschreiben')" id="nav-anschreiben"><span class="ni-icon" data-icon="mail"></span>Anschreiben</div>
+        <div class="nav-item" onclick="showPage('auftraege')" id="nav-auftraege"><span class="ni-icon" data-icon="clipboard"></span>Aufträge</div>
+        <div class="nav-item" onclick="showPage('mahnwesen')" id="nav-mahnwesen"><span class="ni-icon" data-icon="alertcircle"></span>Offene Posten <span style="font-size:.58rem;font-weight:700;background:#fff3cd;color:#856404;padding:1px 6px;border-radius:7px;margin-left:.35rem">Test</span></div>
       </div>
       <div class="sidebar-divider"></div>
 
       <!-- SYSTEM -->
       <div class="sidebar-section" role="button" onclick="toggleSidebarGroup('sg-sys')">SYSTEM <span class="sg-arrow open" id="arr-sys">▾</span></div>
       <div class="sg-content" id="sg-sys">
-        <div class="nav-item" onclick="showPage('adminpanel')" id="nav-adminpanel"><span class="ni-icon">🔧</span>Admin-Panel</div>
-        <div class="nav-item" onclick="showPage('tarife')" id="nav-tarife"><span class="ni-icon">💎</span>Tarife</div>
+        <div class="nav-item" onclick="showPage('adminpanel')" id="nav-adminpanel"><span class="ni-icon" data-icon="settings"></span>Admin-Panel</div>
+        <div class="nav-item" onclick="showPage('tarife')" id="nav-tarife"><span class="ni-icon" data-icon="creditcard"></span>Tarife</div>
       </div>
     </div>
     <div id="kunden-menu" style="display:none">
-      <div class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard-k" style="padding:.65rem 1rem;margin:.25rem .5rem;border-radius:8px;border-left:none"><span class="ni-icon">📊</span><strong>Dashboard</strong></div>
+      <div class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard-k"><span class="ni-icon" data-icon="home"></span>Dashboard</div>
       <div class="sidebar-divider"></div>
       <div class="sidebar-section" role="button" onclick="toggleSidebarGroup('sg-k-verw')">VERWALTUNG <span class="sg-arrow open" id="arr-k-verw">▾</span></div>
       <div class="sg-content" id="sg-k-verw">
-        <div class="nav-item" onclick="showPage('objekte')" id="nav-objekte-k"><span class="ni-icon">🏢</span>Objekte</div>
-        <div class="nav-item" onclick="showPage('kontakte')" id="nav-kontakte-k"><span class="ni-icon">👥</span>Kontakte</div>
-        <div class="nav-item" onclick="showPage('dokumente')" id="nav-dokumente-k"><span class="ni-icon">📁</span>Dokumente</div>
+        <div class="nav-item" onclick="showPage('objekte')" id="nav-objekte-k"><span class="ni-icon" data-icon="building2"></span>Objekte</div>
+        <div class="nav-item" onclick="showPage('kontakte')" id="nav-kontakte-k"><span class="ni-icon" data-icon="users"></span>Kontakte</div>
+        <div class="nav-item" onclick="showPage('dokumente')" id="nav-dokumente-k"><span class="ni-icon" data-icon="filetext"></span>Dokumente</div>
       </div>
       <div class="sidebar-divider"></div>
       <div class="sidebar-section" role="button" onclick="toggleSidebarGroup('sg-k-erst')">ERSTELLEN <span class="sg-arrow open" id="arr-k-erst">▾</span></div>
       <div class="sg-content" id="sg-k-erst">
-        <div class="nav-item" onclick="showPage('abrechnung')" id="nav-tool-k"><span class="ni-icon">📄</span>Abrechnung</div>
-        <div class="nav-item" onclick="showPage('auftraege')" id="nav-auftraege-k"><span class="ni-icon">🛠</span>Aufträge</div>
-        <div class="nav-item" style="opacity:.4;cursor:not-allowed;pointer-events:none"><span class="ni-icon">✉️</span>Anschreiben<span class="nav-badge" style="background:#eee;color:#aaa">Bald</span></div>
+        <div class="nav-item" onclick="showPage('abrechnung')" id="nav-tool-k"><span class="ni-icon" data-icon="receipt"></span>Abrechnung</div>
+        <div class="nav-item" onclick="showPage('auftraege')" id="nav-auftraege-k"><span class="ni-icon" data-icon="clipboard"></span>Aufträge</div>
+        <div class="nav-item" style="opacity:.4;cursor:not-allowed;pointer-events:none"><span class="ni-icon" data-icon="mail"></span>Anschreiben<span class="nav-badge" style="background:#eee;color:#aaa">Bald</span></div>
       </div>
       <div class="sidebar-divider"></div>
       <div class="sidebar-section" role="button" onclick="toggleSidebarGroup('sg-k-abr')">ABRECHNUNGEN <span class="sg-arrow open" id="arr-k-abr">▾</span></div>
       <div class="sg-content" id="sg-k-abr">
-        <div class="nav-item" onclick="showPage('kunden')" id="nav-kunden"><span class="ni-icon">🗂</span>Alle Abrechnungen</div>
+        <div class="nav-item" onclick="showPage('kunden')" id="nav-kunden"><span class="ni-icon" data-icon="files"></span>Alle Abrechnungen</div>
       </div>
       <div class="sidebar-divider"></div>
-      <div class="nav-item" onclick="showPage('tarife')" id="nav-tarife-k"><span class="ni-icon">💎</span>Tarife</div>
+      <div class="nav-item" onclick="showPage('tarife')" id="nav-tarife-k"><span class="ni-icon" data-icon="creditcard"></span>Tarife</div>
     </div>
     <!-- STICKY FOOTER: Mein Profil (immer unten sichtbar) -->
     <div class="sidebar-footer">
-      <div class="nav-item" onclick="showPage('einstellungen')" id="nav-einstellungen"><span class="ni-icon">👤</span>Mein Profil</div>
+      <div class="nav-item" onclick="showPage('einstellungen')" id="nav-einstellungen"><span class="ni-icon" data-icon="user"></span>Mein Profil</div>
       <div style="padding:.25rem 1.15rem 0"><span onclick="showPage('impressum')" id="nav-impressum" style="font-size:.66rem;color:var(--muted);cursor:pointer">Impressum &amp; Rechtliches</span></div>
     </div>
   </div>
@@ -909,11 +914,11 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
           <div style="display:flex;gap:.75rem;flex-wrap:wrap">
             <button onclick="startNeueAbrechnung()"
               style="display:flex;align-items:center;gap:.5rem;padding:.5rem 1rem;font-size:.875rem;font-weight:500;border-radius:8px;background:#7c3aed;color:#fff;border:none;cursor:pointer;font-family:var(--ff)">
-              <span style="font-size:1rem">📄</span> Neue Abrechnung
+              <span class="mini-ic" data-icon="filetext"></span> Neue Abrechnung
             </button>
             <button onclick="showPage('objekte')"
               style="display:flex;align-items:center;gap:.5rem;padding:.5rem 1rem;font-size:.875rem;font-weight:500;border-radius:8px;background:#f3f4f6;color:#374151;border:none;cursor:pointer;font-family:var(--ff)">
-              <span style="font-size:1rem">🏢</span> Objekte verwalten
+              <span class="mini-ic" data-icon="building2"></span> Objekte verwalten
             </button>
           </div>
         </div>
@@ -929,7 +934,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                 <div style="font-size:1.875rem;font-weight:700;color:#111827;line-height:1.2" id="dash-kpi-objekte">–</div>
                 <div style="font-size:.75rem;color:#6b7280;margin-top:.25rem" id="dash-kpi-objekte-sub">wird geladen</div>
               </div>
-              <div class="dash-kpi-ic" style="background:var(--p-light);color:var(--p)">🏢</div>
+              <div class="dash-kpi-ic" data-icon="building2" style="background:var(--p-light);color:var(--p)"></div>
             </div>
           </div>
 
@@ -941,7 +946,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                 <div style="font-size:1.875rem;font-weight:700;color:#111827;line-height:1.2" id="dash-kpi-einheiten">–</div>
                 <div style="font-size:.75rem;color:#6b7280;margin-top:.25rem" id="dash-kpi-einheiten-sub">wird geladen</div>
               </div>
-              <div class="dash-kpi-ic" style="background:#e4f7ee;color:#10b981">🚪</div>
+              <div class="dash-kpi-ic" data-icon="dooropen" style="background:#e4f7ee;color:#10b981"></div>
             </div>
           </div>
 
@@ -953,7 +958,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                 <div style="font-size:1.625rem;font-weight:700;color:#111827;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="dash-kpi-kaltmiete">–</div>
                 <div style="font-size:.75rem;color:#6b7280;margin-top:.25rem" id="dash-kpi-kaltmiete-sub">aktive Mietverhältnisse</div>
               </div>
-              <div class="dash-kpi-ic" style="background:#fef3da;color:#e0900b">💶</div>
+              <div class="dash-kpi-ic" data-icon="euro" style="background:#fef3da;color:#e0900b"></div>
             </div>
           </div>
 
@@ -965,7 +970,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                 <div style="font-size:1.875rem;font-weight:700;line-height:1.2;color:#111827" id="dash-kpi-weg">–</div>
                 <div style="font-size:.75rem;color:#6b7280;margin-top:.25rem" id="dash-kpi-weg-sub">in Verwaltung</div>
               </div>
-              <div class="dash-kpi-ic" style="background:var(--p-light);color:var(--p)">🏛️</div>
+              <div class="dash-kpi-ic" data-icon="landmark" style="background:var(--p-light);color:var(--p)"></div>
             </div>
           </div>
 
@@ -8334,6 +8339,32 @@ function dashCountUp(id,target,opts){
   function step(ts){if(!t0)t0=ts;var p=Math.min((ts-t0)/dur,1);var e=1-Math.pow(1-p,3);el.textContent=fmt(target*e);if(p<1)requestAnimationFrame(step);else{el.textContent=fmt(target);dashFit(el);}}
   requestAnimationFrame(step);
 }
+// ── ICON-SYSTEM (Lucide-Linien-Icons als Inline-SVG, ersetzt Emojis) ──
+var _ic=function(p){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+p+'</svg>';};
+var LICON={
+ home:_ic('<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>'),
+ building2:_ic('<path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/>'),
+ building:_ic('<rect width="16" height="20" x="4" y="2" rx="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M12 14h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/>'),
+ landmark:_ic('<line x1="3" x2="21" y1="22" y2="22"/><line x1="6" x2="6" y1="18" y2="11"/><line x1="10" x2="10" y1="18" y2="11"/><line x1="14" x2="14" y1="18" y2="11"/><line x1="18" x2="18" y1="18" y2="11"/><polygon points="12 2 20 7 4 7"/>'),
+ users:_ic('<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'),
+ filetext:_ic('<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/>'),
+ files:_ic('<path d="M15.5 2H8.6c-.4 0-.8.2-1.1.5-.3.3-.5.7-.5 1.1v12.8c0 .4.2.8.5 1.1.3.3.7.5 1.1.5h9.8c.4 0 .8-.2 1.1-.5.3-.3.5-.7.5-1.1V6.5L15.5 2z"/><path d="M3 7.6v12.8c0 .4.2.8.5 1.1.3.3.7.5 1.1.5h9.8"/><path d="M15 2v5h5"/>'),
+ receipt:_ic('<path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17.5v-11"/>'),
+ mail:_ic('<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>'),
+ clipboard:_ic('<rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/>'),
+ alertcircle:_ic('<circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>'),
+ settings:_ic('<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>'),
+ creditcard:_ic('<rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/>'),
+ user:_ic('<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>'),
+ dooropen:_ic('<path d="M13 4h3a2 2 0 0 1 2 2v14"/><path d="M2 20h3"/><path d="M13 20h9"/><path d="M10 12v.01"/><path d="M13 4.562v16.157a1 1 0 0 1-1.242.97L5 20V5.562a2 2 0 0 1 1.515-1.94l4-1A2 2 0 0 1 13 4.561Z"/>'),
+ euro:_ic('<path d="M4 10h12"/><path d="M4 14h9"/><path d="M19 6a7.7 7.7 0 0 0-5.2-2A7.9 7.9 0 0 0 6 12c0 4.4 3.5 8 7.8 8 2 0 3.8-.8 5.2-2"/>'),
+ trendingup:_ic('<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>'),
+ arrowright:_ic('<line x1="5" x2="19" y1="12" y2="12"/><polyline points="12 5 19 12 12 19"/>')
+};
+function applyIcons(root){
+  try{(root||document).querySelectorAll('[data-icon]').forEach(function(el){var n=el.getAttribute('data-icon');if(LICON[n]&&!el.firstChild){el.innerHTML=LICON[n];}});}catch(e){}
+}
+if(document.readyState!=='loading'){applyIcons();}else{document.addEventListener('DOMContentLoaded',function(){applyIcons();});}
 // Mieteinnahmen-Diagramm (Soll/Ist) der letzten 6 Monate
 async function loadDashboardChart(){
   var el=document.getElementById('dash-chart');if(!el)return;
@@ -8482,7 +8513,7 @@ async function loadDashboard(){
           +'</div>'
           +(offen>0
             ?'<div style="background:#fdf2f8;border:1px solid #fce7f3;border-radius:8px;padding:.75rem;display:flex;align-items:flex-start;gap:.5rem;margin-bottom:1rem">'
-               +'<span style="color:#ec4899;flex-shrink:0;line-height:1.2">📈</span>'
+               +'<span class="mini-ic" style="color:#ec4899;margin-top:1px">'+LICON.trendingup+'</span>'
                +'<div style="flex:1;font-size:.875rem;color:#831843;font-weight:500">'+offen+' Objekt'+(offen===1?'':'e')+' offen für '+vj+'</div>'
                +'<button onclick="startNeueAbrechnung()" style="font-size:.75rem;color:#be185d;background:none;border:none;cursor:pointer;white-space:nowrap;font-family:var(--ff)">Erstellen →</button>'
              +'</div>'

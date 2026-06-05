@@ -760,11 +760,11 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
 
 <div class="header">
   <div style="display:flex;align-items:center;gap:.6rem">
-    <button id="nav-toggle" onclick="toggleSidebar()" aria-label="Menü öffnen" style="background:#f3f4f6;border:1px solid var(--border);color:#4b4762;border-radius:8px;width:38px;height:38px;cursor:pointer;font-size:1.2rem;align-items:center;justify-content:center;flex-shrink:0;padding:0">☰</button>
+    <button id="nav-toggle" onclick="toggleSidebar()" aria-label="Menü öffnen" style="background:#f3f4f6;border:1px solid var(--border);color:#4b4762;border-radius:8px;width:38px;height:38px;cursor:pointer;font-size:1.2rem;align-items:center;justify-content:center;flex-shrink:0;padding:0;display:none"><span class="mini-ic" data-icon="menu"></span></button>
     <div onclick="showPage('dashboard')" title="NEKOSTA" style="cursor:pointer;font-size:1.3rem;font-weight:800;letter-spacing:-.01em;color:var(--text);line-height:1;white-space:nowrap">NEKOSTA<span style="color:var(--p)">.</span></div>
   </div>
   <div id="global-search-wrap" style="position:relative;flex:1;max-width:380px;margin:0 1rem">
-    <span style="position:absolute;left:.7rem;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:.9rem;pointer-events:none">🔍</span>
+    <span class="mini-ic" data-icon="search" style="position:absolute;left:.7rem;top:50%;transform:translateY(-50%);color:#9ca3af;pointer-events:none"></span>
     <input id="global-search" type="text" autocomplete="off" placeholder="Suchen: Objekte, Kontakte, Abrechnungen…" oninput="globalSearch(this.value)" onfocus="if(this.value.trim().length>1)globalSearch(this.value)" onkeydown="if(event.key==='Escape'){closeGlobalSearch();this.blur();}"
       style="width:100%;background:#f3f4f6;border:1px solid var(--border);color:var(--text);border-radius:9px;padding:.5rem .75rem .5rem 2.1rem;font-size:.85rem;font-family:var(--ff);outline:none">
     <div id="global-search-results" style="display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;background:var(--white);color:var(--text);border:1px solid var(--border);border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.18);max-height:65vh;overflow-y:auto;z-index:400;padding:.35rem 0"></div>
@@ -821,7 +821,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
       <div class="captcha-box">
         <span class="q" id="captcha-q"></span>
         <input type="number" id="captcha-a" placeholder="?">
-        <button class="captcha-refresh" onclick="newCaptcha()">🔄</button>
+        <button class="captcha-refresh" onclick="newCaptcha()"><span class="mini-ic" data-icon="refresh"></span></button>
         <span style="font-size:.7rem;color:var(--muted)">Ich bin kein Roboter</span>
       </div>
       <button class="btn-login" onclick="doRegister()">Konto erstellen</button>
@@ -1332,7 +1332,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                 <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.65rem">Notiz</div>
                 <textarea id="od-notiz-input" placeholder="Interne Anmerkungen zum Objekt..." style="border:1px solid var(--border);border-radius:8px;padding:.6rem .75rem;font-size:.84rem;font-family:var(--ff);width:100%;min-height:80px;resize:vertical;outline:none;background:var(--bg);box-sizing:border-box"></textarea>
                 <div style="display:flex;align-items:center;gap:.6rem;margin-top:.5rem">
-                  <button class="btn-small" onclick="saveObjektNotiz()">💾 Speichern</button>
+                  <button class="btn-small" onclick="saveObjektNotiz()"><span class="btn-ic" data-icon="save"></span> Speichern</button>
                   <span id="od-notiz-saved" style="display:none;font-size:.72rem;color:var(--success)">✅ Gespeichert</span>
                 </div>
               </div>
@@ -1369,7 +1369,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                 </div>
               </div>
               <div style="display:flex;gap:.65rem">
-                <button class="btn-primary" onclick="saveBankdaten()" style="font-size:.82rem">💾 Speichern</button>
+                <button class="btn-primary" onclick="saveBankdaten()" style="font-size:.82rem"><span class="btn-ic" data-icon="save"></span> Speichern</button>
                 <button class="btn-secondary" onclick="startAbrechnungFuerAktivesObjekt()" style="font-size:.82rem">📄 Abrechnung erstellen</button>
               </div>
               <!-- Individuelle Verteilschlüssel -->
@@ -1573,7 +1573,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
       <div style="background:var(--white);border-radius:16px;width:100%;max-width:520px;margin:auto;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.2)">
         <div style="background:var(--p);color:#fff;padding:1.1rem 1.5rem;display:flex;justify-content:space-between;align-items:center">
           <div style="font-size:1rem;font-weight:700">🏛️ WEG-Einheit (Sondereigentum)</div>
-          <button type="button" onclick="closeWegEinheitModal()" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:6px 10px;cursor:pointer">✕</button>
+          <button type="button" onclick="closeWegEinheitModal()" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:6px 10px;cursor:pointer"><span class="btn-ic" data-icon="x"></span></button>
         </div>
         <div style="padding:1.5rem">
           <input type="hidden" id="weg-einheit-edit-id">
@@ -1594,7 +1594,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
           </div>
           <div style="font-size:.72rem;color:var(--muted);margin-bottom:.85rem">💡 Der Miteigentumsanteil (MEA) gibt den Anteil am Gemeinschaftseigentum an, z. B. 250/1000 = 25%.</div>
           <div style="display:flex;gap:.75rem">
-            <button type="button" class="btn-primary" onclick="saveWegEinheit()" style="flex:1">💾 Speichern</button>
+            <button type="button" class="btn-primary" onclick="saveWegEinheit()" style="flex:1"><span class="btn-ic" data-icon="save"></span> Speichern</button>
             <button type="button" class="btn-secondary" onclick="closeWegEinheitModal()" style="flex:1">Abbrechen</button>
           </div>
         </div>
@@ -1606,7 +1606,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
       <div style="background:var(--white);border-radius:16px;width:100%;max-width:520px;margin:auto;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.2)">
         <div style="background:var(--p);color:#fff;padding:1.1rem 1.5rem;display:flex;justify-content:space-between;align-items:center">
           <div style="font-size:1rem;font-weight:700">👤 Eigentümer zuordnen</div>
-          <button type="button" onclick="closeWegEigentuemerModal()" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:6px 10px;cursor:pointer">✕</button>
+          <button type="button" onclick="closeWegEigentuemerModal()" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:6px 10px;cursor:pointer"><span class="btn-ic" data-icon="x"></span></button>
         </div>
         <div style="padding:1.5rem">
           <input type="hidden" id="weg-eig-edit-id">
@@ -1624,7 +1624,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
             </div>
           </div>
           <div style="display:flex;gap:.75rem">
-            <button type="button" class="btn-primary" onclick="saveWegEigentuemer()" style="flex:1">💾 Speichern</button>
+            <button type="button" class="btn-primary" onclick="saveWegEigentuemer()" style="flex:1"><span class="btn-ic" data-icon="save"></span> Speichern</button>
             <button type="button" class="btn-secondary" onclick="closeWegEigentuemerModal()" style="flex:1">Abbrechen</button>
           </div>
         </div>
@@ -1654,7 +1654,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
           <div class="field" style="grid-column:1/-1"><label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;text-transform:none;letter-spacing:0;font-size:.82rem;color:#b4471a"><input type="checkbox" id="ein-ust" style="width:16px;height:16px;accent-color:#e65100;cursor:pointer">🏪 USt-optiert (§9 UStG) – bei der Abrechnung Umsatzsteuer ausweisen</label></div>
         </div>
         <div style="display:flex;gap:.65rem">
-          <button class="btn-primary" onclick="saveEinheit()" style="flex:1">💾 Speichern</button>
+          <button class="btn-primary" onclick="saveEinheit()" style="flex:1"><span class="btn-ic" data-icon="save"></span> Speichern</button>
           <button class="btn-secondary" onclick="closeEinheitModal()" style="flex:1">Abbrechen</button>
         </div>
         <div id="einheit-msg" style="display:none;margin-top:.6rem;font-size:.78rem;padding:.4rem .7rem;border-radius:6px"></div>
@@ -1666,7 +1666,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
       <div style="background:var(--white);border-radius:16px;width:100%;max-width:580px;margin:auto;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.2)">
         <div style="background:var(--p);color:#fff;padding:1.25rem 1.5rem;display:flex;justify-content:space-between;align-items:center">
           <div style="font-size:1rem;font-weight:700" id="objekt-modal-title">Objekt anlegen</div>
-          <button type="button" onclick="closeObjektModal()" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:.9rem">✕</button>
+          <button type="button" onclick="closeObjektModal()" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:.9rem"><span class="btn-ic" data-icon="x"></span></button>
         </div>
         <input type="hidden" id="objekt-edit-id">
 
@@ -1758,7 +1758,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
           <div class="field" style="grid-column:1/-1"><label>IBAN (optional)</label><input type="text" id="m-iban" placeholder="DE12 3456 ..."></div>
         </div>
         <div style="display:flex;gap:.65rem;margin-top:.25rem">
-          <button class="btn-primary" onclick="saveMieter()" style="flex:1">💾 Speichern</button>
+          <button class="btn-primary" onclick="saveMieter()" style="flex:1"><span class="btn-ic" data-icon="save"></span> Speichern</button>
           <button class="btn-secondary" onclick="closeMieterModal()" style="flex:1">Abbrechen</button>
         </div>
         <div id="mieter-modal-msg" style="display:none;margin-top:.6rem;font-size:.78rem;padding:.4rem .7rem;border-radius:6px"></div>
@@ -1771,7 +1771,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
       <div style="background:var(--white);border-radius:16px;width:100%;max-width:520px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.2)">
         <div style="background:var(--p);color:#fff;padding:1.25rem 1.5rem;display:flex;justify-content:space-between;align-items:center">
           <div><div style="font-size:1rem;font-weight:700">Neue Nebenkostenabrechnung</div><div style="font-size:.78rem;opacity:.75;margin-top:2px">Wie möchten Sie abrechnen?</div></div>
-          <button onclick="document.getElementById('abr-typ-modal').style.display='none'" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:6px 10px;cursor:pointer">✕</button>
+          <button onclick="document.getElementById('abr-typ-modal').style.display='none'" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:6px 10px;cursor:pointer"><span class="btn-ic" data-icon="x"></span></button>
         </div>
         <div style="padding:1.5rem;display:grid;grid-template-columns:1fr 1fr;gap:1rem">
           <div onclick="startAbrechnungObjektbasiert()" style="border:2px solid var(--border);border-radius:12px;padding:1.25rem;cursor:pointer;transition:.15s" onmouseover="this.style.borderColor='var(--p)';this.style.background='var(--p-light)'" onmouseout="this.style.borderColor='var(--border)';this.style.background=''">
@@ -1948,7 +1948,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
               </div>
               <div style="display:flex;gap:.4rem;align-items:center">
                 <button type="button" onclick="importKostenVorlage('hk')" class="btn-small" style="font-size:.7rem">📂 Vorlage</button>
-                <button type="button" onclick="saveKostenVorlage('hk')" class="btn-small" style="font-size:.7rem">💾 Speichern</button>
+                <button type="button" onclick="saveKostenVorlage('hk')" class="btn-small" style="font-size:.7rem"><span class="btn-ic" data-icon="save"></span> Speichern</button>
                 <label class="hk-toggle" style="margin-left:.35rem;font-size:.78rem"><input type="checkbox" id="keine-hk" onchange="toggleHK()"> Keine Heizkosten</label>
               </div>
             </div>
@@ -1966,7 +1966,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
           <div class="kosten-section" style="margin-top:1.25rem;padding-top:1.1rem;border-top:1px solid var(--border)">
             <div class="kosten-section-header" style="display:flex;justify-content:space-between;align-items:center">
               <div style="display:flex;align-items:center;gap:.75rem"><div class="kosten-section-title">📋 Betriebskosten</div><span style="font-size:.75rem;color:var(--muted)">Summe: <strong id="bk-summe-live" style="color:var(--p)">0,00 €</strong></span></div>
-              <div style="display:flex;gap:.4rem"><button type="button" onclick="importKostenVorlage('bk')" class="btn-small" style="font-size:.7rem">📂 Vorlage</button><button type="button" onclick="saveKostenVorlage('bk')" class="btn-small" style="font-size:.7rem">💾 Speichern</button></div>
+              <div style="display:flex;gap:.4rem"><button type="button" onclick="importKostenVorlage('bk')" class="btn-small" style="font-size:.7rem">📂 Vorlage</button><button type="button" onclick="saveKostenVorlage('bk')" class="btn-small" style="font-size:.7rem"><span class="btn-ic" data-icon="save"></span> Speichern</button></div>
             </div>
             <div style="overflow-x:auto">
             <table class="kosten-table">
@@ -2054,7 +2054,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
             <button class="btn-small gruen" id="btn-gesamt-clean" onclick="handleGesamtPDF(false,'vorschau')" style="display:none">👁 Vorschau</button>
             <button class="btn-small gruen" id="btn-gesamt-dl" onclick="handleGesamtPDF(false,'download')" style="display:none">⬇️ Alle herunterladen</button>
             <button class="btn-small" style="background:#1d6f42" onclick="exportExcel()">📊 Excel Export</button>
-            <button class="btn-success" id="btn-speichern" style="display:none" onclick="openSaveDialog()">💾 Speichern</button>
+            <button class="btn-success" id="btn-speichern" style="display:none" onclick="openSaveDialog()"><span class="btn-ic" data-icon="save"></span> Speichern</button>
           </div>
 
           <!-- WOHNUNGS-ERGEBNISSE (DETAIL) -->
@@ -2397,7 +2397,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
         <!-- Header -->
         <div style="background:linear-gradient(135deg,#2d1457,#6a2d9f 70%,#8e44c0);color:#fff;padding:1.15rem 1.5rem;display:flex;justify-content:space-between;align-items:center">
           <div style="display:flex;align-items:center;gap:.6rem"><span style="font-size:1.25rem">🛠</span><h3 style="font-size:1.05rem;font-weight:800" id="auftrag-modal-title">Neuer Auftrag</h3></div>
-          <button onclick="closeAuftragModal()" style="background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:1rem">✕</button>
+          <button onclick="closeAuftragModal()" style="background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:1rem"><span class="btn-ic" data-icon="x"></span></button>
         </div>
         <div style="padding:1.5rem;overflow-y:auto">
         <input type="hidden" id="auftrag-edit-id">
@@ -2431,7 +2431,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
           <div class="field"><label style="font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Fällig am</label><input type="date" id="auf-faellig" style="border:1px solid var(--border);border-radius:9px;padding:.6rem .55rem;font-size:.85rem;font-family:var(--ff);width:100%;outline:none;box-sizing:border-box"></div>
         </div>
         <div style="display:flex;gap:.65rem;align-items:center">
-          <button class="btn-primary" onclick="saveAuftrag()" style="flex:1;padding:.7rem">💾 Speichern</button>
+          <button class="btn-primary" onclick="saveAuftrag()" style="flex:1;padding:.7rem"><span class="btn-ic" data-icon="save"></span> Speichern</button>
           <button id="auf-delete-btn" onclick="deleteAuftrag()" style="display:none;background:#fdecea;color:#c0392b;border:1px solid #f3c0bb;border-radius:9px;padding:.7rem .9rem;cursor:pointer;font-family:var(--ff);font-weight:700">🗑 Löschen</button>
         </div>
         </div>
@@ -2878,7 +2878,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
         </div>
         <div class="field" style="margin-bottom:.75rem"><label>Notiz</label><textarea id="k-notiz" style="border:1px solid var(--border);border-radius:var(--r);padding:.5rem .7rem;font-size:.86rem;font-family:var(--ff);width:100%;min-height:55px;resize:vertical;outline:none;background:var(--bg)" placeholder="Interne Anmerkungen..."></textarea></div>
         <div style="display:flex;gap:.65rem">
-          <button class="btn-primary" onclick="saveKontakt()" style="flex:1">💾 Speichern</button>
+          <button class="btn-primary" onclick="saveKontakt()" style="flex:1"><span class="btn-ic" data-icon="save"></span> Speichern</button>
           <button class="btn-secondary" onclick="closeKontaktModal()" style="flex:1">Abbrechen</button>
         </div>
         <div id="kontakt-msg" style="display:none;margin-top:.6rem;font-size:.78rem;padding:.4rem .7rem;border-radius:6px"></div>
@@ -2895,7 +2895,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
             <div style="font-size:1rem;font-weight:700" id="mietverh-modal-title">Neues Mietverhältnis</div>
             <div style="font-size:.78rem;opacity:.75;margin-top:2px" id="mietverh-einheit-label"></div>
           </div>
-          <button onclick="closeMietverhModal()" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:.9rem">✕</button>
+          <button onclick="closeMietverhModal()" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:.9rem"><span class="btn-ic" data-icon="x"></span></button>
         </div>
 
         <div style="padding:1.5rem">
@@ -2975,7 +2975,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
           <div id="mietverh-msg" style="display:none;margin-bottom:.75rem;font-size:.8rem;padding:.5rem .75rem;border-radius:8px"></div>
 
           <div style="display:flex;gap:.75rem">
-            <button onclick="saveMietverhaeltnis()" style="flex:1;background:var(--p);color:#fff;border:none;border-radius:8px;padding:.75rem;cursor:pointer;font-size:.9rem;font-family:var(--ff);font-weight:600">💾 Speichern</button>
+            <button onclick="saveMietverhaeltnis()" style="flex:1;background:var(--p);color:#fff;border:none;border-radius:8px;padding:.75rem;cursor:pointer;font-size:.9rem;font-family:var(--ff);font-weight:600"><span class="btn-ic" data-icon="save"></span> Speichern</button>
             <button onclick="closeMietverhModal()" style="flex:1;background:none;border:1px solid var(--border);border-radius:8px;padding:.75rem;cursor:pointer;font-size:.9rem;color:var(--muted);font-family:var(--ff)">Abbrechen</button>
           </div>
         </div>
@@ -3203,7 +3203,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
 <div id="help-panel" style="display:none;position:fixed;bottom:88px;right:20px;z-index:800;width:344px;max-width:calc(100vw - 40px);background:var(--white);border:1px solid var(--border);border-radius:16px;box-shadow:0 16px 50px rgba(0,0,0,.25);overflow:hidden">
   <div style="background:linear-gradient(135deg,var(--p),#7c3aed);color:#fff;padding:.85rem 1rem;display:flex;justify-content:space-between;align-items:center">
     <div><div style="font-weight:700;font-size:.92rem">Hilfe &amp; Kontakt</div><div style="font-size:.7rem;opacity:.85">NEKOSTA-Assistent</div></div>
-    <button onclick="toggleHelpPanel()" style="background:none;border:none;color:#fff;font-size:1.1rem;cursor:pointer">✕</button>
+    <button onclick="toggleHelpPanel()" style="background:none;border:none;color:#fff;font-size:1.1rem;cursor:pointer"><span class="btn-ic" data-icon="x"></span></button>
   </div>
   <div style="display:flex;border-bottom:1px solid var(--border)">
     <button id="help-tab-chat" onclick="setHelpTab('chat')" style="flex:1;border:none;background:var(--white);padding:.6rem;cursor:pointer;font-size:.8rem;font-weight:700;color:var(--p);border-bottom:2px solid var(--p);font-family:var(--ff)">💡 Assistent</button>
@@ -3245,7 +3245,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
     <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:.5rem">Gewicht je Einheit</div>
     <div id="vs-editor-body"></div>
     <div style="display:flex;gap:.65rem;margin-top:1.2rem">
-      <button class="btn-primary" onclick="saveVs()" style="flex:1">💾 Speichern</button>
+      <button class="btn-primary" onclick="saveVs()" style="flex:1"><span class="btn-ic" data-icon="save"></span> Speichern</button>
       <button class="btn-secondary" onclick="closeVsEditor()" style="flex:1">Abbrechen</button>
     </div>
   </div>
@@ -3280,7 +3280,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
         <h3 style="font-size:1rem;font-weight:700">🗑 Papierkorb</h3>
         <div style="font-size:.75rem;color:var(--muted);margin-top:2px">Gelöschte Abrechnungen – werden nach 7 Tagen permanent entfernt</div>
       </div>
-      <button onclick="document.getElementById('papierkorb-modal').style.display='none'" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:var(--muted)">✕</button>
+      <button onclick="document.getElementById('papierkorb-modal').style.display='none'" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:var(--muted)"><span class="btn-ic" data-icon="x"></span></button>
     </div>
     <div id="papierkorb-list"><div style="color:var(--muted);font-size:.85rem;text-align:center;padding:2rem">Wird geladen...</div></div>
   </div>
@@ -3859,7 +3859,7 @@ function addWohn(){
           </label>
         </div>
       </div>
-      <button class="btn-remove-wohn" onclick="removeWohn(this)" title="Wohneinheit entfernen">✕</button>
+      <button class="btn-remove-wohn" onclick="removeWohn(this)" title="Wohneinheit entfernen"><span class="btn-ic" data-icon="x"></span></button>
     </div>
     <div class="wohn-card-body">
       <div class="mieter-header-row">
@@ -3897,7 +3897,7 @@ function createMieterRow(vonVal,bisVal){
     <input type="number" class="m-pers" value="1" min="0" step="1">
     <input type="text" inputmode="decimal" class="m-vbk" placeholder="0,00" oninput="sanitizeNumInput(this)">
     <input type="text" inputmode="decimal" class="m-vhk" placeholder="0,00" oninput="sanitizeNumInput(this)">
-    <button class="btn-remove-mieter" onclick="removeMieter(this)">✕</button>`;
+    <button class="btn-remove-mieter" onclick="removeMieter(this)"><span class="btn-ic" data-icon="x"></span></button>`;
   return row;
 }
 
@@ -4008,7 +4008,7 @@ function addKostenRow(tbodyId,name='',schluessel='flaeche',notiz='',direktWerte=
     </select></td>
     <td><input type="text" placeholder="z. B. Rechnung Nr. 2025-001" class="k-notiz" value="${notiz}" style="min-width:130px"></td>
     <td><button class="btn-small zuordn-btn" style="background:var(--p-mid);font-size:.7rem;display:${(schluessel==='direkt'||schluessel==='hkv')?'block':'none'}" onclick="openZuordnung(this)">${schluessel==='hkv'?'🔥 Verbrauch':'🔧 Bearbeiten'}</button></td>
-    <td><button class="btn-remove" onclick="this.closest('tr').remove()">✕</button></td>`;
+    <td><button class="btn-remove" onclick="this.closest('tr').remove()"><span class="btn-ic" data-icon="x"></span></button></td>`;
   tbody.appendChild(tr);
 }
 function handleSchluesselChange(sel){
@@ -4277,7 +4277,7 @@ async function renderVerteilschluesselPanel(objId){
     return '<div style="display:flex;justify-content:space-between;align-items:center;padding:.6rem .85rem;border:1px solid var(--border);border-radius:9px;margin-bottom:.5rem">'
       +'<div><div style="font-weight:700;font-size:.88rem">⚙ '+v.name+'</div><div style="font-size:.72rem;color:var(--muted)">'+teile+' von '+einh.length+' Einheiten · Summe Gewichte: '+sum.toLocaleString('de-DE')+'</div></div>'
       +'<div style="display:flex;gap:.35rem"><button class="btn-small" style="font-size:.72rem" onclick="openVsEditor(\''+objId+'\',\''+v.id+'\')">✏️ Bearbeiten</button>'
-      +'<button class="btn-small" style="font-size:.72rem;background:#ddd;color:#666" onclick="deleteVs(\''+v.id+'\',\''+objId+'\')">✕</button></div>'
+      +'<button class="btn-small" style="font-size:.72rem;background:#ddd;color:#666" onclick="deleteVs(\''+v.id+'\',\''+objId+'\')"><span class="btn-ic" data-icon="x"></span></button></div>'
     +'</div>';
   }).join('');
 }
@@ -8385,7 +8385,17 @@ var LICON={
  bank:_ic('<line x1="3" x2="21" y1="22" y2="22"/><line x1="6" x2="6" y1="18" y2="11"/><line x1="10" x2="10" y1="18" y2="11"/><line x1="14" x2="14" y1="18" y2="11"/><line x1="18" x2="18" y1="18" y2="11"/><polygon points="12 2 20 7 4 7"/>'),
  list:_ic('<line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/>'),
  grid:_ic('<rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/>'),
- file:_ic('<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/>')
+ file:_ic('<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/>'),
+ save:_ic('<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>'),
+ printer:_ic('<polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/>'),
+ upload:_ic('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/>'),
+ copy:_ic('<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>'),
+ refresh:_ic('<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>'),
+ shield:_ic('<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>'),
+ bookopen:_ic('<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>'),
+ check:_ic('<polyline points="20 6 9 17 4 12"/>'),
+ menu:_ic('<line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>'),
+ gear:_ic('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>')
 };
 function applyIcons(root){
   try{(root||document).querySelectorAll('[data-icon]').forEach(function(el){var n=el.getAttribute('data-icon');if(LICON[n]&&!el.firstChild){el.innerHTML=LICON[n];}});}catch(e){}
@@ -10610,7 +10620,7 @@ async function renderMvVertragList(mvId){
   _mvPendingVertrag.forEach(function(file,idx){
     html+='<div style="display:flex;align-items:center;gap:.5rem;padding:.4rem .6rem;background:#fff8e6;border:1px dashed #e0c068;border-radius:8px;margin-bottom:.35rem;font-size:.82rem">'
       +'<span>⏳</span><span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escapeHtml(file.name)+' <span style="color:var(--muted)">· wird beim Speichern hochgeladen</span></span>'
-      +'<button type="button" class="btn-small" style="font-size:.6rem;padding:2px 7px;background:#eee;color:#666" onclick="mvVertragUnstage('+idx+')">✕</button>'
+      +'<button type="button" class="btn-small" style="font-size:.6rem;padding:2px 7px;background:#eee;color:#666" onclick="mvVertragUnstage('+idx+')"><span class="btn-ic" data-icon="x"></span></button>'
     +'</div>';
   });
   if(!html)html='<div style="font-size:.78rem;color:var(--muted);font-style:italic">Noch kein Mietvertrag hinterlegt.</div>';
@@ -10960,7 +10970,7 @@ async function loadObjektEinheiten(objId){
           +'</div>'
           +'<div style="display:flex;align-items:center;gap:.35rem">'
             +'<span style="font-size:.65rem;font-weight:700;padding:1px 7px;border-radius:8px;background:'+(m.aktiv?'#d4edda':'#f5f5f5')+';color:'+(m.aktiv?'#155724':'#888')+'">'+(m.aktiv?'Aktiv':'Beendet')+'</span>'
-            +'<button onclick="event.stopPropagation();deleteMietverhaeltnis(\''+m.id+'\')" class="btn-small" style="font-size:.62rem;padding:1px 5px;background:#ddd;color:#666">✕</button>'
+            +'<button onclick="event.stopPropagation();deleteMietverhaeltnis(\''+m.id+'\')" class="btn-small" style="font-size:.62rem;padding:1px 5px;background:#ddd;color:#666"><span class="btn-ic" data-icon="x"></span></button>'
           +'</div>'
           +'</div>';
       });
@@ -11444,7 +11454,7 @@ function addNkErhoehungZeile(){
   row.innerHTML='<div><div style="font-size:.65rem;color:var(--muted);margin-bottom:.2rem">AB DATUM</div><input type="date" class="nk-datum" style="border:1px solid var(--border);border-radius:6px;padding:.35rem .5rem;font-size:.82rem;width:100%;outline:none;box-sizing:border-box"></div>'
     +'<div><div style="font-size:.65rem;color:var(--muted);margin-bottom:.2rem">NEUE BK-VZ €</div><input type="number" class="nk-bk" placeholder="0.00" step="0.01" style="border:1px solid var(--border);border-radius:6px;padding:.35rem .5rem;font-size:.82rem;width:100%;outline:none;box-sizing:border-box"></div>'
     +'<div><div style="font-size:.65rem;color:var(--muted);margin-bottom:.2rem">NEUE HK-VZ €</div><input type="number" class="nk-hk" placeholder="0.00" step="0.01" style="border:1px solid var(--border);border-radius:6px;padding:.35rem .5rem;font-size:.82rem;width:100%;outline:none;box-sizing:border-box"></div>'
-    +'<button onclick="this.parentNode.remove()" style="background:#ddd;border:none;border-radius:6px;padding:.35rem .5rem;cursor:pointer;font-size:.75rem;color:#666">✕</button>';
+    +'<button onclick="this.parentNode.remove()" style="background:#ddd;border:none;border-radius:6px;padding:.35rem .5rem;cursor:pointer;font-size:.75rem;color:#666"><span class="btn-ic" data-icon="x"></span></button>';
   list.appendChild(row);
 }
 function getNkErhoehungen(){
@@ -11774,7 +11784,7 @@ function saveKostenVorlage(typ){
 function importKostenVorlage(typ){
   var vorlagen=JSON.parse(localStorage.getItem('nekosta-vorlagen-'+typ)||'[]');
   if(!vorlagen.length){
-    showToast('Keine Vorlagen gespeichert. Zuerst Kosten eingeben und auf 💾 Speichern klicken.');
+    showToast('Keine Vorlagen gespeichert. Zuerst Kosten eingeben und auf <span class="btn-ic" data-icon="save"></span> Speichern klicken.');
     return;
   }
   // Show selection
@@ -12107,7 +12117,7 @@ document.addEventListener('DOMContentLoaded',function(){
             <div style="font-size:1rem;font-weight:700" id="ed-title">Einheit</div>
             <div style="font-size:.75rem;opacity:.8;margin-top:1px" id="ed-sub"></div>
           </div>
-          <button onclick="document.getElementById('einheit-detail-modal').style.display='none'" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:6px 10px;cursor:pointer">✕</button>
+          <button onclick="document.getElementById('einheit-detail-modal').style.display='none'" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:6px 10px;cursor:pointer"><span class="btn-ic" data-icon="x"></span></button>
         </div>
         <div style="display:flex;border-bottom:2px solid var(--border);background:var(--white)">
           <button type="button" id="edtab-zahlungen" onclick="showEinheitDetailTab('zahlungen')" style="background:none;border:none;border-bottom:2px solid var(--p);margin-bottom:-2px;padding:.65rem 1.25rem;cursor:pointer;font-size:.85rem;font-weight:700;color:var(--p);font-family:var(--ff)">💳 Zahlungen</button>
@@ -12130,7 +12140,7 @@ document.addEventListener('DOMContentLoaded',function(){
             <div style="font-size:.78rem;color:var(--muted);margin-bottom:.5rem">Interne Notiz zur Einheit:</div>
             <textarea id="ed-notiz-input" rows="5" style="border:1px solid var(--border);border-radius:8px;padding:.65rem .85rem;font-size:.85rem;font-family:var(--ff);width:100%;resize:vertical;outline:none;background:var(--bg);box-sizing:border-box" placeholder="Notizen, Besonderheiten, Mängel..."></textarea>
             <div style="display:flex;align-items:center;gap:.6rem;margin-top:.6rem">
-              <button class="btn-primary" onclick="saveEinheitNotiz()" style="font-size:.82rem;padding:.5rem 1rem">💾 Speichern</button>
+              <button class="btn-primary" onclick="saveEinheitNotiz()" style="font-size:.82rem;padding:.5rem 1rem"><span class="btn-ic" data-icon="save"></span> Speichern</button>
               <span id="ed-notiz-saved" style="display:none;font-size:.72rem;color:var(--success)">✅ Gespeichert</span>
             </div>
           </div>

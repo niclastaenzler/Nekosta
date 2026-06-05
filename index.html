@@ -77,6 +77,10 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--tex
  .nav-badge{margin-left:auto;background:var(--p-light);color:var(--p);font-size:.58rem;font-weight:700;padding:1px 5px;border-radius:8px}
  .sidebar-divider{height:1px;background:var(--border);margin:.35rem .85rem}
 .main-content{flex:1;min-width:0;overflow-x:hidden}
+.buha-inp{width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:7px;padding:.4rem .5rem;font-size:.82rem;font-family:Arial,sans-serif;outline:none;background:var(--white)}
+.buha-inp:focus{border-color:var(--p);box-shadow:0 0 0 2px var(--p-light)}
+.buha-inp.err{border-color:#c0392b;background:#fdf0ef}
+#buha-maske label{font-size:.6rem;font-weight:700;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:1px}
 /* ── MOBILE-NAVIGATION (Hamburger) ── */
 #nav-toggle{display:none}
 #sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(20,10,40,.45);z-index:150;opacity:0;transition:opacity .25s}
@@ -1465,26 +1469,39 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
               <!-- TAB: BUCHEN -->
               <div id="buha-pane-buchen">
                 <div id="buha-kpis" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.6rem;margin-bottom:1rem"></div>
-                <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:1rem">
-                  <div style="font-size:.78rem;font-weight:700;color:var(--p);margin-bottom:.7rem">➕ Neue Buchung <span style="font-weight:400;color:var(--muted);font-size:.7rem">· Enter = speichern / nächstes Feld</span></div>
-                  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.55rem;align-items:end" id="buha-maske">
-                    <div><label style="font-size:.64rem;font-weight:700;color:var(--muted);text-transform:uppercase">Buchungsdatum</label><input type="date" id="bu-datum" class="buha-inp"></div>
-                    <div><label style="font-size:.64rem;font-weight:700;color:var(--muted);text-transform:uppercase">Belegdatum</label><input type="date" id="bu-belegdatum" class="buha-inp"></div>
-                    <div><label style="font-size:.64rem;font-weight:700;color:var(--muted);text-transform:uppercase">Beleg-Nr.</label><input type="text" id="bu-belegnr" class="buha-inp" placeholder="2025-001"></div>
-                    <div style="grid-column:span 2"><label style="font-size:.64rem;font-weight:700;color:var(--muted);text-transform:uppercase">Buchungstext</label><input type="text" id="bu-text" class="buha-inp" placeholder="z. B. Gebäudeversicherung Q1"></div>
-                    <div><label style="font-size:.64rem;font-weight:700;color:var(--muted);text-transform:uppercase">Soll-Konto</label><select id="bu-soll" class="buha-inp"></select></div>
-                    <div><label style="font-size:.64rem;font-weight:700;color:var(--muted);text-transform:uppercase">Haben-Konto</label><select id="bu-haben" class="buha-inp"></select></div>
-                    <div><label style="font-size:.64rem;font-weight:700;color:var(--muted);text-transform:uppercase">Betrag (€)</label><input type="text" inputmode="decimal" id="bu-betrag" class="buha-inp" placeholder="0,00" oninput="sanitizeNumInput(this)"></div>
-                    <div><label style="font-size:.64rem;font-weight:700;color:var(--muted);text-transform:uppercase">USt %</label><select id="bu-ust" class="buha-inp"><option value="0">0 %</option><option value="7">7 %</option><option value="19">19 %</option></select></div>
-                    <div><button class="btn-primary" style="white-space:nowrap" onclick="buhaSaveBuchung()">✓ Buchen</button></div>
-                  </div>
-                </div>
+                <!-- JOURNAL (oben) -->
                 <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.6rem">
                   <span style="font-size:.88rem;font-weight:700">📓 Journal</span>
-                  <input type="text" id="buha-suche" oninput="renderBuhaJournal()" placeholder="🔍 Suche …" style="border:1px solid var(--border);border-radius:8px;padding:.4rem .7rem;font-size:.82rem;font-family:Arial,sans-serif;outline:none;flex:1;min-width:180px">
+                  <input type="text" id="buha-suche" oninput="renderBuhaJournal()" placeholder="🔍 Volltextsuche … (F10)" style="border:1px solid var(--border);border-radius:8px;padding:.4rem .7rem;font-size:.82rem;font-family:Arial,sans-serif;outline:none;flex:1;min-width:180px">
                   <button class="btn-small" onclick="buhaExportCsv()">📊 CSV</button>
                 </div>
                 <div id="buha-journal" style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow-x:auto"></div>
+                <!-- STICKY BUCHUNGSMASKE (unten, DATEV-Stil) -->
+                <div id="buha-maske-wrap" style="position:sticky;bottom:0;z-index:40;background:var(--white);border:2px solid var(--p);border-radius:12px;padding:.75rem 1rem;margin-top:1rem;box-shadow:0 -8px 22px rgba(0,0,0,.10)">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem;flex-wrap:wrap;gap:.5rem">
+                    <div style="font-size:.76rem;font-weight:700;color:var(--p)">➕ Erfassung <span style="font-weight:400;color:var(--muted);font-size:.66rem">· Enter = nächstes Feld · „+" speichern&amp;neu · „−" zurück · F2/F3 Konto · F4 Vorlage · F8 buchen</span></div>
+                    <div style="display:flex;gap:.4rem;align-items:center">
+                      <select id="bu-vorlage" onchange="buhaVorlageLoad(this.value)" style="border:1px solid var(--border);border-radius:7px;padding:.35rem .5rem;font-size:.76rem;font-family:Arial,sans-serif;outline:none;max-width:170px"><option value="">📋 Vorlage …</option></select>
+                      <button class="btn-small" onclick="buhaVorlageSpeichern()" title="Aktuelle Eingabe als Vorlage speichern">💾</button>
+                    </div>
+                  </div>
+                  <div id="buha-maske" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(115px,1fr));gap:.5rem;align-items:end">
+                    <div><label>Belegdatum</label><input type="date" id="bu-belegdatum" class="buha-inp"></div>
+                    <div><label>Buchungsdatum</label><input type="date" id="bu-datum" class="buha-inp"></div>
+                    <div><label>Beleg-Nr.</label><input type="text" id="bu-belegnr" class="buha-inp" placeholder="2025-001"></div>
+                    <div><label>BU-Schlüssel</label><select id="bu-schluessel" class="buha-inp" onchange="buhaCalcSteuer()"></select></div>
+                    <div><label>Konto (Soll)</label><input list="buha-konten-dl" id="bu-soll" class="buha-inp" placeholder="Nr." autocomplete="off" oninput="buhaLiveCheck()"></div>
+                    <div><label>Gegenkonto (Haben)</label><input list="buha-konten-dl" id="bu-haben" class="buha-inp" placeholder="Nr." autocomplete="off" oninput="buhaLiveCheck()"></div>
+                    <div><label>Betrag brutto (€)</label><input type="text" inputmode="decimal" id="bu-betrag" class="buha-inp" placeholder="0,00" oninput="sanitizeNumInput(this);buhaCalcSteuer()"></div>
+                    <div style="grid-column:span 2"><label>Buchungstext</label><input type="text" id="bu-text" class="buha-inp" placeholder="z. B. Gebäudeversicherung Q1"></div>
+                    <div><label>Kostenstelle</label><input type="text" id="bu-kostenstelle" class="buha-inp" placeholder="optional"></div>
+                    <div><label>Einheit</label><input type="text" id="bu-einheit" class="buha-inp" placeholder="optional"></div>
+                    <div><label>Eigentümer</label><input type="text" id="bu-eigentuemer" class="buha-inp" placeholder="optional"></div>
+                    <div style="display:flex;flex-direction:column;justify-content:flex-end"><button class="btn-primary" style="white-space:nowrap;padding:.45rem .7rem" onclick="buhaSaveBuchung()">✓ Buchen</button></div>
+                  </div>
+                  <div id="bu-steuer-info" style="font-size:.72rem;color:var(--muted);margin-top:.45rem;min-height:1em"></div>
+                  <datalist id="buha-konten-dl"></datalist>
+                </div>
               </div>
               <!-- TAB: KONTENRAHMEN -->
               <div id="buha-pane-konten" style="display:none">
@@ -7552,21 +7569,37 @@ async function deleteFeedback(id){
 }
 
 // ════════════ WEG-BUCHHALTUNG (Phase 1) ════════════
-var buha={objektId:null, jahr:null, ug:'', ugListe:[], konten:[], buchungen:[]};
+var buha={objektId:null, jahr:null, ug:'', ugListe:[], konten:[], buchungen:[], vorlagen:[], steuer:[], sort:{col:'buchungsdatum',dir:-1}};
 function buhaEuro(n){return (parseFloat(n)||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';}
 
 async function ladeBuchhaltung(objId){
   if(!currentUser)return;
-  // Tastatursteuerung (einmalig): Enter speichert (Betragsfeld) bzw. springt zum nächsten Feld
+  // ── Tastatursteuerung (einmalig) ──
   if(!buha._kbReady){buha._kbReady=true;
     var maske=document.getElementById('buha-maske');
+    var fields=function(){return Array.prototype.slice.call(maske.querySelectorAll('.buha-inp'));};
+    var focusRel=function(inp,delta){var all=fields();var i=all.indexOf(inp);var n=i+delta;if(n>=0&&n<all.length)all[n].focus();};
     if(maske)maske.addEventListener('keydown',function(e){
-      if(e.key!=='Enter')return; var inp=e.target;
-      if(!inp.classList||!inp.classList.contains('buha-inp'))return;
-      e.preventDefault();
-      if(inp.id==='bu-betrag'){buhaSaveBuchung();return;}
-      var all=Array.prototype.slice.call(maske.querySelectorAll('.buha-inp'));
-      var i=all.indexOf(inp); if(i>-1&&i<all.length-1)all[i+1].focus();
+      var inp=e.target; if(!inp.classList||!inp.classList.contains('buha-inp'))return;
+      if(e.key==='Enter'){ e.preventDefault();
+        var all=fields(); var i=all.indexOf(inp);
+        if(i===all.length-1){buhaSaveBuchung();} else if(i>-1){all[i+1].focus();}
+        return;
+      }
+      // DATEV-Numpad: am Betragsfeld „+" = speichern&neu, „−" = Feld zurück
+      if(inp.id==='bu-betrag'){
+        if(e.key==='+'){e.preventDefault();buhaSaveBuchung();return;}
+        if(e.key==='-'){e.preventDefault();focusRel(inp,-1);return;}
+      }
+    });
+    // F-Tasten (nur wenn Buchhaltungs-Tab sichtbar)
+    document.addEventListener('keydown',function(e){
+      var pane=document.getElementById('buha-maske-wrap');
+      if(!pane||!pane.offsetParent)return; // Tab nicht sichtbar
+      var map={F2:'bu-soll',F3:'bu-haben',F4:'bu-vorlage',F10:'buha-suche'};
+      if(map[e.key]){e.preventDefault();var el=document.getElementById(map[e.key]);if(el)el.focus();return;}
+      if(e.key==='F8'){e.preventDefault();buhaSaveBuchung();return;}
+      if(e.key==='F5'){e.preventDefault();buhaReload();return;}
     });
   }
   // Auf das aktuelle (WEG-)Objekt eingrenzen
@@ -7602,17 +7635,23 @@ async function buhaReload(){
   try{
     var kr=await sb.from('weg_konten').select('*').eq('user_id',currentUser.id).order('nummer');
     buha.konten=kr.data||[];
+    var vr=await sb.from('weg_vorlagen').select('*').eq('user_id',currentUser.id).order('name');
+    buha.vorlagen=vr.data||[];
+    var sr=await sb.from('weg_steuerschluessel').select('*').eq('user_id',currentUser.id);
+    buha.steuer=sr.data||[];
     var q=sb.from('weg_buchungen').select('*').eq('user_id',currentUser.id).eq('objekt_id',buha.objektId).eq('wirtschaftsjahr',buha.jahr);
     // Buchungskreis: Gesamt-WEG = ohne Untergemeinschaft (null); sonst die gewählte UG
     q = buha.ug ? q.eq('untergemeinschaft_id',buha.ug) : q.is('untergemeinschaft_id',null);
     var br=await q.order('buchungsdatum',{ascending:false}).order('created_at',{ascending:false});
     buha.buchungen=br.data||[];
   }catch(e){showToast('❌ '+(e.message||e));}
-  fillKontoSelects();
+  fillKontoControls();
   renderKonten();
   renderBuhaJournal();
   renderBuhaKpis();
   var d=document.getElementById('bu-datum'); if(d&&!d.value)d.value=todayStr();
+  var bd=document.getElementById('bu-belegdatum'); if(bd&&!bd.value)bd.value=todayStr();
+  buhaCalcSteuer();
 }
 
 function buhaTab(t){
@@ -7624,14 +7663,37 @@ function buhaTab(t){
   if(t==='audit')renderBuhaAudit();
 }
 
+// ── BUCHUNGSSCHLÜSSEL (DATEV-Stil, konfigurierbar via weg_steuerschluessel) ──
+var STEUER_SCHLUESSEL=[
+  {schluessel:'0', bezeichnung:'ohne Umsatzsteuer', art:'none', satz:0, steuerkonto:''},
+  {schluessel:'8', bezeichnung:'Vorsteuer 7 %', art:'vorsteuer', satz:7, steuerkonto:'1571'},
+  {schluessel:'9', bezeichnung:'Vorsteuer 19 %', art:'vorsteuer', satz:19, steuerkonto:'1576'},
+  {schluessel:'2', bezeichnung:'Umsatzsteuer 7 %', art:'umsatzsteuer', satz:7, steuerkonto:'1771'},
+  {schluessel:'3', bezeichnung:'Umsatzsteuer 19 %', art:'umsatzsteuer', satz:19, steuerkonto:'1776'}
+];
+function buhaSchluesselListe(){
+  // Standard + benutzerdefinierte (aus buha.steuer) zusammenführen (custom überschreibt gleiche Nummer)
+  var map={}; STEUER_SCHLUESSEL.forEach(function(s){map[s.schluessel]=s;});
+  (buha.steuer||[]).forEach(function(s){map[s.schluessel]={schluessel:s.schluessel,bezeichnung:s.bezeichnung||s.schluessel,art:s.art||'none',satz:parseFloat(s.satz)||0,steuerkonto:s.steuerkonto||''};});
+  return Object.keys(map).map(function(k){return map[k];}).sort(function(a,b){return a.schluessel.localeCompare(b.schluessel,undefined,{numeric:true});});
+}
+function buhaSchluesselDef(s){return buhaSchluesselListe().find(function(x){return x.schluessel===String(s);})||STEUER_SCHLUESSEL[0];}
+
 // ── KONTENRAHMEN ──
 function kontoLabel(k){return k.nummer+' · '+k.name;}
-function fillKontoSelects(){
-  var opts='<option value="">– Konto wählen –</option>'+buha.konten.filter(function(k){return k.aktiv!==false;}).map(function(k){
-    return '<option value="'+escapeHtml(k.nummer)+'">'+escapeHtml(kontoLabel(k))+'</option>';
+// Konto-Autovervollständigung (Datalist), Buchungsschlüssel- und Vorlagen-Dropdown füllen
+function fillKontoControls(){
+  var dl=document.getElementById('buha-konten-dl');
+  if(dl)dl.innerHTML=buha.konten.filter(function(k){return k.aktiv!==false;}).map(function(k){
+    return '<option value="'+escapeHtml(k.nummer)+'">'+escapeHtml(k.name)+'</option>';
   }).join('');
-  ['bu-soll','bu-haben'].forEach(function(id){var el=document.getElementById(id);if(el){var v=el.value;el.innerHTML=opts;el.value=v;}});
+  var sk=document.getElementById('bu-schluessel');
+  if(sk){var v=sk.value||'0'; sk.innerHTML=buhaSchluesselListe().map(function(s){return '<option value="'+escapeHtml(s.schluessel)+'">'+escapeHtml(s.schluessel+' · '+s.bezeichnung)+'</option>';}).join(''); sk.value=v;}
+  var vs=document.getElementById('bu-vorlage');
+  if(vs)vs.innerHTML='<option value="">📋 Vorlage …</option>'+(buha.vorlagen||[]).map(function(v){return '<option value="'+v.id+'">'+escapeHtml(v.name)+'</option>';}).join('');
 }
+function kontoName(nr){var k=buha.konten.find(function(x){return x.nummer===nr;});return k?k.name:'';}
+function kontoExists(nr){return buha.konten.some(function(x){return x.nummer===nr;});}
 function kontoTypLabel(t){return {aktiv:'Aktiv',passiv:'Passiv',aufwand:'Aufwand',ertrag:'Ertrag'}[t]||t;}
 function kontoTypColor(t){return {aktiv:['#e3f2fd','#1565c0'],passiv:['#f3e8fd','#6a2d9f'],aufwand:['#fdecea','#c0392b'],ertrag:['#e9f9f0','#1a7a4a']}[t]||['#eee','#666'];}
 function renderKonten(){
@@ -7738,25 +7800,74 @@ var KONTENRAHMEN_TPL={
 };
 
 // ── BUCHEN ──
+function buhaVal(id){var el=document.getElementById(id);return el?el.value.trim():'';}
+// Steuer aus Buchungsschlüssel berechnen (Brutto eingegeben → Netto/Steuer) + Live-Anzeige
+function buhaCalcSteuer(){
+  var def=buhaSchluesselDef(buhaVal('bu-schluessel'));
+  var brutto=parseNum(buhaVal('bu-betrag'));
+  var info=document.getElementById('bu-steuer-info'); if(!info)return {netto:brutto,steuer:0,def:def};
+  if(!brutto){info.textContent=def.satz>0?('Buchungsschlüssel '+def.schluessel+': '+def.bezeichnung):'';info.style.color='var(--muted)';return {netto:0,steuer:0,def:def};}
+  var netto=def.satz>0?brutto/(1+def.satz/100):brutto;
+  var steuer=brutto-netto;
+  if(def.satz>0){
+    info.style.color='#0e7c7b';
+    info.textContent='≈ Netto '+buhaEuro(netto)+'  ·  '+(def.art==='vorsteuer'?'Vorsteuer':'USt')+' '+def.satz+'% '+buhaEuro(steuer)+(def.steuerkonto?'  → Steuerkonto '+def.steuerkonto:'')+'  ·  Brutto '+buhaEuro(brutto);
+  }else{info.style.color='var(--muted)';info.textContent='ohne Umsatzsteuer · Betrag '+buhaEuro(brutto);}
+  return {netto:netto,steuer:steuer,def:def};
+}
+// Live-Prüfung: Konto-Felder rot färben, wenn ungültig
+function buhaLiveCheck(){
+  ['bu-soll','bu-haben'].forEach(function(id){
+    var el=document.getElementById(id); if(!el)return;
+    var v=el.value.trim();
+    var bad = v && !kontoExists(v);
+    el.classList.toggle('err', !!bad);
+  });
+  var s=buhaVal('bu-soll'), h=buhaVal('bu-haben');
+  if(s&&h&&s===h){document.getElementById('bu-haben').classList.add('err');}
+}
 async function buhaSaveBuchung(){
-  if(!buha.objektId){showToast('Bitte ein Objekt wählen.');return;}
-  var v=function(id){var el=document.getElementById(id);return el?el.value:'';};
-  var soll=v('bu-soll'), haben=v('bu-haben'), betrag=parseNum(v('bu-betrag'));
-  if(!soll||!haben){showToast('Bitte Soll- und Haben-Konto wählen.');return;}
-  if(soll===haben){showToast('Soll- und Haben-Konto müssen verschieden sein.');return;}
-  if(!(betrag>0)){showToast('Bitte einen Betrag > 0 eingeben.');return;}
-  var row={user_id:currentUser.id,objekt_id:buha.objektId,wirtschaftsjahr:buha.jahr,
-    untergemeinschaft_id:buha.ug||null,
-    buchungsdatum:v('bu-datum')||todayStr(),belegdatum:v('bu-belegdatum')||null,belegnr:v('bu-belegnr')||null,
-    text:v('bu-text')||null,soll_konto:soll,haben_konto:haben,betrag:betrag,ust_satz:parseFloat(v('bu-ust'))||0};
+  if(!buha.objektId){showToast('Bitte eine WEG öffnen.');return;}
+  var soll=buhaVal('bu-soll'), haben=buhaVal('bu-haben'), brutto=parseNum(buhaVal('bu-betrag'));
+  if(!soll||!haben){showToast('Bitte Konto und Gegenkonto angeben.');return;}
+  if(!kontoExists(soll)){showToast('Konto „'+soll+'" gibt es nicht im Kontenrahmen.');document.getElementById('bu-soll').classList.add('err');return;}
+  if(!kontoExists(haben)){showToast('Gegenkonto „'+haben+'" gibt es nicht im Kontenrahmen.');document.getElementById('bu-haben').classList.add('err');return;}
+  if(soll===haben){showToast('Konto und Gegenkonto müssen verschieden sein.');return;}
+  if(!(brutto>0)){showToast('Bitte einen Betrag > 0 eingeben.');return;}
+  var c=buhaCalcSteuer();
+  var sk=buhaVal('bu-schluessel')||'0';
+  var row={user_id:currentUser.id,objekt_id:buha.objektId,wirtschaftsjahr:buha.jahr,untergemeinschaft_id:buha.ug||null,
+    buchungsdatum:buhaVal('bu-datum')||todayStr(),belegdatum:buhaVal('bu-belegdatum')||null,belegnr:buhaVal('bu-belegnr')||null,
+    text:buhaVal('bu-text')||null,soll_konto:soll,haben_konto:haben,betrag:brutto,
+    schluessel:sk, ust_satz:c.def.satz||0, steuer_kz:sk, netto:Math.round(c.netto*100)/100, steuer:Math.round(c.steuer*100)/100,
+    kostenstelle:buhaVal('bu-kostenstelle')||null, einheit_bez:buhaVal('bu-einheit')||null, eigentuemer:buhaVal('bu-eigentuemer')||null};
   var ins=await sb.from('weg_buchungen').insert(row).select().single();
   if(ins.error){showToast('❌ '+ins.error.message);return;}
-  await logAudit('buchung_erstellt','buchung',ins.data.id,{betrag:betrag,soll:soll,haben:haben,text:row.text});
+  await logAudit('buchung_erstellt','buchung',ins.data.id,{betrag:brutto,soll:soll,haben:haben,schluessel:sk,text:row.text});
   showToast('✅ Buchung gespeichert');
-  // Maske teilweise zurücksetzen (Datum/Konten behalten für Schnellerfassung)
-  ['bu-belegnr','bu-text','bu-betrag'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
-  var t=document.getElementById('bu-text'); if(t)t.focus();
+  // Schnellerfassung: Datum/Belegnr/Schlüssel behalten, Rest leeren, Fokus auf Konto
+  ['bu-soll','bu-haben','bu-betrag','bu-text','bu-kostenstelle','bu-einheit','bu-eigentuemer'].forEach(function(id){var el=document.getElementById(id);if(el){el.value='';el.classList.remove('err');}});
   await buhaReload();
+  var f=document.getElementById('bu-soll'); if(f)f.focus();
+}
+// Buchungsvorlagen
+async function buhaVorlageSpeichern(){
+  var name=prompt('Name der Buchungsvorlage (z. B. „Gebäudeversicherung"):',buhaVal('bu-text')||'');
+  if(name===null)return; name=(name||'').trim(); if(!name){showToast('Bitte einen Namen angeben.');return;}
+  var row={user_id:currentUser.id,name:name,soll_konto:buhaVal('bu-soll')||null,haben_konto:buhaVal('bu-haben')||null,schluessel:buhaVal('bu-schluessel')||'0',text:buhaVal('bu-text')||null,kostenstelle:buhaVal('bu-kostenstelle')||null};
+  var {error}=await sb.from('weg_vorlagen').insert(row);
+  if(error){showToast('❌ '+error.message);return;}
+  showToast('💾 Vorlage „'+name+'" gespeichert'); await buhaReload();
+}
+function buhaVorlageLoad(id){
+  if(!id)return;
+  var v=(buha.vorlagen||[]).find(function(x){return x.id===id;}); if(!v)return;
+  var set=function(eid,val){var el=document.getElementById(eid);if(el)el.value=val||'';};
+  set('bu-soll',v.soll_konto);set('bu-haben',v.haben_konto);set('bu-schluessel',v.schluessel||'0');set('bu-text',v.text);set('bu-kostenstelle',v.kostenstelle);
+  document.getElementById('bu-vorlage').value='';
+  buhaLiveCheck();buhaCalcSteuer();
+  var f=document.getElementById('bu-betrag'); if(f)f.focus();
+  showToast('📋 Vorlage „'+v.name+'" geladen');
 }
 function renderBuhaKpis(){
   var c=document.getElementById('buha-kpis'); if(!c)return;
@@ -7772,31 +7883,65 @@ function renderBuhaKpis(){
   var card=function(lbl,val,col){return '<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:.85rem 1rem"><div style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">'+lbl+'</div><div style="font-size:1.25rem;font-weight:800;margin-top:.3rem;color:'+col+';font-variant-numeric:tabular-nums">'+val+'</div></div>';};
   c.innerHTML=card('Einnahmen',buhaEuro(ertrag),'#1a7a4a')+card('Ausgaben',buhaEuro(aufwand),'#c0392b')+card('Saldo',buhaEuro(saldo),saldo>=0?'#1a7a4a':'#c0392b')+card('Buchungen',aktiv.length+(buha.buchungen.length>aktiv.length?' (+'+(buha.buchungen.length-aktiv.length)+' storno)':''),'var(--text)');
 }
+function buhaSortBy(col){
+  if(buha.sort.col===col)buha.sort.dir*=-1; else {buha.sort.col=col;buha.sort.dir=1;}
+  renderBuhaJournal();
+}
 function renderBuhaJournal(){
   var c=document.getElementById('buha-journal'); if(!c)return;
   var q=((document.getElementById('buha-suche')||{value:''}).value||'').toLowerCase();
   var nm={}; buha.konten.forEach(function(k){nm[k.nummer]=k.name;});
   var list=buha.buchungen.filter(function(b){
     if(!q)return true;
-    return [b.text,b.belegnr,b.soll_konto,b.haben_konto,nm[b.soll_konto],nm[b.haben_konto]].filter(Boolean).join(' ').toLowerCase().indexOf(q)>-1;
+    return [b.text,b.belegnr,b.soll_konto,b.haben_konto,nm[b.soll_konto],nm[b.haben_konto],b.schluessel].filter(Boolean).join(' ').toLowerCase().indexOf(q)>-1;
+  });
+  // Sortierung
+  var sc=buha.sort.col, sd=buha.sort.dir;
+  list=list.slice().sort(function(a,b){
+    var av=a[sc],bv=b[sc]; if(sc==='betrag'){av=parseFloat(av)||0;bv=parseFloat(bv)||0;}
+    av=(av==null?'':av); bv=(bv==null?'':bv);
+    return (av<bv?-1:av>bv?1:0)*sd;
   });
   if(!list.length){c.innerHTML='<div style="padding:2rem;text-align:center;color:var(--muted)">Keine Buchungen.</div>';return;}
-  c.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:.82rem;min-width:760px"><thead><tr style="border-bottom:2px solid var(--border)">'
-    +['Datum','Beleg','Buchungstext','Soll','Haben','Betrag',''].map(function(h,i){return '<th style="text-align:'+(i===5?'right':'left')+';padding:.5rem .7rem;font-size:.64rem;text-transform:uppercase;color:var(--muted)">'+h+'</th>';}).join('')
+  var arrow=function(col){return buha.sort.col===col?(buha.sort.dir>0?' ▲':' ▼'):'';};
+  var th=function(label,col,align){return '<th onclick="'+(col?'buhaSortBy(\''+col+'\')':'')+'" style="text-align:'+(align||'left')+';padding:.5rem .6rem;font-size:.62rem;text-transform:uppercase;color:var(--muted);'+(col?'cursor:pointer;user-select:none':'')+'">'+label+(col?arrow(col):'')+'</th>';};
+  c.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:.81rem;min-width:820px"><thead><tr style="border-bottom:2px solid var(--border)">'
+    +th('Datum','buchungsdatum')+th('Beleg','belegnr')+th('Buchungstext','text')+th('Soll','soll_konto')+th('Haben','haben_konto')+th('BU','schluessel','center')+th('Betrag','betrag','right')+th('Status','storniert','center')+th('','')
     +'</tr></thead><tbody>'
     +list.map(function(b){
       var stor=b.storniert||b.ist_storno;
-      var kl=function(nr){return '<span style="font-variant-numeric:tabular-nums">'+escapeHtml(nr||'–')+'</span>'+(nm[nr]?' <span style="color:var(--muted);font-size:.74rem">'+escapeHtml(nm[nr])+'</span>':'');};
-      return '<tr style="border-bottom:1px solid var(--border);'+(stor?'opacity:.55':'')+'">'
-        +'<td style="padding:.45rem .7rem;white-space:nowrap">'+fmtDatum(b.buchungsdatum)+'</td>'
-        +'<td style="padding:.45rem .7rem;color:var(--muted)">'+escapeHtml(b.belegnr||'–')+'</td>'
-        +'<td style="padding:.45rem .7rem">'+escapeHtml(b.text||'')+(b.ist_storno?' <span style="font-size:.6rem;font-weight:700;color:#c0392b">STORNO</span>':'')+(b.storniert?' <span style="font-size:.6rem;font-weight:700;color:#9a6700">storniert</span>':'')+'</td>'
-        +'<td style="padding:.45rem .7rem">'+kl(b.soll_konto)+'</td>'
-        +'<td style="padding:.45rem .7rem">'+kl(b.haben_konto)+'</td>'
-        +'<td style="padding:.45rem .7rem;text-align:right;font-weight:700;font-variant-numeric:tabular-nums">'+buhaEuro(b.betrag)+'</td>'
-        +'<td style="padding:.45rem .7rem;text-align:right">'+((!stor)?'<button class="btn-small" style="font-size:.62rem;padding:2px 7px;background:#fff3cd;color:#856404" onclick="buhaStorno(\''+b.id+'\')">↺ Storno</button>':'')+'</td>'
+      var fehler=(b.soll_konto&&!nm[b.soll_konto])||(b.haben_konto&&!nm[b.haben_konto]);
+      var kl=function(nr){return '<span style="font-variant-numeric:tabular-nums">'+escapeHtml(nr||'–')+'</span>'+(nm[nr]?' <span style="color:var(--muted);font-size:.72rem">'+escapeHtml(nm[nr])+'</span>':(nr?' <span style="color:#c0392b;font-size:.66rem">?</span>':''));};
+      var statusBadge=b.ist_storno?'<span style="font-size:.6rem;font-weight:700;padding:1px 6px;border-radius:6px;background:#fdecea;color:#c0392b">Storno</span>'
+        :b.storniert?'<span style="font-size:.6rem;font-weight:700;padding:1px 6px;border-radius:6px;background:#fff3cd;color:#9a6700">storniert</span>'
+        :'<span style="font-size:.6rem;font-weight:700;padding:1px 6px;border-radius:6px;background:#e9f9f0;color:#1a7a4a">gebucht</span>';
+      return '<tr ondblclick="buhaRowDetail(\''+b.id+'\')" title="Doppelklick: Details/Storno" style="border-bottom:1px solid var(--border);cursor:pointer;'+(stor?'opacity:.6;':'')+(fehler?'background:#fdf0ef;':'')+'">'
+        +'<td style="padding:.4rem .6rem;white-space:nowrap">'+fmtDatum(b.buchungsdatum)+'</td>'
+        +'<td style="padding:.4rem .6rem;color:var(--muted)">'+escapeHtml(b.belegnr||'–')+'</td>'
+        +'<td style="padding:.4rem .6rem">'+escapeHtml(b.text||'')+'</td>'
+        +'<td style="padding:.4rem .6rem">'+kl(b.soll_konto)+'</td>'
+        +'<td style="padding:.4rem .6rem">'+kl(b.haben_konto)+'</td>'
+        +'<td style="padding:.4rem .6rem;text-align:center;font-variant-numeric:tabular-nums">'+escapeHtml(b.schluessel||'0')+'</td>'
+        +'<td style="padding:.4rem .6rem;text-align:right;font-weight:700;font-variant-numeric:tabular-nums">'+buhaEuro(b.betrag)+'</td>'
+        +'<td style="padding:.4rem .6rem;text-align:center">'+statusBadge+'</td>'
+        +'<td style="padding:.4rem .6rem;text-align:right">'+((!stor)?'<button class="btn-small" style="font-size:.6rem;padding:2px 7px;background:#fff3cd;color:#856404" onclick="event.stopPropagation();buhaStorno(\''+b.id+'\')">↺</button>':'')+'</td>'
       +'</tr>';
     }).join('')+'</tbody></table>';
+}
+function buhaRowDetail(id){
+  var b=buha.buchungen.find(function(x){return x.id===id;}); if(!b)return;
+  var nm={}; buha.konten.forEach(function(k){nm[k.nummer]=k.name;});
+  var row=function(l,v){return '<div style="display:flex;justify-content:space-between;gap:1rem;padding:3px 0;border-bottom:1px solid var(--border)"><span style="color:var(--muted)">'+l+'</span><span style="font-weight:600;text-align:right">'+v+'</span></div>';};
+  var html='<div style="font-size:.82rem;text-align:left">'
+    +row('Buchungsdatum',fmtDatum(b.buchungsdatum))+row('Belegdatum',b.belegdatum?fmtDatum(b.belegdatum):'–')+row('Beleg-Nr.',escapeHtml(b.belegnr||'–'))
+    +row('Soll',escapeHtml(b.soll_konto||'–')+' '+escapeHtml(nm[b.soll_konto]||''))+row('Haben',escapeHtml(b.haben_konto||'–')+' '+escapeHtml(nm[b.haben_konto]||''))
+    +row('BU-Schlüssel',escapeHtml(b.schluessel||'0'))+row('Betrag (brutto)',buhaEuro(b.betrag))+row('Netto',buhaEuro(b.netto))+row('Steuer',buhaEuro(b.steuer))
+    +(b.kostenstelle?row('Kostenstelle',escapeHtml(b.kostenstelle)):'')+(b.einheit_bez?row('Einheit',escapeHtml(b.einheit_bez)):'')+(b.eigentuemer?row('Eigentümer',escapeHtml(b.eigentuemer)):'')
+    +row('Status',b.ist_storno?'Storno':b.storniert?'storniert':'gebucht')
+    +'</div>';
+  var btns=[{label:'Schließen',style:'background:var(--bg);color:var(--muted)',onClick:function(){}}];
+  if(!(b.storniert||b.ist_storno))btns.unshift({label:'↺ Stornieren',style:'background:#9a6700;color:#fff',onClick:function(){buhaStorno(id);}});
+  appConfirm({icon:'🧾',title:'Buchung '+(b.belegnr||''),message:html,buttons:btns});
 }
 function buhaStorno(id){
   var b=buha.buchungen.find(function(x){return x.id===id;}); if(!b)return;

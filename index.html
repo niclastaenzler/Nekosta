@@ -1232,10 +1232,10 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
               <div style="display:flex;gap:.4rem;margin-top:.45rem;flex-wrap:wrap" id="od-unit-badges"></div>
             </div>
             <div style="display:flex;gap:.5rem;flex-wrap:wrap">
-              <button style="background:#fff;color:var(--p);border:none;border-radius:9px;padding:.5rem 1rem;cursor:pointer;font-size:.82rem;font-weight:700;font-family:var(--ff)" onclick="startAbrechnungFuerAktivesObjekt()">📄 Abrechnen</button>
-              <button style="background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.32);border-radius:9px;padding:.5rem 1rem;cursor:pointer;font-size:.82rem;font-family:var(--ff)" onclick="editAktivesObjekt()">✏️ Ändern</button>
-              <button style="background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.32);border-radius:9px;padding:.5rem 1rem;cursor:pointer;font-size:.82rem;font-family:var(--ff)" onclick="dupliziereObjekt()">📋 Duplizieren</button>
-              <button style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.32);border-radius:9px;padding:.5rem .8rem;cursor:pointer;font-size:.82rem;color:#fff" onclick="deleteObjekt(aktivesObjekt.id).then(function(){showPage('objekte')})" title="Löschen">🗑</button>
+              <button style="background:#fff;color:var(--p);border:none;border-radius:9px;padding:.5rem 1rem;cursor:pointer;font-size:.82rem;font-weight:700;font-family:var(--ff)" onclick="startAbrechnungFuerAktivesObjekt()"><span class="btn-ic" data-icon="receipt"></span> Abrechnen</button>
+              <button style="background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.32);border-radius:9px;padding:.5rem 1rem;cursor:pointer;font-size:.82rem;font-family:var(--ff)" onclick="editAktivesObjekt()"><span class="btn-ic" data-icon="pencil"></span> Ändern</button>
+              <button style="background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.32);border-radius:9px;padding:.5rem 1rem;cursor:pointer;font-size:.82rem;font-family:var(--ff)" onclick="dupliziereObjekt()"><span class="btn-ic" data-icon="copy"></span> Duplizieren</button>
+              <button style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.32);border-radius:9px;padding:.5rem .8rem;cursor:pointer;font-size:.82rem;color:#fff" onclick="deleteObjekt(aktivesObjekt.id).then(function(){showPage('objekte')})" title="Löschen"><span class="btn-ic" data-icon="trash"></span></button>
             </div>
           </div>
 
@@ -1246,9 +1246,9 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
             <button type="button" id="tab-einheiten-tab" onclick="showObjektTab('einheiten')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.75rem 1.25rem;cursor:pointer;font-size:.88rem;color:var(--muted);font-family:var(--ff)">Einheiten</button>
 
             <button type="button" id="tab-mietverh-tab" onclick="showObjektTab('mietverhaeltnisse')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.75rem 1.25rem;cursor:pointer;font-size:.88rem;color:var(--muted);font-family:var(--ff)">Mietverhältnisse</button>
-            <button type="button" id="tab-dienstleistung-tab" onclick="showObjektTab('dienstleistung')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.75rem 1.25rem;cursor:pointer;font-size:.88rem;color:var(--muted);font-family:var(--ff)">🔧 Dienstleistungsverträge</button>
-            <button type="button" id="tab-auftraege-tab" onclick="showObjektTab('auftraege')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.75rem 1.25rem;cursor:pointer;font-size:.88rem;color:var(--muted);font-family:var(--ff)">🛠 Aufträge</button>
-            <button type="button" id="tab-dokumente-tab" onclick="showObjektTab('dokumente')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.75rem 1.25rem;cursor:pointer;font-size:.88rem;color:var(--muted);font-family:var(--ff)">📁 Dokumente</button>
+            <button type="button" id="tab-dienstleistung-tab" onclick="showObjektTab('dienstleistung')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.75rem 1.25rem;cursor:pointer;font-size:.88rem;color:var(--muted);font-family:var(--ff)"><span class="btn-ic" data-icon="wrench"></span> Dienstleistungsverträge</button>
+            <button type="button" id="tab-auftraege-tab" onclick="showObjektTab('auftraege')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.75rem 1.25rem;cursor:pointer;font-size:.88rem;color:var(--muted);font-family:var(--ff)"><span class="btn-ic" data-icon="clipboard"></span> Aufträge</button>
+            <button type="button" id="tab-dokumente-tab" onclick="showObjektTab('dokumente')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.75rem 1.25rem;cursor:pointer;font-size:.88rem;color:var(--muted);font-family:var(--ff)"><span class="btn-ic" data-icon="folder"></span> Dokumente</button>
             <button type="button" id="tab-weg-eigentuemer-tab" onclick="showObjektTab('weg-eigentuemer')" style="display:none;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.75rem 1.25rem;cursor:pointer;font-size:.88rem;color:var(--muted);font-family:var(--ff)">Eigentümer</button>
             <button type="button" id="tab-weg-einheiten-tab" onclick="showObjektTab('weg-einheiten')" style="display:none;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.75rem 1.25rem;cursor:pointer;font-size:.88rem;color:var(--muted);font-family:var(--ff)">WEG-Einheiten</button>
             <button type="button" id="tab-buchhaltung-tab" onclick="showObjektTab('buchhaltung')" style="display:none;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.75rem 1.25rem;cursor:pointer;font-size:.88rem;color:var(--muted);font-family:var(--ff)">Buchhaltung</button>
@@ -1416,7 +1416,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
             <!-- TAB: DIENSTLEISTUNGSVERTRÄGE -->
             <div id="tab-content-dienstleistung" style="display:none">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem">
-                <div><h3 style="font-size:.9rem;font-weight:700">🔧 Dienstleistungsverträge</h3><div style="font-size:.76rem;color:var(--muted)">Verträge von Dienstleistern (Reinigung, Wartung, Versicherung …) verwalten.</div></div>
+                <div><h3 style="font-size:.9rem;font-weight:700;display:flex;align-items:center;gap:.4rem"><span class="mini-ic" data-icon="wrench" style="color:var(--p)"></span>Dienstleistungsverträge</h3><div style="font-size:.76rem;color:var(--muted)">Verträge von Dienstleistern (Reinigung, Wartung, Versicherung …) verwalten.</div></div>
                 <button class="btn-primary" style="font-size:.82rem;padding:.5rem 1rem" onclick="document.getElementById('dl-file-input').click()">⬆️ Vertrag hochladen</button>
                 <input type="file" id="dl-file-input" multiple style="display:none" onchange="dlHandleUpload(this.files)">
               </div>
@@ -1426,7 +1426,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
             <!-- TAB: DOKUMENTE (objektbezogen) -->
             <div id="tab-content-dokumente" style="display:none">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem">
-                <div><h3 style="font-size:.9rem;font-weight:700">📁 Dokumente zu diesem Objekt</h3><div style="font-size:.76rem;color:var(--muted)">Alle abgelegten Unterlagen – nach Ordnern gruppiert.</div></div>
+                <div><h3 style="font-size:.9rem;font-weight:700;display:flex;align-items:center;gap:.4rem"><span class="mini-ic" data-icon="folder" style="color:var(--p)"></span>Dokumente zu diesem Objekt</h3><div style="font-size:.76rem;color:var(--muted)">Alle abgelegten Unterlagen – nach Ordnern gruppiert.</div></div>
                 <button class="btn-primary" style="font-size:.82rem;padding:.5rem 1rem" onclick="document.getElementById('od-dok-file-input').click()">⬆️ Datei hochladen</button>
                 <input type="file" id="od-dok-file-input" multiple style="display:none" onchange="odDokHandleUpload(this.files)">
               </div>
@@ -1436,7 +1436,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
             <!-- TAB: AUFTRÄGE (objektbezogen) -->
             <div id="tab-content-auftraege" style="display:none">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem">
-                <div><h3 style="font-size:.9rem;font-weight:700">🛠 Aufträge zu diesem Objekt</h3><div style="font-size:.76rem;color:var(--muted)">Aufgaben & Handwerker-Aufträge für dieses Objekt.</div></div>
+                <div><h3 style="font-size:.9rem;font-weight:700;display:flex;align-items:center;gap:.4rem"><span class="mini-ic" data-icon="clipboard" style="color:var(--p)"></span>Aufträge zu diesem Objekt</h3><div style="font-size:.76rem;color:var(--muted)">Aufgaben & Handwerker-Aufträge für dieses Objekt.</div></div>
                 <button class="btn-primary" style="font-size:.82rem;padding:.5rem 1rem" onclick="openAuftragModal('', aktivesObjekt&&aktivesObjekt.id)">+ Auftrag anlegen</button>
               </div>
               <div id="od-auftraege-list"><div style="color:var(--muted);font-size:.85rem;text-align:center;padding:2rem">Wird geladen...</div></div>
@@ -1473,11 +1473,11 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
               </div>
               <!-- Tabs -->
               <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:1.1rem;flex-wrap:wrap">
-                <button type="button" id="buha-tab-buchen" onclick="buhaTab('buchen')" style="background:none;border:none;border-bottom:2px solid var(--p);margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;font-weight:700;color:var(--p);font-family:var(--ff)">📝 Buchungen</button>
-                <button type="button" id="buha-tab-hausgeld" onclick="buhaTab('hausgeld')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:var(--ff)">💶 Hausgeld</button>
-                <button type="button" id="buha-tab-konten" onclick="buhaTab('konten')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:var(--ff)">📚 Kontenrahmen</button>
-                <button type="button" id="buha-tab-ausw" onclick="buhaTab('ausw')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:var(--ff)">📊 Auswertungen</button>
-                <button type="button" id="buha-tab-audit" onclick="buhaTab('audit')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:var(--ff)">🛡️ Audit</button>
+                <button type="button" id="buha-tab-buchen" onclick="buhaTab('buchen')" style="background:none;border:none;border-bottom:2px solid var(--p);margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;font-weight:700;color:var(--p);font-family:var(--ff)"><span class="btn-ic" data-icon="pencil"></span> Buchungen</button>
+                <button type="button" id="buha-tab-hausgeld" onclick="buhaTab('hausgeld')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:var(--ff)"><span class="btn-ic" data-icon="euro"></span> Hausgeld</button>
+                <button type="button" id="buha-tab-konten" onclick="buhaTab('konten')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:var(--ff)"><span class="btn-ic" data-icon="bookopen"></span> Kontenrahmen</button>
+                <button type="button" id="buha-tab-ausw" onclick="buhaTab('ausw')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:var(--ff)"><span class="btn-ic" data-icon="barchart"></span> Auswertungen</button>
+                <button type="button" id="buha-tab-audit" onclick="buhaTab('audit')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:var(--ff)"><span class="btn-ic" data-icon="shield"></span> Audit</button>
               </div>
               <!-- TAB: BUCHEN -->
               <div id="buha-pane-buchen">

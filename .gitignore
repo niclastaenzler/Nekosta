@@ -1,0 +1,12 @@
+# Lokale Claude-/Tooling-Dateien
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+*.lock
+
+# OS-Müll
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Abhängigkeiten (falls je genutzt)
+node_modules/

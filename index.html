@@ -83,6 +83,9 @@ body{font-family:var(--ff);background:var(--bg);color:var(--text);font-size:15px
  .mini-ic svg{width:16px;height:16px;display:block;stroke-width:2}
  .h1-ic{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;flex-shrink:0;color:var(--p)}
  .h1-ic svg{width:24px;height:24px;display:block;stroke-width:2}
+ .ic-lg{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;flex-shrink:0}
+ .ic-lg svg{width:30px;height:30px;display:block;stroke-width:2}
+ .wegc-nav-btn:hover{background:#f3e9fb !important}
  .btn-ic{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;flex-shrink:0;vertical-align:-2px}
  .btn-ic svg{width:16px;height:16px;display:block;stroke-width:2}
  .nav-badge{margin-left:auto;background:var(--p-light);color:var(--p);font-size:.58rem;font-weight:700;padding:1px 5px;border-radius:8px}
@@ -3498,7 +3501,7 @@ function showPage(name){
   else if(name==='tokens'){name='einstellungen';_profilTab='abo';}
   var allPages=['tool','abrechnung','archiv','mahnwesen','stammdaten','anschreiben','kunden','tokens','tarife','auftraege',
     'einstellungen','heizkostenerstellen','impressum','welcome','bearbeitungsnotizen',
-    'adminpanel','dashboard','objekte','weg','mieter','objekt-detail','kontakte','dokumente','buchhaltung'];
+    'adminpanel','dashboard','objekte','weg','weg-cockpit','mieter','objekt-detail','kontakte','dokumente','buchhaltung'];
 
   var adminVisible=document.getElementById('admin-menu').style.display!=='none';
 
@@ -8753,7 +8756,7 @@ function renderWegObjekte(){
   cards.innerHTML=_alleWeg.map(function(o){
     var adr=[o.strasse,o.plz&&o.ort?o.plz+' '+o.ort:o.ort].filter(Boolean).join(', ');
     var initials=(o.name||'?').replace(/[^A-Za-z0-9ÄÖÜäöü ]/g,'').trim().slice(0,2).toUpperCase()||'WE';
-    return '<div onclick="openObjektDetail(\''+o.id+'\')" style="background:var(--white);border:1px solid var(--border);border-radius:14px;padding:1.1rem;cursor:pointer;transition:box-shadow .15s,transform .15s" onmouseover="this.style.boxShadow=\'0 8px 24px rgba(123,31,162,.13)\';this.style.transform=\'translateY(-2px)\'" onmouseout="this.style.boxShadow=\'\';this.style.transform=\'\'">'
+    return '<div onclick="openWegCockpit(\''+o.id+'\')" style="background:var(--white);border:1px solid var(--border);border-radius:14px;padding:1.1rem;cursor:pointer;transition:box-shadow .15s,transform .15s" onmouseover="this.style.boxShadow=\'0 8px 24px rgba(123,31,162,.13)\';this.style.transform=\'translateY(-2px)\'" onmouseout="this.style.boxShadow=\'\';this.style.transform=\'\'">'
       +'<div style="display:flex;align-items:flex-start;gap:.75rem;margin-bottom:.85rem">'
         +'<div style="width:42px;height:42px;border-radius:10px;background:#f3e5f5;color:#7b1fa2;display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:800;flex-shrink:0">'+initials+'</div>'
         +'<div style="flex:1;min-width:0">'
@@ -8768,13 +8771,116 @@ function renderWegObjekte(){
         +'<div style="text-align:right"><div style="color:var(--muted);font-size:.66rem;text-transform:uppercase">Hausgeld/Mon.</div><strong>'+fmtEuro(o._hausgeld)+'</strong></div>'
       +'</div>'
       +'<div style="display:flex;gap:.4rem;margin-top:.85rem" onclick="event.stopPropagation()">'
-        +'<button class="btn-small" style="flex:1;font-size:.72rem" onclick="openObjektDetail(\''+o.id+'\')">📊 Öffnen</button>'
-        +'<button class="oa-btn" title="Löschen" onclick="deleteObjekt(\''+o.id+'\')">🗑</button>'
+        +'<button class="btn-small" style="flex:1;font-size:.72rem" onclick="openWegCockpit(\''+o.id+'\')"><span class="btn-ic" data-icon="arrowright"></span> Cockpit öffnen</button>'
+        +'<button class="oa-btn" title="Löschen" onclick="deleteObjekt(\''+o.id+'\')"><span class="mini-ic" data-icon="trash"></span></button>'
       +'</div>'
     +'</div>';
   }).join('');
 }
 function openWegModal(){openObjektModal();selectObjektTyp('weg');}
+
+// ══ WEG-COCKPIT (eigenständige WEG-Verwaltung) ══
+var _wegcCur=null;
+var WEGC_MODS=[
+  {id:'dashboard',    label:'Übersicht',     icon:'home'},
+  {id:'einheiten',    label:'Einheiten',     icon:'dooropen'},
+  {id:'eigentuemer',  label:'Eigentümer',    icon:'users'},
+  {id:'buchhaltung',  label:'Buchhaltung',   icon:'bookopen'},
+  {id:'hausgeld',     label:'Hausgeld',      icon:'euro'},
+  {id:'beschluesse',  label:'Beschlüsse',    icon:'clipboard',     soon:true},
+  {id:'ruecklagen',   label:'Rücklagen',     icon:'shield',        soon:true},
+  {id:'schaeden',     label:'Schäden',       icon:'alerttriangle', soon:true},
+  {id:'dienstleister',label:'Dienstleister', icon:'wrench',        soon:true}
+];
+async function openWegCockpit(wegId){
+  try{
+    var {data,error}=await sb.from('objekte').select('*').eq('id',wegId).maybeSingle();
+    if(error||!data){showToast('Fehler beim Laden der WEG');return;}
+    _wegcCur=data;
+    var adr=[data.strasse,data.plz&&data.ort?data.plz+' '+data.ort:data.ort].filter(Boolean).join(', ');
+    var nEl=document.getElementById('wegc-name'); if(nEl)nEl.textContent=data.name||'WEG';
+    var aEl=document.getElementById('wegc-adr');  if(aEl)aEl.textContent=adr||'—';
+    showPage('weg-cockpit');
+    wegcGo('dashboard');
+  }catch(e){console.error('openWegCockpit:',e);showToast('Fehler: '+e.message);}
+}
+function renderWegcNav(active){
+  var nav=document.getElementById('wegc-nav'); if(!nav)return;
+  nav.innerHTML=WEGC_MODS.map(function(m){
+    var a=m.id===active;
+    return '<button class="wegc-nav-btn" onclick="wegcGo(\''+m.id+'\')" style="display:flex;align-items:center;gap:.55rem;width:100%;text-align:left;border:none;cursor:pointer;font-family:var(--ff);font-size:.84rem;padding:.5rem .6rem;border-radius:8px;background:'+(a?'#7b1fa2':'transparent')+';color:'+(a?'#fff':'#374151')+';font-weight:'+(a?'600':'500')+'">'
+      +'<span class="mini-ic" data-icon="'+m.icon+'" style="color:'+(a?'#fff':'#7b1fa2')+'"></span>'
+      +'<span style="flex:1">'+m.label+'</span>'
+      +(m.soon?'<span style="font-size:.56rem;font-weight:700;background:'+(a?'rgba(255,255,255,.25)':'#f3e5f5')+';color:'+(a?'#fff':'#7b1fa2')+';padding:1px 6px;border-radius:7px">Bald</span>':'')
+    +'</button>';
+  }).join('');
+}
+function wegcGo(mod){
+  if(!_wegcCur)return;
+  var wegId=_wegcCur.id;
+  var tabMap={einheiten:'weg-einheiten',eigentuemer:'weg-eigentuemer',buchhaltung:'buchhaltung',hausgeld:'buchhaltung'};
+  if(tabMap[mod]){
+    var p=openObjektDetail(wegId);
+    var after=function(){try{showObjektTab(tabMap[mod]);if(mod==='hausgeld'&&typeof buhaTab==='function')buhaTab('hausgeld');}catch(e){}};
+    if(p&&p.then)p.then(after);else setTimeout(after,400);
+    return;
+  }
+  renderWegcNav(mod);
+  var c=document.getElementById('wegc-content'); if(!c)return;
+  if(mod==='dashboard'){wegcRenderDashboard(c);return;}
+  var info={
+    beschluesse:['Beschlüsse & Versammlung','clipboard','Eigentümerversammlungen planen, Beschlüsse fassen und die Beschlusssammlung (§ 24 WEG) pflegen.'],
+    ruecklagen:['Rücklagen','shield','Instandhaltungsrücklage verwalten: Stand, Zuführungen und Entnahmen je Wirtschaftsjahr.'],
+    schaeden:['Schäden','alerttriangle','Schadensmeldungen erfassen, Versicherungsfälle dokumentieren und Status verfolgen.'],
+    dienstleister:['Dienstleister','wrench','Verträge mit Hausmeister, Reinigung, Wartung & Versicherung an einem Ort.']
+  };
+  var t=info[mod]||['Modul','folder',''];
+  c.innerHTML='<div style="text-align:center;padding:3.5rem 1.5rem;max-width:540px;margin:0 auto">'
+    +'<div style="width:64px;height:64px;border-radius:16px;background:#f3e5f5;color:#7b1fa2;display:flex;align-items:center;justify-content:center;margin:0 auto 1.1rem"><span class="ic-lg" data-icon="'+t[1]+'"></span></div>'
+    +'<h2 style="font-size:1.3rem;font-weight:800;margin-bottom:.45rem">'+t[0]+'</h2>'
+    +'<p style="color:var(--muted);font-size:.9rem;line-height:1.5;margin-bottom:1.4rem">'+t[2]+'</p>'
+    +'<div style="display:inline-flex;align-items:center;gap:.45rem;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;font-size:.82rem;font-weight:600;padding:.6rem 1rem;border-radius:9px"><span class="mini-ic" data-icon="clock"></span> Bald verfügbar – als eigenes Modul geplant</div>'
+  +'</div>';
+}
+async function wegcRenderDashboard(c){
+  renderWegcNav('dashboard');
+  c.innerHTML='<div style="color:var(--muted);font-size:.85rem">Lädt…</div>';
+  var wegId=_wegcCur.id;
+  var einh=0,eigCnt=0,hg=0;
+  try{
+    var res=await Promise.all([
+      sb.from('weg_einheiten').select('id',{count:'exact'}).eq('user_id',currentUser.id).eq('objekt_id',wegId),
+      sb.from('weg_eigentuemer').select('hausgeld_soll').eq('user_id',currentUser.id).eq('objekt_id',wegId)
+    ]);
+    einh=res[0].count!=null?res[0].count:(res[0].data||[]).length;
+    var owners=res[1].data||[]; eigCnt=owners.length;
+    hg=owners.reduce(function(s,x){return s+(parseFloat(x.hausgeld_soll)||0);},0);
+  }catch(e){console.warn('wegc dash:',e);}
+  var adr=[_wegcCur.strasse,_wegcCur.plz&&_wegcCur.ort?_wegcCur.plz+' '+_wegcCur.ort:_wegcCur.ort].filter(Boolean).join(', ');
+  var kpi=function(val,lbl,ic){return '<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:1rem;box-shadow:0 1px 2px rgba(16,24,40,.05)"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.02em;color:#6b7280;margin-bottom:.35rem">'+lbl+'</div><div style="font-size:1.875rem;font-weight:700;color:#111827;line-height:1.2">'+val+'</div></div><div class="dash-kpi-ic" data-icon="'+ic+'" style="background:#f3e5f5;color:#7b1fa2"></div></div></div>';};
+  var act=function(mod,lbl,ic,desc){return '<button onclick="wegcGo(\''+mod+'\')" style="display:flex;align-items:center;gap:.85rem;text-align:left;background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:.9rem 1rem;cursor:pointer;font-family:var(--ff);box-shadow:0 1px 2px rgba(16,24,40,.05);transition:border-color .15s,box-shadow .15s" onmouseover="this.style.borderColor=\'#e4d3f0\';this.style.boxShadow=\'0 4px 14px rgba(123,31,162,.1)\'" onmouseout="this.style.borderColor=\'#eef0f4\';this.style.boxShadow=\'0 1px 2px rgba(16,24,40,.05)\'"><span style="width:38px;height:38px;border-radius:10px;background:#f3e5f5;color:#7b1fa2;display:flex;align-items:center;justify-content:center;flex-shrink:0"><span class="mini-ic" data-icon="'+ic+'" style="width:18px;height:18px"></span></span><span style="min-width:0"><span style="display:block;font-weight:700;font-size:.9rem;color:#111827">'+lbl+'</span><span style="display:block;font-size:.76rem;color:var(--muted)">'+desc+'</span></span></button>';};
+  c.innerHTML=
+    '<div style="margin-bottom:1.5rem"><h1 style="font-size:1.6rem;font-weight:800;letter-spacing:-.01em;color:#111827">'+(_wegcCur.name||'WEG')+'</h1><div style="font-size:.85rem;color:#6b7280;margin-top:2px">'+(adr||'—')+'</div></div>'
+    +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.75rem">'
+      +kpi(einh,'Einheiten','dooropen')
+      +kpi(eigCnt,'Eigentümer','users')
+      +kpi(fmtEuro(hg),'Hausgeld / Mon.','euro')
+    +'</div>'
+    +'<div style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#6b7280;margin-bottom:.75rem">Verwaltung</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:.85rem;margin-bottom:1.75rem">'
+      +act('einheiten','Einheiten','dooropen','Wohnungen & Teileigentum')
+      +act('eigentuemer','Eigentümer','users','Eigentümer & MEA-Anteile')
+      +act('buchhaltung','Buchhaltung','bookopen','Buchungen, Konten, Auswertungen')
+      +act('hausgeld','Hausgeld','euro','Sollstellungen & offene Posten')
+    +'</div>'
+    +'<div style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#6b7280;margin-bottom:.75rem">Weitere Module</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:.85rem">'
+      +act('beschluesse','Beschlüsse','clipboard','Versammlung & Beschlusssammlung')
+      +act('ruecklagen','Rücklagen','shield','Instandhaltungsrücklage')
+      +act('schaeden','Schäden','alerttriangle','Schäden & Versicherungsfälle')
+      +act('dienstleister','Dienstleister','wrench','Verträge & Partner')
+    +'</div>';
+}
 
 // ── GLOBALE SUCHE ──
 var _gsTimer=null;
@@ -9648,7 +9754,7 @@ async function openObjektDetail(objId){
     currentPageName='objekt-detail';
     var allP=['tool','abrechnung','archiv','mahnwesen','stammdaten','anschreiben','kunden','tokens',
       'einstellungen','heizkostenerstellen','impressum','welcome','bearbeitungsnotizen',
-      'adminpanel','dashboard','objekte','weg','mieter','objekt-detail','kontakte'];
+      'adminpanel','dashboard','objekte','weg','weg-cockpit','mieter','objekt-detail','kontakte'];
     allP.forEach(function(p){
       var el=document.getElementById('page-'+p);
       if(el)el.style.display=p==='objekt-detail'?'block':'none';

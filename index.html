@@ -8788,7 +8788,7 @@ var WEGC_MODS=[
   {id:'eigentuemer',  label:'Eigentümer',    icon:'users'},
   {id:'buchhaltung',  label:'Buchhaltung',   icon:'bookopen'},
   {id:'hausgeld',     label:'Hausgeld',      icon:'euro'},
-  {id:'beschluesse',  label:'Beschlüsse',    icon:'clipboard',     soon:true},
+  {id:'beschluesse',  label:'Beschlüsse',    icon:'clipboard'},
   {id:'ruecklagen',   label:'Rücklagen',     icon:'shield'},
   {id:'schaeden',     label:'Schäden',       icon:'alerttriangle', soon:true},
   {id:'dienstleister',label:'Dienstleister', icon:'wrench',        soon:true}
@@ -8832,6 +8832,7 @@ function wegcGo(mod){
   renderWegcNav(mod);
   if(mod==='dashboard'){wegcRenderDashboard(c);return;}
   if(mod==='ruecklagen'){wegcRenderRuecklagen(c);return;}
+  if(mod==='beschluesse'){wegcRenderBeschluesse(c);return;}
   var info={
     beschluesse:['Beschlüsse & Versammlung','clipboard','Eigentümerversammlungen planen, Beschlüsse fassen und die Beschlusssammlung (§ 24 WEG) pflegen.'],
     ruecklagen:['Rücklagen','shield','Instandhaltungsrücklage verwalten: Stand, Zuführungen und Entnahmen je Wirtschaftsjahr.'],
@@ -8996,6 +8997,87 @@ async function wegcRenderBuchhaltung(c,subtab){
   aktivesObjekt=_wegcCur;
   try{ await ladeBuchhaltung(_wegcCur.id); }catch(e){ console.warn('buha load:',e); }
   try{ buhaTab(subtab==='hausgeld'?'hausgeld':'buchen'); }catch(e){}
+}
+// ── WEG-Cockpit: Beschlüsse / Versammlung (§24 WEG Beschlusssammlung) ──
+function _wegcKpi(v,l,ic,col){return '<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:1rem;box-shadow:0 1px 2px rgba(16,24,40,.05)"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.02em;color:#6b7280;margin-bottom:.35rem">'+l+'</div><div style="font-size:1.5rem;font-weight:700;color:'+col+';line-height:1.2">'+v+'</div></div><span style="width:38px;height:38px;border-radius:10px;background:'+col+'18;color:'+col+';display:flex;align-items:center;justify-content:center;flex-shrink:0"><span class="mini-ic" data-icon="'+ic+'" style="width:18px;height:18px"></span></span></div></div>';}
+function _wegcFld(lbl,inner){return '<div style="display:flex;flex-direction:column;gap:3px">'+(lbl?'<label style="font-size:.62rem;font-weight:700;color:var(--muted);text-transform:uppercase">'+lbl+'</label>':'')+inner+'</div>';}
+function _wegcDfmt(d){if(!d)return'–';var p=(''+d).slice(0,10).split('-');return p.length===3?p[2]+'.'+p[1]+'.'+p[0]:d;}
+async function wegcRenderBeschluesse(c){
+  renderWegcNav('beschluesse');
+  if(!c)c=document.getElementById('wegc-content'); if(!c)return;
+  c.innerHTML='<div style="color:var(--muted);font-size:.85rem">Lädt…</div>';
+  var wegId=_wegcCur.id, rows=[];
+  try{
+    var res=await sb.from('weg_beschluesse').select('*').eq('user_id',currentUser.id).eq('objekt_id',wegId).order('datum',{ascending:false}).order('created_at',{ascending:false});
+    if(res.error)throw res.error; rows=res.data||[];
+  }catch(e){c.innerHTML='<div style="color:#dc2626;font-size:.85rem">Fehler beim Laden: '+escapeHtml(e.message||'')+'</div>';return;}
+  var gesamt=rows.length, ang=rows.filter(function(r){return r.ergebnis==='angenommen';}).length, letzte=rows.length?rows[0].datum:null;
+  var today=new Date().toISOString().slice(0,10);
+  var erg=function(e){var m={angenommen:['#16a34a','#f0fdf4','Angenommen'],abgelehnt:['#dc2626','#fef2f2','Abgelehnt'],vertagt:['#d97706','#fffbeb','Vertagt']};var x=m[e]||['#6b7280','#f3f4f6',e||'–'];return '<span style="font-size:.7rem;font-weight:700;color:'+x[0]+';background:'+x[1]+';padding:2px 9px;border-radius:8px;white-space:nowrap">'+x[2]+'</span>';};
+  var html=''
+    +'<div style="margin-bottom:1.25rem"><h1 style="font-size:1.6rem;font-weight:800;color:#111827">Beschlüsse</h1><div style="font-size:.85rem;color:#6b7280;margin-top:2px">Beschlusssammlung (§ 24 WEG) · '+escapeHtml(_wegcCur.name||'WEG')+'</div></div>'
+    +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem">'
+      +_wegcKpi(gesamt,'Beschlüsse gesamt','clipboard','#7b1fa2')
+      +_wegcKpi(ang,'davon angenommen','checkcircle','#16a34a')
+      +_wegcKpi(_wegcDfmt(letzte),'Letzter Beschluss','calendar','#2563eb')
+    +'</div>'
+    +'<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:1rem 1.1rem;margin-bottom:1.5rem;box-shadow:0 1px 2px rgba(16,24,40,.05)">'
+      +'<div style="font-size:.8rem;font-weight:700;margin-bottom:.7rem;color:#111827">Neuer Beschluss</div>'
+      +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.6rem;margin-bottom:.6rem">'
+        +_wegcFld('Datum','<input id="wegc-bs-datum" type="date" value="'+today+'" class="buha-inp">')
+        +_wegcFld('Versammlung','<input id="wegc-bs-vers" type="text" placeholder="z. B. Ordentliche ETV 2026" class="buha-inp">')
+        +_wegcFld('TOP','<input id="wegc-bs-top" type="text" placeholder="z. B. TOP 4" class="buha-inp">')
+        +_wegcFld('Ergebnis','<select id="wegc-bs-erg" class="buha-inp"><option value="angenommen">Angenommen</option><option value="abgelehnt">Abgelehnt</option><option value="vertagt">Vertagt</option></select>')
+      +'</div>'
+      +_wegcFld('Titel','<input id="wegc-bs-titel" type="text" placeholder="Kurztitel des Beschlusses" class="buha-inp" style="margin-bottom:.6rem">')
+      +_wegcFld('Beschlusstext','<textarea id="wegc-bs-text" rows="3" placeholder="Wortlaut des Beschlusses…" class="buha-inp" style="resize:vertical;margin-bottom:.6rem"></textarea>')
+      +'<div style="display:flex;gap:.6rem;flex-wrap:wrap;align-items:flex-end">'
+        +_wegcFld('Ja','<input id="wegc-bs-ja" type="number" min="0" step="any" value="0" class="buha-inp" style="max-width:90px">')
+        +_wegcFld('Nein','<input id="wegc-bs-nein" type="number" min="0" step="any" value="0" class="buha-inp" style="max-width:90px">')
+        +_wegcFld('Enthaltungen','<input id="wegc-bs-enth" type="number" min="0" step="any" value="0" class="buha-inp" style="max-width:110px">')
+        +'<button class="btn-primary" style="padding:.5rem 1rem;white-space:nowrap;margin-left:auto" onclick="wegcBeschlussSave()"><span class="btn-ic" data-icon="plus"></span> Beschluss speichern</button>'
+      +'</div>'
+    +'</div>';
+  if(!rows.length){
+    html+='<div style="text-align:center;color:var(--muted);font-size:.85rem;padding:2.5rem;background:var(--white);border:1px solid #eef0f4;border-radius:12px">Noch keine Beschlüsse erfasst.</div>';
+  }else{
+    html+='<div style="display:flex;flex-direction:column;gap:.75rem">';
+    rows.forEach(function(r){
+      var abst=(parseFloat(r.ja_stimmen)||0)+' / '+(parseFloat(r.nein_stimmen)||0)+' / '+(parseFloat(r.enthaltungen)||0);
+      html+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:1rem 1.1rem;box-shadow:0 1px 2px rgba(16,24,40,.05)">'
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.75rem;margin-bottom:.4rem">'
+          +'<div style="font-size:.72rem;color:#6b7280">'+_wegcDfmt(r.datum)+(r.versammlung?' · '+escapeHtml(r.versammlung):'')+(r.top?' · '+escapeHtml(r.top):'')+'</div>'
+          +'<div style="display:flex;align-items:center;gap:.5rem;flex-shrink:0">'+erg(r.ergebnis)+'<button class="oa-btn" title="Löschen" onclick="wegcBeschlussDel(\''+r.id+'\')"><span class="mini-ic" data-icon="trash"></span></button></div>'
+        +'</div>'
+        +(r.titel?'<div style="font-weight:700;font-size:.95rem;color:#111827;margin-bottom:.25rem">'+escapeHtml(r.titel)+'</div>':'')
+        +(r.beschlusstext?'<div style="font-size:.85rem;color:#4b5563;white-space:pre-wrap;line-height:1.5">'+escapeHtml(r.beschlusstext)+'</div>':'')
+        +'<div style="font-size:.72rem;color:#6b7280;margin-top:.5rem">Abstimmung (Ja / Nein / Enth.): <strong>'+abst+'</strong></div>'
+      +'</div>';
+    });
+    html+='</div>';
+  }
+  c.innerHTML=html;
+}
+async function wegcBeschlussSave(){
+  if(!_wegcCur)return;
+  var g=function(id){var el=document.getElementById(id);return el?el.value:'';};
+  var d=g('wegc-bs-datum'), titel=(g('wegc-bs-titel')||'').trim(), text=(g('wegc-bs-text')||'').trim();
+  if(!d){showToast('Bitte Datum angeben');return;}
+  if(!titel&&!text){showToast('Bitte Titel oder Beschlusstext angeben');return;}
+  var num=function(v){var n=parseFloat((''+v).replace(',','.'));return isNaN(n)?0:n;};
+  var rec={user_id:currentUser.id,objekt_id:_wegcCur.id,datum:d,versammlung:(g('wegc-bs-vers')||'').trim()||null,top:(g('wegc-bs-top')||'').trim()||null,titel:titel||null,beschlusstext:text||null,ergebnis:g('wegc-bs-erg')||'angenommen',ja_stimmen:num(g('wegc-bs-ja')),nein_stimmen:num(g('wegc-bs-nein')),enthaltungen:num(g('wegc-bs-enth')),jahr:parseInt((''+d).slice(0,4))||new Date().getFullYear()};
+  try{
+    var res=await sb.from('weg_beschluesse').insert(rec);
+    if(res.error){showToast('Fehler: '+res.error.message);return;}
+    showToast('Beschluss gespeichert'); wegcRenderBeschluesse();
+  }catch(e){showToast('Fehler: '+e.message);}
+}
+function wegcBeschlussDel(id){
+  appConfirm({icon:'🗑',title:'Beschluss löschen?',message:'Dieser Beschluss wird dauerhaft aus der Beschlusssammlung entfernt.',
+    buttons:[
+      {label:'Abbrechen',style:'background:#f3f4f6;color:#374151',onClick:appConfirmClose},
+      {label:'Löschen',style:'background:#dc2626;color:#fff',onClick:async function(){appConfirmClose();try{var res=await sb.from('weg_beschluesse').delete().eq('id',id);if(res.error){showToast('Fehler: '+res.error.message);return;}showToast('Gelöscht');wegcRenderBeschluesse();}catch(e){showToast('Fehler: '+e.message);}}}
+    ]});
 }
 
 // ── GLOBALE SUCHE ──

@@ -1486,7 +1486,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                 <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.6rem">
                   <span style="font-size:.88rem;font-weight:700">📓 Journal</span>
                   <input type="text" id="buha-suche" oninput="renderBuhaJournal()" placeholder="🔍 Volltextsuche … (F10)" style="border:1px solid var(--border);border-radius:8px;padding:.4rem .7rem;font-size:.82rem;font-family:var(--ff);outline:none;flex:1;min-width:180px">
-                  <button class="btn-small" onclick="buhaExportCsv()">📊 CSV</button>
+                  <button class="btn-small" onclick="buhaExportCsv()"><span class="btn-ic" data-icon="download"></span> CSV</button>
                 </div>
                 <div id="buha-journal" style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow-x:auto"></div>
                 <!-- STICKY BUCHUNGSMASKE (unten, DATEV-Stil) -->
@@ -1524,7 +1524,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                   <select id="hg-filter" onchange="renderHausgeld()" style="border:1px solid var(--border);border-radius:8px;padding:.45rem .7rem;font-size:.82rem;font-family:var(--ff);background:var(--white);outline:none">
                     <option value="alle">Alle Posten</option><option value="offen">Nur offene</option><option value="ueberfaellig">Nur überfällige</option><option value="bezahlt">Nur bezahlte</option>
                   </select>
-                  <span style="margin-left:auto"><button class="btn-small" onclick="hausgeldCsv()">📊 CSV</button></span>
+                  <span style="margin-left:auto"><button class="btn-small" onclick="hausgeldCsv()"><span class="btn-ic" data-icon="download"></span> CSV</button></span>
                 </div>
                 <div id="hg-content" style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow-x:auto"></div>
                 <div style="font-size:.72rem;color:var(--muted);margin-top:.6rem">💡 Das monatliche Hausgeld stammt aus dem Feld „Hausgeld" je Eigentümer (Reiter „Eigentümer"). Sollstellungen werden monatlich für das gewählte Wirtschaftsjahr erzeugt; bezahlte Posten kannst du als Zahlungseingang markieren.</div>
@@ -1550,7 +1550,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                   </select>
                   <select id="ausw-konto" onchange="renderAuswertungen()" style="display:none;border:1px solid var(--border);border-radius:8px;padding:.45rem .7rem;font-size:.84rem;font-family:var(--ff);background:var(--white);outline:none"></select>
                   <span style="margin-left:auto;display:flex;gap:.4rem">
-                    <button class="btn-small" onclick="buhaAuswCsv()">📊 CSV</button>
+                    <button class="btn-small" onclick="buhaAuswCsv()"><span class="btn-ic" data-icon="download"></span> CSV</button>
                     <button class="btn-small" onclick="buhaAuswPrint()">🖨️ Drucken/PDF</button>
                   </span>
                 </div>
@@ -1947,7 +1947,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                 <span style="font-size:.75rem;color:var(--muted)">Summe: <strong id="hk-summe-live" style="color:#e67e22">0,00 €</strong></span>
               </div>
               <div style="display:flex;gap:.4rem;align-items:center">
-                <button type="button" onclick="importKostenVorlage('hk')" class="btn-small" style="font-size:.7rem">📂 Vorlage</button>
+                <button type="button" onclick="importKostenVorlage('hk')" class="btn-small" style="font-size:.7rem"><span class="btn-ic" data-icon="folder"></span> Vorlage</button>
                 <button type="button" onclick="saveKostenVorlage('hk')" class="btn-small" style="font-size:.7rem"><span class="btn-ic" data-icon="save"></span> Speichern</button>
                 <label class="hk-toggle" style="margin-left:.35rem;font-size:.78rem"><input type="checkbox" id="keine-hk" onchange="toggleHK()"> Keine Heizkosten</label>
               </div>
@@ -1966,7 +1966,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
           <div class="kosten-section" style="margin-top:1.25rem;padding-top:1.1rem;border-top:1px solid var(--border)">
             <div class="kosten-section-header" style="display:flex;justify-content:space-between;align-items:center">
               <div style="display:flex;align-items:center;gap:.75rem"><div class="kosten-section-title">📋 Betriebskosten</div><span style="font-size:.75rem;color:var(--muted)">Summe: <strong id="bk-summe-live" style="color:var(--p)">0,00 €</strong></span></div>
-              <div style="display:flex;gap:.4rem"><button type="button" onclick="importKostenVorlage('bk')" class="btn-small" style="font-size:.7rem">📂 Vorlage</button><button type="button" onclick="saveKostenVorlage('bk')" class="btn-small" style="font-size:.7rem"><span class="btn-ic" data-icon="save"></span> Speichern</button></div>
+              <div style="display:flex;gap:.4rem"><button type="button" onclick="importKostenVorlage('bk')" class="btn-small" style="font-size:.7rem"><span class="btn-ic" data-icon="folder"></span> Vorlage</button><button type="button" onclick="saveKostenVorlage('bk')" class="btn-small" style="font-size:.7rem"><span class="btn-ic" data-icon="save"></span> Speichern</button></div>
             </div>
             <div style="overflow-x:auto">
             <table class="kosten-table">
@@ -2037,7 +2037,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
               <button type="button" onclick="setPdfLayout('modern')" id="wiz-layout-modern" style="border:2px solid var(--border);border-radius:7px;padding:.3rem .8rem;cursor:pointer;font-size:.72rem;font-weight:600;background:var(--white);color:var(--muted);font-family:var(--ff)">Modern</button>
               <button type="button" onclick="setPdfLayout('compact')" id="wiz-layout-compact" style="border:2px solid var(--border);border-radius:7px;padding:.3rem .8rem;cursor:pointer;font-size:.72rem;font-weight:600;background:var(--white);color:var(--muted);font-family:var(--ff)">Kompakt</button>
             </div>
-            <button onclick="vorschauPdfLayout(currentPdfLayout||'standard')" class="btn-small" style="margin-left:auto;font-size:.7rem;white-space:nowrap">👁 Vorschau</button>
+            <button onclick="vorschauPdfLayout(currentPdfLayout||'standard')" class="btn-small" style="margin-left:auto;font-size:.7rem;white-space:nowrap"><span class="btn-ic" data-icon="eye"></span> Vorschau</button>
           </div>
           <!-- ANSCHREIBEN-OPTIONEN -->
           <div style="background:#faf8fc;border:1px solid var(--border);border-radius:10px;padding:.7rem 1rem;margin-bottom:.75rem;display:flex;align-items:center;gap:1.25rem;flex-wrap:wrap">
@@ -2051,9 +2051,9 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
           </div>
           <div class="pdf-actions-bar">
             <div><div class="pa-label">📥 PDF Gesamtpaket</div><div class="pa-sub">Alle Wohnungen in einem Dokument</div></div>
-            <button class="btn-small gruen" id="btn-gesamt-clean" onclick="handleGesamtPDF(false,'vorschau')" style="display:none">👁 Vorschau</button>
+            <button class="btn-small gruen" id="btn-gesamt-clean" onclick="handleGesamtPDF(false,'vorschau')" style="display:none"><span class="btn-ic" data-icon="eye"></span> Vorschau</button>
             <button class="btn-small gruen" id="btn-gesamt-dl" onclick="handleGesamtPDF(false,'download')" style="display:none">⬇️ Alle herunterladen</button>
-            <button class="btn-small" style="background:#1d6f42" onclick="exportExcel()">📊 Excel Export</button>
+            <button class="btn-small" style="background:#1d6f42" onclick="exportExcel()"><span class="btn-ic" data-icon="download"></span> Excel Export</button>
             <button class="btn-success" id="btn-speichern" style="display:none" onclick="openSaveDialog()"><span class="btn-ic" data-icon="save"></span> Speichern</button>
           </div>
 
@@ -2079,8 +2079,8 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
               <div style="font-size:.95rem;font-weight:700;color:var(--p)">✅ Abrechnung abschließen</div>
               <div style="font-size:.78rem;color:var(--muted);margin-top:2px">Als „Abgerechnet" speichern und unter „Meine Abrechnungen" ablegen. Doppelte Bestätigung erforderlich.</div>
             </div>
-            <button class="btn-secondary" onclick="pruefeUndZeige()" title="Plausibilitätsprüfung (nicht umlagefähige Kosten, Summen, Vorauszahlungen, Frist, HeizkostenV)">🔍 Prüfen</button>
-            <button class="btn-primary" onclick="openAbrechnungConfirm()">📋 Abrechnen &amp; speichern</button>
+            <button class="btn-secondary" onclick="pruefeUndZeige()" title="Plausibilitätsprüfung (nicht umlagefähige Kosten, Summen, Vorauszahlungen, Frist, HeizkostenV)"><span class="btn-ic" data-icon="search"></span> Prüfen</button>
+            <button class="btn-primary" onclick="openAbrechnungConfirm()"><span class="btn-ic" data-icon="checkcircle"></span> Abrechnen &amp; speichern</button>
           </div>
         </div>
       </div>
@@ -2093,8 +2093,8 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
           <div id="stammdaten-warn" style="display:none;background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:.3rem .75rem;font-size:.75rem;color:#856404">
             ⚠️ <strong>Stammdaten fehlen!</strong> <a href="#" onclick="showPage('stammdaten');return false" style="color:#856404;text-decoration:underline">Jetzt ausfüllen</a> – sonst fehlt der Absender im PDF.
           </div>
-          <button class="btn-success" onclick="zwischenspeichern()">💾 Zwischenspeichern</button>
-          <button class="btn-secondary" id="btn-probe" onclick="ladeProbeabrechnung()" style="font-size:.78rem;padding:.5rem 1rem;display:none">🧪 Probe</button>
+          <button class="btn-success" onclick="zwischenspeichern()"><span class="btn-ic" data-icon="save"></span> Zwischenspeichern</button>
+          <button class="btn-secondary" id="btn-probe" onclick="ladeProbeabrechnung()" style="font-size:.78rem;padding:.5rem 1rem;display:none"><span class="btn-ic" data-icon="flask"></span> Probe</button>
           <span id="wizard-step-label" style="font-size:.82rem;color:var(--muted)">Schritt 1 von 4</span>
         </div>
         <button class="btn-primary" id="btn-weiter" onclick="wizardWeiter()">Weiter →</button>
@@ -2107,10 +2107,10 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:.75rem">
           <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
             <h1 style="font-size:1.5rem;font-weight:700">Betriebskostenabrechnungen</h1>
-            <span id="archiv-entwuerfe-badge" style="display:none;background:#fff3cd;color:#856404;font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:12px;cursor:pointer" onclick="document.getElementById('archiv-filter-status').value='entwurf';renderArchivTabelle()">📝 Entwürfe</span>
+            <span id="archiv-entwuerfe-badge" style="display:none;background:#fff3cd;color:#856404;font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:12px;cursor:pointer" onclick="document.getElementById('archiv-filter-status').value='entwurf';renderArchivTabelle()"><span class="mini-ic" data-icon="pencil" style="vertical-align:-2px"></span> Entwürfe</span>
           </div>
           <div style="display:flex;gap:.65rem">
-            <button class="btn-secondary" onclick="showPage('archiv')" style="font-size:.82rem;padding:.5rem 1rem">📋 BKA aus Vorjahr</button>
+            <button class="btn-secondary" onclick="showPage('archiv')" style="font-size:.82rem;padding:.5rem 1rem"><span class="btn-ic" data-icon="copy"></span> BKA aus Vorjahr</button>
             <button class="btn-primary" onclick="startNeueAbrechnung()" style="display:flex;align-items:center;gap:.35rem"><span>+</span> Neue Abrechnung erstellen</button>
           </div>
         </div>
@@ -4652,7 +4652,7 @@ async function renderErgebnis(){
       bodyHtml+='<div style="display:flex;align-items:center;gap:1rem;padding:.6rem 1rem;background:#faf8fc;border-bottom:1px solid var(--border);flex-wrap:wrap">'
         +'<div style="font-size:.82rem"><strong>'+p.name+'</strong> <span style="color:var(--muted);font-size:.75rem">'+fmtDatum(p.von)+' – '+fmtDatum(p.bis)+' · '+p.days+' Tage</span></div>'
         +'<div style="margin-left:auto;display:flex;gap:.35rem">'
-          +'<button class="btn-small gruen" style="font-size:.65rem;padding:2px 6px" onclick="handlePeriodePDF('+wi+','+pi+',false,&#39;vorschau&#39;)">👁 Vorschau</button>'
+          +'<button class="btn-small gruen" style="font-size:.65rem;padding:2px 6px" onclick="handlePeriodePDF('+wi+','+pi+',false,&#39;vorschau&#39;)"><span class="btn-ic" data-icon="eye"></span> Vorschau</button>'
           +'<button class="btn-small gruen" style="font-size:.65rem;padding:2px 6px" onclick="handlePeriodePDF('+wi+','+pi+',false,&#39;download&#39;)">⬇ PDF</button>'
           +'<button class="btn-small" style="font-size:.65rem;padding:2px 6px" onclick="anschreibenFuerPeriode('+wi+','+pi+')">✉️ Anschreiben</button>'
         +'</div>'

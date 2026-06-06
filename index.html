@@ -8790,8 +8790,8 @@ var WEGC_MODS=[
   {id:'hausgeld',     label:'Hausgeld',      icon:'euro'},
   {id:'beschluesse',  label:'Beschlüsse',    icon:'clipboard'},
   {id:'ruecklagen',   label:'Rücklagen',     icon:'shield'},
-  {id:'schaeden',     label:'Schäden',       icon:'alerttriangle', soon:true},
-  {id:'dienstleister',label:'Dienstleister', icon:'wrench',        soon:true}
+  {id:'schaeden',     label:'Schäden',       icon:'alerttriangle'},
+  {id:'dienstleister',label:'Dienstleister', icon:'wrench'}
 ];
 async function openWegCockpit(wegId){
   try{
@@ -8833,6 +8833,8 @@ function wegcGo(mod){
   if(mod==='dashboard'){wegcRenderDashboard(c);return;}
   if(mod==='ruecklagen'){wegcRenderRuecklagen(c);return;}
   if(mod==='beschluesse'){wegcRenderBeschluesse(c);return;}
+  if(mod==='schaeden'){wegcRenderSchaeden(c);return;}
+  if(mod==='dienstleister'){wegcRenderDienstleister(c);return;}
   var info={
     beschluesse:['Beschlüsse & Versammlung','clipboard','Eigentümerversammlungen planen, Beschlüsse fassen und die Beschlusssammlung (§ 24 WEG) pflegen.'],
     ruecklagen:['Rücklagen','shield','Instandhaltungsrücklage verwalten: Stand, Zuführungen und Entnahmen je Wirtschaftsjahr.'],
@@ -8955,9 +8957,7 @@ async function wegcRueckSave(){
   var dEl=document.getElementById('wegc-rl-datum'),tEl=document.getElementById('wegc-rl-typ'),bEl=document.getElementById('wegc-rl-betrag'),zEl=document.getElementById('wegc-rl-zweck');
   if(!dEl||!bEl)return;
   var d=dEl.value,typ=tEl.value,zweck=(zEl.value||'').trim();
-  var s=(bEl.value||'').trim();
-  if(s.indexOf(',')>=0)s=s.replace(/\./g,'').replace(',','.');
-  var betrag=parseFloat(s);
+  var betrag=_wegcNum(bEl.value);
   if(!d){showToast('Bitte Datum angeben');return;}
   if(!betrag||betrag<=0){showToast('Bitte gültigen Betrag angeben');bEl.focus();return;}
   var jahr=parseInt((''+d).slice(0,4))||new Date().getFullYear();
@@ -9002,6 +9002,7 @@ async function wegcRenderBuchhaltung(c,subtab){
 function _wegcKpi(v,l,ic,col){return '<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:1rem;box-shadow:0 1px 2px rgba(16,24,40,.05)"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.02em;color:#6b7280;margin-bottom:.35rem">'+l+'</div><div style="font-size:1.5rem;font-weight:700;color:'+col+';line-height:1.2">'+v+'</div></div><span style="width:38px;height:38px;border-radius:10px;background:'+col+'18;color:'+col+';display:flex;align-items:center;justify-content:center;flex-shrink:0"><span class="mini-ic" data-icon="'+ic+'" style="width:18px;height:18px"></span></span></div></div>';}
 function _wegcFld(lbl,inner){return '<div style="display:flex;flex-direction:column;gap:3px">'+(lbl?'<label style="font-size:.62rem;font-weight:700;color:var(--muted);text-transform:uppercase">'+lbl+'</label>':'')+inner+'</div>';}
 function _wegcDfmt(d){if(!d)return'–';var p=(''+d).slice(0,10).split('-');return p.length===3?p[2]+'.'+p[1]+'.'+p[0]:d;}
+function _wegcNum(s){s=(''+(s==null?'':s)).trim();if(!s)return 0;if(s.indexOf(',')>=0){s=s.replace(/\./g,'').replace(',','.');}else{s=s.replace(/\./g,'');}var n=parseFloat(s);return isNaN(n)?0:n;}
 async function wegcRenderBeschluesse(c){
   renderWegcNav('beschluesse');
   if(!c)c=document.getElementById('wegc-content'); if(!c)return;
@@ -9077,6 +9078,143 @@ function wegcBeschlussDel(id){
     buttons:[
       {label:'Abbrechen',style:'background:#f3f4f6;color:#374151',onClick:appConfirmClose},
       {label:'Löschen',style:'background:#dc2626;color:#fff',onClick:async function(){appConfirmClose();try{var res=await sb.from('weg_beschluesse').delete().eq('id',id);if(res.error){showToast('Fehler: '+res.error.message);return;}showToast('Gelöscht');wegcRenderBeschluesse();}catch(e){showToast('Fehler: '+e.message);}}}
+    ]});
+}
+// ── WEG-Cockpit: Schäden / Versicherungsfälle ──
+async function wegcRenderSchaeden(c){
+  renderWegcNav('schaeden');
+  if(!c)c=document.getElementById('wegc-content'); if(!c)return;
+  c.innerHTML='<div style="color:var(--muted);font-size:.85rem">Lädt…</div>';
+  var wegId=_wegcCur.id, rows=[];
+  try{ var res=await sb.from('weg_schaeden').select('*').eq('user_id',currentUser.id).eq('objekt_id',wegId).order('datum',{ascending:false}).order('created_at',{ascending:false}); if(res.error)throw res.error; rows=res.data||[]; }
+  catch(e){c.innerHTML='<div style="color:#dc2626;font-size:.85rem">Fehler beim Laden: '+escapeHtml(e.message||'')+'</div>';return;}
+  var gesamt=rows.length, offen=rows.filter(function(r){return r.status!=='erledigt';}).length, kosten=rows.reduce(function(s,r){return s+(parseFloat(r.kosten)||0);},0);
+  var today=new Date().toISOString().slice(0,10);
+  var stat=function(s){var m={offen:['#dc2626','#fef2f2','Offen'],in_bearbeitung:['#2563eb','#eff6ff','In Bearbeitung'],erledigt:['#16a34a','#f0fdf4','Erledigt']};var x=m[s]||['#6b7280','#f3f4f6',s||'–'];return '<span style="font-size:.7rem;font-weight:700;color:'+x[0]+';background:'+x[1]+';padding:2px 9px;border-radius:8px;white-space:nowrap">'+x[2]+'</span>';};
+  var html=''
+    +'<div style="margin-bottom:1.25rem"><h1 style="font-size:1.6rem;font-weight:800;color:#111827">Schäden</h1><div style="font-size:.85rem;color:#6b7280;margin-top:2px">Schadensmeldungen & Versicherungsfälle · '+escapeHtml(_wegcCur.name||'WEG')+'</div></div>'
+    +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem">'
+      +_wegcKpi(gesamt,'Schäden gesamt','alerttriangle','#7b1fa2')
+      +_wegcKpi(offen,'offen / in Arbeit','clock','#e67e22')
+      +_wegcKpi(fmtEuro(kosten),'Kosten gesamt','euro','#dc2626')
+    +'</div>'
+    +'<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:1rem 1.1rem;margin-bottom:1.5rem;box-shadow:0 1px 2px rgba(16,24,40,.05)">'
+      +'<div style="font-size:.8rem;font-weight:700;margin-bottom:.7rem;color:#111827">Neuer Schaden</div>'
+      +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.6rem;margin-bottom:.6rem">'
+        +_wegcFld('Datum','<input id="wegc-sc-datum" type="date" value="'+today+'" class="buha-inp">')
+        +_wegcFld('Ort / Einheit','<input id="wegc-sc-ort" type="text" placeholder="z. B. Keller, WHG 3" class="buha-inp">')
+        +_wegcFld('Status','<select id="wegc-sc-status" class="buha-inp"><option value="offen">Offen</option><option value="in_bearbeitung">In Bearbeitung</option><option value="erledigt">Erledigt</option></select>')
+        +_wegcFld('Versicherungsfall','<select id="wegc-sc-vers" class="buha-inp"><option value="nein">Nein</option><option value="ja">Ja</option></select>')
+        +_wegcFld('Kosten (€)','<input id="wegc-sc-kosten" type="text" inputmode="decimal" placeholder="0,00" class="buha-inp">')
+      +'</div>'
+      +_wegcFld('Beschreibung','<textarea id="wegc-sc-text" rows="2" placeholder="Was ist passiert?" class="buha-inp" style="resize:vertical;margin-bottom:.6rem"></textarea>')
+      +'<div style="display:flex;justify-content:flex-end"><button class="btn-primary" style="padding:.5rem 1rem" onclick="wegcSchadenSave()"><span class="btn-ic" data-icon="plus"></span> Schaden speichern</button></div>'
+    +'</div>';
+  if(!rows.length){
+    html+='<div style="text-align:center;color:var(--muted);font-size:.85rem;padding:2.5rem;background:var(--white);border:1px solid #eef0f4;border-radius:12px">Noch keine Schäden erfasst.</div>';
+  }else{
+    html+='<div style="display:flex;flex-direction:column;gap:.75rem">';
+    rows.forEach(function(r){
+      html+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:1rem 1.1rem;box-shadow:0 1px 2px rgba(16,24,40,.05)">'
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.75rem;margin-bottom:.35rem">'
+          +'<div style="font-size:.72rem;color:#6b7280">'+_wegcDfmt(r.datum)+(r.ort?' · '+escapeHtml(r.ort):'')+'</div>'
+          +'<div style="display:flex;align-items:center;gap:.5rem;flex-shrink:0">'+(r.versicherungsfall?'<span style="font-size:.7rem;font-weight:700;color:#2563eb;background:#eff6ff;padding:2px 9px;border-radius:8px">Versicherung</span>':'')+stat(r.status)+'<button class="oa-btn" title="Löschen" onclick="wegcSchadenDel(\''+r.id+'\')"><span class="mini-ic" data-icon="trash"></span></button></div>'
+        +'</div>'
+        +(r.beschreibung?'<div style="font-size:.88rem;color:#374151;white-space:pre-wrap;line-height:1.5">'+escapeHtml(r.beschreibung)+'</div>':'')
+        +((parseFloat(r.kosten)||0)>0?'<div style="font-size:.78rem;color:#6b7280;margin-top:.4rem">Kosten: <strong>'+fmtEuro(parseFloat(r.kosten)||0)+'</strong></div>':'')
+      +'</div>';
+    });
+    html+='</div>';
+  }
+  c.innerHTML=html;
+}
+async function wegcSchadenSave(){
+  if(!_wegcCur)return;
+  var g=function(id){var el=document.getElementById(id);return el?el.value:'';};
+  var d=g('wegc-sc-datum'), ort=(g('wegc-sc-ort')||'').trim(), text=(g('wegc-sc-text')||'').trim();
+  if(!d){showToast('Bitte Datum angeben');return;}
+  if(!ort&&!text){showToast('Bitte Ort oder Beschreibung angeben');return;}
+  var kosten=_wegcNum(g('wegc-sc-kosten'));
+  var rec={user_id:currentUser.id,objekt_id:_wegcCur.id,datum:d,ort:ort||null,beschreibung:text||null,status:g('wegc-sc-status')||'offen',versicherungsfall:g('wegc-sc-vers')==='ja',kosten:kosten,jahr:parseInt((''+d).slice(0,4))||new Date().getFullYear()};
+  try{ var res=await sb.from('weg_schaeden').insert(rec); if(res.error){showToast('Fehler: '+res.error.message);return;} showToast('Schaden gespeichert'); wegcRenderSchaeden(); }catch(e){showToast('Fehler: '+e.message);}
+}
+function wegcSchadenDel(id){
+  appConfirm({icon:'🗑',title:'Schaden löschen?',message:'Diese Schadensmeldung wird dauerhaft entfernt.',
+    buttons:[
+      {label:'Abbrechen',style:'background:#f3f4f6;color:#374151',onClick:appConfirmClose},
+      {label:'Löschen',style:'background:#dc2626;color:#fff',onClick:async function(){appConfirmClose();try{var res=await sb.from('weg_schaeden').delete().eq('id',id);if(res.error){showToast('Fehler: '+res.error.message);return;}showToast('Gelöscht');wegcRenderSchaeden();}catch(e){showToast('Fehler: '+e.message);}}}
+    ]});
+}
+// ── WEG-Cockpit: Dienstleister / Verträge ──
+async function wegcRenderDienstleister(c){
+  renderWegcNav('dienstleister');
+  if(!c)c=document.getElementById('wegc-content'); if(!c)return;
+  c.innerHTML='<div style="color:var(--muted);font-size:.85rem">Lädt…</div>';
+  var wegId=_wegcCur.id, rows=[];
+  try{ var res=await sb.from('weg_dienstleister').select('*').eq('user_id',currentUser.id).eq('objekt_id',wegId).order('firma',{ascending:true}); if(res.error)throw res.error; rows=res.data||[]; }
+  catch(e){c.innerHTML='<div style="color:#dc2626;font-size:.85rem">Fehler beim Laden: '+escapeHtml(e.message||'')+'</div>';return;}
+  var anzahl=rows.length, kostenJ=rows.reduce(function(s,r){return s+(parseFloat(r.kosten_jahr)||0);},0);
+  var html=''
+    +'<div style="margin-bottom:1.25rem"><h1 style="font-size:1.6rem;font-weight:800;color:#111827">Dienstleister</h1><div style="font-size:.85rem;color:#6b7280;margin-top:2px">Verträge & Partner · '+escapeHtml(_wegcCur.name||'WEG')+'</div></div>'
+    +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem">'
+      +_wegcKpi(anzahl,'Verträge','wrench','#7b1fa2')
+      +_wegcKpi(fmtEuro(kostenJ),'Kosten / Jahr','euro','#e67e22')
+    +'</div>'
+    +'<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:1rem 1.1rem;margin-bottom:1.5rem;box-shadow:0 1px 2px rgba(16,24,40,.05)">'
+      +'<div style="font-size:.8rem;font-weight:700;margin-bottom:.7rem;color:#111827">Neuer Dienstleister</div>'
+      +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.6rem;margin-bottom:.6rem">'
+        +_wegcFld('Firma','<input id="wegc-dl-firma" type="text" placeholder="z. B. Hausmeister Müller" class="buha-inp">')
+        +_wegcFld('Gewerk','<input id="wegc-dl-gewerk" type="text" placeholder="z. B. Hausmeister" class="buha-inp">')
+        +_wegcFld('Kosten / Jahr (€)','<input id="wegc-dl-kosten" type="text" inputmode="decimal" placeholder="0,00" class="buha-inp">')
+        +_wegcFld('Kündigungsfrist','<input id="wegc-dl-kfrist" type="text" placeholder="z. B. 3 Monate" class="buha-inp">')
+      +'</div>'
+      +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.6rem;margin-bottom:.6rem">'
+        +_wegcFld('Vertrag von','<input id="wegc-dl-von" type="date" class="buha-inp">')
+        +_wegcFld('Vertrag bis','<input id="wegc-dl-bis" type="date" class="buha-inp">')
+        +_wegcFld('Kontakt','<input id="wegc-dl-kontakt" type="text" placeholder="Tel. / E-Mail" class="buha-inp">')
+      +'</div>'
+      +_wegcFld('Notiz','<textarea id="wegc-dl-notiz" rows="2" placeholder="Bemerkungen…" class="buha-inp" style="resize:vertical;margin-bottom:.6rem"></textarea>')
+      +'<div style="display:flex;justify-content:flex-end"><button class="btn-primary" style="padding:.5rem 1rem" onclick="wegcDlSave()"><span class="btn-ic" data-icon="plus"></span> Dienstleister speichern</button></div>'
+    +'</div>';
+  if(!rows.length){
+    html+='<div style="text-align:center;color:var(--muted);font-size:.85rem;padding:2.5rem;background:var(--white);border:1px solid #eef0f4;border-radius:12px">Noch keine Dienstleister erfasst.</div>';
+  }else{
+    html+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:.75rem">';
+    rows.forEach(function(r){
+      var lauf=[r.vertrag_von?_wegcDfmt(r.vertrag_von):null,r.vertrag_bis?_wegcDfmt(r.vertrag_bis):null].filter(Boolean).join(' – ');
+      html+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:1rem 1.1rem;box-shadow:0 1px 2px rgba(16,24,40,.05)">'
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem;margin-bottom:.3rem">'
+          +'<div style="font-weight:700;font-size:.95rem;color:#111827">'+escapeHtml(r.firma||'–')+'</div>'
+          +'<button class="oa-btn" title="Löschen" onclick="wegcDlDel(\''+r.id+'\')"><span class="mini-ic" data-icon="trash"></span></button>'
+        +'</div>'
+        +(r.gewerk?'<span style="display:inline-block;font-size:.68rem;font-weight:700;color:#7b1fa2;background:#f3e5f5;padding:2px 8px;border-radius:8px;margin-bottom:.5rem">'+escapeHtml(r.gewerk)+'</span>':'')
+        +'<div style="font-size:.8rem;color:#4b5563;line-height:1.6">'
+          +((parseFloat(r.kosten_jahr)||0)>0?'<div>Kosten/Jahr: <strong>'+fmtEuro(parseFloat(r.kosten_jahr)||0)+'</strong></div>':'')
+          +(lauf?'<div>Laufzeit: '+lauf+'</div>':'')
+          +(r.kuendigungsfrist?'<div>Kündigungsfrist: '+escapeHtml(r.kuendigungsfrist)+'</div>':'')
+          +(r.kontakt?'<div>Kontakt: '+escapeHtml(r.kontakt)+'</div>':'')
+        +'</div>'
+        +(r.notiz?'<div style="font-size:.78rem;color:#6b7280;margin-top:.4rem;white-space:pre-wrap">'+escapeHtml(r.notiz)+'</div>':'')
+      +'</div>';
+    });
+    html+='</div>';
+  }
+  c.innerHTML=html;
+}
+async function wegcDlSave(){
+  if(!_wegcCur)return;
+  var g=function(id){var el=document.getElementById(id);return el?el.value:'';};
+  var firma=(g('wegc-dl-firma')||'').trim();
+  if(!firma){showToast('Bitte Firma angeben');return;}
+  var kj=_wegcNum(g('wegc-dl-kosten'));
+  var rec={user_id:currentUser.id,objekt_id:_wegcCur.id,firma:firma,gewerk:(g('wegc-dl-gewerk')||'').trim()||null,kosten_jahr:kj,vertrag_von:g('wegc-dl-von')||null,vertrag_bis:g('wegc-dl-bis')||null,kuendigungsfrist:(g('wegc-dl-kfrist')||'').trim()||null,kontakt:(g('wegc-dl-kontakt')||'').trim()||null,notiz:(g('wegc-dl-notiz')||'').trim()||null};
+  try{ var res=await sb.from('weg_dienstleister').insert(rec); if(res.error){showToast('Fehler: '+res.error.message);return;} showToast('Dienstleister gespeichert'); wegcRenderDienstleister(); }catch(e){showToast('Fehler: '+e.message);}
+}
+function wegcDlDel(id){
+  appConfirm({icon:'🗑',title:'Dienstleister löschen?',message:'Dieser Eintrag wird dauerhaft entfernt.',
+    buttons:[
+      {label:'Abbrechen',style:'background:#f3f4f6;color:#374151',onClick:appConfirmClose},
+      {label:'Löschen',style:'background:#dc2626;color:#fff',onClick:async function(){appConfirmClose();try{var res=await sb.from('weg_dienstleister').delete().eq('id',id);if(res.error){showToast('Fehler: '+res.error.message);return;}showToast('Gelöscht');wegcRenderDienstleister();}catch(e){showToast('Fehler: '+e.message);}}}
     ]});
 }
 

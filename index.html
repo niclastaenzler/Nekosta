@@ -216,6 +216,75 @@ body.sidebar-open #sidebar-backdrop{display:block;opacity:1}
 .btn-small.gruen:hover{background:#15673d}
 .btn-row{display:flex;gap:.7rem;margin-top:1rem;flex-wrap:wrap}
 
+/* ════ WIZARD-REDESIGN (Figma „Reiter umdesignen") – nur im Wizard #page-tool ════ */
+#page-tool .wizard-content{padding:1.5rem}
+#page-tool .page-header{margin-bottom:1rem}
+#page-tool .page-title{font-size:1rem;font-weight:600;color:#1f2937}
+#page-tool .page-sub{font-size:.75rem;color:#6b7280;margin-top:2px}
+/* Sektions-Label mit farbigem Links-Balken */
+.wz-seclabel{display:inline-flex;align-items:center;font-size:10px;line-height:1.5;font-weight:600;letter-spacing:.11em;text-transform:uppercase;color:var(--p);border-left:2px solid #8b5cf6;padding-left:.5rem;white-space:nowrap}
+.wz-seclabel.orange{color:#ea580c;border-left-color:#f97316}
+/* Wizard-Karten: flach, hellgrauer Rand, 8px */
+#page-tool .card{border-radius:8px;border:1px solid #e5e7eb;box-shadow:none;padding:1rem;margin-bottom:1rem}
+#page-tool .card-title{font-size:10px;font-weight:600;letter-spacing:.11em;color:var(--p);margin-bottom:.85rem}
+#page-tool .card-title::before{width:2px;height:12px;background:#8b5cf6;border-radius:0}
+/* Step 1: Felder einheitlich (gray-50 Hintergrund, kleine Labels) */
+#page-tool .field label{font-size:10px;font-weight:500;letter-spacing:.04em;color:#9ca3af}
+#page-tool .field input,#page-tool .field select{border:1px solid #e5e7eb;border-radius:6px;padding:.5rem .7rem;font-size:.875rem;background:#f9fafb;color:#374151}
+#page-tool .field input:focus,#page-tool .field select:focus{border-color:var(--p);background:#fff;box-shadow:0 0 0 3px rgba(124,58,237,.12)}
+/* Grunddaten-Raster wie Figma: 5 Spalten, Objekt/Adresse über 2, Kunde volle Breite */
+#page-tool #abr-sektion-manuell .meta-grid{grid-template-columns:repeat(5,minmax(0,1fr))}
+#page-tool #abr-sektion-manuell .meta-grid .field:nth-child(2){grid-column:span 2}
+#page-tool #abr-sektion-manuell .meta-grid .field:nth-child(5){grid-column:1 / -1}
+@media(max-width:900px){#page-tool #abr-sektion-manuell .meta-grid{grid-template-columns:repeat(2,1fr)}#page-tool #abr-sektion-manuell .meta-grid .field:nth-child(5){grid-column:1 / -1}}
+/* Step 2: Wohneinheiten-Karten */
+#page-tool .wohn-card{border-radius:8px;border:1px solid #e5e7eb;box-shadow:none;overflow:hidden}
+#page-tool .wohn-card-header{background:#f5f3ff;border-bottom:1px solid #ede9fe;padding:.55rem 1rem;align-items:center;gap:.6rem}
+#page-tool .reorder-col{flex-direction:column;gap:1px;padding-top:0}
+#page-tool .reorder-btn{background:none;border:none;color:#9ca3af;padding:0 2px;font-size:.62rem;line-height:1.05}
+#page-tool .reorder-btn:hover{background:none;color:#6b7280}
+#page-tool .wohn-card-header input.w-bez{flex:1;min-width:140px;border:1px solid transparent;background:transparent;font-size:.9rem;font-weight:600;color:#1f2937;padding:.32rem .45rem;border-radius:6px}
+#page-tool .wohn-card-header input.w-bez:hover{border-color:#e5e7eb;background:#fff}
+#page-tool .wohn-card-header input.w-bez:focus{border-color:var(--p);background:#fff}
+#page-tool .wohn-card-header .flaeche-wrap input{width:64px;border-color:#e5e7eb;padding:.28rem .5rem;font-size:.8rem;border-radius:6px}
+#page-tool .wohn-card-header .flaeche-wrap span{font-size:.78rem;color:#9ca3af;font-weight:400}
+#page-tool .wohn-opt-row{margin-top:0;background:#fafafa;border-bottom:1px solid #f3f4f6;padding:.5rem 1rem;gap:1.25rem}
+#page-tool .w-opt{background:none;border:none;border-radius:0;padding:0;font-size:.72rem;font-weight:400;color:#6b7280}
+#page-tool .w-opt.gewerbe{color:var(--p)}
+#page-tool .w-opt.gewerbe svg{width:11px;height:11px}
+#page-tool .wohn-card-body{padding:.25rem 1rem 1rem}
+#page-tool .mieter-header-row{font-size:10px;color:#9ca3af;font-weight:500;border-bottom-color:#f3f4f6}
+#page-tool .mieter-row{border-bottom:1px solid #f9fafb}
+#page-tool .mieter-row input,#page-tool .mieter-row select{border-color:#e5e7eb;border-radius:6px;padding:.4rem .5rem}
+#page-tool .btn-add-mieter{border:none;color:var(--p);font-weight:500;padding:.4rem .2rem;margin:.35rem 0 0;font-size:.78rem}
+#page-tool .btn-add-mieter:hover{color:var(--p-mid);border:none}
+#page-tool #addWohnBtn,#page-tool .btn-add{border:1px dashed #ddd6fe;color:var(--p);border-radius:8px;padding:.65rem;font-size:.82rem}
+#page-tool #addWohnBtn:hover,#page-tool .btn-add:hover{border-color:var(--p);background:#f5f3ff;color:var(--p)}
+/* Step 3: Kosten – jede Sektion eine eigene Karte */
+.kosten-card{border:1px solid #e5e7eb;border-radius:8px;background:#fff;overflow:hidden;margin-bottom:1rem}
+.kosten-card-head{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;padding:.55rem 1rem;background:#fafafa;border-bottom:1px solid #f3f4f6}
+.kosten-summe{font-size:.72rem;color:#6b7280}
+.kosten-card-body{padding:.25rem 1rem 1rem}
+.kosten-head-btn{font-size:.7rem;border:1px solid #e5e7eb;color:#6b7280;background:#fff;border-radius:6px;padding:.3rem .6rem;cursor:pointer;font-family:var(--ff);display:inline-flex;align-items:center;gap:.25rem;white-space:nowrap}
+.kosten-head-btn:hover{background:#f9fafb}
+.kosten-add-btn{font-size:.72rem;border:1px solid #ddd6fe;color:var(--p);background:#fff;border-radius:6px;padding:.32rem .75rem;cursor:pointer;font-family:var(--ff);white-space:nowrap}
+.kosten-add-btn:hover{background:#f5f3ff}
+.kosten-add-btn.orange{border-color:#fed7aa;color:#ea580c}
+.kosten-add-btn.orange:hover{background:#fff7ed}
+#page-tool .kosten-table th{background:transparent;border-bottom:1px solid #f3f4f6;font-size:10px;color:#9ca3af;font-weight:500}
+#page-tool .kosten-table td{border-bottom:1px solid #f9fafb}
+#page-tool .kosten-table input,#page-tool .kosten-table select{border-color:#e5e7eb;border-radius:6px}
+/* Footer-Buttons wie Figma (leichter, Outline) */
+.wizard-footer .btn-secondary,.wizard-footer .btn-success,.wizard-footer .btn-primary{font-weight:500;font-size:.85rem;padding:.5rem 1.1rem;border-radius:6px}
+.wizard-footer .btn-success{background:#fff;color:#4b5563;border:1px solid #e5e7eb}
+.wizard-footer .btn-success:hover{background:#f9fafb}
+.wizard-footer #btn-probe{background:#fff;color:var(--p);border:1px solid #ddd6fe}
+.wizard-footer #btn-probe:hover{background:#f5f3ff}
+.wizard-footer #btn-zurueck{background:#fff;color:#4b5563;border:1px solid #e5e7eb}
+.wizard-footer #btn-zurueck:hover{background:#f9fafb}
+.wizard-footer .btn-primary{background:var(--p);color:#fff;border:none}
+.wizard-footer .btn-primary:hover{background:var(--p-mid)}
+
 /* ── TOKENS ── */
 .token-balance-chip{background:var(--p-light);border:1px solid transparent;border-radius:20px;padding:.25rem .85rem;font-size:.78rem;color:var(--p);display:none;align-items:center;gap:.4rem;cursor:pointer}
 .token-balance-chip .tbc-val{font-weight:700;color:var(--p)}
@@ -2004,43 +2073,44 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
       <!-- STEP 3: KOSTEN -->
       <div id="step3" class="wizard-content" style="display:none">
         <div class="page-header"><div class="page-title">Kostenaufstellung</div><div class="page-sub">Heiz- und Betriebskosten des Objektes eintragen.</div></div>
-        <div class="card">
-          <!-- HEIZKOSTEN ZUERST -->
-          <div class="kosten-section" id="hk-section">
-            <div class="kosten-section-header" style="display:flex;justify-content:space-between;align-items:center">
-              <div style="display:flex;align-items:center;gap:.75rem">
-                <div class="kosten-section-title">🔥 Heizkosten</div>
-                <span style="font-size:.75rem;color:var(--muted)">Summe: <strong id="hk-summe-live" style="color:#e67e22">0,00 €</strong></span>
-              </div>
-              <div style="display:flex;gap:.4rem;align-items:center">
-                <button type="button" onclick="importKostenVorlage('hk')" class="btn-small" style="font-size:.7rem"><span class="btn-ic" data-icon="folder"></span> Vorlage</button>
-                <button type="button" onclick="saveKostenVorlage('hk')" class="btn-small" style="font-size:.7rem"><span class="btn-ic" data-icon="save"></span> Speichern</button>
-                <label class="hk-toggle" style="margin-left:.35rem;font-size:.78rem"><input type="checkbox" id="keine-hk" onchange="toggleHK()"> Keine Heizkosten</label>
-              </div>
-            </div>
-            <div id="hk-content">
-              <div style="overflow-x:auto">
-              <table class="kosten-table">
-                <thead><tr><th style="width:28px"></th><th style="min-width:130px">Kostenart</th><th style="width:110px">Betrag (€)</th><th style="width:62px" title="Enthaltene USt – nur für Gewerbeeinheiten ausgewiesen">USt</th><th style="width:64px" title="§ 35a EStG: haushaltsnahe Dienstleistung / Handwerkerleistung und Lohnanteil in % – per 🔧 eintragen">§ 35a</th><th style="width:160px">Verteilungsschlüssel</th><th style="min-width:140px">Notizen</th><th style="width:75px">Zuordnung</th><th style="width:26px"></th></tr></thead>
-                <tbody id="hkRows"></tbody>
-              </table>
-              </div>
-              <button class="btn-add" onclick="addKostenRow('hkRows')">+ Heizkostenart hinzufügen</button>
+        <!-- HEIZKOSTEN -->
+        <div class="kosten-card" id="hk-section">
+          <div class="kosten-card-head">
+            <span class="wz-seclabel orange">Heizkosten (max. 3)</span>
+            <span class="kosten-summe">Summe: <strong id="hk-summe-live" style="color:#ea580c">0,00 €</strong></span>
+            <div style="flex:1"></div>
+            <label class="hk-toggle" style="margin:0;font-size:.72rem"><input type="checkbox" id="keine-hk" onchange="toggleHK()"> Keine Heizkosten</label>
+            <button type="button" onclick="importKostenVorlage('hk')" class="kosten-head-btn"><span class="btn-ic" data-icon="folder"></span> Vorlage</button>
+            <button type="button" onclick="saveKostenVorlage('hk')" class="kosten-head-btn"><span class="btn-ic" data-icon="save"></span> Speichern</button>
+            <button type="button" onclick="addKostenRow('hkRows')" class="kosten-add-btn orange">+ Hinzufügen</button>
+          </div>
+          <div id="hk-content" class="kosten-card-body">
+            <div style="overflow-x:auto">
+            <table class="kosten-table">
+              <thead><tr><th style="width:28px"></th><th style="min-width:130px">Kostenart</th><th style="width:110px">Betrag (€)</th><th style="width:62px" title="Enthaltene USt – nur für Gewerbeeinheiten ausgewiesen">USt</th><th style="width:64px" title="§ 35a EStG: haushaltsnahe Dienstleistung / Handwerkerleistung und Lohnanteil in % – per 🔧 eintragen">§ 35a</th><th style="width:160px">Verteilungsschlüssel</th><th style="min-width:140px">Notizen</th><th style="width:75px">Zuordnung</th><th style="width:26px"></th></tr></thead>
+              <tbody id="hkRows"></tbody>
+            </table>
             </div>
           </div>
-          <!-- BETRIEBSKOSTEN -->
-          <div class="kosten-section" style="margin-top:1.25rem;padding-top:1.1rem;border-top:1px solid var(--border)">
-            <div class="kosten-section-header" style="display:flex;justify-content:space-between;align-items:center">
-              <div style="display:flex;align-items:center;gap:.75rem"><div class="kosten-section-title">📋 Betriebskosten</div><span style="font-size:.75rem;color:var(--muted)">Summe: <strong id="bk-summe-live" style="color:var(--p)">0,00 €</strong></span></div>
-              <div style="display:flex;gap:.4rem"><button type="button" onclick="importKostenVorlage('bk')" class="btn-small" style="font-size:.7rem"><span class="btn-ic" data-icon="folder"></span> Vorlage</button><button type="button" onclick="saveKostenVorlage('bk')" class="btn-small" style="font-size:.7rem"><span class="btn-ic" data-icon="save"></span> Speichern</button></div>
-            </div>
+        </div>
+
+        <!-- BETRIEBSKOSTEN -->
+        <div class="kosten-card">
+          <div class="kosten-card-head">
+            <span class="wz-seclabel">Betriebskosten (max. 10)</span>
+            <span class="kosten-summe">Summe: <strong id="bk-summe-live" style="color:var(--p)">0,00 €</strong></span>
+            <div style="flex:1"></div>
+            <button type="button" onclick="importKostenVorlage('bk')" class="kosten-head-btn"><span class="btn-ic" data-icon="folder"></span> Vorlage</button>
+            <button type="button" onclick="saveKostenVorlage('bk')" class="kosten-head-btn"><span class="btn-ic" data-icon="save"></span> Speichern</button>
+            <button type="button" onclick="addKostenRow('bkRows')" class="kosten-add-btn">+ Hinzufügen</button>
+          </div>
+          <div class="kosten-card-body">
             <div style="overflow-x:auto">
             <table class="kosten-table">
               <thead><tr><th style="width:28px"></th><th style="min-width:130px">Kostenart</th><th style="width:105px">Gesamt (€)</th><th style="width:62px" title="Enthaltene USt – nur für Gewerbeeinheiten ausgewiesen">USt</th><th style="width:64px" title="§ 35a EStG: haushaltsnahe Dienstleistung / Handwerkerleistung und Lohnanteil in % – per 🔧 eintragen">§ 35a</th><th style="width:160px">Verteilungsschlüssel</th><th style="min-width:140px">Notizen</th><th style="width:75px">Zuordnung</th><th style="width:26px"></th></tr></thead>
               <tbody id="bkRows"></tbody>
             </table>
             </div>
-            <button class="btn-add" onclick="addKostenRow('bkRows')">+ Betriebskostenart hinzufügen</button>
           </div>
         </div>
       </div>
@@ -3905,28 +3975,24 @@ function addWohn(){
         <button class="reorder-btn" onclick="moveWohn(this,-1)">▲</button>
         <button class="reorder-btn" onclick="moveWohn(this,1)">▼</button>
       </div>
-      <div class="wohn-card-fields">
-        <div class="wohn-top-row">
-          <input type="text" class="w-bez" placeholder="Bezeichnung, z. B. Whg. EG links">
-          <div class="flaeche-wrap">
-            <input type="text" inputmode="decimal" class="w-flaeche" placeholder="Fläche" oninput="sanitizeNumInput(this)">
-            <span>m²</span>
-          </div>
-        </div>
-        <div class="wohn-opt-row">
-          <label class="w-opt" title="Miteigentumsanteil verwenden (z.B. 123/1000)">
-            <input type="checkbox" class="w-mea-cb" onchange="toggleMEA(this)"> MEA-Anteil
-          </label>
-          <div class="flaeche-wrap w-mea-wrap" style="display:none">
-            <input type="text" class="w-mea" placeholder="z.B. 123/1000" style="width:118px;text-align:left">
-            <span style="font-size:.7rem">MEA</span>
-          </div>
-          <label class="w-opt" style="color:#b4471a" title="Gewerbeeinheit mit Umsatzsteuer-Option (§9 UStG) – Netto/USt wird ausgewiesen">
-            <input type="checkbox" class="w-gewerbe-ust"> 🏪 Gewerbe (USt)
-          </label>
-        </div>
+      <input type="text" class="w-bez" placeholder="Bezeichnung, z. B. Whg. EG links">
+      <div class="flaeche-wrap">
+        <input type="text" inputmode="decimal" class="w-flaeche" placeholder="Fläche" oninput="sanitizeNumInput(this)">
+        <span>m²</span>
       </div>
       <button class="btn-remove-wohn" onclick="removeWohn(this)" title="Wohneinheit entfernen"><span class="btn-ic" data-icon="x"></span></button>
+    </div>
+    <div class="wohn-opt-row">
+      <label class="w-opt" title="Miteigentumsanteil verwenden (z.B. 123/1000)">
+        <input type="checkbox" class="w-mea-cb" onchange="toggleMEA(this)"> MEA-Anteil
+      </label>
+      <div class="flaeche-wrap w-mea-wrap" style="display:none">
+        <input type="text" class="w-mea" placeholder="z.B. 123/1000" style="width:118px;text-align:left">
+        <span style="font-size:.7rem">MEA</span>
+      </div>
+      <label class="w-opt gewerbe" title="Gewerbeeinheit mit Umsatzsteuer-Option (§9 UStG) – Netto/USt wird ausgewiesen">
+        <input type="checkbox" class="w-gewerbe-ust"> <span class="mini-ic" data-icon="percent"></span> Gewerbe (USt)
+      </label>
     </div>
     <div class="wohn-card-body">
       <div class="mieter-header-row">
@@ -8422,6 +8488,7 @@ var LICON={
  files:_ic('<path d="M15.5 2H8.6c-.4 0-.8.2-1.1.5-.3.3-.5.7-.5 1.1v12.8c0 .4.2.8.5 1.1.3.3.7.5 1.1.5h9.8c.4 0 .8-.2 1.1-.5.3-.3.5-.7.5-1.1V6.5L15.5 2z"/><path d="M3 7.6v12.8c0 .4.2.8.5 1.1.3.3.7.5 1.1.5h9.8"/><path d="M15 2v5h5"/>'),
  receipt:_ic('<path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17.5v-11"/>'),
  mail:_ic('<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>'),
+ percent:_ic('<line x1="19" x2="5" y1="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/>'),
  clipboard:_ic('<rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/>'),
  alertcircle:_ic('<circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>'),
  settings:_ic('<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>'),

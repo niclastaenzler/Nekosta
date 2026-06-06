@@ -3494,6 +3494,7 @@ function openAbgeschlossenModal(abgId,name,jahr){
 function toggleSidebar(){document.body.classList.toggle('sidebar-open');}
 function closeSidebar(){document.body.classList.remove('sidebar-open');}
 function showPage(name){
+  try{_wegcRestoreBuha();}catch(e){}
   closeSidebar(); // Mobile: Menü nach Auswahl schließen
   // Stammdaten & Abo sind jetzt Tabs unter "Mein Profil" (einstellungen)
   var _profilTab=null;
@@ -8817,16 +8818,18 @@ function renderWegcNav(active){
 }
 function wegcGo(mod){
   if(!_wegcCur)return;
-  var wegId=_wegcCur.id;
-  var tabMap={einheiten:'weg-einheiten',eigentuemer:'weg-eigentuemer',buchhaltung:'buchhaltung',hausgeld:'buchhaltung'};
+  if(mod!=='buchhaltung'&&mod!=='hausgeld')_wegcRestoreBuha();
+  var c=document.getElementById('wegc-content'); if(!c)return;
+  if(mod==='buchhaltung'){wegcRenderBuchhaltung(c);return;}
+  if(mod==='hausgeld'){wegcRenderBuchhaltung(c,'hausgeld');return;}
+  var tabMap={einheiten:'weg-einheiten',eigentuemer:'weg-eigentuemer'};
   if(tabMap[mod]){
-    var p=openObjektDetail(wegId);
-    var after=function(){try{showObjektTab(tabMap[mod]);if(mod==='hausgeld'&&typeof buhaTab==='function')buhaTab('hausgeld');}catch(e){}};
+    var p=openObjektDetail(_wegcCur.id);
+    var after=function(){try{showObjektTab(tabMap[mod]);}catch(e){}};
     if(p&&p.then)p.then(after);else setTimeout(after,400);
     return;
   }
   renderWegcNav(mod);
-  var c=document.getElementById('wegc-content'); if(!c)return;
   if(mod==='dashboard'){wegcRenderDashboard(c);return;}
   if(mod==='ruecklagen'){wegcRenderRuecklagen(c);return;}
   var info={
@@ -8970,6 +8973,29 @@ function wegcRueckDel(id){
       {label:'Abbrechen',style:'background:#f3f4f6;color:#374151',onClick:appConfirmClose},
       {label:'Löschen',style:'background:#dc2626;color:#fff',onClick:async function(){appConfirmClose();try{var res=await sb.from('weg_ruecklagen').delete().eq('id',id);if(res.error){showToast('Fehler: '+res.error.message);return;}showToast('Gelöscht');wegcRenderRuecklagen();}catch(e){showToast('Fehler: '+e.message);}}}
     ]});
+}
+// ── WEG-Cockpit: Buchhaltung nativ einbetten (bestehenden #tab-content-buchhaltung wiederverwenden) ──
+var _buhaHomeParent=null;
+function _wegcRestoreBuha(){
+  try{
+    var node=document.getElementById('tab-content-buchhaltung');
+    var wc=document.getElementById('wegc-content');
+    if(node&&_buhaHomeParent&&wc&&node.parentNode===wc){node.style.display='none';_buhaHomeParent.appendChild(node);}
+  }catch(e){}
+}
+async function wegcRenderBuchhaltung(c,subtab){
+  if(!_wegcCur)return;
+  if(!c)c=document.getElementById('wegc-content'); if(!c)return;
+  var node=document.getElementById('tab-content-buchhaltung');
+  if(!node){c.innerHTML='<div style="color:#dc2626;font-size:.85rem">Buchhaltungs-Modul nicht gefunden.</div>';return;}
+  if(!_buhaHomeParent)_buhaHomeParent=node.parentNode;
+  renderWegcNav(subtab==='hausgeld'?'hausgeld':'buchhaltung');
+  c.innerHTML='<div style="margin-bottom:1.1rem"><h1 style="font-size:1.6rem;font-weight:800;color:#111827">'+(subtab==='hausgeld'?'Hausgeld':'Buchhaltung')+'</h1><div style="font-size:.85rem;color:#6b7280;margin-top:2px">'+escapeHtml(_wegcCur.name||'WEG')+'</div></div>';
+  c.appendChild(node);
+  node.style.display='block';
+  aktivesObjekt=_wegcCur;
+  try{ await ladeBuchhaltung(_wegcCur.id); }catch(e){ console.warn('buha load:',e); }
+  try{ buhaTab(subtab==='hausgeld'?'hausgeld':'buchen'); }catch(e){}
 }
 
 // ── GLOBALE SUCHE ──
@@ -9822,6 +9848,7 @@ async function loadMietverhaeltnisse(objId){
 var aktivesObjekt=null;
 
 async function openObjektDetail(objId){
+  try{_wegcRestoreBuha();}catch(e){}
   try{
     var {data,error}=await sb.from('objekte').select('*').eq('id',objId).maybeSingle();
     if(error||!data){showToast('Fehler beim Laden des Objekts');return;}

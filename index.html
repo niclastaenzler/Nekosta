@@ -1333,7 +1333,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                 <textarea id="od-notiz-input" placeholder="Interne Anmerkungen zum Objekt..." style="border:1px solid var(--border);border-radius:8px;padding:.6rem .75rem;font-size:.84rem;font-family:var(--ff);width:100%;min-height:80px;resize:vertical;outline:none;background:var(--bg);box-sizing:border-box"></textarea>
                 <div style="display:flex;align-items:center;gap:.6rem;margin-top:.5rem">
                   <button class="btn-small" onclick="saveObjektNotiz()"><span class="btn-ic" data-icon="save"></span> Speichern</button>
-                  <span id="od-notiz-saved" style="display:none;font-size:.72rem;color:var(--success)">✅ Gespeichert</span>
+                  <span id="od-notiz-saved" style="display:none;font-size:.72rem;color:var(--success);align-items:center;gap:.3rem"><span class="mini-ic" data-icon="checkcircle"></span>Gespeichert</span>
                 </div>
               </div>
 
@@ -1370,7 +1370,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
               </div>
               <div style="display:flex;gap:.65rem">
                 <button class="btn-primary" onclick="saveBankdaten()" style="font-size:.82rem"><span class="btn-ic" data-icon="save"></span> Speichern</button>
-                <button class="btn-secondary" onclick="startAbrechnungFuerAktivesObjekt()" style="font-size:.82rem">📄 Abrechnung erstellen</button>
+                <button class="btn-secondary" onclick="startAbrechnungFuerAktivesObjekt()" style="font-size:.82rem"><span class="btn-ic" data-icon="receipt"></span> Abrechnung erstellen</button>
               </div>
               <!-- Individuelle Verteilschlüssel -->
               <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:1.1rem;margin-top:1.1rem">
@@ -1417,7 +1417,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
             <div id="tab-content-dienstleistung" style="display:none">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem">
                 <div><h3 style="font-size:.9rem;font-weight:700;display:flex;align-items:center;gap:.4rem"><span class="mini-ic" data-icon="wrench" style="color:var(--p)"></span>Dienstleistungsverträge</h3><div style="font-size:.76rem;color:var(--muted)">Verträge von Dienstleistern (Reinigung, Wartung, Versicherung …) verwalten.</div></div>
-                <button class="btn-primary" style="font-size:.82rem;padding:.5rem 1rem" onclick="document.getElementById('dl-file-input').click()">⬆️ Vertrag hochladen</button>
+                <button class="btn-primary" style="font-size:.82rem;padding:.5rem 1rem" onclick="document.getElementById('dl-file-input').click()"><span class="btn-ic" data-icon="upload"></span> Vertrag hochladen</button>
                 <input type="file" id="dl-file-input" multiple style="display:none" onchange="dlHandleUpload(this.files)">
               </div>
               <div id="od-dienstleistung-list"><div style="color:var(--muted);font-size:.85rem;text-align:center;padding:2rem">Wird geladen...</div></div>
@@ -1427,7 +1427,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
             <div id="tab-content-dokumente" style="display:none">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem">
                 <div><h3 style="font-size:.9rem;font-weight:700;display:flex;align-items:center;gap:.4rem"><span class="mini-ic" data-icon="folder" style="color:var(--p)"></span>Dokumente zu diesem Objekt</h3><div style="font-size:.76rem;color:var(--muted)">Alle abgelegten Unterlagen – nach Ordnern gruppiert.</div></div>
-                <button class="btn-primary" style="font-size:.82rem;padding:.5rem 1rem" onclick="document.getElementById('od-dok-file-input').click()">⬆️ Datei hochladen</button>
+                <button class="btn-primary" style="font-size:.82rem;padding:.5rem 1rem" onclick="document.getElementById('od-dok-file-input').click()"><span class="btn-ic" data-icon="upload"></span> Datei hochladen</button>
                 <input type="file" id="od-dok-file-input" multiple style="display:none" onchange="odDokHandleUpload(this.files)">
               </div>
               <div id="od-dok-content"><div style="color:var(--muted);font-size:.85rem;text-align:center;padding:2rem">Wird geladen...</div></div>
@@ -1467,7 +1467,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                 <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
                   <span style="font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)">Buchungskreis</span>
                   <select id="buha-ug" onchange="buhaReload()" style="border:1px solid var(--border);border-radius:8px;padding:.45rem .7rem;font-size:.84rem;font-family:var(--ff);background:var(--white);outline:none"></select>
-                  <button class="btn-small" onclick="openUgModal()" title="Untergemeinschaften anlegen/verwalten" style="font-size:.72rem">⚙ Untergemeinschaften</button>
+                  <button class="btn-small" onclick="openUgModal()" title="Untergemeinschaften anlegen/verwalten" style="font-size:.72rem"><span class="btn-ic" data-icon="gear"></span> Untergemeinschaften</button>
                 </div>
                 <select id="buha-jahr" onchange="buhaReload()" style="border:1px solid var(--border);border-radius:8px;padding:.45rem .7rem;font-size:.84rem;font-family:var(--ff);background:var(--white);outline:none"></select>
               </div>
@@ -1484,7 +1484,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                 <div id="buha-kpis" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.6rem;margin-bottom:1rem"></div>
                 <!-- JOURNAL (oben) -->
                 <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.6rem">
-                  <span style="font-size:.88rem;font-weight:700">📓 Journal</span>
+                  <span style="font-size:.88rem;font-weight:700;display:inline-flex;align-items:center;gap:.4rem"><span class="mini-ic" data-icon="bookopen" style="color:var(--p)"></span>Journal</span>
                   <input type="text" id="buha-suche" oninput="renderBuhaJournal()" placeholder="🔍 Volltextsuche … (F10)" style="border:1px solid var(--border);border-radius:8px;padding:.4rem .7rem;font-size:.82rem;font-family:var(--ff);outline:none;flex:1;min-width:180px">
                   <button class="btn-small" onclick="buhaExportCsv()"><span class="btn-ic" data-icon="download"></span> CSV</button>
                 </div>
@@ -1510,7 +1510,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                     <div><label>Kostenstelle</label><input type="text" id="bu-kostenstelle" class="buha-inp" placeholder="optional"></div>
                     <div><label>Einheit</label><input type="text" id="bu-einheit" class="buha-inp" placeholder="optional"></div>
                     <div><label>Eigentümer</label><input type="text" id="bu-eigentuemer" class="buha-inp" placeholder="optional"></div>
-                    <div style="display:flex;flex-direction:column;justify-content:flex-end"><button class="btn-primary" style="white-space:nowrap;padding:.45rem .7rem" onclick="buhaSaveBuchung()">✓ Buchen</button></div>
+                    <div style="display:flex;flex-direction:column;justify-content:flex-end"><button class="btn-primary" style="white-space:nowrap;padding:.45rem .7rem" onclick="buhaSaveBuchung()"><span class="btn-ic" data-icon="check"></span> Buchen</button></div>
                   </div>
                   <div id="bu-steuer-info" style="font-size:.72rem;color:var(--muted);margin-top:.45rem;min-height:1em"></div>
                   <datalist id="buha-konten-dl"></datalist>
@@ -1532,10 +1532,10 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
               <!-- TAB: KONTENRAHMEN -->
               <div id="buha-pane-konten" style="display:none">
                 <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.8rem">
-                  <button class="btn-primary" onclick="openKontoModal()">➕ Konto anlegen</button>
-                  <button class="btn-secondary" onclick="seedKontenrahmen('skr03')">📥 SKR03-Vorlage</button>
-                  <button class="btn-secondary" onclick="seedKontenrahmen('skr04')">📥 SKR04-Vorlage</button>
-                  <button class="btn-secondary" onclick="openBksModal()">⚙ Buchungsschlüssel</button>
+                  <button class="btn-primary" onclick="openKontoModal()"><span class="btn-ic" data-icon="plus"></span> Konto anlegen</button>
+                  <button class="btn-secondary" onclick="seedKontenrahmen('skr03')"><span class="btn-ic" data-icon="download"></span> SKR03-Vorlage</button>
+                  <button class="btn-secondary" onclick="seedKontenrahmen('skr04')"><span class="btn-ic" data-icon="download"></span> SKR04-Vorlage</button>
+                  <button class="btn-secondary" onclick="openBksModal()"><span class="btn-ic" data-icon="gear"></span> Buchungsschlüssel</button>
                   <span id="buha-konten-count" style="font-size:.78rem;color:var(--muted);margin-left:auto"></span>
                 </div>
                 <div id="buha-konten" style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow-x:auto"></div>
@@ -1551,7 +1551,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                   <select id="ausw-konto" onchange="renderAuswertungen()" style="display:none;border:1px solid var(--border);border-radius:8px;padding:.45rem .7rem;font-size:.84rem;font-family:var(--ff);background:var(--white);outline:none"></select>
                   <span style="margin-left:auto;display:flex;gap:.4rem">
                     <button class="btn-small" onclick="buhaAuswCsv()"><span class="btn-ic" data-icon="download"></span> CSV</button>
-                    <button class="btn-small" onclick="buhaAuswPrint()">🖨️ Drucken/PDF</button>
+                    <button class="btn-small" onclick="buhaAuswPrint()"><span class="btn-ic" data-icon="printer"></span> Drucken/PDF</button>
                   </span>
                 </div>
                 <div id="ausw-content" style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow-x:auto"></div>
@@ -1720,7 +1720,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
           </div>
           <div id="obj-msg" style="display:none;margin-bottom:.75rem;font-size:.8rem;padding:.5rem .75rem;border-radius:8px"></div>
           <div style="display:flex;gap:.75rem">
-            <button type="button" class="btn-primary" onclick="saveObjekt()" style="flex:1">🏢 Objekt anlegen</button>
+            <button type="button" class="btn-primary" onclick="saveObjekt()" style="flex:1"><span class="btn-ic" data-icon="building2"></span> Objekt anlegen</button>
             <button type="button" class="btn-secondary" onclick="closeObjektModal()" style="flex:1">Abbrechen</button>
           </div>
         </div>
@@ -1891,7 +1891,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                 <option value="">– Objekt wählen –</option>
               </select>
             </div>
-            <button class="btn-secondary" onclick="ladeObjektInWizard()" style="white-space:nowrap;padding:.45rem .9rem;font-size:.82rem">🔄 Laden</button>
+            <button class="btn-secondary" onclick="ladeObjektInWizard()" style="white-space:nowrap;padding:.45rem .9rem;font-size:.82rem"><span class="btn-ic" data-icon="refresh"></span> Laden</button>
           </div>
           <div id="objekt-import-info" style="display:none;background:var(--success-bg);border:1px solid rgba(26,122,74,.2);border-radius:8px;padding:.65rem 1rem;font-size:.82rem;color:var(--success);margin-bottom:.5rem">
             ✅ <strong id="objekt-import-text"></strong> – Wohneinheiten und Mieter werden in Schritt 2 automatisch geladen.
@@ -2001,7 +2001,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
           <!-- ÜBERBLICK JE EINHEIT -->
           <div id="ergebnis-summary-card" style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:1.25rem;margin-bottom:1.25rem;display:none">
             <div onclick="toggleErgSummary()" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);user-select:none">
-              <span>📊 Überblick aller Einheiten</span>
+              <span style="display:inline-flex;align-items:center;gap:.4rem"><span class="mini-ic" data-icon="barchart"></span>Überblick aller Einheiten</span>
               <span id="erg-summary-arrow" style="font-size:.7rem;color:var(--p);transition:transform .2s">▶</span>
             </div>
             <div id="ergebnis-summary-body" style="display:none;margin-top:.85rem"><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.82rem" id="ergebnis-summary-table">
@@ -2030,7 +2030,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
 
           <!-- PDF AKTIONEN -->
           <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:.75rem 1rem;margin-bottom:.75rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
-            <span style="font-size:.75rem;font-weight:700;color:var(--muted);white-space:nowrap">📄 PDF-Layout:</span>
+            <span style="font-size:.75rem;font-weight:700;color:var(--muted);white-space:nowrap;display:inline-flex;align-items:center;gap:.35rem"><span class="mini-ic" data-icon="file"></span>PDF-Layout:</span>
             <div style="display:flex;gap:.3rem;flex-wrap:wrap">
               <button type="button" onclick="setPdfLayout('standard')" id="wiz-layout-standard" style="border:2px solid var(--p);border-radius:7px;padding:.3rem .8rem;cursor:pointer;font-size:.72rem;font-weight:700;background:var(--p);color:#fff;font-family:var(--ff)">Standard</button>
               <button type="button" onclick="setPdfLayout('minimal')" id="wiz-layout-minimal" style="border:2px solid var(--border);border-radius:7px;padding:.3rem .8rem;cursor:pointer;font-size:.72rem;font-weight:600;background:var(--white);color:var(--muted);font-family:var(--ff)">Minimal</button>
@@ -2041,7 +2041,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
           </div>
           <!-- ANSCHREIBEN-OPTIONEN -->
           <div style="background:#faf8fc;border:1px solid var(--border);border-radius:10px;padding:.7rem 1rem;margin-bottom:.75rem;display:flex;align-items:center;gap:1.25rem;flex-wrap:wrap">
-            <span style="font-size:.75rem;font-weight:700;color:var(--p);white-space:nowrap">✉️ Anschreiben</span>
+            <span style="font-size:.75rem;font-weight:700;color:var(--p);white-space:nowrap;display:inline-flex;align-items:center;gap:.35rem"><span class="mini-ic" data-icon="mail"></span>Anschreiben</span>
             <label style="display:flex;align-items:center;gap:.45rem;font-size:.8rem;cursor:pointer">
               <input type="checkbox" id="opt-anschr-aktiv" checked onchange="setAnschrOpt()"> Begleitschreiben jeder Abrechnung voranstellen
             </label>
@@ -2052,7 +2052,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
           <div class="pdf-actions-bar">
             <div><div class="pa-label">📥 PDF Gesamtpaket</div><div class="pa-sub">Alle Wohnungen in einem Dokument</div></div>
             <button class="btn-small gruen" id="btn-gesamt-clean" onclick="handleGesamtPDF(false,'vorschau')" style="display:none"><span class="btn-ic" data-icon="eye"></span> Vorschau</button>
-            <button class="btn-small gruen" id="btn-gesamt-dl" onclick="handleGesamtPDF(false,'download')" style="display:none">⬇️ Alle herunterladen</button>
+            <button class="btn-small gruen" id="btn-gesamt-dl" onclick="handleGesamtPDF(false,'download')" style="display:none"><span class="btn-ic" data-icon="download"></span> Alle herunterladen</button>
             <button class="btn-small" style="background:#1d6f42" onclick="exportExcel()"><span class="btn-ic" data-icon="download"></span> Excel Export</button>
             <button class="btn-success" id="btn-speichern" style="display:none" onclick="openSaveDialog()"><span class="btn-ic" data-icon="save"></span> Speichern</button>
           </div>
@@ -2117,7 +2117,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
         <!-- FILTER -->
         <div style="display:flex;gap:.65rem;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap">
           <div style="position:relative;flex:1;min-width:180px">
-            <span style="position:absolute;left:.75rem;top:50%;transform:translateY(-50%);color:var(--muted);font-size:.85rem">🔍</span>
+            <span class="mini-ic" data-icon="search" style="position:absolute;left:.7rem;top:50%;transform:translateY(-50%);color:#9ca3af"></span>
             <input type="text" id="archiv-search" placeholder="Nebenkostenabrechnungen durchsuchen..." oninput="renderArchivTabelle()"
               style="width:100%;border:1px solid var(--border);border-radius:8px;padding:.5rem .75rem .5rem 2.2rem;font-size:.85rem;font-family:var(--ff);outline:none;background:var(--white)">
           </div>
@@ -2199,7 +2199,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
             <div class="field"><label>BIC</label><input type="text" id="s-bic" placeholder="BELADEBEXXX"></div>
           </div>
           <div class="btn-row" style="margin-top:1.1rem">
-            <button class="btn-primary" onclick="saveStammdaten()">💾 Stammdaten speichern</button>
+            <button class="btn-primary" onclick="saveStammdaten()"><span class="btn-ic" data-icon="save"></span> Stammdaten speichern</button>
           </div>
           <div id="stamm-msg" style="display:none;margin-top:.7rem;font-size:.8rem;padding:.45rem .7rem;border-radius:6px"></div>
         </div>
@@ -2213,7 +2213,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
               <input type="file" id="briefkopf-file" accept="image/png,image/jpeg" onchange="handleBriefkopfUpload(this)" style="font-size:.84rem;font-family:var(--ff)">
               <div style="font-size:.74rem;color:var(--muted);margin-top:.5rem">Empfohlen: Breite ca. 1600 px, max. ~2 MB. Wird auf die Seitenbreite skaliert.</div>
               <div style="display:flex;gap:.5rem;margin-top:.85rem">
-                <button class="btn-secondary" onclick="entferneBriefkopf()" id="briefkopf-remove-btn" style="font-size:.8rem;display:none;color:#c0392b;border-color:#c0392b">🗑 Briefkopf entfernen</button>
+                <button class="btn-secondary" onclick="entferneBriefkopf()" id="briefkopf-remove-btn" style="font-size:.8rem;display:none;color:#c0392b;border-color:#c0392b"><span class="btn-ic" data-icon="trash"></span> Briefkopf entfernen</button>
               </div>
               <div id="briefkopf-msg" style="display:none;margin-top:.7rem;font-size:.8rem;padding:.45rem .7rem;border-radius:6px"></div>
             </div>
@@ -2310,19 +2310,19 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
             <textarea id="anschr-zusatz" style="border:1px solid var(--border);border-radius:var(--r);padding:.5rem .75rem;font-size:.88rem;font-family:var(--ff);width:100%;min-height:60px;resize:vertical;outline:none;background:var(--bg)" placeholder="Eigener Zusatztext..."></textarea>
           </div>
           <div class="btn-row" style="margin-top:.75rem">
-            <button class="btn-primary" onclick="generiereAnschreiben()">📄 Anschreiben generieren</button>
-            <button class="btn-secondary" onclick="resetAnschreiben()">↺ Zurücksetzen</button>
+            <button class="btn-primary" onclick="generiereAnschreiben()"><span class="btn-ic" data-icon="mail"></span> Anschreiben generieren</button>
+            <button class="btn-secondary" onclick="resetAnschreiben()"><span class="btn-ic" data-icon="refresh"></span> Zurücksetzen</button>
           </div>
         </div>
 
         <!-- VORSCHAU -->
         <div class="card" id="anschr-preview" style="display:none">
           <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
-            <span>📄 Vorschau</span>
+            <span style="display:inline-flex;align-items:center;gap:.4rem"><span class="mini-ic" data-icon="file"></span>Vorschau</span>
             <div style="display:flex;gap:.5rem">
-              <button class="btn-small" onclick="anschreibenPdf('vorschau')">📄 PDF-Vorschau</button>
-              <button class="btn-small gruen" onclick="anschreibenPdf('download')">⬇️ PDF</button>
-              <button class="btn-small grau" onclick="kopierenAnschreiben()">📋 Kopieren</button>
+              <button class="btn-small" onclick="anschreibenPdf('vorschau')"><span class="btn-ic" data-icon="file"></span> PDF-Vorschau</button>
+              <button class="btn-small gruen" onclick="anschreibenPdf('download')"><span class="btn-ic" data-icon="download"></span> PDF</button>
+              <button class="btn-small grau" onclick="kopierenAnschreiben()"><span class="btn-ic" data-icon="copy"></span> Kopieren</button>
             </div>
           </div>
           <div id="anschr-text" style="font-family:var(--ff);font-size:.9rem;line-height:1.9;white-space:pre-wrap;background:var(--white);border-radius:8px;padding:2rem;border:1px solid var(--border);min-height:200px"></div>
@@ -2354,22 +2354,22 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
           <select id="auf-filter-objekt" onchange="renderAuftraege()" style="border:1px solid var(--border);border-radius:8px;padding:.5rem .9rem;font-size:.85rem;font-family:var(--ff);background:var(--white);outline:none;cursor:pointer"><option value="">Alle Objekte</option></select>
           <div style="margin-left:auto;display:inline-flex;background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:3px;gap:3px">
             <button type="button" id="auf-view-board" onclick="setAuftragView('board')" style="border:none;border-radius:7px;padding:.4rem .85rem;cursor:pointer;font-size:.8rem;font-family:var(--ff);background:var(--p);color:#fff;font-weight:700">▦ Board</button>
-            <button type="button" id="auf-view-liste" onclick="setAuftragView('liste')" style="border:none;border-radius:7px;padding:.4rem .85rem;cursor:pointer;font-size:.8rem;font-family:var(--ff);background:transparent;color:var(--muted);font-weight:600">☰ Liste</button>
+            <button type="button" id="auf-view-liste" onclick="setAuftragView('liste')" style="border:none;border-radius:7px;padding:.4rem .85rem;cursor:pointer;font-size:.8rem;font-family:var(--ff);background:transparent;color:var(--muted);font-weight:600"><span class="btn-ic" data-icon="list"></span> Liste</button>
           </div>
         </div>
 
         <!-- KANBAN BOARD -->
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;align-items:start" id="auf-board">
           <div class="auf-col" data-status="offen">
-            <div style="display:flex;align-items:center;gap:.5rem;padding:.6rem .85rem;border-radius:10px 10px 0 0;background:linear-gradient(135deg,#fb923c,#f97316);color:#fff;font-weight:700;font-size:.82rem"><span>📋 Offen</span><span id="auf-cnt-offen" style="margin-left:auto;background:rgba(255,255,255,.25);border-radius:10px;padding:1px 9px;font-size:.72rem">0</span></div>
+            <div style="display:flex;align-items:center;gap:.5rem;padding:.6rem .85rem;border-radius:10px 10px 0 0;background:linear-gradient(135deg,#fb923c,#f97316);color:#fff;font-weight:700;font-size:.82rem"><span><span class="btn-ic" data-icon="clipboard"></span> Offen</span><span id="auf-cnt-offen" style="margin-left:auto;background:rgba(255,255,255,.25);border-radius:10px;padding:1px 9px;font-size:.72rem">0</span></div>
             <div id="auf-list-offen" class="auf-dropzone" ondragover="aufDragOver(event)" ondrop="aufDrop(event,'offen')" style="min-height:120px;background:var(--bg);border:1px solid var(--border);border-top:none;border-radius:0 0 10px 10px;padding:.65rem;display:flex;flex-direction:column;gap:.6rem"></div>
           </div>
           <div class="auf-col" data-status="in_arbeit">
-            <div style="display:flex;align-items:center;gap:.5rem;padding:.6rem .85rem;border-radius:10px 10px 0 0;background:linear-gradient(135deg,#60a5fa,#2563eb);color:#fff;font-weight:700;font-size:.82rem"><span>🔧 In Arbeit</span><span id="auf-cnt-in_arbeit" style="margin-left:auto;background:rgba(255,255,255,.25);border-radius:10px;padding:1px 9px;font-size:.72rem">0</span></div>
+            <div style="display:flex;align-items:center;gap:.5rem;padding:.6rem .85rem;border-radius:10px 10px 0 0;background:linear-gradient(135deg,#60a5fa,#2563eb);color:#fff;font-weight:700;font-size:.82rem"><span><span class="btn-ic" data-icon="wrench"></span> In Arbeit</span><span id="auf-cnt-in_arbeit" style="margin-left:auto;background:rgba(255,255,255,.25);border-radius:10px;padding:1px 9px;font-size:.72rem">0</span></div>
             <div id="auf-list-in_arbeit" class="auf-dropzone" ondragover="aufDragOver(event)" ondrop="aufDrop(event,'in_arbeit')" style="min-height:120px;background:var(--bg);border:1px solid var(--border);border-top:none;border-radius:0 0 10px 10px;padding:.65rem;display:flex;flex-direction:column;gap:.6rem"></div>
           </div>
           <div class="auf-col" data-status="erledigt">
-            <div style="display:flex;align-items:center;gap:.5rem;padding:.6rem .85rem;border-radius:10px 10px 0 0;background:linear-gradient(135deg,#4ade80,#16a34a);color:#fff;font-weight:700;font-size:.82rem"><span>✅ Erledigt</span><span id="auf-cnt-erledigt" style="margin-left:auto;background:rgba(255,255,255,.25);border-radius:10px;padding:1px 9px;font-size:.72rem">0</span></div>
+            <div style="display:flex;align-items:center;gap:.5rem;padding:.6rem .85rem;border-radius:10px 10px 0 0;background:linear-gradient(135deg,#4ade80,#16a34a);color:#fff;font-weight:700;font-size:.82rem"><span><span class="btn-ic" data-icon="checkcircle"></span> Erledigt</span><span id="auf-cnt-erledigt" style="margin-left:auto;background:rgba(255,255,255,.25);border-radius:10px;padding:1px 9px;font-size:.72rem">0</span></div>
             <div id="auf-list-erledigt" class="auf-dropzone" ondragover="aufDragOver(event)" ondrop="aufDrop(event,'erledigt')" style="min-height:120px;background:var(--bg);border:1px solid var(--border);border-top:none;border-radius:0 0 10px 10px;padding:.65rem;display:flex;flex-direction:column;gap:.6rem"></div>
           </div>
         </div>
@@ -2396,7 +2396,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
       <div style="background:#fff;border-radius:16px;width:100%;max-width:500px;max-height:92vh;overflow:hidden;box-shadow:0 30px 80px rgba(18,8,38,.4);display:flex;flex-direction:column">
         <!-- Header -->
         <div style="background:linear-gradient(135deg,#2d1457,#6a2d9f 70%,#8e44c0);color:#fff;padding:1.15rem 1.5rem;display:flex;justify-content:space-between;align-items:center">
-          <div style="display:flex;align-items:center;gap:.6rem"><span style="font-size:1.25rem">🛠</span><h3 style="font-size:1.05rem;font-weight:800" id="auftrag-modal-title">Neuer Auftrag</h3></div>
+          <div style="display:flex;align-items:center;gap:.6rem"><span class="mini-ic" data-icon="clipboard" style="color:var(--p)"></span><h3 style="font-size:1.05rem;font-weight:800" id="auftrag-modal-title">Neuer Auftrag</h3></div>
           <button onclick="closeAuftragModal()" style="background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:1rem"><span class="btn-ic" data-icon="x"></span></button>
         </div>
         <div style="padding:1.5rem;overflow-y:auto">
@@ -2420,9 +2420,9 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
           <label style="font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:.4rem">Status</label>
           <input type="hidden" id="auf-status" value="offen">
           <div id="auf-status-chips" style="display:flex;gap:.5rem">
-            <button type="button" data-status="offen" onclick="setAufStatus('offen')" style="flex:1;border:2px solid var(--border);background:#fff;border-radius:10px;padding:.55rem;cursor:pointer;font-size:.82rem;font-weight:700;font-family:var(--ff);color:#e67e22">📋 Offen</button>
-            <button type="button" data-status="in_arbeit" onclick="setAufStatus('in_arbeit')" style="flex:1;border:2px solid var(--border);background:#fff;border-radius:10px;padding:.55rem;cursor:pointer;font-size:.82rem;font-weight:700;font-family:var(--ff);color:#2563eb">🔧 In Arbeit</button>
-            <button type="button" data-status="erledigt" onclick="setAufStatus('erledigt')" style="flex:1;border:2px solid var(--border);background:#fff;border-radius:10px;padding:.55rem;cursor:pointer;font-size:.82rem;font-weight:700;font-family:var(--ff);color:#16a34a">✅ Erledigt</button>
+            <button type="button" data-status="offen" onclick="setAufStatus('offen')" style="flex:1;border:2px solid var(--border);background:#fff;border-radius:10px;padding:.55rem;cursor:pointer;font-size:.82rem;font-weight:700;font-family:var(--ff);color:#e67e22"><span class="btn-ic" data-icon="clipboard"></span> Offen</button>
+            <button type="button" data-status="in_arbeit" onclick="setAufStatus('in_arbeit')" style="flex:1;border:2px solid var(--border);background:#fff;border-radius:10px;padding:.55rem;cursor:pointer;font-size:.82rem;font-weight:700;font-family:var(--ff);color:#2563eb"><span class="btn-ic" data-icon="wrench"></span> In Arbeit</button>
+            <button type="button" data-status="erledigt" onclick="setAufStatus('erledigt')" style="flex:1;border:2px solid var(--border);background:#fff;border-radius:10px;padding:.55rem;cursor:pointer;font-size:.82rem;font-weight:700;font-family:var(--ff);color:#16a34a"><span class="btn-ic" data-icon="checkcircle"></span> Erledigt</button>
           </div>
         </div>
 
@@ -2432,7 +2432,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
         </div>
         <div style="display:flex;gap:.65rem;align-items:center">
           <button class="btn-primary" onclick="saveAuftrag()" style="flex:1;padding:.7rem"><span class="btn-ic" data-icon="save"></span> Speichern</button>
-          <button id="auf-delete-btn" onclick="deleteAuftrag()" style="display:none;background:#fdecea;color:#c0392b;border:1px solid #f3c0bb;border-radius:9px;padding:.7rem .9rem;cursor:pointer;font-family:var(--ff);font-weight:700">🗑 Löschen</button>
+          <button id="auf-delete-btn" onclick="deleteAuftrag()" style="display:none;background:#fdecea;color:#c0392b;border:1px solid #f3c0bb;border-radius:9px;padding:.7rem .9rem;cursor:pointer;font-family:var(--ff);font-weight:700"><span class="btn-ic" data-icon="trash"></span> Löschen</button>
         </div>
         </div>
       </div>
@@ -2467,13 +2467,13 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
           <div class="field" style="margin-bottom:.75rem"><label>Typ</label>
             <select id="banner-type"><option value="">Kein Banner</option><option value="info">ℹ️ Info (blau)</option><option value="warn">⚠️ Warnung (gelb)</option><option value="success">✅ Erfolg (grün)</option></select>
           </div>
-          <button class="btn-primary" onclick="saveBanner()">💾 Banner speichern</button>
+          <button class="btn-primary" onclick="saveBanner()"><span class="btn-ic" data-icon="save"></span> Banner speichern</button>
         </div>
         <div class="card"><div class="card-title">📊 Nutzungsstatistiken</div><div id="admin-stats"><div style="color:var(--muted);font-size:.85rem;padding:.5rem">Wird geladen...</div></div></div>
         <div class="card">
           <div class="card-title" style="display:flex;align-items:center;justify-content:space-between">
-            <span>📨 Nachrichten &amp; Feedback</span>
-            <button class="btn-small" style="font-size:.7rem" onclick="loadFeedback()">↻ Aktualisieren</button>
+            <span style="display:inline-flex;align-items:center;gap:.4rem"><span class="mini-ic" data-icon="inbox"></span>Nachrichten &amp; Feedback</span>
+            <button class="btn-small" style="font-size:.7rem" onclick="loadFeedback()"><span class="btn-ic" data-icon="refresh"></span> Aktualisieren</button>
           </div>
           <div id="admin-feedback"><div style="color:var(--muted);font-size:.85rem;padding:.5rem">Wird geladen...</div></div>
         </div>
@@ -2514,7 +2514,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
             </div>
             <div class="field" style="margin-bottom:.4rem"><label>E-Mail-Adresse ändern</label><input type="email" id="prof-email" placeholder="neue@email.de"></div>
             <div style="font-size:.72rem;color:var(--muted);margin-bottom:.75rem">⚠️ Nach dem Speichern erhalten Sie eine Bestätigungs-E-Mail. Erst nach Bestätigung wird die Adresse geändert.</div>
-            <button class="btn-primary" onclick="saveProfile()">💾 Profil speichern</button>
+            <button class="btn-primary" onclick="saveProfile()"><span class="btn-ic" data-icon="save"></span> Profil speichern</button>
             <div id="prof-msg" style="display:none;margin-top:.6rem;font-size:.8rem;padding:.4rem .7rem;border-radius:6px"></div>
           </div>
         </div>
@@ -2525,7 +2525,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
               <div class="field"><label>Neues Passwort</label><input type="password" id="new-pw" placeholder="Mind. 7 Zeichen + Sonderzeichen"></div>
               <div class="field"><label>Passwort bestätigen</label><input type="password" id="new-pw2" placeholder="Wiederholen"></div>
             </div>
-            <button class="btn-primary" onclick="changePassword()">🔒 Passwort ändern</button>
+            <button class="btn-primary" onclick="changePassword()"><span class="btn-ic" data-icon="lock"></span> Passwort ändern</button>
             <div id="pw-change-msg" style="display:none;margin-top:.6rem;font-size:.8rem;padding:.4rem .7rem;border-radius:6px"></div>
           </div>
         </div>
@@ -2545,11 +2545,11 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
             <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:.85rem">
               <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden">
                 <div style="background:#1a1430;padding:1.5rem;text-align:center"><span style="font-size:1.6rem;font-weight:800;color:#fff;letter-spacing:-.02em">NEKOSTA<span style="color:#c084e8">.</span></span></div>
-                <button class="btn-small" style="width:100%;border-radius:0;padding:.6rem;border:none;border-top:1px solid var(--border)" onclick="downloadLogo('weiss')">⬇️ Weiß (SVG)</button>
+                <button class="btn-small" style="width:100%;border-radius:0;padding:.6rem;border:none;border-top:1px solid var(--border)" onclick="downloadLogo('weiss')"><span class="btn-ic" data-icon="download"></span> Weiß (SVG)</button>
               </div>
               <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden">
                 <div style="background:#fff;padding:1.5rem;text-align:center;border-bottom:1px solid var(--border)"><span style="font-size:1.6rem;font-weight:800;color:#1a1430;letter-spacing:-.02em">NEKOSTA<span style="color:#c084e8">.</span></span></div>
-                <button class="btn-small" style="width:100%;border-radius:0;padding:.6rem;border:none;border-top:1px solid var(--border)" onclick="downloadLogo('schwarz')">⬇️ Schwarz-Pink (SVG)</button>
+                <button class="btn-small" style="width:100%;border-radius:0;padding:.6rem;border:none;border-top:1px solid var(--border)" onclick="downloadLogo('schwarz')"><span class="btn-ic" data-icon="download"></span> Schwarz-Pink (SVG)</button>
               </div>
             </div>
           </div>
@@ -2578,7 +2578,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                 <option value="0">Volle Breite</option>
               </select>
             </div>
-            <button type="button" class="btn-secondary" onclick="resetLayoutSettings()">↺ Layout zurücksetzen</button>
+            <button type="button" class="btn-secondary" onclick="resetLayoutSettings()"><span class="btn-ic" data-icon="refresh"></span> Layout zurücksetzen</button>
           </div>
 
           <!-- NK-ABRECHNUNG LAYOUTS -->
@@ -2648,7 +2648,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
             <div class="card-title">💾 Datensicherung (Backup)</div>
             <div style="font-size:.85rem;color:var(--muted);margin-bottom:.75rem;line-height:1.6">Alle Ihre Daten als JSON-Datei herunterladen. Empfehlung: monatlich sichern.</div>
             <div id="backup-last-date" style="font-size:.75rem;color:var(--muted);margin-bottom:.75rem;font-style:italic">Noch kein Backup erstellt</div>
-            <button class="btn-primary" onclick="erstelleBackup()">💾 Backup jetzt erstellen</button>
+            <button class="btn-primary" onclick="erstelleBackup()"><span class="btn-ic" data-icon="save"></span> Backup jetzt erstellen</button>
           </div>
         </div>
       </div>
@@ -2667,7 +2667,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
             <div id="abo-current-badge" style="font-size:.7rem;font-weight:700;padding:4px 12px;border-radius:999px;background:#e9f9f0;color:#1a7a4a">Aktiv</div>
           </div>
           <div style="display:flex;gap:.65rem;flex-wrap:wrap">
-            <button class="btn-primary" onclick="showPage('tarife')" style="flex:1;min-width:190px">💎 Tarif wählen / erweitern</button>
+            <button class="btn-primary" onclick="showPage('tarife')" style="flex:1;min-width:190px"><span class="btn-ic" data-icon="creditcard"></span> Tarif wählen / erweitern</button>
             <button class="btn-secondary" id="abo-kuendigen-btn" onclick="kuendigeAbo()" style="flex:1;min-width:160px;color:#c0392b;border-color:#c0392b;display:none">Abo beenden</button>
           </div>
           <div style="font-size:.74rem;color:var(--muted);margin-top:.9rem">Tarif jederzeit wechselbar oder kündbar · Alle Preise zzgl. ges. USt. · Eine Übersicht aller Tarife findest du unter „💎 Tarife".</div>
@@ -2685,18 +2685,18 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
           </div>
           <!-- Speicheranzeige -->
           <div style="min-width:240px;background:var(--white);border:1px solid var(--border);border-radius:12px;padding:.7rem .9rem">
-            <div style="display:flex;justify-content:space-between;font-size:.7rem;font-weight:700;color:var(--muted);margin-bottom:.4rem"><span>💾 Speicher</span><span id="dok-quota-text">–</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:.7rem;font-weight:700;color:var(--muted);margin-bottom:.4rem"><span style="display:inline-flex;align-items:center;gap:.35rem"><span class="mini-ic" data-icon="save"></span>Speicher</span><span id="dok-quota-text">–</span></div>
             <div style="height:7px;background:var(--bg);border-radius:99px;overflow:hidden"><div id="dok-quota-bar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--p),#a855f7);border-radius:99px;transition:width .4s"></div></div>
             <div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem;margin-top:.4rem">
               <span id="dok-quota-sub" style="font-size:.66rem;color:var(--muted)"></span>
-              <button onclick="showPage('tarife')" title="Mehr Speicher über einen höheren Tarif" style="border:none;background:var(--p-light);color:var(--p);font-size:.66rem;font-weight:700;padding:3px 9px;border-radius:7px;cursor:pointer;white-space:nowrap;font-family:var(--ff)">💎 Mehr Speicher</button>
+              <button onclick="showPage('tarife')" title="Mehr Speicher über einen höheren Tarif" style="border:none;background:var(--p-light);color:var(--p);font-size:.66rem;font-weight:700;padding:3px 9px;border-radius:7px;cursor:pointer;white-space:nowrap;font-family:var(--ff)"><span class="btn-ic" data-icon="creditcard"></span> Mehr Speicher</button>
             </div>
           </div>
         </div>
 
         <!-- Suchleiste -->
         <div style="position:relative;margin-bottom:.85rem">
-          <span style="position:absolute;left:.85rem;top:50%;transform:translateY(-50%);color:var(--muted);font-size:.9rem">🔍</span>
+          <span class="mini-ic" data-icon="search" style="position:absolute;left:.8rem;top:50%;transform:translateY(-50%);color:#9ca3af"></span>
           <input type="text" id="dok-search" placeholder="Dateien durchsuchen …" oninput="dokSearch(this.value)" autocomplete="off"
             style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:10px;padding:.6rem .9rem .6rem 2.4rem;font-size:.85rem;font-family:var(--ff);outline:none;background:var(--white)">
         </div>
@@ -2704,8 +2704,8 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
         <!-- Toolbar -->
         <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:1rem">
           <div id="dok-breadcrumb" style="font-size:.85rem;font-weight:600;flex:1;min-width:200px;display:flex;align-items:center;gap:.35rem;flex-wrap:wrap"></div>
-          <button class="btn-small" id="dok-btn-folder" onclick="dokNeuerOrdner()" style="display:none">📂 Neuer Ordner</button>
-          <button class="btn-primary" id="dok-btn-upload" onclick="document.getElementById('dok-file-input').click()" style="display:none;font-size:.8rem;padding:.45rem .9rem">⬆️ Datei hochladen</button>
+          <button class="btn-small" id="dok-btn-folder" onclick="dokNeuerOrdner()" style="display:none"><span class="btn-ic" data-icon="folder"></span> Neuer Ordner</button>
+          <button class="btn-primary" id="dok-btn-upload" onclick="document.getElementById('dok-file-input').click()" style="display:none;font-size:.8rem;padding:.45rem .9rem"><span class="btn-ic" data-icon="upload"></span> Datei hochladen</button>
           <input type="file" id="dok-file-input" multiple style="display:none" onchange="dokHandleUpload(this.files)">
         </div>
 
@@ -2731,14 +2731,14 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
           <div><label style="font-size:.72rem;font-weight:700;color:var(--muted)">USt %</label><select id="konto-ust" style="border:1px solid var(--border);border-radius:7px;padding:.5rem;font-size:.88rem;font-family:var(--ff);width:100%;outline:none"><option value="0">0 %</option><option value="7">7 %</option><option value="19">19 %</option></select></div>
         </div>
         <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;margin-bottom:1rem;cursor:pointer"><input type="checkbox" id="konto-umlage" checked> umlagefähig (auf Eigentümer/Mieter umlegbar)</label>
-        <div style="display:flex;gap:.65rem"><button class="btn-primary" style="flex:1" onclick="saveKonto()">✓ Speichern</button><button class="btn-secondary" style="flex:1" onclick="closeKontoModal()">Abbrechen</button></div>
+        <div style="display:flex;gap:.65rem"><button class="btn-primary" style="flex:1" onclick="saveKonto()"><span class="btn-ic" data-icon="check"></span> Speichern</button><button class="btn-secondary" style="flex:1" onclick="closeKontoModal()">Abbrechen</button></div>
       </div>
     </div>
 
     <!-- UNTERGEMEINSCHAFTEN MODAL -->
     <div id="ug-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:700;align-items:center;justify-content:center;padding:1rem">
       <div style="background:#fff;border-radius:14px;padding:1.6rem;width:100%;max-width:460px;max-height:90vh;overflow-y:auto">
-        <h3 style="font-size:.98rem;font-weight:700;margin-bottom:.3rem">👥 Untergemeinschaften</h3>
+        <h3 style="font-size:.98rem;font-weight:700;margin-bottom:.3rem;display:flex;align-items:center;gap:.4rem"><span class="mini-ic" data-icon="users" style="color:var(--p)"></span>Untergemeinschaften</h3>
         <p style="font-size:.8rem;color:var(--muted);margin-bottom:1rem">Untergliedere die WEG (z. B. Mehrhausanlage „Haus A / Haus B"). Jede Untergemeinschaft hat eine <strong>eigene Buchhaltung</strong>; „Gesamt-WEG" bleibt für gemeinschaftliche Kosten.</p>
         <div style="display:flex;gap:.5rem;margin-bottom:1rem">
           <input type="text" id="ug-name" placeholder="Name, z. B. Haus A" onkeydown="if(event.key==='Enter')addUg()" style="flex:1;border:1px solid var(--border);border-radius:7px;padding:.5rem .7rem;font-size:.88rem;font-family:var(--ff);outline:none">
@@ -2752,7 +2752,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
     <!-- BUCHUNGSSCHLÜSSEL MODAL -->
     <div id="bks-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:700;align-items:center;justify-content:center;padding:1rem">
       <div style="background:#fff;border-radius:14px;padding:1.6rem;width:100%;max-width:560px;max-height:90vh;overflow-y:auto">
-        <h3 style="font-size:.98rem;font-weight:700;margin-bottom:.3rem">⚙ Buchungsschlüssel</h3>
+        <h3 style="font-size:.98rem;font-weight:700;margin-bottom:.3rem"><span class="btn-ic" data-icon="gear"></span> Buchungsschlüssel</h3>
         <p style="font-size:.8rem;color:var(--muted);margin-bottom:1rem">Steuer-/Buchungsschlüssel steuern automatisch USt/Vorsteuer-Satz und das Steuerkonto. Standard-Schlüssel kannst du überschreiben oder eigene anlegen.</p>
         <div style="display:grid;grid-template-columns:60px 1fr 110px 70px 90px auto;gap:.4rem;align-items:end;margin-bottom:.8rem">
           <div><label style="font-size:.62rem;font-weight:700;color:var(--muted);text-transform:uppercase">Nr.</label><input type="text" id="bks-nr" placeholder="1" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:7px;padding:.4rem;font-size:.85rem;font-family:var(--ff);outline:none"></div>
@@ -2800,15 +2800,15 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
         <!-- SUCHE + FILTER -->
         <div style="display:flex;gap:.75rem;margin-bottom:1.5rem;flex-wrap:wrap">
           <div style="position:relative;flex:1;min-width:220px">
-            <span style="position:absolute;left:.75rem;top:50%;transform:translateY(-50%);color:var(--muted);font-size:.9rem">🔍</span>
+            <span class="mini-ic" data-icon="search" style="position:absolute;left:.7rem;top:50%;transform:translateY(-50%);color:#9ca3af"></span>
             <input type="text" id="kontakte-search" placeholder="Kontakte durchsuchen..." oninput="renderKontakte()"
               style="width:100%;border:1px solid var(--border);border-radius:8px;padding:.55rem .75rem .55rem 2.2rem;font-size:.88rem;font-family:var(--ff);outline:none;background:var(--white);box-sizing:border-box">
           </div>
           <!-- Typ Filter -->
           <div style="display:flex;gap:.4rem;align-items:center;background:var(--white);border:1px solid var(--border);border-radius:8px;padding:.25rem">
             <button type="button" id="ktyp-alle" onclick="setKontaktTypFilter('')" style="background:var(--p);color:#fff;border:none;border-radius:6px;padding:.35rem .75rem;cursor:pointer;font-size:.8rem;font-family:var(--ff)">Alle</button>
-            <button type="button" id="ktyp-mieter" onclick="setKontaktTypFilter('Mieter')" style="background:none;color:var(--muted);border:none;border-radius:6px;padding:.35rem .75rem;cursor:pointer;font-size:.8rem;font-family:var(--ff)">👤 Mieter</button>
-            <button type="button" id="ktyp-eigentuemer" onclick="setKontaktTypFilter('Eigentümer')" style="background:none;color:var(--muted);border:none;border-radius:6px;padding:.35rem .75rem;cursor:pointer;font-size:.8rem;font-family:var(--ff)">🏠 Eigentümer</button>
+            <button type="button" id="ktyp-mieter" onclick="setKontaktTypFilter('Mieter')" style="background:none;color:var(--muted);border:none;border-radius:6px;padding:.35rem .75rem;cursor:pointer;font-size:.8rem;font-family:var(--ff)"><span class="btn-ic" data-icon="user"></span> Mieter</button>
+            <button type="button" id="ktyp-eigentuemer" onclick="setKontaktTypFilter('Eigentümer')" style="background:none;color:var(--muted);border:none;border-radius:6px;padding:.35rem .75rem;cursor:pointer;font-size:.8rem;font-family:var(--ff)"><span class="btn-ic" data-icon="building"></span> Eigentümer</button>
             <button type="button" id="ktyp-sonstiges" onclick="setKontaktTypFilter('Sonstiges')" style="background:none;color:var(--muted);border:none;border-radius:6px;padding:.35rem .75rem;cursor:pointer;font-size:.8rem;font-family:var(--ff)">Sonstiges</button>
           </div>
           <div style="display:flex;gap:.5rem;align-items:center">
@@ -7585,7 +7585,7 @@ async function setFeedbackStatus(id,status){
 async function deleteFeedback(id){
   appConfirm({icon:'🗑',title:'Nachricht löschen?',message:'Diese Nachricht wird dauerhaft entfernt.',
     buttons:[
-      {label:'🗑 Löschen',style:'background:#c0392b;color:#fff',onClick:async function(){
+      {label:'<span class="btn-ic" data-icon="trash"></span> Löschen',style:'background:#c0392b;color:#fff',onClick:async function(){
         var {error}=await sb.from('feedback').delete().eq('id',id);
         if(error){showToast('❌ '+error.message);return;}
         showToast('🗑 Gelöscht'); loadFeedback();
@@ -7778,7 +7778,7 @@ function deleteKonto(id){
   // Wird das Konto in Buchungen verwendet?
   var used=buha.buchungen.some(function(b){return b.soll_konto===k.nummer||b.haben_konto===k.nummer;});
   appConfirm({icon:'🗑',title:'Konto löschen?',message:used?'⚠️ Konto <strong>'+escapeHtml(kontoLabel(k))+'</strong> wird in Buchungen dieses Jahres verwendet. Löschen kann Auswertungen verfälschen.':'Konto <strong>'+escapeHtml(kontoLabel(k))+'</strong> löschen?',
-    buttons:[{label:'🗑 Löschen',style:'background:#c0392b;color:#fff',onClick:async function(){
+    buttons:[{label:'<span class="btn-ic" data-icon="trash"></span> Löschen',style:'background:#c0392b;color:#fff',onClick:async function(){
       var {error}=await sb.from('weg_konten').delete().eq('id',id);
       if(error){showToast('❌ '+error.message);return;}
       await logAudit('konto_geloescht','konto',id,{nummer:k.nummer}); showToast('🗑 Konto gelöscht'); await buhaReload();
@@ -8024,7 +8024,7 @@ async function addUg(){
 function deleteUg(id){
   var u=buha.ugListe.find(function(x){return x.id===id;}); if(!u)return;
   appConfirm({icon:'🗑',title:'Untergemeinschaft löschen?',message:'„'+escapeHtml(u.name)+'" löschen? Bereits erfasste Buchungen bleiben erhalten und werden dem <strong>Gesamt-WEG</strong> zugeordnet.',
-    buttons:[{label:'🗑 Löschen',style:'background:#c0392b;color:#fff',onClick:async function(){
+    buttons:[{label:'<span class="btn-ic" data-icon="trash"></span> Löschen',style:'background:#c0392b;color:#fff',onClick:async function(){
       // Buchungen erhalten → Zuordnung auf Gesamt-WEG (null) umhängen (nichts verschwindet)
       try{await sb.from('weg_buchungen').update({untergemeinschaft_id:null}).eq('untergemeinschaft_id',id);}catch(e){}
       var {error}=await sb.from('weg_untergemeinschaften').delete().eq('id',id);
@@ -8082,7 +8082,7 @@ async function saveBks(){
 }
 function deleteBks(id){
   appConfirm({icon:'🗑',title:'Schlüssel löschen?',message:'Eigenen Buchungsschlüssel entfernen? Der Standard (falls vorhanden) gilt dann wieder.',
-    buttons:[{label:'🗑 Löschen',style:'background:#c0392b;color:#fff',onClick:async function(){
+    buttons:[{label:'<span class="btn-ic" data-icon="trash"></span> Löschen',style:'background:#c0392b;color:#fff',onClick:async function(){
       var {error}=await sb.from('weg_steuerschluessel').delete().eq('id',id);
       if(error){showToast('❌ '+error.message);return;}
       await buhaReload(); renderBksList(); showToast('🗑 Gelöscht');
@@ -8395,7 +8395,9 @@ var LICON={
  bookopen:_ic('<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>'),
  check:_ic('<polyline points="20 6 9 17 4 12"/>'),
  menu:_ic('<line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>'),
- gear:_ic('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>')
+ gear:_ic('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>'),
+ lock:_ic('<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>'),
+ inbox:_ic('<polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>')
 };
 function applyIcons(root){
   try{(root||document).querySelectorAll('[data-icon]').forEach(function(el){var n=el.getAttribute('data-icon');if(LICON[n]&&!el.firstChild){el.innerHTML=LICON[n];}});}catch(e){}
@@ -8893,7 +8895,7 @@ function renderObjekteTabelle(){
         +'<div onclick="startAbrechnungFuerAktivesObjektById(\''+o.id+'\')" class="omenu-item">📄 Abrechnen</div>'
         +'<div onclick="openMieterModalFuerObjekt(\''+o.id+'\',\''+safeName(o)+'\')" class="omenu-item">+ Mieter hinzufügen</div>'
         +'<div style="height:1px;background:var(--border)"></div>'
-        +'<div onclick="deleteObjekt(\''+o.id+'\')" class="omenu-item omenu-danger">🗑 Löschen</div>'
+        +'<div onclick="deleteObjekt(\''+o.id+'\')" class="omenu-item omenu-danger"><span class="btn-ic" data-icon="trash"></span> Löschen</div>'
       +'</div>'
     +'</div>';
   };
@@ -9605,7 +9607,7 @@ async function loadMietverhaeltnisse(objId){
             +(m.aktiv?'<button onclick="mietverhBezahltBisHeute(\''+m.id+'\')" class="btn-small gruen" style="font-size:.7rem" title="Alle fälligen Mieten bis heute als bezahlt setzen">✓ bis heute bezahlt</button>':'')
             +'<button onclick="editMietverhaeltnis(\''+m.id+'\')" class="btn-small" style="font-size:.72rem" title="Bearbeiten">✏️</button>'
             +(m.aktiv?'<button onclick="beendeMietverhaeltnis(\''+m.id+'\')" class="btn-small" style="font-size:.72rem;background:#fff3cd;color:#856404" title="Mietverhältnis beenden">Beenden</button>':'')
-            +'<button onclick="deleteMietverhaeltnis(\''+m.id+'\')" class="btn-small" style="font-size:.72rem;background:#fdecea;color:#c0392b" title="Dauerhaft löschen">🗑 Löschen</button>'
+            +'<button onclick="deleteMietverhaeltnis(\''+m.id+'\')" class="btn-small" style="font-size:.72rem;background:#fdecea;color:#c0392b" title="Dauerhaft löschen"><span class="btn-ic" data-icon="trash"></span> Löschen</button>'
           +'</div>'
         +'</div>';
       }).join('')
@@ -10367,7 +10369,7 @@ async function dokDownload(path,name){
 function dokDelete(id,path){
   appConfirm({icon:'🗑',title:'Datei löschen?',message:'Die Datei wird endgültig aus dem Speicher entfernt. Das kann nicht rückgängig gemacht werden.',
     buttons:[
-      {label:'🗑 Löschen',style:'background:#c0392b;color:#fff',onClick:async function(){
+      {label:'<span class="btn-ic" data-icon="trash"></span> Löschen',style:'background:#c0392b;color:#fff',onClick:async function(){
         try{await sb.storage.from('dokumente').remove([path]);}catch(e){}
         var {error}=await sb.from('dokumente').delete().eq('id',id);
         if(error){showToast('❌ '+error.message);return;}
@@ -10636,7 +10638,7 @@ function mvVertragUnstage(idx){ _mvPendingVertrag.splice(idx,1); renderMvVertrag
 function mvVertragDelete(id,path,mvId){
   appConfirm({icon:'🗑',title:'Mietvertrag löschen?',message:'Die Datei wird endgültig aus dem Speicher entfernt.',
     buttons:[
-      {label:'🗑 Löschen',style:'background:#c0392b;color:#fff',onClick:async function(){
+      {label:'<span class="btn-ic" data-icon="trash"></span> Löschen',style:'background:#c0392b;color:#fff',onClick:async function(){
         try{await sb.storage.from('dokumente').remove([path]);}catch(e){}
         await sb.from('dokumente').delete().eq('id',id);
         showToast('🗑 Mietvertrag gelöscht'); renderMvVertragList(mvId);

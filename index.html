@@ -133,7 +133,7 @@ body.sidebar-open #sidebar-backdrop{display:block;opacity:1}
 .wizard-step.active .ws-num{background:var(--p);color:#fff}
 .wizard-arrow{color:var(--border);font-size:.8rem;padding:0 .25rem}
 .wizard-content{padding:2rem}
-.wizard-footer{background:var(--white);border-top:1px solid var(--border);padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center;position:fixed;bottom:0;left:var(--sidebar);right:0;z-index:148;flex-wrap:wrap;gap:.5rem;box-shadow:0 -2px 12px rgba(16,24,40,.07)}
+.wizard-footer{background:var(--white);border-top:1px solid var(--border);padding:.75rem 2rem;display:flex;justify-content:space-between;align-items:center;position:fixed;bottom:0;left:var(--sidebar);right:0;z-index:148;flex-wrap:wrap;gap:.5rem;box-shadow:0 -1px 2px rgba(16,24,40,.04);min-height:var(--wizfoot-h);box-sizing:border-box}
 
 /* ── CARDS ── */
 .card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin-bottom:1.1rem}
@@ -288,6 +288,10 @@ body.sidebar-open #sidebar-backdrop{display:block;opacity:1}
 #page-tool .erg-kpi-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:.75rem}
 @media(max-width:900px){#page-tool .erg-kpi-grid{grid-template-columns:repeat(2,1fr)}}
 #page-tool .ergebnis-header .eh-jahr{font-size:1.875rem}
+.erg-kpi-fic{display:inline-flex;align-items:center;justify-content:center}
+.erg-kpi-fic svg{width:18px;height:18px;display:block}
+/* Hilfe-/Kontakt-Blase: Fineline-Sprechblase */
+#help-fab svg{width:24px;height:24px;display:block}
 
 /* ── TOKENS ── */
 .token-balance-chip{background:var(--p-light);border:1px solid transparent;border-radius:20px;padding:.25rem .85rem;font-size:.78rem;color:var(--p);display:none;align-items:center;gap:.4rem;cursor:pointer}
@@ -3339,7 +3343,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
 </div>
 
 <!-- HILFE & KONTAKT WIDGET -->
-<button id="help-fab" onclick="toggleHelpPanel()" title="Hilfe & Kontakt" style="display:none;position:fixed;bottom:20px;right:20px;z-index:800;width:56px;height:56px;border-radius:50%;border:none;background:linear-gradient(135deg,var(--p),#a855f7);color:#fff;font-size:1.5rem;cursor:pointer;box-shadow:0 8px 24px rgba(106,45,159,.4)">💬</button>
+<button id="help-fab" onclick="toggleHelpPanel()" title="Hilfe & Kontakt" style="display:none;position:fixed;bottom:20px;right:20px;z-index:800;width:56px;height:56px;border-radius:50%;border:none;background:linear-gradient(135deg,var(--p),#a855f7);color:#fff;cursor:pointer;box-shadow:0 8px 24px rgba(106,45,159,.4);align-items:center;justify-content:center"><span data-icon="messagecircle"></span></button>
 <div id="help-panel" style="display:none;position:fixed;bottom:88px;right:20px;z-index:800;width:344px;max-width:calc(100vw - 40px);background:var(--white);border:1px solid var(--border);border-radius:16px;box-shadow:0 16px 50px rgba(0,0,0,.25);overflow:hidden">
   <div style="background:linear-gradient(135deg,var(--p),#7c3aed);color:#fff;padding:.85rem 1rem;display:flex;justify-content:space-between;align-items:center">
     <div><div style="font-weight:700;font-size:.92rem">Hilfe &amp; Kontakt</div><div style="font-size:.7rem;opacity:.85">NEKOSTA-Assistent</div></div>
@@ -3536,7 +3540,8 @@ async function initApp(user){
   var _lp=document.getElementById('landing');if(_lp)_lp.style.display='none';
   document.getElementById('login-overlay').style.display='none';
   document.getElementById('app').style.display='block';
-  var _fab=document.getElementById('help-fab');if(_fab)_fab.style.display='flex';
+  // Hilfe-/Kontakt-Blase nur im Dashboard – showPage() steuert die Sichtbarkeit
+  var _fab=document.getElementById('help-fab');if(_fab)_fab.style.display='none';
   document.getElementById('user-bar').style.display='flex';
   document.getElementById('user-email').textContent=user.email;
   document.getElementById('role-badge').textContent=isAdmin?'Verwalter':'Kunde';
@@ -3675,6 +3680,10 @@ function showPage(name){
     var el=document.getElementById('page-'+p);
     if(el)el.style.display=p===name?'block':'none';
   });
+
+  // Hilfe-/Kontakt-Blase nur im Dashboard zeigen
+  var _fab=document.getElementById('help-fab');
+  if(_fab)_fab.style.display=(name==='dashboard')?'flex':'none';
 
   // Nav active state
   document.querySelectorAll('.nav-item').forEach(function(el){el.classList.remove('active');});
@@ -4711,17 +4720,17 @@ async function renderErgebnis(){
     return '<div style="border-radius:8px;border:1px solid '+o.border+';background:'+o.bg+';padding:1rem">'
       +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">'
         +'<span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:'+o.lblColor+'">'+o.lbl+'</span>'
-        +'<span style="font-size:1.05rem;line-height:1">'+o.ic+'</span>'
+        +'<span class="erg-kpi-fic" style="color:'+(o.icColor||'#9ca3af')+'">'+o.ic+'</span>'
       +'</div>'
       +'<div style="font-size:1.5rem;font-weight:600;line-height:1.15;margin-top:.4rem;color:'+(o.valColor||'#111827')+';font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+o.val+'</div>'
       +'<div style="font-size:.72rem;color:#9ca3af;margin-top:.15rem">'+o.sub+'</div>'
     +'</div>';
   };
   var summaryHtml='<div class="erg-kpi-grid">'
-    +kpiCard({lbl:'Einheiten',val:einheitenCount,ic:'🏠',bg:'#fff',border:'#e5e7eb',lblColor:'#9ca3af',sub:e.jahr+' · '+(e.hasHK?'mit Heizkosten':'ohne Heizkosten')})
-    +kpiCard({lbl:'Gesamtkosten',val:fmt(gesamtKosten),ic:'📊',bg:'#fffbeb',border:'#fde68a',lblColor:'#d97706',sub:'BK '+fmt(bkTotal)+(e.hasHK?' · HK '+fmt(hkTotal):'')})
-    +kpiCard({lbl:'Nachzahlungen',val:fmt(totalNachzahlung),valColor:'#dc2626',ic:'⚠️',bg:'#fef2f2',border:'#fecaca',lblColor:'#ef4444',sub:nachCount+' '+(nachCount===1?'Abrechnung':'Abrechnungen')})
-    +kpiCard({lbl:'Erstattungen',val:fmt(totalErstattung),valColor:'#15803d',ic:'✅',bg:'#f0fdf4',border:'#bbf7d0',lblColor:'#16a34a',sub:erstCount+' '+(erstCount===1?'Abrechnung':'Abrechnungen')})
+    +kpiCard({lbl:'Einheiten',val:einheitenCount,ic:LICON.home,icColor:'#7c3aed',bg:'#fff',border:'#e5e7eb',lblColor:'#9ca3af',sub:e.jahr+' · '+(e.hasHK?'mit Heizkosten':'ohne Heizkosten')})
+    +kpiCard({lbl:'Gesamtkosten',val:fmt(gesamtKosten),ic:LICON.barchart,icColor:'#d97706',bg:'#fffbeb',border:'#fde68a',lblColor:'#d97706',sub:'BK '+fmt(bkTotal)+(e.hasHK?' · HK '+fmt(hkTotal):'')})
+    +kpiCard({lbl:'Nachzahlungen',val:fmt(totalNachzahlung),valColor:'#dc2626',ic:LICON.alerttriangle,icColor:'#ef4444',bg:'#fef2f2',border:'#fecaca',lblColor:'#ef4444',sub:nachCount+' '+(nachCount===1?'Abrechnung':'Abrechnungen')})
+    +kpiCard({lbl:'Erstattungen',val:fmt(totalErstattung),valColor:'#15803d',ic:LICON.check,icColor:'#16a34a',bg:'#f0fdf4',border:'#bbf7d0',lblColor:'#16a34a',sub:erstCount+' '+(erstCount===1?'Abrechnung':'Abrechnungen')})
     +'</div>';
 
   var summaryEl=document.getElementById('res-summary');
@@ -6160,6 +6169,9 @@ window.addEventListener('beforeunload',function(e){
 function syncHeaderHeight(){
   var h=document.querySelector('.header');
   if(h)document.documentElement.style.setProperty('--header-h',Math.round(h.getBoundingClientRect().height)+'px');
+  // Wizard-Footer bündig mit dem Sidebar-Footer-Strich („Mein Profil") ausrichten
+  var sf=document.querySelector('.sidebar-footer');
+  if(sf){var fh=Math.round(sf.getBoundingClientRect().height);if(fh>0)document.documentElement.style.setProperty('--wizfoot-h',fh+'px');}
 }
 window.addEventListener('resize',syncHeaderHeight);
 window.addEventListener('load',syncHeaderHeight);
@@ -8490,6 +8502,7 @@ var LICON={
  receipt:_ic('<path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17.5v-11"/>'),
  mail:_ic('<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>'),
  percent:_ic('<line x1="19" x2="5" y1="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/>'),
+ messagecircle:_ic('<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>'),
  clipboard:_ic('<rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/>'),
  alertcircle:_ic('<circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>'),
  settings:_ic('<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>'),

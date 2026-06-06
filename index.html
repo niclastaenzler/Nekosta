@@ -439,6 +439,28 @@ body.theme-lila{--p:#7c3aed;--p-mid:#6d28d9;--p-light:#ede9fe;--p-accent:#a78bfa
 .dash-kpi:hover{transform:translateY(-4px);box-shadow:0 14px 34px rgba(106,45,159,.13)}
 .dash-panel{transition:box-shadow .22s,border-color .22s;box-shadow:0 1px 2px rgba(16,24,40,.05)}
 .dash-panel:hover{box-shadow:0 4px 14px rgba(16,24,40,.08);border-color:#e4e0f0}
+/* ── Widget-Dashboard ── */
+#dash-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;align-items:start}
+.dash-widget{position:relative;min-width:0}
+@media(max-width:900px){#dash-grid{grid-template-columns:1fr} #dash-grid .dash-widget{grid-column:span 1 !important}}
+.dwctrl{display:none;position:absolute;top:6px;right:6px;z-index:20;gap:3px;background:rgba(255,255,255,.96);border:1px solid #e4d3f0;border-radius:8px;padding:3px;box-shadow:0 4px 14px rgba(0,0,0,.12)}
+body.dash-edit .dwctrl{display:flex}
+body.dash-edit .dash-widget{outline:2px dashed #cdb4e8;outline-offset:3px;border-radius:12px}
+body.dash-edit .dash-widget>*:first-child:not(.dwctrl){pointer-events:none}
+body.dash-edit .dash-widget{cursor:grab}
+.dash-widget.dragging{opacity:.45}
+.dash-widget.dragover{outline:2px solid var(--p) !important}
+.dwctrl button{border:none;background:#f3f0fa;color:#6b7280;border-radius:6px;width:24px;height:24px;font-size:.72rem;font-weight:700;cursor:pointer;font-family:var(--ff);display:flex;align-items:center;justify-content:center;padding:0}
+.dwctrl button:hover{background:#ede4f8;color:var(--p)}
+.dwctrl button.on{background:var(--p);color:#fff}
+.dwctrl button svg{width:13px;height:13px;display:block}
+.dwctrl .dwh{cursor:grab;color:#9ca3af}
+.dash-hidden-chip{display:inline-flex;align-items:center;gap:.4rem;background:#f3f0fa;border:1px solid #e4d3f0;color:#4b4762;border-radius:8px;padding:.35rem .65rem;font-size:.8rem;cursor:pointer;font-family:var(--ff)}
+.dash-hidden-chip:hover{background:#ede4f8;color:var(--p)}
+.dash-hidden-chip svg{width:13px;height:13px}
+/* Leeres Widget (z.B. keine auslaufenden MV) nur im Ansichts-Modus ausblenden */
+body:not(.dash-edit) #dash-grid .dash-widget[data-empty="1"]{display:none}
+#dash-hidden-bar{display:none;flex-wrap:wrap;gap:.5rem;margin-top:1rem;padding:.75rem 1rem;background:#faf8fe;border:1px dashed #d9c8ee;border-radius:12px}
 /* KPI-Zahlen platzsicher: skalieren + eine Zeile, kein Umbruch bei großen Beträgen */
 .dash-kpi>div:last-child{min-width:0}
 .dash-kpi>div:last-child>div:first-child{min-width:0;flex:1}
@@ -927,108 +949,148 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
               style="display:flex;align-items:center;gap:.5rem;padding:.5rem 1rem;font-size:.875rem;font-weight:500;border-radius:8px;background:#f3f4f6;color:#374151;border:none;cursor:pointer;font-family:var(--ff)">
               <span class="mini-ic" data-icon="building2"></span> Objekte verwalten
             </button>
+            <button id="dash-reset-btn" onclick="dashResetLayout()" title="Auf Standard zurücksetzen"
+              style="display:none;align-items:center;gap:.5rem;padding:.5rem 1rem;font-size:.875rem;font-weight:500;border-radius:8px;background:#fff;color:#b91c1c;border:1px solid #fca5a5;cursor:pointer;font-family:var(--ff)">
+              <span class="mini-ic" data-icon="refresh"></span> Zurücksetzen
+            </button>
+            <button id="dash-edit-btn" onclick="dashToggleEdit()"
+              style="display:flex;align-items:center;gap:.5rem;padding:.5rem 1rem;font-size:.875rem;font-weight:500;border-radius:8px;background:#fff;color:#374151;border:1px solid var(--border);cursor:pointer;font-family:var(--ff)">
+              <span class="mini-ic" data-icon="settings"></span> Anpassen
+            </button>
           </div>
         </div>
 
-        <!-- ── KPI ROW ── -->
-        <div class="dash-kpi-grid">
+        <!-- ── ANPASSBARES WIDGET-GRID ── -->
+        <div id="dash-grid">
 
-          <div class="dash-kpi dash-anim" style="background:var(--white);border-radius:10px;padding:1rem;border:1px solid #f0f0f2;box-shadow:0 1px 2px rgba(16,24,40,.05);position:relative;overflow:hidden;cursor:pointer" onclick="showPage('objekte')">
-            <div style="position:absolute;top:0;left:0;right:0;height:4px;background:var(--p)"></div>
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">
-              <div>
-                <div style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.02em;color:#6b7280;margin-bottom:.35rem">Objekte</div>
-                <div style="font-size:1.875rem;font-weight:700;color:#111827;line-height:1.2" id="dash-kpi-objekte">–</div>
-                <div style="font-size:.75rem;color:#6b7280;margin-top:.25rem" id="dash-kpi-objekte-sub">wird geladen</div>
+          <!-- KPI: Objekte -->
+          <div class="dash-widget" data-w="kpi-objekte" style="grid-column:span 1">
+            <div class="dash-kpi dash-anim" style="background:var(--white);border-radius:10px;padding:1rem;border:1px solid #f0f0f2;box-shadow:0 1px 2px rgba(16,24,40,.05);position:relative;overflow:hidden;cursor:pointer" onclick="showPage('objekte')">
+              <div style="position:absolute;top:0;left:0;right:0;height:4px;background:var(--p)"></div>
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">
+                <div>
+                  <div style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.02em;color:#6b7280;margin-bottom:.35rem">Objekte</div>
+                  <div style="font-size:1.875rem;font-weight:700;color:#111827;line-height:1.2" id="dash-kpi-objekte">–</div>
+                  <div style="font-size:.75rem;color:#6b7280;margin-top:.25rem" id="dash-kpi-objekte-sub">wird geladen</div>
+                </div>
+                <div class="dash-kpi-ic" data-icon="building2" style="background:var(--p-light);color:var(--p)"></div>
               </div>
-              <div class="dash-kpi-ic" data-icon="building2" style="background:var(--p-light);color:var(--p)"></div>
             </div>
+            <div class="dwctrl"><button class="dwh" title="Verschieben (ziehen)" data-icon="menu"></button><button onclick="dashWResize('kpi-objekte')" title="Breite ändern" data-icon="grid"></button><button onclick="dashWHide('kpi-objekte')" title="Ausblenden" data-icon="x"></button></div>
           </div>
 
-          <div class="dash-kpi dash-anim" style="background:var(--white);border-radius:10px;padding:1rem;border:1px solid #f0f0f2;box-shadow:0 1px 2px rgba(16,24,40,.05);position:relative;overflow:hidden;cursor:pointer" onclick="showPage('objekte')">
-            <div style="position:absolute;top:0;left:0;right:0;height:4px;background:#10b981"></div>
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">
-              <div>
-                <div style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.02em;color:#6b7280;margin-bottom:.35rem">Einheiten</div>
-                <div style="font-size:1.875rem;font-weight:700;color:#111827;line-height:1.2" id="dash-kpi-einheiten">–</div>
-                <div style="font-size:.75rem;color:#6b7280;margin-top:.25rem" id="dash-kpi-einheiten-sub">wird geladen</div>
+          <!-- KPI: Einheiten -->
+          <div class="dash-widget" data-w="kpi-einheiten" style="grid-column:span 1">
+            <div class="dash-kpi dash-anim" style="background:var(--white);border-radius:10px;padding:1rem;border:1px solid #f0f0f2;box-shadow:0 1px 2px rgba(16,24,40,.05);position:relative;overflow:hidden;cursor:pointer" onclick="showPage('objekte')">
+              <div style="position:absolute;top:0;left:0;right:0;height:4px;background:#10b981"></div>
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">
+                <div>
+                  <div style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.02em;color:#6b7280;margin-bottom:.35rem">Einheiten</div>
+                  <div style="font-size:1.875rem;font-weight:700;color:#111827;line-height:1.2" id="dash-kpi-einheiten">–</div>
+                  <div style="font-size:.75rem;color:#6b7280;margin-top:.25rem" id="dash-kpi-einheiten-sub">wird geladen</div>
+                </div>
+                <div class="dash-kpi-ic" data-icon="dooropen" style="background:#e4f7ee;color:#10b981"></div>
               </div>
-              <div class="dash-kpi-ic" data-icon="dooropen" style="background:#e4f7ee;color:#10b981"></div>
             </div>
+            <div class="dwctrl"><button class="dwh" title="Verschieben (ziehen)" data-icon="menu"></button><button onclick="dashWResize('kpi-einheiten')" title="Breite ändern" data-icon="grid"></button><button onclick="dashWHide('kpi-einheiten')" title="Ausblenden" data-icon="x"></button></div>
           </div>
 
-          <div class="dash-kpi dash-anim" style="background:var(--white);border-radius:10px;padding:1rem;border:1px solid #f0f0f2;box-shadow:0 1px 2px rgba(16,24,40,.05);position:relative;overflow:hidden">
-            <div style="position:absolute;top:0;left:0;right:0;height:4px;background:#f59e0b"></div>
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">
-              <div style="min-width:0">
-                <div style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.02em;color:#6b7280;margin-bottom:.35rem">Monatliche Kaltmiete</div>
-                <div style="font-size:1.625rem;font-weight:700;color:#111827;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="dash-kpi-kaltmiete">–</div>
-                <div style="font-size:.75rem;color:#6b7280;margin-top:.25rem" id="dash-kpi-kaltmiete-sub">aktive Mietverhältnisse</div>
+          <!-- KPI: Kaltmiete -->
+          <div class="dash-widget" data-w="kpi-kaltmiete" style="grid-column:span 1">
+            <div class="dash-kpi dash-anim" style="background:var(--white);border-radius:10px;padding:1rem;border:1px solid #f0f0f2;box-shadow:0 1px 2px rgba(16,24,40,.05);position:relative;overflow:hidden">
+              <div style="position:absolute;top:0;left:0;right:0;height:4px;background:#f59e0b"></div>
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">
+                <div style="min-width:0">
+                  <div style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.02em;color:#6b7280;margin-bottom:.35rem">Monatliche Kaltmiete</div>
+                  <div style="font-size:1.625rem;font-weight:700;color:#111827;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="dash-kpi-kaltmiete">–</div>
+                  <div style="font-size:.75rem;color:#6b7280;margin-top:.25rem" id="dash-kpi-kaltmiete-sub">aktive Mietverhältnisse</div>
+                </div>
+                <div class="dash-kpi-ic" data-icon="euro" style="background:#fef3da;color:#e0900b"></div>
               </div>
-              <div class="dash-kpi-ic" data-icon="euro" style="background:#fef3da;color:#e0900b"></div>
             </div>
+            <div class="dwctrl"><button class="dwh" title="Verschieben (ziehen)" data-icon="menu"></button><button onclick="dashWResize('kpi-kaltmiete')" title="Breite ändern" data-icon="grid"></button><button onclick="dashWHide('kpi-kaltmiete')" title="Ausblenden" data-icon="x"></button></div>
           </div>
 
-          <div class="dash-kpi dash-anim" style="background:var(--white);border-radius:10px;padding:1rem;border:1px solid #f0f0f2;box-shadow:0 1px 2px rgba(16,24,40,.05);position:relative;overflow:hidden;cursor:pointer" onclick="showPage('weg')">
-            <div style="position:absolute;top:0;left:0;right:0;height:4px;background:var(--p)"></div>
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">
-              <div>
-                <div style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.02em;color:#6b7280;margin-bottom:.35rem">WEG-Objekte</div>
-                <div style="font-size:1.875rem;font-weight:700;line-height:1.2;color:#111827" id="dash-kpi-weg">–</div>
-                <div style="font-size:.75rem;color:#6b7280;margin-top:.25rem" id="dash-kpi-weg-sub">in Verwaltung</div>
+          <!-- KPI: WEG-Objekte -->
+          <div class="dash-widget" data-w="kpi-weg" style="grid-column:span 1">
+            <div class="dash-kpi dash-anim" style="background:var(--white);border-radius:10px;padding:1rem;border:1px solid #f0f0f2;box-shadow:0 1px 2px rgba(16,24,40,.05);position:relative;overflow:hidden;cursor:pointer" onclick="showPage('weg')">
+              <div style="position:absolute;top:0;left:0;right:0;height:4px;background:var(--p)"></div>
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">
+                <div>
+                  <div style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.02em;color:#6b7280;margin-bottom:.35rem">WEG-Objekte</div>
+                  <div style="font-size:1.875rem;font-weight:700;line-height:1.2;color:#111827" id="dash-kpi-weg">–</div>
+                  <div style="font-size:.75rem;color:#6b7280;margin-top:.25rem" id="dash-kpi-weg-sub">in Verwaltung</div>
+                </div>
+                <div class="dash-kpi-ic" data-icon="landmark" style="background:var(--p-light);color:var(--p)"></div>
               </div>
-              <div class="dash-kpi-ic" data-icon="landmark" style="background:var(--p-light);color:var(--p)"></div>
             </div>
+            <div class="dwctrl"><button class="dwh" title="Verschieben (ziehen)" data-icon="menu"></button><button onclick="dashWResize('kpi-weg')" title="Breite ändern" data-icon="grid"></button><button onclick="dashWHide('kpi-weg')" title="Ausblenden" data-icon="x"></button></div>
+          </div>
+
+          <!-- Mieteinnahmen-Diagramm -->
+          <div class="dash-widget" data-w="chart" style="grid-column:span 4">
+            <div class="dash-anim dash-panel" style="background:var(--white);border-radius:10px;border:1px solid #f0f0f2;overflow:hidden">
+              <div style="padding:1.25rem 1.25rem .75rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem">
+                <div style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.03em;color:#6b7280">Kaltmieten · letzte 6 Monate</div>
+                <div style="display:flex;gap:1rem;font-size:.72rem;color:var(--muted)">
+                  <span style="display:flex;align-items:center;gap:.35rem"><span style="width:11px;height:11px;border-radius:3px;background:#e5e7eb;display:inline-block"></span> Soll</span>
+                  <span style="display:flex;align-items:center;gap:.35rem"><span style="width:11px;height:11px;border-radius:3px;background:var(--p);display:inline-block"></span> Bezahlt</span>
+                </div>
+              </div>
+              <div id="dash-chart" style="padding:0 1.25rem 1.25rem">
+                <div style="text-align:center;color:var(--muted);font-size:.82rem;padding:2rem">Wird geladen...</div>
+              </div>
+            </div>
+            <div class="dwctrl"><button class="dwh" title="Verschieben (ziehen)" data-icon="menu"></button><button onclick="dashWResize('chart')" title="Breite ändern" data-icon="grid"></button><button onclick="dashWHide('chart')" title="Ausblenden" data-icon="x"></button></div>
+          </div>
+
+          <!-- Warnungen: Auslaufende Mietverhältnisse (nur sichtbar wenn Daten) -->
+          <div class="dash-widget" data-w="warnungen" data-empty="1" style="grid-column:span 4">
+            <div id="dash-warnungen-wrap" style="display:none">
+              <div style="background:#fffaf0;border:1px solid #f0d9a8;border-radius:14px;overflow:hidden">
+                <div style="padding:.9rem 1.35rem;border-bottom:1px solid #f0d9a8;display:flex;align-items:center;gap:.5rem">
+                  <span style="font-size:1.1rem">⏰</span>
+                  <span style="font-size:.8rem;font-weight:700;color:#856404">Auslaufende Mietverhältnisse</span>
+                </div>
+                <div id="dash-warnungen-list" style="padding:.5rem 0"></div>
+              </div>
+            </div>
+            <div class="dwctrl"><button class="dwh" title="Verschieben (ziehen)" data-icon="menu"></button><button onclick="dashWResize('warnungen')" title="Breite ändern" data-icon="grid"></button><button onclick="dashWHide('warnungen')" title="Ausblenden" data-icon="x"></button></div>
+          </div>
+
+          <!-- Vermietungsstand -->
+          <div class="dash-widget" data-w="belegung" style="grid-column:span 2">
+            <div class="dash-anim dash-panel" style="background:var(--white);border-radius:10px;border:1px solid #f0f0f2;overflow:hidden">
+              <div style="padding:1.25rem 1.25rem .75rem;display:flex;justify-content:space-between;align-items:center">
+                <div style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.03em;color:#6b7280">Vermietungsstand</div>
+                <button onclick="showPage('objekte')" style="font-size:.75rem;color:var(--p);background:none;border:none;cursor:pointer;font-weight:600;font-family:var(--ff)">Objekte →</button>
+              </div>
+              <div id="dash-belegung" style="padding:0 1.25rem 1.25rem">
+                <div style="text-align:center;color:var(--muted);font-size:.82rem">Wird geladen...</div>
+              </div>
+            </div>
+            <div class="dwctrl"><button class="dwh" title="Verschieben (ziehen)" data-icon="menu"></button><button onclick="dashWResize('belegung')" title="Breite ändern" data-icon="grid"></button><button onclick="dashWHide('belegung')" title="Ausblenden" data-icon="x"></button></div>
+          </div>
+
+          <!-- Abrechnungs-Status -->
+          <div class="dash-widget" data-w="abr-status" style="grid-column:span 2">
+            <div class="dash-anim dash-panel" style="background:var(--white);border-radius:10px;border:1px solid #f0f0f2;overflow:hidden">
+              <div style="padding:1.25rem 1.25rem .75rem;display:flex;justify-content:space-between;align-items:center">
+                <div style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.03em;color:#6b7280">Abrechnungs-Status <span id="dash-abr-jahr" style="color:var(--p)"></span></div>
+                <button onclick="startNeueAbrechnung()" style="font-size:.75rem;color:var(--p);background:none;border:none;cursor:pointer;font-weight:600;font-family:var(--ff)">+ Neu</button>
+              </div>
+              <div id="dash-abr-status" style="padding:0 1.25rem 1.25rem">
+                <div style="text-align:center;color:var(--muted);font-size:.82rem">Wird geladen...</div>
+              </div>
+            </div>
+            <div class="dwctrl"><button class="dwh" title="Verschieben (ziehen)" data-icon="menu"></button><button onclick="dashWResize('abr-status')" title="Breite ändern" data-icon="grid"></button><button onclick="dashWHide('abr-status')" title="Ausblenden" data-icon="x"></button></div>
           </div>
 
         </div>
 
-        <!-- ── MIETEINNAHMEN-DIAGRAMM ── -->
-        <div class="dash-anim dash-panel" style="background:var(--white);border-radius:10px;border:1px solid #f0f0f2;overflow:hidden;margin-bottom:1.25rem">
-          <div style="padding:1.25rem 1.25rem .75rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem">
-            <div style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.03em;color:#6b7280">Kaltmieten · letzte 6 Monate</div>
-            <div style="display:flex;gap:1rem;font-size:.72rem;color:var(--muted)">
-              <span style="display:flex;align-items:center;gap:.35rem"><span style="width:11px;height:11px;border-radius:3px;background:#e5e7eb;display:inline-block"></span> Soll</span>
-              <span style="display:flex;align-items:center;gap:.35rem"><span style="width:11px;height:11px;border-radius:3px;background:var(--p);display:inline-block"></span> Bezahlt</span>
-            </div>
-          </div>
-          <div id="dash-chart" style="padding:0 1.25rem 1.25rem">
-            <div style="text-align:center;color:var(--muted);font-size:.82rem;padding:2rem">Wird geladen...</div>
-          </div>
-        </div>
+        <!-- Ausgeblendete Widgets (nur im Bearbeiten-Modus) -->
+        <div id="dash-hidden-bar"></div>
 
-        <!-- ── WARNUNGEN: Auslaufende Mietverhältnisse ── -->
-        <div id="dash-warnungen-wrap" style="display:none;margin-bottom:1.25rem">
-          <div style="background:#fffaf0;border:1px solid #f0d9a8;border-radius:14px;overflow:hidden">
-            <div style="padding:.9rem 1.35rem;border-bottom:1px solid #f0d9a8;display:flex;align-items:center;gap:.5rem">
-              <span style="font-size:1.1rem">⏰</span>
-              <span style="font-size:.8rem;font-weight:700;color:#856404">Auslaufende Mietverhältnisse</span>
-            </div>
-            <div id="dash-warnungen-list" style="padding:.5rem 0"></div>
-          </div>
-        </div>
-
-        <!-- ── 2-SPALTIG: Vermietungsstand + Abrechnungs-Status ── -->
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.25rem;align-items:start;margin-bottom:1.25rem">
-          <div class="dash-anim dash-panel" style="background:var(--white);border-radius:10px;border:1px solid #f0f0f2;overflow:hidden">
-            <div style="padding:1.25rem 1.25rem .75rem;display:flex;justify-content:space-between;align-items:center">
-              <div style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.03em;color:#6b7280">Vermietungsstand</div>
-              <button onclick="showPage('objekte')" style="font-size:.75rem;color:var(--p);background:none;border:none;cursor:pointer;font-weight:600;font-family:var(--ff)">Objekte →</button>
-            </div>
-            <div id="dash-belegung" style="padding:0 1.25rem 1.25rem">
-              <div style="text-align:center;color:var(--muted);font-size:.82rem">Wird geladen...</div>
-            </div>
-          </div>
-          <div class="dash-anim dash-panel" style="background:var(--white);border-radius:10px;border:1px solid #f0f0f2;overflow:hidden">
-            <div style="padding:1.25rem 1.25rem .75rem;display:flex;justify-content:space-between;align-items:center">
-              <div style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.03em;color:#6b7280">Abrechnungs-Status <span id="dash-abr-jahr" style="color:var(--p)"></span></div>
-              <button onclick="startNeueAbrechnung()" style="font-size:.75rem;color:var(--p);background:none;border:none;cursor:pointer;font-weight:600;font-family:var(--ff)">+ Neu</button>
-            </div>
-            <div id="dash-abr-status" style="padding:0 1.25rem 1.25rem">
-              <div style="text-align:center;color:var(--muted);font-size:.82rem">Wird geladen...</div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -8477,6 +8539,7 @@ async function loadDashboardChart(){
 }
 async function loadDashboard(){
   try{
+    loadDashLayout();applyDashLayout();
     dashAnimateIn();
     loadDashboardChart();
     // Date + greeting
@@ -8576,6 +8639,138 @@ async function loadDashboard(){
     }
 
   }catch(e){console.error('Dashboard Fehler:',e);}
+}
+
+// ── DASHBOARD WIDGET-SYSTEM (anpassbar: verschieben/Größe/aus-einblenden, Layout pro User) ──
+var DASH_WIDGETS=[
+  {id:'kpi-objekte',  label:'Kennzahl: Objekte',     span:1, spans:[1,2]},
+  {id:'kpi-einheiten',label:'Kennzahl: Einheiten',   span:1, spans:[1,2]},
+  {id:'kpi-kaltmiete',label:'Kennzahl: Kaltmiete',   span:1, spans:[1,2]},
+  {id:'kpi-weg',      label:'Kennzahl: WEG-Objekte', span:1, spans:[1,2]},
+  {id:'chart',        label:'Mieteinnahmen-Diagramm',span:4, spans:[2,4]},
+  {id:'warnungen',    label:'Auslaufende Mietverhältnisse', span:4, spans:[2,4]},
+  {id:'belegung',     label:'Vermietungsstand',      span:2, spans:[1,2,4]},
+  {id:'abr-status',   label:'Abrechnungs-Status',    span:2, spans:[1,2,4]}
+];
+var _dashLayout=null, _dashDragId=null, _dashDnDReady=false;
+function dashLayoutKey(){return 'nekosta_dash_layout_'+(typeof currentUser!=='undefined'&&currentUser?currentUser.id:'anon');}
+function dashDefaultLayout(){return {order:DASH_WIDGETS.map(function(w){return w.id;}),hidden:{},span:{}};}
+function loadDashLayout(){
+  try{var raw=localStorage.getItem(dashLayoutKey());_dashLayout=raw?JSON.parse(raw):null;}catch(e){_dashLayout=null;}
+  if(!_dashLayout||!_dashLayout.order)_dashLayout=dashDefaultLayout();
+  if(!_dashLayout.hidden)_dashLayout.hidden={};
+  if(!_dashLayout.span)_dashLayout.span={};
+  // Neue Widgets, die noch nicht im gespeicherten Layout sind, hinten anhängen
+  DASH_WIDGETS.forEach(function(w){if(_dashLayout.order.indexOf(w.id)<0)_dashLayout.order.push(w.id);});
+  // Verwaiste IDs (entfernte Widgets) aus der Reihenfolge filtern
+  var valid={};DASH_WIDGETS.forEach(function(w){valid[w.id]=1;});
+  _dashLayout.order=_dashLayout.order.filter(function(id){return valid[id];});
+  return _dashLayout;
+}
+function saveDashLayout(){try{localStorage.setItem(dashLayoutKey(),JSON.stringify(_dashLayout));}catch(e){}}
+function applyDashLayout(){
+  var grid=document.getElementById('dash-grid');
+  if(!grid)return;
+  if(!_dashLayout)loadDashLayout();
+  // Reihenfolge im DOM herstellen
+  _dashLayout.order.forEach(function(id){
+    var el=grid.querySelector('.dash-widget[data-w="'+id+'"]');
+    if(el)grid.appendChild(el);
+  });
+  // Sichtbarkeit + Breite (Span) anwenden
+  DASH_WIDGETS.forEach(function(w){
+    var el=grid.querySelector('.dash-widget[data-w="'+w.id+'"]');
+    if(!el)return;
+    if(_dashLayout.hidden[w.id]){el.style.display='none';}
+    else{el.style.display='';el.style.gridColumn='span '+(_dashLayout.span[w.id]||w.span);}
+  });
+}
+function dashSetupDnD(){
+  if(_dashDnDReady)return;
+  var g=document.getElementById('dash-grid');if(!g)return;
+  g.addEventListener('dragstart',dashDragStart);
+  g.addEventListener('dragover',dashDragOver);
+  g.addEventListener('dragleave',dashDragLeave);
+  g.addEventListener('drop',dashDrop);
+  g.addEventListener('dragend',dashDragEnd);
+  _dashDnDReady=true;
+}
+function dashDragStart(e){
+  if(!document.body.classList.contains('dash-edit'))return;
+  var w=e.target.closest('.dash-widget');if(!w)return;
+  _dashDragId=w.getAttribute('data-w');
+  w.classList.add('dragging');
+  try{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',_dashDragId);}catch(_){}
+}
+function dashDragOver(e){
+  if(!_dashDragId)return;
+  e.preventDefault();
+  try{e.dataTransfer.dropEffect='move';}catch(_){}
+  var w=e.target.closest('.dash-widget');
+  document.querySelectorAll('#dash-grid .dash-widget.dragover').forEach(function(x){x.classList.remove('dragover');});
+  if(w&&w.getAttribute('data-w')!==_dashDragId)w.classList.add('dragover');
+}
+function dashDragLeave(e){
+  var w=e.target.closest('.dash-widget');
+  if(w&&!w.contains(e.relatedTarget))w.classList.remove('dragover');
+}
+function dashDrop(e){
+  e.preventDefault();
+  var target=e.target.closest('.dash-widget');
+  document.querySelectorAll('#dash-grid .dash-widget.dragover').forEach(function(x){x.classList.remove('dragover');});
+  if(!_dashDragId||!target){return;}
+  var tid=target.getAttribute('data-w');
+  if(tid===_dashDragId)return;
+  var order=_dashLayout.order.slice();
+  var from=order.indexOf(_dashDragId),to=order.indexOf(tid);
+  if(from<0||to<0)return;
+  order.splice(from,1);order.splice(to,0,_dashDragId);
+  _dashLayout.order=order;saveDashLayout();applyDashLayout();
+}
+function dashDragEnd(){
+  document.querySelectorAll('#dash-grid .dash-widget.dragging,#dash-grid .dash-widget.dragover').forEach(function(x){x.classList.remove('dragging','dragover');});
+  _dashDragId=null;
+}
+function dashToggleEdit(){
+  var on=!document.body.classList.contains('dash-edit');
+  document.body.classList.toggle('dash-edit',on);
+  if(on)dashSetupDnD();
+  document.querySelectorAll('#dash-grid .dash-widget').forEach(function(el){el.draggable=on;});
+  var btn=document.getElementById('dash-edit-btn');
+  if(btn){btn.innerHTML=on?'<span class="mini-ic" data-icon="check"></span> Fertig':'<span class="mini-ic" data-icon="settings"></span> Anpassen';
+    btn.style.background=on?'var(--p)':'#fff';btn.style.color=on?'#fff':'#374151';btn.style.borderColor=on?'var(--p)':'var(--border)';}
+  var rb=document.getElementById('dash-reset-btn');if(rb)rb.style.display=on?'inline-flex':'none';
+  renderDashHiddenBar();
+  if(on)showToast('🎛 Widgets verschieben, vergrößern oder ausblenden – „Fertig" speichert.');
+}
+function dashWHide(id){if(!_dashLayout)return;_dashLayout.hidden[id]=true;saveDashLayout();applyDashLayout();renderDashHiddenBar();}
+function dashWShow(id){if(!_dashLayout)return;delete _dashLayout.hidden[id];saveDashLayout();applyDashLayout();renderDashHiddenBar();
+  document.querySelectorAll('#dash-grid .dash-widget').forEach(function(el){el.draggable=document.body.classList.contains('dash-edit');});}
+function dashWResize(id){
+  var def=null;DASH_WIDGETS.forEach(function(w){if(w.id===id)def=w;});if(!def)return;
+  var spans=def.spans||[1,2];
+  var cur=_dashLayout.span[id]||def.span;
+  var i=spans.indexOf(cur);var next=spans[(i+1)%spans.length];
+  _dashLayout.span[id]=next;saveDashLayout();applyDashLayout();
+}
+function renderDashHiddenBar(){
+  var bar=document.getElementById('dash-hidden-bar');if(!bar)return;
+  var editMode=document.body.classList.contains('dash-edit');
+  var hidden=DASH_WIDGETS.filter(function(w){return _dashLayout&&_dashLayout.hidden[w.id];});
+  if(!editMode||!hidden.length){bar.style.display='none';bar.innerHTML='';return;}
+  bar.style.display='flex';
+  bar.innerHTML='<span style="font-size:.78rem;color:#6b7280;align-self:center;margin-right:.3rem">Ausgeblendet – zum Wiederanzeigen klicken:</span>'
+    +hidden.map(function(w){return '<span class="dash-hidden-chip" onclick="dashWShow(\''+w.id+'\')"><span class="mini-ic" data-icon="plus"></span>'+escapeHtml(w.label)+'</span>';}).join('');
+}
+function dashResetLayout(){
+  appConfirm({icon:'↺',title:'Dashboard zurücksetzen?',message:'Anordnung, Größe und Sichtbarkeit aller Widgets werden auf den Standard zurückgesetzt.',buttons:[
+    {label:'Abbrechen'},
+    {label:'Zurücksetzen',style:'background:var(--p);color:#fff',onClick:function(){
+      _dashLayout=dashDefaultLayout();saveDashLayout();applyDashLayout();renderDashHiddenBar();
+      document.querySelectorAll('#dash-grid .dash-widget').forEach(function(el){el.draggable=document.body.classList.contains('dash-edit');});
+      showToast('✓ Dashboard zurückgesetzt');
+    }}
+  ]});
 }
 
 
@@ -10369,6 +10564,7 @@ async function loadAuslaufendeMV(){
   var wrap=document.getElementById('dash-warnungen-wrap');
   var list=document.getElementById('dash-warnungen-list');
   if(!wrap||!list)return;
+  var widget=wrap.closest('.dash-widget');
   var heute=new Date();
   var in90=new Date();in90.setDate(in90.getDate()+90);
   var {data}=await sb.from('mietverhaeltnisse')
@@ -10379,7 +10575,14 @@ async function loadAuslaufendeMV(){
     .gte('auszug',localDateStr(heute))
     .lte('auszug',localDateStr(in90))
     .order('auszug');
-  if(!data||!data.length){wrap.style.display='none';return;}
+  if(!data||!data.length){
+    // Kein Datum-Inhalt: im Ansichts-Modus ausgeblendet (data-empty), im Bearbeiten-Modus Platzhalter
+    if(widget)widget.setAttribute('data-empty','1');
+    list.innerHTML='<div style="padding:.65rem 1.35rem;color:var(--muted);font-size:.8rem">Aktuell keine auslaufenden Mietverhältnisse.</div>';
+    wrap.style.display='block';
+    return;
+  }
+  if(widget)widget.setAttribute('data-empty','0');
   list.innerHTML=data.map(function(mv){
     var auszug=new Date(mv.auszug);
     var tage=Math.ceil((auszug-heute)/(1000*60*60*24));

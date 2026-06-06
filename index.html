@@ -284,6 +284,10 @@ body.sidebar-open #sidebar-backdrop{display:block;opacity:1}
 .wizard-footer #btn-zurueck:hover{background:#f9fafb}
 .wizard-footer .btn-primary{background:var(--p);color:#fff;border:none}
 .wizard-footer .btn-primary:hover{background:var(--p-mid)}
+/* Step 4: KPI-Kacheln 4-spaltig (Figma), Banner-Jahr größer */
+#page-tool .erg-kpi-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:.75rem}
+@media(max-width:900px){#page-tool .erg-kpi-grid{grid-template-columns:repeat(2,1fr)}}
+#page-tool .ergebnis-header .eh-jahr{font-size:1.875rem}
 
 /* ── TOKENS ── */
 .token-balance-chip{background:var(--p-light);border:1px solid transparent;border-radius:20px;padding:.25rem .85rem;font-size:.78rem;color:var(--p);display:none;align-items:center;gap:.4rem;cursor:pointer}
@@ -2135,9 +2139,9 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
           <div id="res-summary" style="margin-bottom:1.25rem"></div>
 
           <!-- ÜBERBLICK JE EINHEIT -->
-          <div id="ergebnis-summary-card" style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:1.25rem;margin-bottom:1.25rem;display:none">
-            <div onclick="toggleErgSummary()" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);user-select:none">
-              <span style="display:inline-flex;align-items:center;gap:.4rem"><span class="mini-ic" data-icon="barchart"></span>Überblick aller Einheiten</span>
+          <div id="ergebnis-summary-card" style="background:var(--white);border:1px solid #e5e7eb;border-radius:8px;padding:1.25rem;margin-bottom:1.25rem;display:none">
+            <div onclick="toggleErgSummary()" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none">
+              <span class="wz-seclabel">Überblick aller Einheiten</span>
               <span id="erg-summary-arrow" style="font-size:.7rem;color:var(--p);transition:transform .2s">▶</span>
             </div>
             <div id="ergebnis-summary-body" style="display:none;margin-top:.85rem"><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.82rem" id="ergebnis-summary-table">
@@ -4702,25 +4706,22 @@ async function renderErgebnis(){
   });
   var gesamtKosten=bkTotal+(e.hasHK?hkTotal:0);
 
-  // Moderne KPI-Kacheln (Dashboard-Stil)
+  // KPI-Kacheln (Figma „Reiter umdesignen": farbige Flächen)
   var kpiCard=function(o){
-    return '<div class="dash-kpi" style="background:linear-gradient(180deg,'+o.bg+',var(--white));border-radius:16px;padding:1.15rem 1.25rem;border:1px solid var(--border);position:relative;overflow:hidden">'
-      +'<div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,'+o.bar+')"></div>'
+    return '<div style="border-radius:8px;border:1px solid '+o.border+';background:'+o.bg+';padding:1rem">'
       +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">'
-        +'<div style="min-width:0">'
-          +'<div style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin-bottom:.5rem">'+o.lbl+'</div>'
-          +'<div style="font-size:1.65rem;font-weight:800;line-height:1;color:'+(o.valColor||'var(--text)')+';font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+o.val+'</div>'
-          +'<div style="font-size:.7rem;color:var(--muted);margin-top:.35rem">'+o.sub+'</div>'
-        +'</div>'
-        +'<div class="dash-kpi-ic" style="background:'+o.icBg+';color:'+o.icColor+'">'+o.ic+'</div>'
+        +'<span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:'+o.lblColor+'">'+o.lbl+'</span>'
+        +'<span style="font-size:1.05rem;line-height:1">'+o.ic+'</span>'
       +'</div>'
+      +'<div style="font-size:1.5rem;font-weight:600;line-height:1.15;margin-top:.4rem;color:'+(o.valColor||'#111827')+';font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+o.val+'</div>'
+      +'<div style="font-size:.72rem;color:#9ca3af;margin-top:.15rem">'+o.sub+'</div>'
     +'</div>';
   };
   var summaryHtml='<div class="erg-kpi-grid">'
-    +kpiCard({lbl:'Einheiten',val:einheitenCount,ic:'🏠',bg:'#faf7ff',bar:'var(--p),#a855f7',icBg:'var(--p-light)',icColor:'var(--p)',sub:e.jahr+' · '+(e.hasHK?'mit Heizkosten':'ohne Heizkosten')})
-    +kpiCard({lbl:'Gesamtkosten',val:fmt(gesamtKosten),ic:'💶',bg:'#fff9ee',bar:'#f59e0b,#fbbf24',icBg:'#fef3da',icColor:'#e0900b',sub:'BK '+fmt(bkTotal)+(e.hasHK?' · HK '+fmt(hkTotal):'')})
-    +kpiCard({lbl:'Nachzahlungen',val:fmt(totalNachzahlung),valColor:'#c0392b',ic:'⚠️',bg:'#fff5f5',bar:'#ef4444,#f87171',icBg:'#fde8e8',icColor:'#ef4444',sub:nachCount+' '+(nachCount===1?'Abrechnung':'Abrechnungen')})
-    +kpiCard({lbl:'Erstattungen',val:fmt(totalErstattung),valColor:'#1a7a4a',ic:'✅',bg:'#f1fbf6',bar:'#10b981,#34d399',icBg:'#e4f7ee',icColor:'#10b981',sub:erstCount+' '+(erstCount===1?'Abrechnung':'Abrechnungen')})
+    +kpiCard({lbl:'Einheiten',val:einheitenCount,ic:'🏠',bg:'#fff',border:'#e5e7eb',lblColor:'#9ca3af',sub:e.jahr+' · '+(e.hasHK?'mit Heizkosten':'ohne Heizkosten')})
+    +kpiCard({lbl:'Gesamtkosten',val:fmt(gesamtKosten),ic:'📊',bg:'#fffbeb',border:'#fde68a',lblColor:'#d97706',sub:'BK '+fmt(bkTotal)+(e.hasHK?' · HK '+fmt(hkTotal):'')})
+    +kpiCard({lbl:'Nachzahlungen',val:fmt(totalNachzahlung),valColor:'#dc2626',ic:'⚠️',bg:'#fef2f2',border:'#fecaca',lblColor:'#ef4444',sub:nachCount+' '+(nachCount===1?'Abrechnung':'Abrechnungen')})
+    +kpiCard({lbl:'Erstattungen',val:fmt(totalErstattung),valColor:'#15803d',ic:'✅',bg:'#f0fdf4',border:'#bbf7d0',lblColor:'#16a34a',sub:erstCount+' '+(erstCount===1?'Abrechnung':'Abrechnungen')})
     +'</div>';
 
   var summaryEl=document.getElementById('res-summary');
@@ -12750,11 +12751,11 @@ function buildErgebnisSummary(ergebnis){
     +'<td></td>'
   +'</tr>';
 
-  // initial eingeklappt
+  // initial aufgeklappt (wie Figma-Überblick)
   var body=document.getElementById('ergebnis-summary-body');
   var arrow=document.getElementById('erg-summary-arrow');
-  if(body)body.style.display='none';
-  if(arrow)arrow.style.transform='rotate(0deg)';
+  if(body)body.style.display='block';
+  if(arrow)arrow.style.transform='rotate(90deg)';
   card.style.display='block';
 }
 

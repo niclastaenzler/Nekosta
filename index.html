@@ -1377,8 +1377,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
             <div style="display:flex;gap:.5rem;flex-wrap:wrap">
               <button style="background:#fff;color:var(--p);border:none;border-radius:9px;padding:.5rem 1rem;cursor:pointer;font-size:.82rem;font-weight:700;font-family:var(--ff)" onclick="startAbrechnungFuerAktivesObjekt()"><span class="btn-ic" data-icon="receipt"></span> Abrechnen</button>
               <button style="background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.32);border-radius:9px;padding:.5rem 1rem;cursor:pointer;font-size:.82rem;font-family:var(--ff)" onclick="editAktivesObjekt()"><span class="btn-ic" data-icon="pencil"></span> Ändern</button>
-              <button style="background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.32);border-radius:9px;padding:.5rem 1rem;cursor:pointer;font-size:.82rem;font-family:var(--ff)" onclick="dupliziereObjekt()"><span class="btn-ic" data-icon="copy"></span> Duplizieren</button>
-              <button style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.32);border-radius:9px;padding:.5rem .8rem;cursor:pointer;font-size:.82rem;color:#fff" onclick="deleteObjekt(aktivesObjekt.id).then(function(){showPage('objekte')})" title="Löschen"><span class="btn-ic" data-icon="trash"></span></button>
+              <button style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.32);border-radius:9px;padding:.5rem .8rem;cursor:pointer;font-size:.82rem;color:#fff" onclick="deleteObjekt(aktivesObjekt.id,{name:aktivesObjekt.name,fromDetail:true})" title="Löschen"><span class="btn-ic" data-icon="trash"></span></button>
             </div>
           </div>
 
@@ -3344,6 +3343,25 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
 
 <!-- HILFE & KONTAKT WIDGET -->
 <button id="help-fab" onclick="toggleHelpPanel()" title="Hilfe & Kontakt" style="display:none;position:fixed;bottom:20px;right:20px;z-index:800;width:56px;height:56px;border-radius:50%;border:none;background:linear-gradient(135deg,var(--p),#a855f7);color:#fff;cursor:pointer;box-shadow:0 8px 24px rgba(106,45,159,.4);align-items:center;justify-content:center"><span data-icon="messagecircle"></span></button>
+
+<!-- OBJEKT LÖSCHEN – Bestätigung per Namenseingabe -->
+<div id="del-objekt-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:700;align-items:center;justify-content:center;padding:1.5rem">
+  <div style="background:#fff;border-radius:14px;padding:1.5rem;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+    <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem">
+      <span style="font-size:1.4rem">🗑️</span>
+      <h3 style="font-size:1.05rem;font-weight:700;margin:0">Objekt löschen</h3>
+    </div>
+    <p style="font-size:.85rem;color:var(--muted);line-height:1.55;margin:.25rem 0 1rem">
+      Diese Aktion löscht <strong id="del-objekt-name" style="color:var(--text)"></strong> und <strong>alle zugehörigen Daten</strong> (Einheiten, Mietverhältnisse, Zahlungen, Dokumente …) unwiderruflich.
+    </p>
+    <label style="font-size:.78rem;font-weight:600;color:var(--muted);display:block;margin-bottom:.35rem">Zur Bestätigung den Objektnamen exakt eingeben:</label>
+    <input id="del-objekt-input" type="text" autocomplete="off" oninput="updateDelObjektBtn()" onkeydown="if(event.key==='Enter')confirmDelObjekt()" placeholder="Objektname" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:.6rem .8rem;font-size:.9rem;font-family:var(--ff);outline:none;box-sizing:border-box">
+    <div style="display:flex;gap:.6rem;margin-top:1.25rem">
+      <button onclick="closeDelObjektModal()" class="btn-secondary" style="flex:1;padding:.7rem 1rem">Abbrechen</button>
+      <button id="del-objekt-confirm" onclick="confirmDelObjekt()" disabled style="flex:1;border:none;border-radius:9px;padding:.7rem 1rem;font-size:.88rem;font-weight:700;cursor:not-allowed;font-family:var(--ff);background:#e5e7eb;color:#9ca3af">Endgültig löschen</button>
+    </div>
+  </div>
+</div>
 <div id="help-panel" style="display:none;position:fixed;bottom:88px;right:20px;z-index:800;width:344px;max-width:calc(100vw - 40px);background:var(--white);border:1px solid var(--border);border-radius:16px;box-shadow:0 16px 50px rgba(0,0,0,.25);overflow:hidden">
   <div style="background:linear-gradient(135deg,var(--p),#7c3aed);color:#fff;padding:.85rem 1rem;display:flex;justify-content:space-between;align-items:center">
     <div><div style="font-weight:700;font-size:.92rem">Hilfe &amp; Kontakt</div><div style="font-size:.7rem;opacity:.85">NEKOSTA-Assistent</div></div>
@@ -9809,11 +9827,43 @@ async function editObjekt(id){
   var {data}=await sb.from('objekte').select('*').eq('id',id).maybeSingle();
   if(data)openObjektModal(data);
 }
-async function deleteObjekt(id){
-  if(!confirm('Objekt wirklich löschen? Alle zugehörigen Daten werden ebenfalls gelöscht.'))return;
-  await sb.from('objekte').delete().eq('id',id);
-  showToast('🗑 Objekt gelöscht');loadObjekte();
+// Objekt löschen: Sicherheitsabfrage – der Objektname muss exakt eingetippt werden
+var _delObjektId=null,_delObjektName='',_delObjektFromDetail=false;
+async function deleteObjekt(id,opts){
+  opts=opts||{};
+  var name=opts.name;
+  if(!name){try{var r=await sb.from('objekte').select('name').eq('id',id).maybeSingle();name=r.data?r.data.name:'';}catch(e){name='';}}
+  openDeleteObjektModal(id,name||'',!!opts.fromDetail);
+}
+function openDeleteObjektModal(id,name,fromDetail){
+  _delObjektId=id;_delObjektName=name||'';_delObjektFromDetail=!!fromDetail;
+  var nm=document.getElementById('del-objekt-name');if(nm)nm.textContent='„'+(name||'dieses Objekt')+'"';
+  var inp=document.getElementById('del-objekt-input');if(inp){inp.value='';inp.placeholder=name||'Objektname';}
+  updateDelObjektBtn();
+  var m=document.getElementById('del-objekt-modal');if(m)m.style.display='flex';
+  setTimeout(function(){if(inp)inp.focus();},60);
+}
+function updateDelObjektBtn(){
+  var inp=document.getElementById('del-objekt-input');var btn=document.getElementById('del-objekt-confirm');
+  if(!inp||!btn)return;
+  var match=inp.value.trim()!==''&&inp.value.trim()===(_delObjektName||'').trim();
+  btn.disabled=!match;
+  btn.style.cursor=match?'pointer':'not-allowed';
+  btn.style.background=match?'#dc2626':'#e5e7eb';
+  btn.style.color=match?'#fff':'#9ca3af';
+}
+function closeDelObjektModal(){var m=document.getElementById('del-objekt-modal');if(m)m.style.display='none';_delObjektId=null;}
+async function confirmDelObjekt(){
+  var inp=document.getElementById('del-objekt-input');
+  if(!_delObjektId||!inp||inp.value.trim()!==(_delObjektName||'').trim())return;
+  var id=_delObjektId,fromDetail=_delObjektFromDetail;
+  closeDelObjektModal();
+  var {error}=await sb.from('objekte').delete().eq('id',id);
+  if(error){showToast('❌ '+error.message);return;}
+  showToast('🗑 Objekt gelöscht');
+  if(typeof loadObjekte==='function')loadObjekte();
   if(typeof loadWegObjekte==='function')loadWegObjekte();
+  if(fromDetail)showPage('objekte');
 }
 
 async function saveObjekt(){
@@ -10683,33 +10733,6 @@ async function loadAuslaufendeMV(){
 }
 
 // ── OBJEKT DUPLIZIEREN ──
-async function dupliziereObjekt(){
-  if(!aktivesObjekt)return;
-  if(!confirm('Objekt "'+aktivesObjekt.name+'" duplizieren?\n\nKopiert werden: Objektdaten + alle Einheiten (OHNE Mieter/Mietverhältnisse).'))return;
-  showToast('Objekt wird dupliziert...');
-  // 1. Copy object
-  var neuObj={
-    user_id:currentUser.id,
-    name:aktivesObjekt.name+' (Kopie)',
-    strasse:aktivesObjekt.strasse,plz:aktivesObjekt.plz,ort:aktivesObjekt.ort,
-    gesamtflaeche:aktivesObjekt.gesamtflaeche,einheiten_anzahl:aktivesObjekt.einheiten_anzahl,
-    kategorie:aktivesObjekt.kategorie,baujahr:aktivesObjekt.baujahr,notiz:aktivesObjekt.notiz
-  };
-  var {data:obj,error:e1}=await sb.from('objekte').insert(neuObj).select().single();
-  if(e1){showToast('Fehler: '+e1.message);return;}
-  // 2. Copy units (without tenants)
-  var {data:einheiten}=await sb.from('einheiten').select('*').eq('objekt_id',aktivesObjekt.id);
-  if(einheiten&&einheiten.length){
-    var neueEinheiten=einheiten.map(function(e){
-      return {user_id:currentUser.id,objekt_id:obj.id,bezeichnung:e.bezeichnung,
-        typ:e.typ,flaeche:e.flaeche,stockwerk:e.stockwerk};
-    });
-    await sb.from('einheiten').insert(neueEinheiten);
-  }
-  showToast('✅ Objekt dupliziert! ('+(einheiten?einheiten.length:0)+' Einheiten kopiert)');
-  openObjektDetail(obj.id);
-}
-
 // ══════════════════════════════════════════
 // ── WEG-VERWALTUNG ──
 // ══════════════════════════════════════════
@@ -11737,7 +11760,7 @@ async function loadObjektEinheiten(objId){
       +'<div style="padding:.65rem 1rem .85rem;background:var(--bg)">'
         +mvHtml
         +'<div id="mu-'+e.id+'" style="margin-top:.5rem"></div>'
-        +'<button onclick="loadMietubersichtFuerEinheit(\''+e.id+'\',\'mu-'+e.id+'\')" class="btn-small" style="font-size:.68rem;margin-top:.3rem;background:var(--p-light);color:var(--p)">📊 Mietübersicht laden</button>'
+        +'<button id="mu-btn-'+e.id+'" onclick="toggleMietubersicht(\''+e.id+'\')" class="btn-small" style="font-size:.68rem;margin-top:.3rem;background:var(--p-light);color:var(--p)">📊 Mietübersicht</button>'
       +'</div>'
       +'</div>';
   }).join('');

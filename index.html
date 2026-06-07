@@ -2006,9 +2006,11 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
         <div class="wizard-arrow">›</div>
         <div class="wizard-step" id="ws3" onclick="goStep(3)"><span class="ws-num">3</span>Kosten</div>
         <div class="wizard-arrow">›</div>
-        <div class="wizard-step" id="ws4" onclick="goStep(4)"><span class="ws-num">4</span>Überblick</div>
+        <div class="wizard-step" id="ws4" onclick="goStep(4)"><span class="ws-num">4</span>Kosten je Einheit</div>
         <div class="wizard-arrow">›</div>
-        <div class="wizard-step" id="ws5" onclick="goStep(5)"><span class="ws-num">5</span>Ergebnis &amp; PDF</div>
+        <div class="wizard-step" id="ws5" onclick="goStep(5)"><span class="ws-num">5</span>Überblick</div>
+        <div class="wizard-arrow">›</div>
+        <div class="wizard-step" id="ws6" onclick="goStep(6)"><span class="ws-num">6</span>Ergebnis &amp; PDF</div>
       </div>
 
       <div id="steps-wrapper" style="padding-top:60px;padding-bottom:96px">
@@ -2084,11 +2086,6 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
       <!-- STEP 3: KOSTEN -->
       <div id="step3" class="wizard-content" style="display:none">
         <div class="page-header"><div class="page-title">Kostenaufstellung</div><div class="page-sub">Heiz- und Betriebskosten erfassen und Verteilungsschlüssel festlegen.</div></div>
-        <div class="k-subtabs">
-          <button type="button" id="k-tab-allg" class="k-subtab active" onclick="step3Tab('allg')">Heiz- &amp; Betriebskosten</button>
-          <button type="button" id="k-tab-einzel" class="k-subtab" onclick="step3Tab('einzel')">Kosten je Einheit</button>
-        </div>
-        <div id="k-pane-allg">
         <!-- HEIZKOSTEN -->
         <div class="kosten-card" id="hk-section">
           <div class="kosten-card-head">
@@ -2129,33 +2126,54 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
             </div>
           </div>
         </div>
-        </div><!-- /k-pane-allg -->
+      </div>
 
-        <!-- KOSTEN JE EINHEIT (nur ausgewählte Einheiten) -->
-        <div id="k-pane-einzel" style="display:none">
-          <div class="kosten-card">
-            <div class="kosten-card-head">
-              <span class="wz-seclabel">Kosten je Einheit</span>
-              <span class="kosten-summe">Summe: <strong id="ek-summe-live" style="color:var(--p)">0,00 €</strong></span>
-              <div style="flex:1"></div>
-              <button type="button" onclick="addEinzelKostenRow()" class="kosten-add-btn">+ Hinzufügen</button>
+      <!-- STEP 4: KOSTEN JE EINHEIT -->
+      <div id="step4" class="wizard-content" style="display:none">
+        <div class="page-header"><div class="page-title">Kosten je Einheit</div><div class="page-sub">Kosten, die nur bestimmte Einheiten betreffen – taggenau nur auf die Auswahl verteilt.</div></div>
+        <div style="background:#faf8fc;border:1px solid #ede9fe;border-radius:8px;padding:.6rem .9rem;font-size:.78rem;color:#6b7280;line-height:1.5;margin-bottom:1rem">💡 Beispiele: Aufzug (nur Obergeschosse), Gewerbe-spezifische Kosten, Reparatur in einem Gebäudeteil. Pro Position die betroffenen Einheiten wählen + Verteilmethode (gleich / Fläche / Personen). <em>Nur im Objekt-Modus sinnvoll (Einheiten aus Schritt 2).</em></div>
+
+        <!-- HEIZKOSTEN JE EINHEIT -->
+        <div class="kosten-card">
+          <div class="kosten-card-head">
+            <span class="wz-seclabel orange">Heizkosten je Einheit</span>
+            <span class="kosten-summe">Summe: <strong id="ek-hk-summe-live" style="color:#ea580c">0,00 €</strong></span>
+            <div style="flex:1"></div>
+            <button type="button" onclick="addEinzelKostenRow('ekHkRows')" class="kosten-add-btn orange">+ Hinzufügen</button>
+          </div>
+          <div class="kosten-card-body">
+            <div style="overflow-x:auto">
+            <table class="kosten-table">
+              <thead><tr><th style="width:28px"></th><th style="min-width:150px">Bezeichnung *</th><th style="width:120px">Betrag (€)</th><th style="width:160px">Betroffene Einheiten</th><th style="width:150px">Verteilung</th><th style="min-width:120px">Notiz</th><th style="width:26px"></th></tr></thead>
+              <tbody id="ekHkRows"></tbody>
+            </table>
             </div>
-            <div class="kosten-card-body">
-              <p style="font-size:.78rem;color:#6b7280;margin:.2rem 0 .7rem;line-height:1.5">Positionen, die nur bestimmte Einheiten betreffen (z. B. Aufzug, Gewerbe-spezifische Kosten). Der Betrag wird <strong>taggenau nur auf die ausgewählten Einheiten</strong> verteilt. <em>Nur im Objekt-Modus sinnvoll (Einheiten aus Schritt 2).</em></p>
-              <div style="overflow-x:auto">
-              <table class="kosten-table">
-                <thead><tr><th style="min-width:150px">Bezeichnung *</th><th style="width:120px">Betrag (€)</th><th style="width:160px">Betroffene Einheiten</th><th style="width:150px">Verteilung</th><th style="min-width:120px">Notiz</th><th style="width:26px"></th></tr></thead>
-                <tbody id="ekRows"></tbody>
-              </table>
-              </div>
-              <div id="ek-empty" style="font-size:.8rem;color:#9ca3af;padding:.6rem 0">Noch keine Positionen – „+ Hinzufügen" klicken.</div>
+            <div class="ek-empty" data-for="ekHkRows" style="font-size:.8rem;color:#9ca3af;padding:.6rem 0">Noch keine Heizkosten-Position – „+ Hinzufügen".</div>
+          </div>
+        </div>
+
+        <!-- BETRIEBSKOSTEN JE EINHEIT -->
+        <div class="kosten-card">
+          <div class="kosten-card-head">
+            <span class="wz-seclabel">Betriebskosten je Einheit</span>
+            <span class="kosten-summe">Summe: <strong id="ek-bk-summe-live" style="color:var(--p)">0,00 €</strong></span>
+            <div style="flex:1"></div>
+            <button type="button" onclick="addEinzelKostenRow('ekBkRows')" class="kosten-add-btn">+ Hinzufügen</button>
+          </div>
+          <div class="kosten-card-body">
+            <div style="overflow-x:auto">
+            <table class="kosten-table">
+              <thead><tr><th style="width:28px"></th><th style="min-width:150px">Bezeichnung *</th><th style="width:120px">Betrag (€)</th><th style="width:160px">Betroffene Einheiten</th><th style="width:150px">Verteilung</th><th style="min-width:120px">Notiz</th><th style="width:26px"></th></tr></thead>
+              <tbody id="ekBkRows"></tbody>
+            </table>
             </div>
+            <div class="ek-empty" data-for="ekBkRows" style="font-size:.8rem;color:#9ca3af;padding:.6rem 0">Noch keine Betriebskosten-Position – „+ Hinzufügen".</div>
           </div>
         </div>
       </div>
 
-      <!-- STEP 4: ERGEBNIS -->
-      <div id="step4" style="display:none">
+      <!-- STEP 5: ÜBERBLICK -->
+      <div id="step5" style="display:none">
         <div class="ergebnis-section">
           <!-- HEADER -->
           <div class="ergebnis-header">
@@ -2198,8 +2216,8 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
         </div>
       </div>
 
-      <!-- STEP 5: ERGEBNIS & PDF -->
-      <div id="step5" style="display:none">
+      <!-- STEP 6: ERGEBNIS & PDF -->
+      <div id="step6" style="display:none">
         <div class="ergebnis-section">
           <div class="page-header" style="margin-bottom:1rem"><div class="page-title">Ergebnis &amp; PDF</div><div class="page-sub">Detail-Aufschlüsselung je Einheit, Vorauszahlungs-Anpassung (§ 556) und PDF/Export.</div></div>
 
@@ -3904,7 +3922,7 @@ async function zwischenspeichern(){
   var jahr=document.getElementById('jahr').value;
   var objekt=document.getElementById('objekt').value||'Neues Objekt';
   var titel=objekt+' – NK '+(jahr||new Date().getFullYear()-1)+' [Entwurf]';
-  var draftData={wohnungen:getWohnungen(),bkKosten:getKosten('bkRows').concat(typeof getEinzelKosten==='function'?getEinzelKosten():[]),hkKosten:getKosten('hkRows'),
+  var draftData={wohnungen:getWohnungen(),bkKosten:getKosten('bkRows').concat(typeof getEinzelKostenBk==='function'?getEinzelKostenBk():[]),hkKosten:getKosten('hkRows').concat(typeof getEinzelKostenHk==='function'?getEinzelKostenHk():[]),
     jahr:parseInt(jahr)||null,objekt:objekt,status:'entwurf',
     objektFlaeche:parseNum((document.getElementById('objekt-flaeche')||{}).value)};
   if(currentDraftId){
@@ -3924,7 +3942,7 @@ async function zwischenspeichern(){
 
 
 function goStep(n){
-  if(n<1||n>5)return;
+  if(n<1||n>6)return;
   if(n>currentStep){
     if(currentStep===2&&!validateWohnungen())return;
     if(currentStep===1){
@@ -3947,7 +3965,7 @@ function goStep(n){
   // Update chip visibility
   var chip=document.getElementById('abrechnung-active-chip');
   if(chip)chip.style.display=(currentPageName!=='tool'&&(hasUnsavedChanges||n>1))?'block':'none';
-  [1,2,3,4,5].forEach(function(i){
+  [1,2,3,4,5,6].forEach(function(i){
     var s=document.getElementById('step'+i);if(s)s.style.display=i===n?'block':'none';
     var ws=document.getElementById('ws'+i);
     if(ws){ws.classList.toggle('active',i===n);ws.classList.toggle('done',i<n);}
@@ -3955,16 +3973,16 @@ function goStep(n){
   var bz=document.getElementById('btn-zurueck');if(bz)bz.style.visibility=n>1?'visible':'hidden';
   var bw=document.getElementById('btn-weiter');
   if(bw){
-    bw.style.display=n===5?'none':'block';
-    bw.style.visibility=n===5?'hidden':'visible';
-    bw.textContent=n===3?'🔢 Berechnen →':'Weiter →';
+    bw.style.display=n===6?'none':'block';
+    bw.style.visibility=n===6?'hidden':'visible';
+    bw.textContent=n===4?'🔢 Berechnen →':'Weiter →';
   }
-  var sl=document.getElementById('wizard-step-label');if(sl)sl.textContent='Schritt '+n+' von 5';
+  var sl=document.getElementById('wizard-step-label');if(sl)sl.textContent='Schritt '+n+' von 6';
 }
 function wizardWeiter(){
   if(currentStep===2&&!validateWohnungen())return;
-  if(currentStep===3){berechnen();}
-  else if(currentStep<5){goStep(currentStep+1);}
+  if(currentStep===4){berechnen();}
+  else if(currentStep<6){goStep(currentStep+1);}
 }
 
 // ── STAMMDATEN ──
@@ -4234,23 +4252,16 @@ function addKostenRow(tbodyId,name='',schluessel='flaeche',notiz='',direktWerte=
     <td><button class="btn-remove" onclick="this.closest('tr').remove()"><span class="btn-ic" data-icon="x"></span></button></td>`;
   tbody.appendChild(tr);
 }
-// ── KOSTEN JE EINHEIT (Verteilung nur auf ausgewählte Einheiten) ──
-function step3Tab(which){
-  var allg=document.getElementById('k-pane-allg'),ein=document.getElementById('k-pane-einzel');
-  var ta=document.getElementById('k-tab-allg'),te=document.getElementById('k-tab-einzel');
-  if(allg)allg.style.display=which==='einzel'?'none':'';
-  if(ein)ein.style.display=which==='einzel'?'':'none';
-  if(ta)ta.classList.toggle('active',which!=='einzel');
-  if(te)te.classList.toggle('active',which==='einzel');
-}
-function addEinzelKostenRow(d){
-  d=d||{};
-  var tbody=document.getElementById('ekRows');if(!tbody)return;
+// ── KOSTEN JE EINHEIT (Verteilung nur auf ausgewählte Einheiten, getrennt in HK + BK) ──
+function addEinzelKostenRow(tbodyId,d){
+  tbodyId=tbodyId||'ekBkRows';d=d||{};
+  var tbody=document.getElementById(tbodyId);if(!tbody)return;
   var aus=d.auswahl||{units:[],methode:'gleich'};
   if(!aus.units)aus.units=[];if(!aus.methode)aus.methode='gleich';
   var tr=document.createElement('tr');
   tr.dataset.auswahl=JSON.stringify({units:aus.units,methode:aus.methode});
-  tr.innerHTML='<td><input type="text" class="ek-name" placeholder="z. B. Aufzugswartung" style="min-width:140px"></td>'
+  tr.innerHTML='<td><div class="kosten-reorder"><button class="reorder-btn" onclick="moveKosten(this,-1)">▲</button><button class="reorder-btn" onclick="moveKosten(this,1)">▼</button></div></td>'
+    +'<td><input type="text" class="ek-name" placeholder="z. B. Aufzugswartung" style="min-width:140px"></td>'
     +'<td><input type="text" inputmode="decimal" class="ek-betrag" placeholder="0,00" oninput="sanitizeNumInput(this,true);updateEkSumme()" style="text-align:right"></td>'
     +'<td><button type="button" class="btn-small ek-units-btn" style="background:var(--p-mid);font-size:.7rem;width:100%" onclick="openEkUnits(this)">Einheiten wählen</button></td>'
     +'<td><select class="ek-methode" onchange="ekMethodeChange(this)"><option value="gleich">Gleichmäßig</option><option value="flaeche">Nach Wohnfläche</option><option value="person">Nach Personen</option></select></td>'
@@ -4275,12 +4286,14 @@ function updateEkUnitsLabel(tr){
   btn.style.background=n?'#1a7a4a':'var(--p-mid)';
 }
 function updateEkSumme(){
-  var s=0;document.querySelectorAll('#ekRows .ek-betrag').forEach(function(i){s+=parseNum(i.value);});
-  var el=document.getElementById('ek-summe-live');if(el)el.textContent=s.toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
-  var emp=document.getElementById('ek-empty');if(emp)emp.style.display=document.querySelectorAll('#ekRows tr').length?'none':'block';
+  [['ekHkRows','ek-hk-summe-live'],['ekBkRows','ek-bk-summe-live']].forEach(function(p){
+    var s=0;document.querySelectorAll('#'+p[0]+' .ek-betrag').forEach(function(i){s+=parseNum(i.value);});
+    var el=document.getElementById(p[1]);if(el)el.textContent=s.toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
+  });
+  document.querySelectorAll('.ek-empty').forEach(function(e){var t=e.getAttribute('data-for');if(t)e.style.display=document.querySelectorAll('#'+t+' tr').length?'none':'block';});
 }
-function getEinzelKosten(){
-  return [].slice.call(document.querySelectorAll('#ekRows tr')).map(function(tr){
+function getEinzelKostenFrom(tbodyId){
+  return [].slice.call(document.querySelectorAll('#'+tbodyId+' tr')).map(function(tr){
     var aus=tr.dataset.auswahl?JSON.parse(tr.dataset.auswahl):{units:[],methode:'gleich'};
     var meth=(tr.querySelector('.ek-methode')||{value:'gleich'}).value;
     return {name:(tr.querySelector('.ek-name')||{value:''}).value.trim()||'',
@@ -4290,6 +4303,8 @@ function getEinzelKosten(){
       ust:0,art35a:'',lohnProzent:0,direktWerte:{},hkv:null};
   }).filter(function(k){return k.betrag>0&&k.name;});
 }
+function getEinzelKostenHk(){return getEinzelKostenFrom('ekHkRows');}
+function getEinzelKostenBk(){return getEinzelKostenFrom('ekBkRows');}
 var _ekCurrentTr=null;
 function openEkUnits(btn){
   _ekCurrentTr=btn.closest('tr');
@@ -4704,8 +4719,8 @@ function berechnen(){
   const hasHK=!document.getElementById('keine-hk').checked;
   const wohnungen=getWohnungen();
   if(!wohnungen.length){showToast('❌ Bitte Wohneinheiten eintragen.');return;}
-  const bkKosten=getKosten('bkRows').concat(typeof getEinzelKosten==='function'?getEinzelKosten():[]);
-  const hkKosten=hasHK?getKosten('hkRows'):[];
+  const bkKosten=getKosten('bkRows').concat(typeof getEinzelKostenBk==='function'?getEinzelKostenBk():[]);
+  const hkKosten=hasHK?getKosten('hkRows').concat(typeof getEinzelKostenHk==='function'?getEinzelKostenHk():[]):[];
   if(!bkKosten.length&&!hkKosten.length){showToast('❌ Bitte Kosten eintragen.');return;}
 
   // Alle Perioden berechnen
@@ -4856,7 +4871,7 @@ function berechnen(){
     objektFlaeche:parseNum((document.getElementById('objekt-flaeche')||{}).value)};
 
   renderErgebnis();
-  goStep(4);
+  goStep(5);
   // Show Abrechnen bar
   const ab=document.getElementById('abrechnen-bar');
   if(ab)ab.style.display='flex';
@@ -6129,26 +6144,28 @@ async function viewAbgerechnet(id){
     if(data.datum&&document.getElementById('datum'))document.getElementById('datum').value=data.datum;
     if(data.data.objektFlaeche&&document.getElementById('objekt-flaeche'))document.getElementById('objekt-flaeche').value=data.data.objektFlaeche;
     // Kosten wiederherstellen
+    var ekTbH=document.getElementById('ekHkRows');if(ekTbH)ekTbH.innerHTML='';
+    var ekTbB2=document.getElementById('ekBkRows');if(ekTbB2)ekTbB2.innerHTML='';
     if(data.data.bkKosten){
       document.getElementById('bkRows').innerHTML='';
-      var ekTbL=document.getElementById('ekRows');if(ekTbL)ekTbL.innerHTML='';
       data.data.bkKosten.forEach(function(k){
-        if(k.schluessel==='auswahl'){if(typeof addEinzelKostenRow==='function')addEinzelKostenRow(k);return;}
+        if(k.schluessel==='auswahl'){if(typeof addEinzelKostenRow==='function')addEinzelKostenRow('ekBkRows',k);return;}
         addKostenRow('bkRows',k.name,k.schluessel||'flaeche');
         var rows=document.querySelectorAll('#bkRows tr');
         if(rows.length)rows[rows.length-1].querySelector('.k-betrag').value=(k.betrag||'');
       });
-      if(typeof updateEkSumme==='function')updateEkSumme();
     }
     if(data.data.hkKosten){
       document.getElementById('hkRows').innerHTML='';
       data.data.hkKosten.forEach(function(k){
+        if(k.schluessel==='auswahl'){if(typeof addEinzelKostenRow==='function')addEinzelKostenRow('ekHkRows',k);return;}
         addKostenRow('hkRows',k.name,k.schluessel||'flaeche');
         var rows=document.querySelectorAll('#hkRows tr');
         if(rows.length)rows[rows.length-1].querySelector('.k-betrag').value=(k.betrag||'');
       });
     }
-    renderErgebnis();goStep(4);
+    if(typeof updateEkSumme==='function')updateEkSumme();
+    renderErgebnis();goStep(5);
     document.getElementById('abrechnen-bar').style.display='none';
     // Read-only Banner + Korrektur-Aktion einfügen
     var rw=document.getElementById('res-wohnungen');
@@ -6162,8 +6179,8 @@ async function viewAbgerechnet(id){
     var bz=document.getElementById('btn-zurueck');if(bz){bz.style.visibility='hidden';}
     var bw=document.getElementById('btn-weiter');if(bw){bw.style.display='none';}
     // Wizard step buttons deaktivieren
-    [1,2,3].forEach(function(n){var ws=document.getElementById('ws'+n);if(ws){ws.style.pointerEvents='none';ws.style.opacity='.4';}});
-    [4,5].forEach(function(n){var ws=document.getElementById('ws'+n);if(ws){ws.style.pointerEvents='';ws.style.opacity='';}});
+    [1,2,3,4].forEach(function(n){var ws=document.getElementById('ws'+n);if(ws){ws.style.pointerEvents='none';ws.style.opacity='.4';}});
+    [5,6].forEach(function(n){var ws=document.getElementById('ws'+n);if(ws){ws.style.pointerEvents='';ws.style.opacity='';}});
   },150);
   showToast('📄 Abgerechnet (schreibgeschützt) – Überblick & Ergebnis ansehbar.');
 }
@@ -6173,12 +6190,14 @@ function befuelleWizardAusData(data){
   if(!data)return;
   // Individuelle Verteilschlüssel aus Snapshot bereitstellen (für Kosten-Dropdown + Anzeige)
   if(data.verteilschluessel&&data.verteilschluessel.length)objektVerteilschluessel=data.verteilschluessel.slice();
-  var ekTbB=document.getElementById('ekRows');if(ekTbB)ekTbB.innerHTML='';
+  var ekTbH0=document.getElementById('ekHkRows');if(ekTbH0)ekTbH0.innerHTML='';
+  var ekTbB0=document.getElementById('ekBkRows');if(ekTbB0)ekTbB0.innerHTML='';
   ['bkKosten','hkKosten'].forEach(function(key){
     var id=key==='bkKosten'?'bkRows':'hkRows';
+    var ekId=key==='bkKosten'?'ekBkRows':'ekHkRows';
     var tb=document.getElementById(id);if(!tb)return;tb.innerHTML='';
     (data[key]||[]).forEach(function(k){
-      if(key==='bkKosten'&&k.schluessel==='auswahl'){if(typeof addEinzelKostenRow==='function')addEinzelKostenRow(k);return;}
+      if(k.schluessel==='auswahl'){if(typeof addEinzelKostenRow==='function')addEinzelKostenRow(ekId,k);return;}
       addKostenRow(id,k.name||'',k.schluessel||'flaeche',k.notiz||'',k.direktWerte||{},k.ust||0,k.art35a||'',(k.lohnProzent!=null?k.lohnProzent:''),k.hkv||null);
       var rows=document.querySelectorAll('#'+id+' tr');var last=rows[rows.length-1];
       if(last){var b=last.querySelector('.k-betrag');if(b)b.value=(k.betrag!=null?k.betrag:'');
@@ -6228,16 +6247,16 @@ function loadAbrechnung(a){
     if(isAbgerechnet){
       // Abgerechnete: direkt Ergebnis anzeigen, KEINE Navigation zurück
       lastErgebnis=a.data;
-      renderErgebnis();goStep(4);
+      renderErgebnis();goStep(5);
       var bz=document.getElementById('btn-zurueck');if(bz)bz.style.visibility='hidden';
       var bw=document.getElementById('btn-weiter');if(bw)bw.style.display='none';
-      [1,2,3].forEach(function(n){var ws=document.getElementById('ws'+n);if(ws){ws.style.pointerEvents='none';ws.style.opacity='.4';}});
-      [4,5].forEach(function(n){var ws=document.getElementById('ws'+n);if(ws){ws.style.pointerEvents='';ws.style.opacity='';}});
+      [1,2,3,4].forEach(function(n){var ws=document.getElementById('ws'+n);if(ws){ws.style.pointerEvents='none';ws.style.opacity='.4';}});
+      [5,6].forEach(function(n){var ws=document.getElementById('ws'+n);if(ws){ws.style.pointerEvents='';ws.style.opacity='';}});
     } else {
       // Entwurf: vollständig wiederherstellen (Einheiten + Kosten), alle Schritte navigierbar
       lastErgebnis=null;
       befuelleWizardAusData(a.data);
-      [1,2,3,4,5].forEach(function(n){var ws=document.getElementById('ws'+n);if(ws){ws.style.pointerEvents='';ws.style.opacity='';}});
+      [1,2,3,4,5,6].forEach(function(n){var ws=document.getElementById('ws'+n);if(ws){ws.style.pointerEvents='';ws.style.opacity='';}});
       var bz2=document.getElementById('btn-zurueck');if(bz2)bz2.style.visibility='hidden';
       var bw2=document.getElementById('btn-weiter');if(bw2){bw2.style.display='block';bw2.style.visibility='visible';}
       goStep(1);
@@ -6420,8 +6439,8 @@ async function autoSaveEntwurf(){
   var titel=oVal+' \u2013 NK '+(jVal||new Date().getFullYear()-1)+' [Entwurf]';
   var draftData={
     wohnungen:typeof getWohnungen==='function'?getWohnungen():[],
-    bkKosten:(typeof getKosten==='function'?getKosten('bkRows'):[]).concat(typeof getEinzelKosten==='function'?getEinzelKosten():[]),
-    hkKosten:typeof getKosten==='function'?getKosten('hkRows'):[],
+    bkKosten:(typeof getKosten==='function'?getKosten('bkRows'):[]).concat(typeof getEinzelKostenBk==='function'?getEinzelKostenBk():[]),
+    hkKosten:(typeof getKosten==='function'?getKosten('hkRows'):[]).concat(typeof getEinzelKostenHk==='function'?getEinzelKostenHk():[]),
     jahr:parseInt(jVal)||null,objekt:oVal,status:'entwurf',objektId:currentAbrObjektId||null,
     objektFlaeche:parseNum((document.getElementById('objekt-flaeche')||{}).value),
     datum:(document.getElementById('datum')||{}).value||null,
@@ -7559,18 +7578,21 @@ async function ladeKorrektur(id){
     if(what!=='1'&&origData.bkKosten){
       document.getElementById('bkRows').innerHTML='';
       document.getElementById('hkRows').innerHTML='';
-      var ekTbK=document.getElementById('ekRows');if(ekTbK)ekTbK.innerHTML='';
+      var ekTbKH=document.getElementById('ekHkRows');if(ekTbKH)ekTbKH.innerHTML='';
+      var ekTbKB=document.getElementById('ekBkRows');if(ekTbKB)ekTbKB.innerHTML='';
       (origData.bkKosten||[]).forEach(function(k){
-        if(k.schluessel==='auswahl'){if(typeof addEinzelKostenRow==='function')addEinzelKostenRow(k);return;}
+        if(k.schluessel==='auswahl'){if(typeof addEinzelKostenRow==='function')addEinzelKostenRow('ekBkRows',k);return;}
         addKostenRow('bkRows',k.name,k.schluessel||'flaeche');
         var rows=document.querySelectorAll('#bkRows tr');
         if(rows.length)rows[rows.length-1].querySelector('.k-betrag').value=(k.betrag||'');
       });
-      if(typeof updateEkSumme==='function')updateEkSumme();
-      (origData.hkKosten||[]).forEach(function(k){addKostenRow('hkRows',k.name,k.schluessel||'flaeche');
+      (origData.hkKosten||[]).forEach(function(k){
+        if(k.schluessel==='auswahl'){if(typeof addEinzelKostenRow==='function')addEinzelKostenRow('ekHkRows',k);return;}
+        addKostenRow('hkRows',k.name,k.schluessel||'flaeche');
         var rows=document.querySelectorAll('#hkRows tr');
         if(rows.length)rows[rows.length-1].querySelector('.k-betrag').value=(k.betrag||'');
       });
+      if(typeof updateEkSumme==='function')updateEkSumme();
     }
 
     goStep(what==='2'?3:2);
@@ -12302,7 +12324,7 @@ function startAbrechnungManuell(){
 function _initWizard(){
   currentDraftId=null;currentAbrObjektId=null;clearUnsaved();importiertesObjekt=null;currentStep=1;
   var chip=document.getElementById('abrechnung-active-chip');if(chip)chip.style.display='none';
-  [1,2,3,4].forEach(function(n){var ws=document.getElementById('ws'+n);if(ws){ws.style.pointerEvents='';ws.style.opacity='';}});
+  [1,2,3,4,5,6].forEach(function(n){var ws=document.getElementById('ws'+n);if(ws){ws.style.pointerEvents='';ws.style.opacity='';}});
   var bwEl=document.getElementById('btn-weiter');if(bwEl){bwEl.style.display='block';bwEl.style.visibility='visible';}
   var info=document.getElementById('objekt-import-info');if(info)info.style.display='none';
   var sel=document.getElementById('objekt-select');if(sel)sel.value='';
@@ -12315,9 +12337,9 @@ function _initWizard(){
   if(document.getElementById('addWohnBtn'))document.getElementById('addWohnBtn').style.display='';
   if(document.getElementById('hkRows'))document.getElementById('hkRows').innerHTML='';
   if(document.getElementById('bkRows'))document.getElementById('bkRows').innerHTML='';
-  if(document.getElementById('ekRows'))document.getElementById('ekRows').innerHTML='';
+  if(document.getElementById('ekHkRows'))document.getElementById('ekHkRows').innerHTML='';
+  if(document.getElementById('ekBkRows'))document.getElementById('ekBkRows').innerHTML='';
   if(typeof updateEkSumme==='function')updateEkSumme();
-  if(typeof step3Tab==='function')step3Tab('allg');
   if(document.getElementById('keine-hk'))document.getElementById('keine-hk').checked=false;
   if(document.getElementById('hk-content'))document.getElementById('hk-content').style.display='block';
   HK_VORGABEN.forEach(function(v){addKostenRow('hkRows',v.name,v.s);});
@@ -12613,7 +12635,7 @@ async function legeMusterkontakteAn(){
 function wizardVorschau(){
   if(!lastErgebnis){
     if(currentStep<3){showToast('⚠️ Bitte erst Schritt 3 (Kosten) ausfüllen.');return;}
-    goStep(4);setTimeout(function(){if(lastErgebnis)handleGesamtPDF(true,'vorschau');else showToast('⚠️ Kosten eintragen und berechnen.');},400);
+    goStep(5);setTimeout(function(){if(lastErgebnis)handleGesamtPDF(true,'vorschau');else showToast('⚠️ Kosten eintragen und berechnen.');},400);
   }else{handleGesamtPDF(true,'vorschau');}
 }
 function vorschauPdfLayout(layout){
@@ -12932,7 +12954,7 @@ function pruefeKosten(){
     +(meldungen.length?'<div style="font-size:.75rem;color:#c0392b;margin-bottom:.75rem">❌ = Fehler müssen vor der Berechnung behoben werden.</div>':'')
     +'<div style="display:flex;gap:.5rem;justify-content:flex-end">'
       +'<button onclick="this.closest(\'div[style*=fixed]\').remove()" class="btn-secondary" style="font-size:.82rem">Schließen</button>'
-      +(meldungen.length===0?'<button onclick="this.closest(\'div[style*=fixed]\').remove();goStep(4);berechnen();" class="btn-primary" style="font-size:.82rem">Trotzdem berechnen →</button>':'')
+      +(meldungen.length===0?'<button onclick="this.closest(\'div[style*=fixed]\').remove();berechnen();" class="btn-primary" style="font-size:.82rem">Trotzdem berechnen →</button>':'')
     +'</div>'
     +'</div>';
   document.body.appendChild(modal);

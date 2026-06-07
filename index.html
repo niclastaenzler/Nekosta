@@ -2083,7 +2083,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
         <!-- HEIZKOSTEN -->
         <div class="kosten-card" id="hk-section">
           <div class="kosten-card-head">
-            <span class="wz-seclabel orange">Heizkosten (max. 3)</span>
+            <span class="wz-seclabel orange">Heizkosten</span>
             <span class="kosten-summe">Summe: <strong id="hk-summe-live" style="color:#ea580c">0,00 €</strong></span>
             <div style="flex:1"></div>
             <label class="hk-toggle" style="margin:0;font-size:.72rem"><input type="checkbox" id="keine-hk" onchange="toggleHK()"> Keine Heizkosten</label>
@@ -2104,7 +2104,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
         <!-- BETRIEBSKOSTEN -->
         <div class="kosten-card">
           <div class="kosten-card-head">
-            <span class="wz-seclabel">Betriebskosten (max. 10)</span>
+            <span class="wz-seclabel">Betriebskosten</span>
             <span class="kosten-summe">Summe: <strong id="bk-summe-live" style="color:var(--p)">0,00 €</strong></span>
             <div style="flex:1"></div>
             <button type="button" onclick="importKostenVorlage('bk')" class="kosten-head-btn"><span class="btn-ic" data-icon="folder"></span> Vorlage</button>
@@ -2276,12 +2276,19 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
           </select>
           <button onclick="resetArchivFilter()" style="font-size:.82rem;color:var(--p);background:none;border:none;cursor:pointer">Filter zurücksetzen</button>
         </div>
+        <!-- SAMMELAKTIONEN -->
+        <div id="archiv-bulk-bar" style="display:none;align-items:center;gap:.75rem;background:var(--p-light);border:1px solid rgba(124,58,237,.25);border-radius:10px;padding:.55rem .9rem;margin-bottom:1rem">
+          <span style="font-size:.85rem;font-weight:600;color:var(--p)"><span id="archiv-sel-count">0</span> ausgewählt</span>
+          <div style="flex:1"></div>
+          <button onclick="bulkDeleteArchiv()" class="btn-small" style="background:#dc2626;display:inline-flex;align-items:center;gap:.3rem"><span class="btn-ic" data-icon="trash"></span> In Papierkorb</button>
+          <button onclick="clearArchivSelection()" class="btn-small" style="background:#6b7280">Aufheben</button>
+        </div>
         <!-- TABELLE -->
         <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:visible">
           <table style="width:100%;border-collapse:collapse">
             <thead>
               <tr style="border-bottom:2px solid var(--border)">
-                <th style="width:32px;padding:.75rem 1rem"><input type="checkbox" style="cursor:pointer"></th>
+                <th style="width:32px;padding:.75rem 1rem"><input type="checkbox" id="archiv-check-all" onchange="toggleAllArchiv(this)" style="cursor:pointer"></th>
                 <th style="text-align:left;padding:.75rem .65rem;font-size:.78rem;font-weight:700;color:var(--text);cursor:pointer" onclick="sortArchiv('titel')">Titel <span style="opacity:.4">↕</span></th>
                 <th style="text-align:left;padding:.75rem .65rem;font-size:.78rem;font-weight:700;color:var(--text);cursor:pointer" onclick="sortArchiv('objekt')">Objekt <span style="opacity:.4">↕</span></th>
                 <th style="text-align:left;padding:.75rem .65rem;font-size:.78rem;font-weight:700;color:var(--text);cursor:pointer" onclick="sortArchiv('jahr')">Zeitraum <span style="opacity:.4">↕</span></th>
@@ -5850,7 +5857,7 @@ function renderArchivTabelle(){
   if(cEl)cEl.textContent='Zeige 1 bis '+Math.min(filtered.length,perPage)+' von '+filtered.length+' Einträgen';
 
   var page=filtered.slice(0,perPage);
-  if(!page.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:3rem;color:var(--muted)">Keine Abrechnungen gefunden.</td></tr>';return;}
+  if(!page.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:3rem;color:var(--muted)">Keine Abrechnungen gefunden.</td></tr>';try{updateArchivSelection();}catch(e){}return;}
 
   tbody.innerHTML=page.map(function(a,ri){
     var isAbg=a.titel&&a.titel.includes('[Abgerechnet]');
@@ -5866,7 +5873,7 @@ function renderArchivTabelle(){
     return '<tr style="border-bottom:1px solid var(--border);cursor:pointer;'+bg+'" '
       +'onclick="'+( isAbg ? "viewAbgerechnet('"+a.id+"')" : "loadAbrechnung("+JSON.stringify(a).replace(/"/g,'&quot;')+")" )+'" '
       +'onmouseover="this.style.background=\'var(--p-light)\'" onmouseout="this.style.background=\''+(ri%2===0?'':'#fafafa')+'\'">'
-      +'<td style="padding:.75rem 1rem" onclick="event.stopPropagation()"><input type="checkbox" style="cursor:pointer"></td>'
+      +'<td style="padding:.75rem 1rem" onclick="event.stopPropagation()"><input type="checkbox" class="archiv-check" data-id="'+a.id+'" onchange="updateArchivSelection()" style="cursor:pointer"></td>'
       +'<td style="padding:.75rem .65rem">'
         +'<div style="font-weight:600;font-size:.88rem">'+clean+'</div>'
         +'<div style="font-size:.72rem;color:var(--muted);margin-top:1px">'+statusBadge+'</div>'
@@ -5902,6 +5909,45 @@ function renderArchivTabelle(){
       document.querySelectorAll('[id^="amenu_"]').forEach(function(el){el.style.display='none';});
     }
   };
+  try{updateArchivSelection();}catch(e){}
+}
+
+// ── Mehrfachauswahl im Abrechnungs-Archiv ──
+function archivSelectedIds(){return [].slice.call(document.querySelectorAll('.archiv-check:checked')).map(function(c){return c.getAttribute('data-id');});}
+function updateArchivSelection(){
+  var checks=document.querySelectorAll('.archiv-check');
+  var ids=archivSelectedIds();
+  var bar=document.getElementById('archiv-bulk-bar');
+  var cnt=document.getElementById('archiv-sel-count');
+  if(cnt)cnt.textContent=ids.length;
+  if(bar)bar.style.display=ids.length?'flex':'none';
+  var ca=document.getElementById('archiv-check-all');
+  if(ca){ca.checked=checks.length>0&&ids.length===checks.length;ca.indeterminate=ids.length>0&&ids.length<checks.length;}
+  checks.forEach(function(c){var tr=c.closest('tr');if(tr){tr.style.outline=c.checked?'2px solid var(--p)':'';tr.style.outlineOffset='-2px';}});
+}
+function toggleAllArchiv(cb){
+  document.querySelectorAll('.archiv-check').forEach(function(c){c.checked=cb.checked;});
+  updateArchivSelection();
+}
+function clearArchivSelection(){
+  document.querySelectorAll('.archiv-check').forEach(function(c){c.checked=false;});
+  var ca=document.getElementById('archiv-check-all');if(ca){ca.checked=false;ca.indeterminate=false;}
+  updateArchivSelection();
+}
+function bulkDeleteArchiv(){
+  var ids=archivSelectedIds();
+  if(!ids.length)return;
+  appConfirm({icon:'🗑',title:ids.length+' Abrechnung'+(ids.length>1?'en':'')+' löschen?',
+    message:'Die ausgewählten Abrechnungen werden in den Papierkorb verschoben (nach 7 Tagen endgültig gelöscht).',
+    buttons:[
+      {label:'Abbrechen'},
+      {label:'In Papierkorb',style:'background:#dc2626;color:#fff',onClick:async function(){
+        var {error}=await sb.from('abrechnungen').update({deleted_at:new Date().toISOString()}).in('id',ids);
+        if(error){showToast('❌ '+error.message);return;}
+        showToast('🗑 '+ids.length+' Abrechnung'+(ids.length>1?'en':'')+' in den Papierkorb verschoben');
+        loadArchiv();
+      }}
+    ]});
 }
 
 function toggleArchivMenu(id){

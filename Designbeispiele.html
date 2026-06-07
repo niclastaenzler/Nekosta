@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NEKOSTA – Design-Beispiele: Anschreiben & Nebenkostenabrechnung</title>
+<style>
+  :root{--p:#7c3aed;--p2:#6d28d9;--ink:#1f2430;--muted:#6b7280;--line:#e5e7eb;--soft:#f6f7f9;}
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:#eceef2;color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;font-size:13px;line-height:1.5}
+  /* ── Screen-Chrome (nicht Teil der Dokumente) ── */
+  .top{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid var(--line);
+    padding:.7rem 1.2rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+  .top b{font-weight:800;letter-spacing:-.01em}
+  .top b span{color:var(--p)}
+  .top .nav{display:flex;gap:.4rem;flex-wrap:wrap;margin-left:auto}
+  .top a{font-size:.8rem;text-decoration:none;color:var(--muted);border:1px solid var(--line);
+    border-radius:999px;padding:.3rem .8rem}
+  .top a:hover{color:var(--p);border-color:#ddd6fe;background:#faf7ff}
+  .wrap{max-width:1160px;margin:0 auto;padding:1.6rem 1rem 4rem}
+  .seckopf{margin:2.4rem .2rem .9rem;display:flex;align-items:baseline;gap:.7rem;flex-wrap:wrap}
+  .seckopf h2{margin:0;font-size:1.15rem;font-weight:800;letter-spacing:-.01em}
+  .seckopf .tag{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+    color:var(--p);background:#f1ecfe;border:1px solid #e4d8fd;border-radius:999px;padding:.2rem .6rem}
+  .seckopf p{margin:0;color:var(--muted);font-size:.82rem;flex-basis:100%}
+  .pair{display:flex;gap:1.2rem;flex-wrap:wrap}
+  /* ── A4-Blatt ── */
+  .sheet{background:#fff;width:520px;max-width:100%;min-height:735px;box-shadow:0 6px 30px rgba(20,24,40,.13);
+    border-radius:3px;overflow:hidden;position:relative}
+  .sheet .pad{padding:42px 44px}
+  .docnote{font-size:.62rem;color:#b9bcc6;text-transform:uppercase;letter-spacing:.1em;font-weight:700}
+  .euro{font-variant-numeric:tabular-nums;white-space:nowrap}
+  table{width:100%;border-collapse:collapse}
+
+  /* ════════ STIL 1 – KLAR (violetter Akzent, ruhig) ════════ */
+  .s1 .sender{font-size:8.5px;color:#9aa0ad;letter-spacing:.02em}
+  .s1 .rule{height:1px;background:var(--line);margin:6px 0 0}
+  .s1 .toprow{display:flex;justify-content:space-between;align-items:flex-start;margin-top:26px;gap:1rem}
+  .s1 .empf{font-size:13px;line-height:1.55}
+  .s1 .empf .nm{font-weight:700}
+  .s1 .meta{text-align:right;font-size:11px;color:var(--muted);white-space:nowrap}
+  .s1 .meta b{color:var(--ink)}
+  .s1 .betreff{margin-top:30px;font-size:15px;font-weight:800;letter-spacing:-.01em}
+  .s1 .betreff .zr{font-weight:500;color:var(--muted);font-size:12px;display:block;margin-top:3px}
+  .s1 .body{margin-top:18px;font-size:12.5px;line-height:1.7;color:#363b46}
+  .s1 .callout{margin-top:18px;border:1px solid #e7ddff;background:linear-gradient(180deg,#faf7ff,#fff);
+    border-radius:12px;padding:16px 18px;display:flex;justify-content:space-between;align-items:center;gap:1rem}
+  .s1 .callout.neg{border-color:#f6d4d0;background:linear-gradient(180deg,#fef4f2,#fff)}
+  .s1 .callout .lbl{font-size:11px;color:var(--muted)}
+  .s1 .callout .lbl b{display:block;color:var(--ink);font-size:13px;margin-top:2px}
+  .s1 .callout .big{font-size:23px;font-weight:800;color:var(--p)}
+  .s1 .callout.neg .big{color:#c0392b}
+  .s1 .bank{margin-top:14px;font-size:11px;color:#4b5563;border:1px dashed var(--line);border-radius:10px;padding:10px 14px}
+  .s1 .bank .k{color:var(--muted)}
+  .s1 .sign{margin-top:22px;font-size:12.5px;line-height:1.7}
+  .s1 .sign .name{font-weight:700;margin-top:14px}
+  /* Stil1 Abrechnung */
+  .s1 .head1{display:flex;justify-content:space-between;align-items:flex-start}
+  .s1 .h-title{font-size:17px;font-weight:800;letter-spacing:-.01em}
+  .s1 .h-sub{font-size:11px;color:var(--muted);margin-top:3px}
+  .s1 .h-jahr{font-size:30px;font-weight:800;color:var(--p);line-height:1}
+  .s1 .infogrid{margin-top:20px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .s1 .ic{border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+  .s1 .ic .k{font-size:9.5px;text-transform:uppercase;letter-spacing:.06em;color:#9aa0ad;font-weight:700}
+  .s1 .ic .v{font-size:13px;font-weight:700;margin-top:3px}
+  .s1 .kt{margin-top:22px}
+  .s1 .kt .grp{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--p);
+    border-left:3px solid var(--p);padding-left:8px;margin:14px 0 6px}
+  .s1 .kt .grp.o{color:#ea580c;border-color:#f97316}
+  .s1 table th{font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:#9aa0ad;font-weight:700;
+    text-align:left;padding:6px 6px;border-bottom:1px solid var(--line)}
+  .s1 table td{font-size:11.5px;padding:6px 6px;border-bottom:1px solid #f2f3f5}
+  .s1 table td.r,.s1 table th.r{text-align:right}
+  .s1 .sum{font-weight:800}
+  .s1 .erg{margin-top:18px;border-radius:12px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;
+    background:#fef4f2;border:1px solid #f6d4d0}
+  .s1 .erg .big{font-size:21px;font-weight:800;color:#c0392b}
+  .s1 .erg.pos{background:#f0fbf4;border-color:#bfe8cc}
+  .s1 .erg.pos .big{color:#15803d}
+
+  /* ════════ STIL 2 – MINIMAL (hairlines, viel Weißraum) ════════ */
+  .s2{color:#23272f}
+  .s2 .pad{padding:48px 46px}
+  .s2 .sender{font-size:8px;letter-spacing:.06em;text-transform:uppercase;color:#aab0bb}
+  .s2 .toprow{display:flex;justify-content:space-between;margin-top:40px;gap:1rem}
+  .s2 .empf{font-size:13px;line-height:1.6}
+  .s2 .empf .nm{font-weight:600}
+  .s2 .meta{text-align:right;font-size:10.5px;color:#9aa0ad}
+  .s2 .betreff{margin-top:46px;font-size:13px;font-weight:700;letter-spacing:.01em}
+  .s2 .hair{height:1px;background:#000;opacity:.12;margin:10px 0 0}
+  .s2 .body{margin-top:22px;font-size:12px;line-height:1.85;color:#3b4049}
+  .s2 .resultline{margin-top:26px;display:flex;justify-content:space-between;align-items:baseline;
+    border-top:2px solid #111;border-bottom:1px solid #000;padding:12px 0}
+  .s2 .resultline .l{font-size:12px;letter-spacing:.02em}
+  .s2 .resultline .v{font-size:24px;font-weight:700;letter-spacing:-.01em}
+  .s2 .resultline .v.neg{color:#b3261e}
+  .s2 .mini{margin-top:8px;font-size:10.5px;color:#9aa0ad;display:flex;justify-content:space-between}
+  .s2 .sign{margin-top:34px;font-size:12px;line-height:1.8}
+  .s2 .sign .name{font-weight:600;margin-top:16px}
+  /* Stil2 Abrechnung */
+  .s2 .h-title{font-size:15px;font-weight:700;letter-spacing:.02em;text-transform:uppercase}
+  .s2 .h-meta{margin-top:4px;font-size:10.5px;color:#9aa0ad}
+  .s2 .kpis{margin-top:26px;display:flex;gap:0;border-top:2px solid #111;border-bottom:1px solid #000}
+  .s2 .kpi{flex:1;padding:12px 4px;text-align:center;border-right:1px solid #eceef1}
+  .s2 .kpi:last-child{border-right:0}
+  .s2 .kpi .k{font-size:8.5px;text-transform:uppercase;letter-spacing:.08em;color:#9aa0ad}
+  .s2 .kpi .v{font-size:15px;font-weight:700;margin-top:4px}
+  .s2 .kpi .v.neg{color:#b3261e}
+  .s2 table{margin-top:26px}
+  .s2 table th{font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:#9aa0ad;font-weight:600;
+    text-align:left;padding:7px 4px;border-bottom:1px solid #000}
+  .s2 table td{font-size:11.5px;padding:7px 4px;border-bottom:1px solid #f0f1f3}
+  .s2 table td.r,.s2 table th.r{text-align:right;font-variant-numeric:tabular-nums}
+  .s2 .grp td{font-size:9.5px!important;text-transform:uppercase;letter-spacing:.07em;color:#23272f;font-weight:700;
+    padding-top:16px;border-bottom:1px solid #d7d9de}
+  .s2 .sumrow td{font-weight:700;border-top:1px solid #000;border-bottom:none}
+
+  /* ════════ STIL 3 – AKZENT (Kopfband + Tiles, kräftiger) ════════ */
+  .s3 .band{background:var(--p);color:#fff;padding:24px 44px}
+  .s3 .band .t{font-size:18px;font-weight:800;letter-spacing:-.01em}
+  .s3 .band .s{font-size:11px;color:#e6ddfb;margin-top:3px}
+  .s3 .band.row{display:flex;justify-content:space-between;align-items:center}
+  .s3 .band .jahr{font-size:26px;font-weight:800}
+  .s3 .pad{padding:28px 44px 42px}
+  .s3 .sender{font-size:8.5px;color:#9aa0ad}
+  .s3 .toprow{display:flex;justify-content:space-between;margin-top:18px;gap:1rem}
+  .s3 .empf{font-size:13px;line-height:1.55}
+  .s3 .empf .nm{font-weight:700}
+  .s3 .meta{text-align:right;font-size:11px;color:var(--muted)}
+  .s3 .body{margin-top:20px;font-size:12.5px;line-height:1.7;color:#363b46}
+  .s3 .tiles{margin-top:18px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+  .s3 .tile{border-radius:12px;padding:12px 12px;border:1px solid var(--line)}
+  .s3 .tile .k{font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:#9aa0ad;font-weight:700}
+  .s3 .tile .v{font-size:16px;font-weight:800;margin-top:5px}
+  .s3 .tile.accent{background:#fef4f2;border-color:#f6d4d0}
+  .s3 .tile.accent .v{color:#c0392b}
+  .s3 .tile.accent.pos{background:#f0fbf4;border-color:#bfe8cc}
+  .s3 .tile.accent.pos .v{color:#15803d}
+  .s3 .bank{margin-top:16px;font-size:11px;color:#4b5563;background:var(--soft);border-radius:10px;padding:11px 14px}
+  .s3 .bank .k{color:var(--muted)}
+  .s3 .sign{margin-top:20px;font-size:12.5px;line-height:1.7}
+  .s3 .sign .name{font-weight:700;margin-top:14px}
+  .s3 .kt{margin-top:22px}
+  .s3 .kt .grp{display:flex;align-items:center;gap:8px;font-size:10px;font-weight:800;text-transform:uppercase;
+    letter-spacing:.06em;color:#fff;background:var(--p);border-radius:7px;padding:6px 10px;margin:14px 0 0}
+  .s3 .kt .grp.o{background:#ea580c}
+  .s3 table th{font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:#9aa0ad;font-weight:700;
+    text-align:left;padding:7px 8px;border-bottom:1px solid var(--line)}
+  .s3 table td{font-size:11.5px;padding:7px 8px;border-bottom:1px solid #f2f3f5}
+  .s3 table td.r,.s3 table th.r{text-align:right;font-variant-numeric:tabular-nums}
+  .s3 table tr:nth-child(even) td{background:#fbfbfd}
+  .s3 .subsum td{font-weight:700;background:#f4f0fd!important;color:var(--p2)}
+
+  @media(max-width:1120px){.pair{justify-content:center}}
+  @media print{body{background:#fff}.top,.seckopf .tag,.wrap>.intro{display:none}.sheet{box-shadow:none;width:100%;page-break-after:always}.pair{display:block}}
+</style>
+</head>
+<body>
+<div class="top">
+  <b>NEKOSTA<span>.</span> · Design-Beispiele</b>
+  <span style="font-size:.78rem;color:#6b7280">Anschreiben &amp; Nebenkostenabrechnung – zum Vergleich</span>
+  <div class="nav">
+    <a href="#s1">① Klar</a><a href="#s2">② Minimal</a><a href="#s3">③ Akzent</a>
+  </div>
+</div>
+
+<div class="wrap">
+  <p class="intro" style="color:#6b7280;font-size:.86rem;margin:.2rem .2rem 0">
+    Drei Gestaltungs-Stile, jeweils <b>Anschreiben</b> (links) + <b>Nebenkostenabrechnung</b> (rechts) im gleichen Look.
+    Alle Zahlen sind Musterdaten. Sag mir, welcher Stil dir gefällt – dann setze ich ihn als echtes PDF (jsPDF) um.
+  </p>
+
+  <!-- ══════════════ STIL 1 – KLAR ══════════════ -->
+  <div class="seckopf" id="s1">
+    <h2>Stil ① „Klar"</h2><span class="tag">violetter Akzent · ruhig</span>
+    <p>Viel Weißraum, dezente graue Linien, Ergebnis in einer weichen farbigen Box. Passt zum App-Theme.</p>
+  </div>
+  <div class="pair s1">
+
+    <!-- Anschreiben -->
+    <div class="sheet"><div class="pad">
+      <div class="sender">P&nbsp;&amp;&nbsp;T Hausverwaltung GmbH · Musterstraße 1 · 53879 Euskirchen</div>
+      <div class="rule"></div>
+      <div class="toprow">
+        <div class="empf">
+          <div class="nm">Herr Thomas Wagner</div>
+          Musterstraße 10, Whg. 1. OG<br>53881 Euskirchen
+        </div>
+        <div class="meta">Euskirchen, <b>07.06.2026</b></div>
+      </div>
+
+      <div class="betreff">Betriebskostenabrechnung 2025
+        <span class="zr">Whg. 1. OG · Abrechnungszeitraum 01.01.2025 – 31.12.2025</span>
+      </div>
+
+      <div class="body">
+        Sehr geehrter Herr Wagner,<br><br>
+        anbei erhalten Sie die Abrechnung der Betriebs- und Heizkosten für den oben genannten Zeitraum.
+        Die Verteilung erfolgte gemäß den vereinbarten bzw. gesetzlichen Verteilerschlüsseln (§ 556 BGB).
+      </div>
+
+      <div class="callout neg">
+        <div class="lbl">Ihr Abrechnungsergebnis
+          <b>Nachzahlung fällig bis 07.07.2026</b>
+        </div>
+        <div class="big euro">328,47 €</div>
+      </div>
+
+      <div class="bank">
+        <span class="k">Bitte überweisen Sie den Betrag auf:</span><br>
+        Kontoinhaber: P &amp; T Hausverwaltung GmbH · IBAN: DE12 3705 0198 0000 1234 56 · BIC: COLSDE33
+      </div>
+
+      <div class="body" style="margin-top:14px">
+        Die detaillierte Aufstellung aller Kostenpositionen entnehmen Sie der beiliegenden Abrechnung.
+        Für Rückfragen stehen wir Ihnen gerne zur Verfügung.
+      </div>
+
+      <div class="sign">
+        Mit freundlichen Grüßen
+        <div class="name">P &amp; T Hausverwaltung GmbH</div>
+      </div>
+    </div></div>
+
+    <!-- Abrechnung -->
+    <div class="sheet"><div class="pad">
+      <div class="head1">
+        <div>
+          <div class="h-title">Betriebskostenabrechnung</div>
+          <div class="h-sub">Musterstraße 10 · Whg. 1. OG · 75 m²</div>
+        </div>
+        <div style="text-align:right"><div class="h-jahr">2025</div></div>
+      </div>
+
+      <div class="infogrid">
+        <div class="ic"><div class="k">Abrechnungszeitraum</div><div class="v">01.01. – 31.12.2025</div></div>
+        <div class="ic"><div class="k">Mieter</div><div class="v">Herr Thomas Wagner</div></div>
+        <div class="ic"><div class="k">Wohnfläche</div><div class="v">75 m² von 215 m²</div></div>
+        <div class="ic"><div class="k">Personen</div><div class="v">2</div></div>
+      </div>
+
+      <div class="kt">
+        <div class="grp o">Heizkosten</div>
+        <table>
+          <tr><th>Position</th><th>Verteilung</th><th class="r">Gesamt</th><th class="r">Ihr Anteil</th></tr>
+          <tr><td>Heizung / Brennstoff</td><td>Verbrauch + Grund</td><td class="r euro">3.200,00 €</td><td class="r euro">612,00 €</td></tr>
+          <tr><td>Warmwasser</td><td>Verbrauch + Grund</td><td class="r euro">1.100,00 €</td><td class="r euro">210,00 €</td></tr>
+          <tr><td class="sum" colspan="3">Zwischensumme Heizkosten</td><td class="r sum euro">822,00 €</td></tr>
+        </table>
+
+        <div class="grp">Betriebskosten</div>
+        <table>
+          <tr><th>Position</th><th>Verteilung</th><th class="r">Gesamt</th><th class="r">Ihr Anteil</th></tr>
+          <tr><td>Grundsteuer</td><td>Wohnfläche</td><td class="r euro">1.200,00 €</td><td class="r euro">418,60 €</td></tr>
+          <tr><td>Wasser / Abwasser</td><td>Wohnfläche</td><td class="r euro">980,00 €</td><td class="r euro">341,86 €</td></tr>
+          <tr><td>Müllabfuhr</td><td>Personen</td><td class="r euro">600,00 €</td><td class="r euro">200,00 €</td></tr>
+          <tr><td>Gebäudeversicherung</td><td>Wohnfläche</td><td class="r euro">540,00 €</td><td class="r euro">188,37 €</td></tr>
+          <tr><td>Hausmeister</td><td>Wohnfläche</td><td class="r euro">720,00 €</td><td class="r euro">251,16 €</td></tr>
+          <tr><td>Hausreinigung &amp; Garten</td><td>Wohnfläche</td><td class="r euro">840,00 €</td><td class="r euro">293,02 €</td></tr>
+          <tr><td class="sum" colspan="3">Zwischensumme Betriebskosten</td><td class="r sum euro">1.693,01 €</td></tr>
+        </table>
+      </div>
+
+      <div class="erg">
+        <div>
+          <div style="font-size:11px;color:#7a3b35">Gesamtkosten 2.515,01 € − Vorauszahlungen 2.186,54 €</div>
+          <div style="font-size:13px;font-weight:800;margin-top:2px;color:#c0392b">Nachzahlung</div>
+        </div>
+        <div class="big euro">328,47 €</div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- ══════════════ STIL 2 – MINIMAL ══════════════ -->
+  <div class="seckopf" id="s2">
+    <h2>Stil ② „Minimal"</h2><span class="tag">schwarz/weiß · editorial</span>
+    <p>Maximaler Weißraum, feine Haarlinien, große gut lesbare Zahlen, fast ohne Farbe.</p>
+  </div>
+  <div class="pair s2">
+
+    <!-- Anschreiben -->
+    <div class="sheet"><div class="pad">
+      <div class="sender">P &amp; T Hausverwaltung GmbH · Musterstraße 1 · 53879 Euskirchen</div>
+      <div class="toprow">
+        <div class="empf">
+          <div class="nm">Herr Thomas Wagner</div>
+          Musterstraße 10, Whg. 1. OG<br>53881 Euskirchen
+        </div>
+        <div class="meta">07.06.2026</div>
+      </div>
+
+      <div class="betreff">Betriebskostenabrechnung 2025 — Whg. 1. OG</div>
+      <div class="hair"></div>
+
+      <div class="body">
+        Sehr geehrter Herr Wagner,<br><br>
+        anbei die Abrechnung Ihrer Betriebs- und Heizkosten für den Zeitraum
+        01.01.2025 – 31.12.2025. Die Kosten wurden nach den vereinbarten Schlüsseln verteilt (§ 556 BGB).
+      </div>
+
+      <div class="resultline">
+        <span class="l">Nachzahlung</span>
+        <span class="v neg euro">328,47 €</span>
+      </div>
+      <div class="mini"><span>fällig bis 07.07.2026</span><span>IBAN DE12 3705 0198 0000 1234 56</span></div>
+
+      <div class="body" style="margin-top:24px">
+        Die vollständige Aufstellung finden Sie auf der folgenden Seite.
+        Bei Fragen erreichen Sie uns jederzeit.
+      </div>
+
+      <div class="sign">
+        Mit freundlichen Grüßen
+        <div class="name">P &amp; T Hausverwaltung GmbH</div>
+      </div>
+    </div></div>
+
+    <!-- Abrechnung -->
+    <div class="sheet"><div class="pad">
+      <div class="h-title">Betriebskostenabrechnung 2025</div>
+      <div class="h-meta">Musterstraße 10 · Whg. 1. OG · 75 m² · Herr Thomas Wagner · 01.01.–31.12.2025</div>
+
+      <div class="kpis">
+        <div class="kpi"><div class="k">Gesamtkosten</div><div class="v euro">2.515,01 €</div></div>
+        <div class="kpi"><div class="k">Vorauszahlung</div><div class="v euro">2.186,54 €</div></div>
+        <div class="kpi"><div class="k">Nachzahlung</div><div class="v neg euro">328,47 €</div></div>
+      </div>
+
+      <table>
+        <tr><th>Position</th><th>Verteilung</th><th class="r">Gesamt</th><th class="r">Anteil</th></tr>
+        <tr class="grp"><td colspan="4">Heizkosten</td></tr>
+        <tr><td>Heizung / Brennstoff</td><td>Verbrauch + Grund</td><td class="r euro">3.200,00 €</td><td class="r euro">612,00 €</td></tr>
+        <tr><td>Warmwasser</td><td>Verbrauch + Grund</td><td class="r euro">1.100,00 €</td><td class="r euro">210,00 €</td></tr>
+        <tr class="grp"><td colspan="4">Betriebskosten</td></tr>
+        <tr><td>Grundsteuer</td><td>Wohnfläche</td><td class="r euro">1.200,00 €</td><td class="r euro">418,60 €</td></tr>
+        <tr><td>Wasser / Abwasser</td><td>Wohnfläche</td><td class="r euro">980,00 €</td><td class="r euro">341,86 €</td></tr>
+        <tr><td>Müllabfuhr</td><td>Personen</td><td class="r euro">600,00 €</td><td class="r euro">200,00 €</td></tr>
+        <tr><td>Gebäudeversicherung</td><td>Wohnfläche</td><td class="r euro">540,00 €</td><td class="r euro">188,37 €</td></tr>
+        <tr><td>Hausmeister</td><td>Wohnfläche</td><td class="r euro">720,00 €</td><td class="r euro">251,16 €</td></tr>
+        <tr><td>Hausreinigung &amp; Garten</td><td>Wohnfläche</td><td class="r euro">840,00 €</td><td class="r euro">293,02 €</td></tr>
+        <tr class="sumrow"><td colspan="3">Summe Ihr Anteil</td><td class="r euro">2.515,01 €</td></tr>
+      </table>
+    </div></div>
+  </div>
+
+  <!-- ══════════════ STIL 3 – AKZENT ══════════════ -->
+  <div class="seckopf" id="s3">
+    <h2>Stil ③ „Akzent"</h2><span class="tag">Kopfband · Kennzahl-Kacheln</span>
+    <p>Farbiges Kopfband, Ergebnis-Kacheln, klare Gruppen-Header. Etwas kräftiger und „digitaler".</p>
+  </div>
+  <div class="pair s3">
+
+    <!-- Anschreiben -->
+    <div class="sheet">
+      <div class="band"><div class="t">Betriebskostenabrechnung 2025</div><div class="s">Whg. 1. OG · Musterstraße 10 · 01.01. – 31.12.2025</div></div>
+      <div class="pad">
+        <div class="sender">P &amp; T Hausverwaltung GmbH · Musterstraße 1 · 53879 Euskirchen</div>
+        <div class="toprow">
+          <div class="empf"><div class="nm">Herr Thomas Wagner</div>Musterstraße 10, Whg. 1. OG<br>53881 Euskirchen</div>
+          <div class="meta">Euskirchen,<br><b style="color:#1f2430">07.06.2026</b></div>
+        </div>
+        <div class="body">
+          Sehr geehrter Herr Wagner,<br><br>
+          anbei Ihre Betriebskostenabrechnung für 2025. Die Verteilung erfolgte nach den vereinbarten
+          Schlüsseln (§ 556 BGB). Ihr Ergebnis im Überblick:
+        </div>
+        <div class="tiles">
+          <div class="tile"><div class="k">Gesamtkosten</div><div class="v euro">2.515,01 €</div></div>
+          <div class="tile"><div class="k">Vorauszahlung</div><div class="v euro">2.186,54 €</div></div>
+          <div class="tile accent"><div class="k">Nachzahlung</div><div class="v euro">328,47 €</div></div>
+        </div>
+        <div class="bank"><span class="k">Bitte überweisen bis 07.07.2026 auf:</span><br>
+          P &amp; T Hausverwaltung GmbH · IBAN DE12 3705 0198 0000 1234 56 · BIC COLSDE33</div>
+        <div class="sign">Mit freundlichen Grüßen<div class="name">P &amp; T Hausverwaltung GmbH</div></div>
+      </div>
+    </div>
+
+    <!-- Abrechnung -->
+    <div class="sheet">
+      <div class="band row"><div><div class="t">Aufstellung der Kosten</div><div class="s">Whg. 1. OG · 75 m² von 215 m² · Herr Thomas Wagner</div></div><div class="jahr">2025</div></div>
+      <div class="pad" style="padding-top:18px">
+        <div class="tiles">
+          <div class="tile"><div class="k">Gesamtkosten</div><div class="v euro">2.515,01 €</div></div>
+          <div class="tile"><div class="k">Vorauszahlung</div><div class="v euro">2.186,54 €</div></div>
+          <div class="tile accent"><div class="k">Nachzahlung</div><div class="v euro">328,47 €</div></div>
+        </div>
+        <div class="kt">
+          <div class="grp o">🔥 Heizkosten</div>
+          <table>
+            <tr><th>Position</th><th>Verteilung</th><th class="r">Gesamt</th><th class="r">Ihr Anteil</th></tr>
+            <tr><td>Heizung / Brennstoff</td><td>Verbrauch + Grund</td><td class="r euro">3.200,00 €</td><td class="r euro">612,00 €</td></tr>
+            <tr><td>Warmwasser</td><td>Verbrauch + Grund</td><td class="r euro">1.100,00 €</td><td class="r euro">210,00 €</td></tr>
+            <tr class="subsum"><td colspan="3">Zwischensumme</td><td class="r euro">822,00 €</td></tr>
+          </table>
+          <div class="grp">📋 Betriebskosten</div>
+          <table>
+            <tr><th>Position</th><th>Verteilung</th><th class="r">Gesamt</th><th class="r">Ihr Anteil</th></tr>
+            <tr><td>Grundsteuer</td><td>Wohnfläche</td><td class="r euro">1.200,00 €</td><td class="r euro">418,60 €</td></tr>
+            <tr><td>Wasser / Abwasser</td><td>Wohnfläche</td><td class="r euro">980,00 €</td><td class="r euro">341,86 €</td></tr>
+            <tr><td>Müllabfuhr</td><td>Personen</td><td class="r euro">600,00 €</td><td class="r euro">200,00 €</td></tr>
+            <tr><td>Gebäudeversicherung</td><td>Wohnfläche</td><td class="r euro">540,00 €</td><td class="r euro">188,37 €</td></tr>
+            <tr><td>Hausmeister</td><td>Wohnfläche</td><td class="r euro">720,00 €</td><td class="r euro">251,16 €</td></tr>
+            <tr><td>Hausreinigung &amp; Garten</td><td>Wohnfläche</td><td class="r euro">840,00 €</td><td class="r euro">293,02 €</td></tr>
+            <tr class="subsum"><td colspan="3">Zwischensumme</td><td class="r euro">1.693,01 €</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

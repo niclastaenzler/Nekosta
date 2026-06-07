@@ -122,10 +122,11 @@ body.sidebar-open #sidebar-backdrop{display:block;opacity:1}
 .page-wrap{padding:2rem;max-width:900px;box-sizing:border-box;width:100%}
 
 /* ── WIZARD ── */
-.wizard-bar{background:var(--white);border-bottom:2px solid var(--border);padding:.65rem 1.5rem;align-items:center;gap:0;position:fixed;top:var(--header-h);left:var(--sidebar);right:0;z-index:149;box-shadow:0 2px 8px rgba(0,0,0,.06);display:none}
+.wizard-bar{background:var(--white);border-bottom:2px solid var(--border);padding:.4rem .8rem;align-items:center;gap:0;position:fixed;top:var(--header-h);left:var(--sidebar);right:0;z-index:149;box-shadow:0 2px 8px rgba(0,0,0,.06);display:none;overflow-x:auto;scrollbar-width:thin}
 #page-tool .wizard-bar{display:flex}
 #page-tool .wizard-bar{display:flex}
-.wizard-step{display:flex;align-items:center;gap:.5rem;padding:1rem .75rem;font-size:.82rem;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;transition:color .2s,border-color .2s;white-space:nowrap}
+.wizard-step{display:flex;align-items:center;gap:.4rem;padding:.85rem .55rem;font-size:.8rem;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;transition:color .2s,border-color .2s;white-space:nowrap;flex-shrink:0}
+.wizard-arrow{flex-shrink:0}
 .wizard-step.active{color:var(--p);border-bottom-color:var(--p);font-weight:700}
 .wizard-step.done{color:var(--success)}
 .wizard-step.done .ws-num{background:var(--success);color:#fff}
@@ -5111,40 +5112,51 @@ async function renderErgebnis(){
   });
 }
 
-// ════ ERGEBNIS-AUFSCHLÜSSELUNG – 3 VARIANTEN zum Auswählen (danach 2 löschen) ════
-var _resVariant=1, _resGroup='mv'; // mv = pro Mietverhältnis, einheit = pro Einheit
-function setResVariant(v){_resVariant=v;renderResListe();}
+// ════ ERGEBNIS-AUFSCHLÜSSELUNG – Listenansicht (Immocloud-Stil) + Gruppierung ════
+var _resGroup='mv'; // mv = pro Mietverhältnis, einheit = pro Einheit
 function setResGroup(g){_resGroup=g;renderResListe();}
 function _resFmt(n){return (n||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';}
 function _resControlsHtml(){
-  var pill=function(v,label){return '<button onclick="setResVariant('+v+')" class="res-vbtn'+(_resVariant===v?' active':'')+'">'+label+'</button>';};
   var gpill=function(g,label){return '<button onclick="setResGroup(\''+g+'\')" class="res-gbtn'+(_resGroup===g?' active':'')+'">'+label+'</button>';};
-  return '<div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:center;margin-bottom:1rem;padding:.6rem .8rem;background:#faf8fc;border:1px solid #ede9fe;border-radius:10px">'
-    +'<div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap"><span style="font-size:.68rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-right:.2rem">Darstellung</span>'+pill(1,'① Tabelle')+pill(2,'② Karten')+pill(3,'③ Liste')+'</div>'
-    +'<div style="flex:1;min-width:10px"></div>'
-    +'<div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap"><span style="font-size:.68rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-right:.2rem">Gruppierung</span>'+gpill('einheit','Pro Einheit')+gpill('mv','Pro Mietverhältnis')+'</div>'
+  return '<div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-bottom:1rem">'
+    +'<span style="font-size:.68rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-right:.1rem">Gruppierung</span>'
+    +gpill('einheit','Pro Einheit')+gpill('mv','Pro Mietverhältnis')
   +'</div>';
 }
-// Normalisierte Items je nach Gruppierung
+// Items je nach Gruppierung; Leerstand-Items werden gesammelt und ans Ende gehängt
 function _resEachItem(e,cb){
+  var leerItems=[];
   e.ergebnisse.forEach(function(we,wi){
     var mieterP=we.perioden.filter(function(p){return !p.periode.isLeerstand;});
     var leerP=we.perioden.filter(function(p){return p.periode.isLeerstand;});
+    var unitBK=0,unitHK=0;we.perioden.forEach(function(pe){unitBK+=pe.bkGes||0;if(e.hasHK)unitHK+=pe.hkGes||0;});
+    var _cur=mieterP.length?mieterP[mieterP.length-1]:null;
+    var _vBk=_cur?(_cur.periode.vorauszBKmonat!=null?_cur.periode.vorauszBKmonat:(_cur.periode.vorauszBK||0)/12):0;
+    var _vHk=(_cur&&e.hasHK)?(_cur.periode.vorauszHKmonat!=null?_cur.periode.vorauszHKmonat:(_cur.periode.vorauszHK||0)/12):0;
+    var vz={einheitId:we.wohnung.einheitId||'',bk:round5(unitBK/12),hk:e.hasHK?round5(unitHK/12):0,vorherBk:_vBk,vorherHk:_vHk};
     if(_resGroup==='einheit'){
-      var tGes=0,tVz=0;mieterP.forEach(function(pe){tGes+=pe.bkGes+(e.hasHK?pe.hkGes:0);tVz+=pe.periode.vorauszBK+(e.hasHK?pe.periode.vorauszHK:0);});
-      cb({wi:wi,pi:null,unit:we.wohnung,title:we.wohnung.bez,
-        sub:mieterP.length?(mieterP.length===1?mieterP[0].periode.name:mieterP.length+' Mietverhältnisse'):'Leerstand',
-        meta:(we.wohnung.flaeche||0)+' m²',ges:tGes,vz:tVz,diff:tVz-tGes,perioden:mieterP,leerP:leerP,empty:!mieterP.length});
+      if(mieterP.length){
+        var tGes=0,tVz=0;mieterP.forEach(function(pe){tGes+=pe.bkGes+(e.hasHK?pe.hkGes:0);tVz+=pe.periode.vorauszBK+(e.hasHK?pe.periode.vorauszHK:0);});
+        cb({type:'mieter',wi:wi,pi:null,unit:we.wohnung,title:we.wohnung.bez,
+          sub:mieterP.length===1?mieterP[0].periode.name:mieterP.length+' Mietverhältnisse',
+          meta:(we.wohnung.flaeche||0)+' m²',ges:tGes,vz:tVz,diff:tVz-tGes,perioden:mieterP,vzInfo:vz});
+      }
     }else{
       mieterP.forEach(function(pe,pi){
-        var ges=pe.bkGes+(e.hasHK?pe.hkGes:0),vz=pe.periode.vorauszBK+(e.hasHK?pe.periode.vorauszHK:0);
-        cb({wi:wi,pi:pi,unit:we.wohnung,title:we.wohnung.bez,sub:pe.periode.name,
+        var ges=pe.bkGes+(e.hasHK?pe.hkGes:0),vzz=pe.periode.vorauszBK+(e.hasHK?pe.periode.vorauszHK:0);
+        cb({type:'mieter',wi:wi,pi:pi,unit:we.wohnung,title:we.wohnung.bez,sub:pe.periode.name,
           meta:fmtDatum(pe.periode.von)+' – '+fmtDatum(pe.periode.bis)+' · '+pe.periode.days+' T',
-          ges:ges,vz:vz,diff:vz-ges,perioden:[pe],leerP:(pi===0?leerP:[]),empty:false});
+          ges:ges,vz:vzz,diff:vzz-ges,perioden:[pe],vzInfo:(pi===mieterP.length-1?vz:null)});
       });
-      if(!mieterP.length)cb({wi:wi,pi:null,unit:we.wohnung,title:we.wohnung.bez,sub:'Leerstand',meta:(we.wohnung.flaeche||0)+' m²',ges:0,vz:0,diff:0,perioden:[],leerP:leerP,empty:true});
+    }
+    if(leerP.length){
+      var lges=leerP.reduce(function(s,pe){return s+pe.bkGes+(e.hasHK?pe.hkGes:0);},0);
+      leerItems.push({type:'leerstand',wi:wi,pi:null,unit:we.wohnung,title:we.wohnung.bez,
+        sub:'Leerstand (Eigentümer trägt Kosten)',meta:leerP.length+' Zeitraum'+(leerP.length>1?'e':''),
+        ges:lges,vz:0,diff:-lges,perioden:leerP});
     }
   });
+  leerItems.forEach(function(it,idx){it.firstLeer=(idx===0);cb(it);});
 }
 function _resPeriodDetail(e,pe){
   var schl=function(s){return (typeof verteilLabel==='function')?verteilLabel(s):s;};
@@ -5166,111 +5178,68 @@ function _resPeriodDetail(e,pe){
   return h;
 }
 function _resItemDetail(e,item){
-  if(item.empty&&!(item.leerP&&item.leerP.length))return '<div style="padding:.85rem;color:#9ca3af;font-size:.82rem">Keine Mieterdaten in diesem Zeitraum.</div>';
   var h='';
   (item.perioden||[]).forEach(function(pe){
-    if((item.perioden||[]).length>1)h+='<div style="font-size:.74rem;font-weight:700;color:var(--p);padding:.5rem .85rem;background:#faf8fc;border-bottom:1px solid var(--border)">'+escapeHtml(pe.periode.name)+' · '+fmtDatum(pe.periode.von)+'–'+fmtDatum(pe.periode.bis)+'</div>';
+    if((item.perioden||[]).length>1){var nm=pe.periode.name||'Leerstand';h+='<div style="font-size:.74rem;font-weight:700;color:var(--p);padding:.5rem .85rem;background:#faf8fc;border-bottom:1px solid var(--border)">'+escapeHtml(nm)+' · '+fmtDatum(pe.periode.von)+'–'+fmtDatum(pe.periode.bis)+'</div>';}
     h+=_resPeriodDetail(e,pe);
   });
-  if(item.leerP&&item.leerP.length){
-    var lt=item.leerP.reduce(function(s,pe){return s+pe.bkGes+(e.hasHK?pe.hkGes:0);},0);
-    h+='<div style="display:flex;justify-content:space-between;padding:.55rem .85rem;font-size:.8rem;background:#fafafa;border-top:1px solid var(--border);color:#888"><span>🏚 Leerstand-Anteil (Eigentümer)</span><span style="font-weight:700;font-variant-numeric:tabular-nums">'+_resFmt(lt)+'</span></div>';
+  if(!(item.perioden||[]).length)h='<div style="padding:.85rem;color:#9ca3af;font-size:.82rem">Keine Daten.</div>';
+  if(item.vzInfo){
+    var vi=item.vzInfo;
+    var neuTot=vi.bk+(e.hasHK?vi.hk:0), vorTot=(vi.vorherBk||0)+(e.hasHK?(vi.vorherHk||0):0), delta=neuTot-vorTot;
+    var dCol=Math.abs(delta)<0.005?'#6b7280':(delta>0?'#c0392b':'#15803d');
+    var dTxt=Math.abs(delta)<0.005?'≈ unverändert':((delta>0?'▲ +':'▼ ')+_resFmt(delta)+' / Monat');
+    h+='<div style="padding:.6rem .85rem;background:#f6f3fc;border-top:1px solid #ede9fe">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem;flex-wrap:wrap">'
+        +'<span style="font-size:.78rem;font-weight:700;color:var(--p)">⚖️ Vorauszahlung anpassen <span style="font-weight:400;color:#9ca3af">· § 556 Abs. 2 BGB</span></span>'
+        +'<span style="font-size:.74rem;font-weight:600;color:'+dCol+'">'+dTxt+'</span>'
+      +'</div>'
+      +'<div style="font-size:.76rem;color:#4b5563;margin-top:.35rem">Bisher: <strong>'+_resFmt(vorTot)+'</strong> / Monat&nbsp; →&nbsp; Empfohlen: <strong style="color:var(--p)">'+_resFmt(neuTot)+'</strong> / Monat'+(e.hasHK?' <span style="color:#9ca3af">(BK '+_resFmt(vi.bk)+' · HK '+_resFmt(vi.hk)+')</span>':'')+'</div>'
+      +'<div style="display:flex;gap:.35rem;margin-top:.55rem;flex-wrap:wrap;align-items:center">'
+        +(vi.einheitId
+          ?'<button class="btn-small gruen" style="font-size:.66rem;padding:3px 9px" onclick="event.stopPropagation();applyVZAnpassung(\''+vi.einheitId+'\','+vi.bk+','+vi.hk+',this)">✓ Ins Mietverhältnis übernehmen</button>'
+          :'<span style="font-size:.7rem;color:#9ca3af;font-style:italic">Manuelle Abrechnung – bitte direkt im Mietverhältnis anpassen.</span>')
+        +(item.pi!=null?'<button class="btn-small" style="font-size:.66rem;padding:3px 9px" onclick="event.stopPropagation();anschreibenFuerPeriode('+item.wi+','+item.pi+',true)">✉️ Anschreiben mit Anpassung</button>':'')
+      +'</div>'
+    +'</div>';
   }
   return h;
 }
 function _resActions(item){
+  if(item.type==='leerstand')return '<button class="btn-small" style="background:#888;font-size:.65rem;padding:2px 7px" onclick="event.stopPropagation();handleLeerstandPDF('+item.wi+',&#39;download&#39;)">⬇ Leerstand-PDF</button>';
   if(item.pi!=null){
     return '<button class="btn-small gruen" style="font-size:.65rem;padding:2px 7px" onclick="event.stopPropagation();handlePeriodePDF('+item.wi+','+item.pi+',false,&#39;vorschau&#39;)"><span class="btn-ic" data-icon="eye"></span></button>'
       +'<button class="btn-small gruen" style="font-size:.65rem;padding:2px 7px" onclick="event.stopPropagation();handlePeriodePDF('+item.wi+','+item.pi+',false,&#39;download&#39;)">⬇ PDF</button>'
       +'<button class="btn-small" style="font-size:.65rem;padding:2px 7px" onclick="event.stopPropagation();anschreibenFuerPeriode('+item.wi+','+item.pi+')">✉️</button>';
   }
-  if(item.empty)return '';
   return '<button class="btn-small gruen" style="font-size:.65rem;padding:2px 7px" onclick="event.stopPropagation();handleWohnPDF('+item.wi+',false,&#39;download&#39;)">⬇ Gesamt-PDF</button>';
 }
-function _resToggleRow(id){var el=document.getElementById(id);if(el)el.style.display=el.style.display==='none'?'table-row':'none';}
 function _resToggleBlock(id){var el=document.getElementById(id);if(el)el.style.display=el.style.display==='none'?'block':'none';}
 function renderResListe(){
   var e=lastErgebnis;if(!e)return;
-  var ctrl=document.getElementById('res-controls');if(ctrl){ctrl.innerHTML=_resControlsHtml();}
-  var rw=document.getElementById('res-wohnungen');if(!rw)return;rw.innerHTML='';
-  if(_resVariant===2)renderResV2(e,rw);
-  else if(_resVariant===3)renderResV3(e,rw);
-  else renderResV1(e,rw);
-}
-// VARIANTE 1 – Kompakte Tabelle
-function renderResV1(e,rw){
+  var ctrl=document.getElementById('res-controls');if(ctrl)ctrl.innerHTML=_resControlsHtml();
+  var vb=document.getElementById('vorausberechnung');if(vb)vb.style.display='none'; // §556 jetzt direkt in der Liste
+  var rw=document.getElementById('res-wohnungen');if(!rw)return;
   var rows='';
   _resEachItem(e,function(item){
-    var id='rd1-'+item.wi+'-'+(item.pi==null?'u':item.pi);
-    var badge=item.empty?'<span style="color:#9ca3af">–</span>':'<span style="font-weight:700;color:'+(item.diff>=0?'#15803d':'#b45309')+'">'+(item.diff>=0?'+':'−')+_resFmt(Math.abs(item.diff))+'</span>';
-    var pill=item.empty?'<span style="font-size:.68rem;color:#9ca3af">Leerstand</span>':'<span style="font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:6px;background:'+(item.diff>=0?'#dcfce7;color:#166534':'#ffedd5;color:#9a3412')+'">'+(item.diff>=0?'Erstattung':'Nachzahlung')+'</span>';
-    rows+='<tr onclick="_resToggleRow(\''+id+'\')" style="border-bottom:1px solid #f1f1f4;cursor:pointer">'
-      +'<td style="padding:.6rem .75rem"><div style="font-weight:600;font-size:.85rem">'+escapeHtml(item.title)+'</div><div style="font-size:.72rem;color:#6b7280">'+escapeHtml(item.sub)+'</div></td>'
-      +'<td style="padding:.6rem .75rem;font-size:.76rem;color:#6b7280;white-space:nowrap">'+escapeHtml(item.meta)+'</td>'
-      +'<td style="padding:.6rem .75rem;text-align:right;font-size:.82rem;font-variant-numeric:tabular-nums">'+_resFmt(item.ges)+'</td>'
-      +'<td style="padding:.6rem .75rem;text-align:right;font-size:.82rem;font-variant-numeric:tabular-nums">'+_resFmt(item.vz)+'</td>'
-      +'<td style="padding:.6rem .75rem;text-align:right;font-variant-numeric:tabular-nums">'+badge+'</td>'
-      +'<td style="padding:.6rem .75rem;text-align:center">'+pill+'</td>'
-      +'<td style="padding:.6rem .75rem;text-align:right;white-space:nowrap">'+_resActions(item)+'</td>'
-    +'</tr>'
-    +'<tr id="'+id+'" style="display:none"><td colspan="7" style="padding:0;background:#fcfcfd;border-bottom:1px solid #f1f1f4">'+_resItemDetail(e,item)+'</td></tr>';
-  });
-  rw.innerHTML='<div style="border:1px solid #e5e7eb;border-radius:10px;overflow:hidden"><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">'
-    +'<thead><tr style="background:#faf9fc;border-bottom:1px solid #e5e7eb">'
-    +'<th style="text-align:left;padding:.55rem .75rem;font-size:.64rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#9ca3af">Einheit / Mieter</th>'
-    +'<th style="text-align:left;padding:.55rem .75rem;font-size:.64rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#9ca3af">Zeitraum / Fläche</th>'
-    +'<th style="text-align:right;padding:.55rem .75rem;font-size:.64rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#9ca3af">Kostenanteil</th>'
-    +'<th style="text-align:right;padding:.55rem .75rem;font-size:.64rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#9ca3af">Vorauszahlung</th>'
-    +'<th style="text-align:right;padding:.55rem .75rem;font-size:.64rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#9ca3af">Saldo</th>'
-    +'<th style="text-align:center;padding:.55rem .75rem;font-size:.64rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#9ca3af">Status</th>'
-    +'<th></th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';
-}
-// VARIANTE 2 – Kompakte Karten
-function renderResV2(e,rw){
-  var cards='';
-  _resEachItem(e,function(item){
-    var id='rd2-'+item.wi+'-'+(item.pi==null?'u':item.pi);
+    var id='rd-'+item.wi+'-'+(item.type==='leerstand'?'l':(item.pi==null?'u':item.pi));
+    if(item.firstLeer)rows+='<div style="padding:1rem .35rem .3rem;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#9ca3af;border-top:2px solid #eef0f3;margin-top:.4rem">🏚 Leerstand-Abrechnungen</div>';
     var col=item.diff>=0?'#15803d':'#b45309';
-    cards+='<div style="border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;background:#fff">'
-      +'<div onclick="_resToggleBlock(\''+id+'\')" style="padding:.85rem 1rem;cursor:pointer">'
-        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">'
-          +'<div style="min-width:0"><div style="font-weight:700;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escapeHtml(item.title)+'</div><div style="font-size:.74rem;color:#6b7280;margin-top:1px">'+escapeHtml(item.sub)+'</div></div>'
-          +'<div style="text-align:right;white-space:nowrap"><div style="font-size:1.05rem;font-weight:700;color:'+col+';font-variant-numeric:tabular-nums">'+(item.empty?'–':(item.diff>=0?'+':'−')+_resFmt(Math.abs(item.diff)))+'</div><div style="font-size:.66rem;color:#9ca3af">'+(item.empty?'Leerstand':(item.diff>=0?'Erstattung':'Nachzahlung'))+'</div></div>'
-        +'</div>'
-        +'<div style="display:flex;gap:1rem;margin-top:.6rem;padding-top:.6rem;border-top:1px solid #f1f1f4;font-size:.74rem;color:#6b7280;flex-wrap:wrap">'
-          +'<span>Kosten <strong style="color:#374151;font-variant-numeric:tabular-nums">'+_resFmt(item.ges)+'</strong></span>'
-          +'<span>VZ <strong style="color:#374151;font-variant-numeric:tabular-nums">'+_resFmt(item.vz)+'</strong></span>'
-          +'<span style="margin-left:auto;color:#9ca3af">'+escapeHtml(item.meta)+'</span>'
-        +'</div>'
-      +'</div>'
-      +'<div id="'+id+'" style="display:none;border-top:1px solid #e5e7eb">'+_resItemDetail(e,item)
-        +'<div style="display:flex;gap:.35rem;justify-content:flex-end;padding:.6rem .85rem;background:#fcfcfd">'+_resActions(item)+'</div>'
-      +'</div>'
-    +'</div>';
-  });
-  rw.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:.85rem">'+cards+'</div>';
-}
-// VARIANTE 3 – Luftige Liste (Immocloud-Stil)
-function renderResV3(e,rw){
-  var rows='';
-  _resEachItem(e,function(item){
-    var id='rd3-'+item.wi+'-'+(item.pi==null?'u':item.pi);
-    var col=item.diff>=0?'#15803d':'#b45309';
+    var saldoLbl=item.type==='leerstand'?'Eigentümer':(item.diff>=0?'Erstattung':'Nachzahlung');
     rows+='<div style="border-bottom:1px solid #eef0f3">'
       +'<div onclick="_resToggleBlock(\''+id+'\')" style="display:flex;align-items:center;gap:1.25rem;padding:1rem .35rem;cursor:pointer;flex-wrap:wrap">'
         +'<div style="flex:1;min-width:160px"><div style="font-weight:600;font-size:.92rem">'+escapeHtml(item.title)+'</div><div style="font-size:.78rem;color:#6b7280;margin-top:2px">'+escapeHtml(item.sub)+(item.meta?' · '+escapeHtml(item.meta):'')+'</div></div>'
         +'<div style="text-align:right;min-width:90px"><div style="font-size:.64rem;color:#9ca3af;text-transform:uppercase;letter-spacing:.04em">Kosten</div><div style="font-size:.85rem;font-variant-numeric:tabular-nums">'+_resFmt(item.ges)+'</div></div>'
         +'<div style="text-align:right;min-width:90px"><div style="font-size:.64rem;color:#9ca3af;text-transform:uppercase;letter-spacing:.04em">Voraus.</div><div style="font-size:.85rem;font-variant-numeric:tabular-nums">'+_resFmt(item.vz)+'</div></div>'
-        +'<div style="text-align:right;min-width:120px"><div style="font-size:.64rem;color:#9ca3af;text-transform:uppercase;letter-spacing:.04em">'+(item.empty?'&nbsp;':(item.diff>=0?'Erstattung':'Nachzahlung'))+'</div><div style="font-size:1rem;font-weight:700;color:'+col+';font-variant-numeric:tabular-nums">'+(item.empty?'–':(item.diff>=0?'+':'−')+_resFmt(Math.abs(item.diff)))+'</div></div>'
+        +'<div style="text-align:right;min-width:120px"><div style="font-size:.64rem;color:#9ca3af;text-transform:uppercase;letter-spacing:.04em">'+saldoLbl+'</div><div style="font-size:1rem;font-weight:700;color:'+col+';font-variant-numeric:tabular-nums">'+(item.diff>=0?'+':'−')+_resFmt(Math.abs(item.diff))+'</div></div>'
       +'</div>'
       +'<div id="'+id+'" style="display:none;border:1px solid #eef0f3;border-radius:10px;margin:0 .35rem 1rem;overflow:hidden">'+_resItemDetail(e,item)
-        +'<div style="display:flex;gap:.35rem;justify-content:flex-end;padding:.6rem .85rem">'+_resActions(item)+'</div>'
+        +'<div style="display:flex;gap:.35rem;justify-content:flex-end;padding:.6rem .85rem;flex-wrap:wrap">'+_resActions(item)+'</div>'
       +'</div>'
     +'</div>';
   });
   rw.innerHTML='<div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:0 .9rem">'+rows+'</div>';
 }
-
 // ── ERGEBNIS TOGGLE FUNCTIONS ──
 window.toggleErgSummary=function toggleErgSummary(){
   var b=document.getElementById('ergebnis-summary-body');
@@ -5834,16 +5803,8 @@ function buildAnschreibenContent(doc,we,pe,opts){
   var drawHead=function(isFirst){
     doc.setDrawColor(200,200,200);doc.setLineWidth(0.2);
     doc.line(5,105,12,105);doc.line(5,210,12,210);
-    // Eigener Briefkopf (falls hinterlegt)
-    if(isFirst&&sm&&sm.briefkopf){
-      try{
-        var props=doc.getImageProperties(sm.briefkopf);
-        var imgW=150, imgH=imgW*(props.height/props.width);
-        if(imgH>40){imgH=40;imgW=imgH*(props.width/props.height);}
-        var fmtImg=/png/i.test(sm.briefkopf.slice(0,30))?'PNG':'JPEG';
-        doc.addImage(sm.briefkopf,fmtImg,L,12,imgW,imgH);
-      }catch(err){}
-    }
+    // Briefkopf bewusst NICHT auf der Nebenkostenabrechnung/Begleitschreiben –
+    // er erscheint nur im separaten Anschreiben (anschreibenPdf). (User-Wunsch 2026-06-07)
     setFont(7,'normal',150,150,150);doc.text(vNameLine,L,50,{maxWidth:C});
     hLine(L,L+85,51.5);
     setFont(10.5,'bold',20,20,20);doc.text(p.isLeerstand?'Eigentümer':p.name,L,61);

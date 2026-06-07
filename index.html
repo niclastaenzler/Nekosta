@@ -261,6 +261,10 @@ body.sidebar-open #sidebar-backdrop{display:block;opacity:1}
 #page-tool #addWohnBtn,#page-tool .btn-add{border:1px dashed #ddd6fe;color:var(--p);border-radius:8px;padding:.65rem;font-size:.82rem}
 #page-tool #addWohnBtn:hover,#page-tool .btn-add:hover{border-color:var(--p);background:#f5f3ff;color:var(--p)}
 /* Step 3: Kosten – jede Sektion eine eigene Karte */
+.k-subtabs{display:flex;gap:.25rem;margin-bottom:1rem;border-bottom:1px solid #e5e7eb}
+.k-subtab{background:none;border:none;border-bottom:2px solid transparent;padding:.5rem .9rem;font-size:.82rem;font-weight:500;color:#6b7280;cursor:pointer;font-family:var(--ff);margin-bottom:-1px}
+.k-subtab:hover{color:#374151}
+.k-subtab.active{color:var(--p);border-bottom-color:var(--p);font-weight:600}
 .kosten-card{border:1px solid #e5e7eb;border-radius:8px;background:#fff;overflow:hidden;margin-bottom:1rem}
 .kosten-card-head{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;padding:.55rem 1rem;background:#fafafa;border-bottom:1px solid #f3f4f6}
 .kosten-summe{font-size:.72rem;color:#6b7280}
@@ -2079,7 +2083,12 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
 
       <!-- STEP 3: KOSTEN -->
       <div id="step3" class="wizard-content" style="display:none">
-        <div class="page-header"><div class="page-title">Kostenaufstellung</div><div class="page-sub">Heiz- und Betriebskosten des Objektes eintragen.</div></div>
+        <div class="page-header"><div class="page-title">Kostenaufstellung</div><div class="page-sub">Heiz- und Betriebskosten erfassen und Verteilungsschlüssel festlegen.</div></div>
+        <div class="k-subtabs">
+          <button type="button" id="k-tab-allg" class="k-subtab active" onclick="step3Tab('allg')">Heiz- &amp; Betriebskosten</button>
+          <button type="button" id="k-tab-einzel" class="k-subtab" onclick="step3Tab('einzel')">Kosten je Einheit</button>
+        </div>
+        <div id="k-pane-allg">
         <!-- HEIZKOSTEN -->
         <div class="kosten-card" id="hk-section">
           <div class="kosten-card-head">
@@ -2117,6 +2126,29 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
               <thead><tr><th style="width:28px"></th><th style="min-width:130px">Kostenart</th><th style="width:105px">Gesamt (€)</th><th style="width:62px" title="Enthaltene USt – nur für Gewerbeeinheiten ausgewiesen">USt</th><th style="width:64px" title="§ 35a EStG: haushaltsnahe Dienstleistung / Handwerkerleistung und Lohnanteil in % – per 🔧 eintragen">§ 35a</th><th style="width:160px">Verteilungsschlüssel</th><th style="min-width:140px">Notizen</th><th style="width:75px">Zuordnung</th><th style="width:26px"></th></tr></thead>
               <tbody id="bkRows"></tbody>
             </table>
+            </div>
+          </div>
+        </div>
+        </div><!-- /k-pane-allg -->
+
+        <!-- KOSTEN JE EINHEIT (nur ausgewählte Einheiten) -->
+        <div id="k-pane-einzel" style="display:none">
+          <div class="kosten-card">
+            <div class="kosten-card-head">
+              <span class="wz-seclabel">Kosten je Einheit</span>
+              <span class="kosten-summe">Summe: <strong id="ek-summe-live" style="color:var(--p)">0,00 €</strong></span>
+              <div style="flex:1"></div>
+              <button type="button" onclick="addEinzelKostenRow()" class="kosten-add-btn">+ Hinzufügen</button>
+            </div>
+            <div class="kosten-card-body">
+              <p style="font-size:.78rem;color:#6b7280;margin:.2rem 0 .7rem;line-height:1.5">Positionen, die nur bestimmte Einheiten betreffen (z. B. Aufzug, Gewerbe-spezifische Kosten). Der Betrag wird <strong>taggenau nur auf die ausgewählten Einheiten</strong> verteilt. <em>Nur im Objekt-Modus sinnvoll (Einheiten aus Schritt 2).</em></p>
+              <div style="overflow-x:auto">
+              <table class="kosten-table">
+                <thead><tr><th style="min-width:150px">Bezeichnung *</th><th style="width:120px">Betrag (€)</th><th style="width:160px">Betroffene Einheiten</th><th style="width:150px">Verteilung</th><th style="min-width:120px">Notiz</th><th style="width:26px"></th></tr></thead>
+                <tbody id="ekRows"></tbody>
+              </table>
+              </div>
+              <div id="ek-empty" style="font-size:.8rem;color:#9ca3af;padding:.6rem 0">Noch keine Positionen – „+ Hinzufügen" klicken.</div>
             </div>
           </div>
         </div>
@@ -3351,6 +3383,26 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
 <!-- HILFE & KONTAKT WIDGET -->
 <button id="help-fab" onclick="toggleHelpPanel()" title="Hilfe & Kontakt" style="display:none;position:fixed;bottom:20px;right:20px;z-index:800;width:56px;height:56px;border-radius:50%;border:none;background:linear-gradient(135deg,var(--p),#a855f7);color:#fff;cursor:pointer;box-shadow:0 8px 24px rgba(106,45,159,.4);align-items:center;justify-content:center"><span data-icon="messagecircle"></span></button>
 
+<!-- KOSTEN JE EINHEIT – betroffene Einheiten wählen -->
+<div id="ek-units-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:700;align-items:center;justify-content:center;padding:1.5rem">
+  <div style="background:#fff;border-radius:14px;padding:1.5rem;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,.3);max-height:85vh;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.4rem">
+      <h3 style="font-size:1.05rem;font-weight:700;margin:0">Betroffene Einheiten</h3>
+      <button onclick="closeEkUnits()" style="background:none;border:none;cursor:pointer;color:#9ca3af"><span class="mini-ic" data-icon="x"></span></button>
+    </div>
+    <p style="font-size:.8rem;color:#6b7280;margin:0 0 .6rem">Wähle die Einheiten, auf die diese Kostenposition verteilt wird.</p>
+    <div style="display:flex;gap:.5rem;margin-bottom:.5rem">
+      <button onclick="ekUnitsAll(true)" class="btn-small" style="background:var(--p-light);color:var(--p)">Alle</button>
+      <button onclick="ekUnitsAll(false)" class="btn-small" style="background:#f3f4f6;color:#6b7280">Keine</button>
+    </div>
+    <div id="ek-units-list" style="overflow-y:auto;flex:1;border:1px solid #e5e7eb;border-radius:8px;padding:0 .6rem;min-height:60px"></div>
+    <div style="display:flex;gap:.6rem;margin-top:1rem">
+      <button onclick="closeEkUnits()" class="btn-secondary" style="flex:1;padding:.7rem 1rem">Abbrechen</button>
+      <button onclick="saveEkUnits()" class="btn-primary" style="flex:1;padding:.7rem 1rem">Übernehmen</button>
+    </div>
+  </div>
+</div>
+
 <!-- OBJEKT LÖSCHEN – Bestätigung per Namenseingabe -->
 <div id="del-objekt-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:700;align-items:center;justify-content:center;padding:1.5rem">
   <div style="background:#fff;border-radius:14px;padding:1.5rem;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,.3)">
@@ -3852,7 +3904,7 @@ async function zwischenspeichern(){
   var jahr=document.getElementById('jahr').value;
   var objekt=document.getElementById('objekt').value||'Neues Objekt';
   var titel=objekt+' – NK '+(jahr||new Date().getFullYear()-1)+' [Entwurf]';
-  var draftData={wohnungen:getWohnungen(),bkKosten:getKosten('bkRows'),hkKosten:getKosten('hkRows'),
+  var draftData={wohnungen:getWohnungen(),bkKosten:getKosten('bkRows').concat(typeof getEinzelKosten==='function'?getEinzelKosten():[]),hkKosten:getKosten('hkRows'),
     jahr:parseInt(jahr)||null,objekt:objekt,status:'entwurf',
     objektFlaeche:parseNum((document.getElementById('objekt-flaeche')||{}).value)};
   if(currentDraftId){
@@ -4182,6 +4234,92 @@ function addKostenRow(tbodyId,name='',schluessel='flaeche',notiz='',direktWerte=
     <td><button class="btn-remove" onclick="this.closest('tr').remove()"><span class="btn-ic" data-icon="x"></span></button></td>`;
   tbody.appendChild(tr);
 }
+// ── KOSTEN JE EINHEIT (Verteilung nur auf ausgewählte Einheiten) ──
+function step3Tab(which){
+  var allg=document.getElementById('k-pane-allg'),ein=document.getElementById('k-pane-einzel');
+  var ta=document.getElementById('k-tab-allg'),te=document.getElementById('k-tab-einzel');
+  if(allg)allg.style.display=which==='einzel'?'none':'';
+  if(ein)ein.style.display=which==='einzel'?'':'none';
+  if(ta)ta.classList.toggle('active',which!=='einzel');
+  if(te)te.classList.toggle('active',which==='einzel');
+}
+function addEinzelKostenRow(d){
+  d=d||{};
+  var tbody=document.getElementById('ekRows');if(!tbody)return;
+  var aus=d.auswahl||{units:[],methode:'gleich'};
+  if(!aus.units)aus.units=[];if(!aus.methode)aus.methode='gleich';
+  var tr=document.createElement('tr');
+  tr.dataset.auswahl=JSON.stringify({units:aus.units,methode:aus.methode});
+  tr.innerHTML='<td><input type="text" class="ek-name" placeholder="z. B. Aufzugswartung" style="min-width:140px"></td>'
+    +'<td><input type="text" inputmode="decimal" class="ek-betrag" placeholder="0,00" oninput="sanitizeNumInput(this,true);updateEkSumme()" style="text-align:right"></td>'
+    +'<td><button type="button" class="btn-small ek-units-btn" style="background:var(--p-mid);font-size:.7rem;width:100%" onclick="openEkUnits(this)">Einheiten wählen</button></td>'
+    +'<td><select class="ek-methode" onchange="ekMethodeChange(this)"><option value="gleich">Gleichmäßig</option><option value="flaeche">Nach Wohnfläche</option><option value="person">Nach Personen</option></select></td>'
+    +'<td><input type="text" class="ek-notiz" placeholder="optional…" style="min-width:120px"></td>'
+    +'<td><button class="btn-remove" onclick="this.closest(\'tr\').remove();updateEkSumme();"><span class="btn-ic" data-icon="x"></span></button></td>';
+  tbody.appendChild(tr);
+  if(d.name)tr.querySelector('.ek-name').value=d.name;
+  if(d.betrag!=null&&d.betrag!=='')tr.querySelector('.ek-betrag').value=d.betrag;
+  if(d.notiz)tr.querySelector('.ek-notiz').value=d.notiz;
+  tr.querySelector('.ek-methode').value=aus.methode||'gleich';
+  updateEkUnitsLabel(tr);updateEkSumme();
+}
+function ekMethodeChange(sel){
+  var tr=sel.closest('tr');var aus=tr.dataset.auswahl?JSON.parse(tr.dataset.auswahl):{units:[],methode:'gleich'};
+  aus.methode=sel.value;tr.dataset.auswahl=JSON.stringify(aus);
+}
+function updateEkUnitsLabel(tr){
+  var btn=tr.querySelector('.ek-units-btn');if(!btn)return;
+  var aus=tr.dataset.auswahl?JSON.parse(tr.dataset.auswahl):{units:[]};
+  var n=(aus.units||[]).length;
+  btn.textContent=n?(n+' Einheit'+(n>1?'en':'')):'Einheiten wählen';
+  btn.style.background=n?'#1a7a4a':'var(--p-mid)';
+}
+function updateEkSumme(){
+  var s=0;document.querySelectorAll('#ekRows .ek-betrag').forEach(function(i){s+=parseNum(i.value);});
+  var el=document.getElementById('ek-summe-live');if(el)el.textContent=s.toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
+  var emp=document.getElementById('ek-empty');if(emp)emp.style.display=document.querySelectorAll('#ekRows tr').length?'none':'block';
+}
+function getEinzelKosten(){
+  return [].slice.call(document.querySelectorAll('#ekRows tr')).map(function(tr){
+    var aus=tr.dataset.auswahl?JSON.parse(tr.dataset.auswahl):{units:[],methode:'gleich'};
+    var meth=(tr.querySelector('.ek-methode')||{value:'gleich'}).value;
+    return {name:(tr.querySelector('.ek-name')||{value:''}).value.trim()||'',
+      betrag:parseNum((tr.querySelector('.ek-betrag')||{value:''}).value),
+      schluessel:'auswahl',auswahl:{units:aus.units||[],methode:meth},
+      notiz:(tr.querySelector('.ek-notiz')||{value:''}).value.trim()||'',
+      ust:0,art35a:'',lohnProzent:0,direktWerte:{},hkv:null};
+  }).filter(function(k){return k.betrag>0&&k.name;});
+}
+var _ekCurrentTr=null;
+function openEkUnits(btn){
+  _ekCurrentTr=btn.closest('tr');
+  var aus=_ekCurrentTr.dataset.auswahl?JSON.parse(_ekCurrentTr.dataset.auswahl):{units:[]};
+  var sel=aus.units||[];
+  var wohnungen=(typeof getWohnungen==='function')?getWohnungen():[];
+  var cont=document.getElementById('ek-units-list');
+  if(!wohnungen.length){cont.innerHTML='<div style="color:#9ca3af;font-size:.85rem;padding:1rem .25rem">Keine Einheiten in Schritt 2 angelegt.</div>';}
+  else{
+    cont.innerHTML=wohnungen.map(function(w){
+      var key=w.einheitId||w.bez;
+      return '<label style="display:flex;align-items:center;gap:.6rem;padding:.5rem .25rem;border-bottom:1px solid #f3f4f6;cursor:pointer;font-size:.88rem">'
+        +'<input type="checkbox" class="ek-unit-cb" value="'+escapeHtml(key)+'" '+(sel.indexOf(key)>=0?'checked':'')+' style="width:16px;height:16px;accent-color:var(--p)">'
+        +'<span style="flex:1">'+escapeHtml(w.bez||'Wohnung')+'</span>'
+        +'<span style="font-size:.75rem;color:#9ca3af">'+(w.flaeche||0)+' m²</span>'
+      +'</label>';
+    }).join('');
+  }
+  document.getElementById('ek-units-modal').style.display='flex';
+}
+function ekUnitsAll(check){document.querySelectorAll('#ek-units-list .ek-unit-cb').forEach(function(c){c.checked=check;});}
+function saveEkUnits(){
+  if(!_ekCurrentTr)return;
+  var units=[].slice.call(document.querySelectorAll('#ek-units-list .ek-unit-cb:checked')).map(function(c){return c.value;});
+  var aus=_ekCurrentTr.dataset.auswahl?JSON.parse(_ekCurrentTr.dataset.auswahl):{units:[],methode:'gleich'};
+  aus.units=units;_ekCurrentTr.dataset.auswahl=JSON.stringify(aus);
+  updateEkUnitsLabel(_ekCurrentTr);closeEkUnits();
+}
+function closeEkUnits(){var m=document.getElementById('ek-units-modal');if(m)m.style.display='none';_ekCurrentTr=null;}
+
 function handleSchluesselChange(sel){
   const tr=sel.closest('tr');
   const btn=tr.querySelector('.zuordn-btn');
@@ -4416,7 +4554,7 @@ function customSchluesselOptionsHtml(selected){
 }
 function verteilLabel(s){
   if(s&&s.indexOf('vs:')===0){var d=getVerteilschluesselDef(s.slice(3));return d?d.name:'Individuell';}
-  return s==='flaeche'?'Fläche':s==='person'?'Person':s==='mea'?'MEA':s==='einheiten'?'Einheiten':s==='direkt'?'Direkt':s==='hkv'?'Verbrauch + Grund':s;
+  return s==='flaeche'?'Fläche':s==='person'?'Person':s==='mea'?'MEA':s==='einheiten'?'Einheiten':s==='direkt'?'Direkt':s==='hkv'?'Verbrauch + Grund':s==='auswahl'?'Ausgewählte Einheiten':s;
 }
 async function ladeVerteilschluessel(objId){
   objektVerteilschluessel=[];
@@ -4566,7 +4704,7 @@ function berechnen(){
   const hasHK=!document.getElementById('keine-hk').checked;
   const wohnungen=getWohnungen();
   if(!wohnungen.length){showToast('❌ Bitte Wohneinheiten eintragen.');return;}
-  const bkKosten=getKosten('bkRows');
+  const bkKosten=getKosten('bkRows').concat(typeof getEinzelKosten==='function'?getEinzelKosten():[]);
   const hkKosten=hasHK?getKosten('hkRows'):[];
   if(!bkKosten.length&&!hkKosten.length){showToast('❌ Bitte Kosten eintragen.');return;}
 
@@ -4633,12 +4771,33 @@ function berechnen(){
           return s+we.perioden.reduce(function(ps,p){return ps+gw(we.w)*p.days;},0);
         },0);
         anteil=totalGwTag>0?(gw(wohnung)*periode.days/totalGwTag)*k.betrag:0;
+      } else if(k.schluessel==='auswahl'){
+        // Kosten je Einheit: Betrag nur auf ausgewählte Einheiten verteilen (taggenau)
+        var ausw=k.auswahl||{units:[],methode:'gleich'};
+        var selU=ausw.units||[];
+        var ukey=function(w){return w.einheitId||w.bez;};
+        var inSel=function(w){return selU.indexOf(ukey(w))>=0;};
+        if(!inSel(wohnung)){anteil=0;}
+        else{
+          var meth=ausw.methode||'gleich';
+          if(meth==='flaeche'){
+            var tF=allWohn.reduce(function(s,we){return s+(inSel(we.w)?we.perioden.reduce(function(ps,p){return ps+we.w.flaeche*p.days;},0):0);},0);
+            anteil=tF>0?(wohnung.flaeche*periode.days/tF)*k.betrag:0;
+          } else if(meth==='person'){
+            var tP=allWohn.reduce(function(s,we){return s+(inSel(we.w)?we.perioden.reduce(function(ps,p){return ps+(p.isLeerstand?0:p.personen*p.days);},0):0);},0);
+            var ptsA=periode.isLeerstand?0:periode.personen*periode.days;
+            anteil=tP>0?(ptsA/tP)*k.betrag:0;
+          } else {
+            var tE=allWohn.reduce(function(s,we){return s+(inSel(we.w)?we.perioden.reduce(function(ps,p){return ps+p.days;},0):0);},0);
+            anteil=tE>0?(periode.days/tE)*k.betrag:0;
+          }
+        }
       } else {
         // Person
         var pts=periode.isLeerstand?0:periode.personen*periode.days;
         anteil=totalPersTag>0?(pts/totalPersTag)*k.betrag:0;
       }
-      return{name:k.name,anteil:anteil,schluessel:k.schluessel,notiz:k.notiz||'',ust:k.ust||0,art35a:k.art35a||'',lohnProzent:k.lohnProzent||0,betragGesamt:k.betrag||0,hkv:k.hkv||null};
+      return{name:k.name,anteil:anteil,schluessel:k.schluessel,notiz:k.notiz||'',ust:k.ust||0,art35a:k.art35a||'',lohnProzent:k.lohnProzent||0,betragGesamt:k.betrag||0,hkv:k.hkv||null,auswahl:k.auswahl||null};
     });
   }
   // § 35a EStG: anteilige Lohnkosten je Periode (haushaltsnahe Dienstleistungen + Handwerkerleistungen)
@@ -5160,7 +5319,7 @@ function buildPeriodContent(doc,we,pe,withWatermark,isFirstPage){
   secH('Angaben zur Verteilung');
   var objektFlaeche=e.objektFlaeche||0;
   var anteilPct=objektFlaeche>0?((we.wohnung.flaeche/objektFlaeche)*100).toFixed(1)+'%':'--';
-  var skLabels={flaeche:'Wohnflaeche',person:'Personenanzahl',mea:'MEA',einheiten:'Einheiten (gleich)',direkt:'Direkte Zuordnung',hkv:'Verbrauch + Grundkosten (HeizkostenV)'};
+  var skLabels={flaeche:'Wohnflaeche',person:'Personenanzahl',mea:'MEA',einheiten:'Einheiten (gleich)',direkt:'Direkte Zuordnung',hkv:'Verbrauch + Grundkosten (HeizkostenV)',auswahl:'Ausgewaehlte Einheiten'};
   var schluessel=[];
   var allKosten=(e.bkKosten||[]).concat(e.hkKosten||[]);
   allKosten.forEach(function(k){if(schluessel.indexOf(k.schluessel)<0)schluessel.push(k.schluessel);});
@@ -5972,11 +6131,14 @@ async function viewAbgerechnet(id){
     // Kosten wiederherstellen
     if(data.data.bkKosten){
       document.getElementById('bkRows').innerHTML='';
+      var ekTbL=document.getElementById('ekRows');if(ekTbL)ekTbL.innerHTML='';
       data.data.bkKosten.forEach(function(k){
+        if(k.schluessel==='auswahl'){if(typeof addEinzelKostenRow==='function')addEinzelKostenRow(k);return;}
         addKostenRow('bkRows',k.name,k.schluessel||'flaeche');
         var rows=document.querySelectorAll('#bkRows tr');
         if(rows.length)rows[rows.length-1].querySelector('.k-betrag').value=(k.betrag||'');
       });
+      if(typeof updateEkSumme==='function')updateEkSumme();
     }
     if(data.data.hkKosten){
       document.getElementById('hkRows').innerHTML='';
@@ -6011,16 +6173,19 @@ function befuelleWizardAusData(data){
   if(!data)return;
   // Individuelle Verteilschlüssel aus Snapshot bereitstellen (für Kosten-Dropdown + Anzeige)
   if(data.verteilschluessel&&data.verteilschluessel.length)objektVerteilschluessel=data.verteilschluessel.slice();
+  var ekTbB=document.getElementById('ekRows');if(ekTbB)ekTbB.innerHTML='';
   ['bkKosten','hkKosten'].forEach(function(key){
     var id=key==='bkKosten'?'bkRows':'hkRows';
     var tb=document.getElementById(id);if(!tb)return;tb.innerHTML='';
     (data[key]||[]).forEach(function(k){
+      if(key==='bkKosten'&&k.schluessel==='auswahl'){if(typeof addEinzelKostenRow==='function')addEinzelKostenRow(k);return;}
       addKostenRow(id,k.name||'',k.schluessel||'flaeche',k.notiz||'',k.direktWerte||{},k.ust||0,k.art35a||'',(k.lohnProzent!=null?k.lohnProzent:''),k.hkv||null);
       var rows=document.querySelectorAll('#'+id+' tr');var last=rows[rows.length-1];
       if(last){var b=last.querySelector('.k-betrag');if(b)b.value=(k.betrag!=null?k.betrag:'');
         if(k.hkv){var hb=last.querySelector('.zuordn-btn');if(hb){hb.style.background='#e9f9f0';hb.style.color='#1a7a4a';}}}
     });
   });
+  if(typeof updateEkSumme==='function')updateEkSumme();
   var khk=document.getElementById('keine-hk');
   if(khk){khk.checked=(data.hasHK===false);if(typeof toggleHK==='function')toggleHK();}
   var wc=document.getElementById('wohnCards');
@@ -6255,7 +6420,7 @@ async function autoSaveEntwurf(){
   var titel=oVal+' \u2013 NK '+(jVal||new Date().getFullYear()-1)+' [Entwurf]';
   var draftData={
     wohnungen:typeof getWohnungen==='function'?getWohnungen():[],
-    bkKosten:typeof getKosten==='function'?getKosten('bkRows'):[],
+    bkKosten:(typeof getKosten==='function'?getKosten('bkRows'):[]).concat(typeof getEinzelKosten==='function'?getEinzelKosten():[]),
     hkKosten:typeof getKosten==='function'?getKosten('hkRows'):[],
     jahr:parseInt(jVal)||null,objekt:oVal,status:'entwurf',objektId:currentAbrObjektId||null,
     objektFlaeche:parseNum((document.getElementById('objekt-flaeche')||{}).value),
@@ -7394,10 +7559,14 @@ async function ladeKorrektur(id){
     if(what!=='1'&&origData.bkKosten){
       document.getElementById('bkRows').innerHTML='';
       document.getElementById('hkRows').innerHTML='';
-      (origData.bkKosten||[]).forEach(function(k){addKostenRow('bkRows',k.name,k.schluessel||'flaeche');
+      var ekTbK=document.getElementById('ekRows');if(ekTbK)ekTbK.innerHTML='';
+      (origData.bkKosten||[]).forEach(function(k){
+        if(k.schluessel==='auswahl'){if(typeof addEinzelKostenRow==='function')addEinzelKostenRow(k);return;}
+        addKostenRow('bkRows',k.name,k.schluessel||'flaeche');
         var rows=document.querySelectorAll('#bkRows tr');
         if(rows.length)rows[rows.length-1].querySelector('.k-betrag').value=(k.betrag||'');
       });
+      if(typeof updateEkSumme==='function')updateEkSumme();
       (origData.hkKosten||[]).forEach(function(k){addKostenRow('hkRows',k.name,k.schluessel||'flaeche');
         var rows=document.querySelectorAll('#hkRows tr');
         if(rows.length)rows[rows.length-1].querySelector('.k-betrag').value=(k.betrag||'');
@@ -12146,6 +12315,9 @@ function _initWizard(){
   if(document.getElementById('addWohnBtn'))document.getElementById('addWohnBtn').style.display='';
   if(document.getElementById('hkRows'))document.getElementById('hkRows').innerHTML='';
   if(document.getElementById('bkRows'))document.getElementById('bkRows').innerHTML='';
+  if(document.getElementById('ekRows'))document.getElementById('ekRows').innerHTML='';
+  if(typeof updateEkSumme==='function')updateEkSumme();
+  if(typeof step3Tab==='function')step3Tab('allg');
   if(document.getElementById('keine-hk'))document.getElementById('keine-hk').checked=false;
   if(document.getElementById('hk-content'))document.getElementById('hk-content').style.display='block';
   HK_VORGABEN.forEach(function(v){addKostenRow('hkRows',v.name,v.s);});

@@ -5422,9 +5422,8 @@ function buildPeriodContent(doc,we,pe,withWatermark,isFirstPage){
   setFont(7,'normal',150,150,150);doc.text(vNameLine,L,50,{maxWidth:C});
   hLine(L,L+85,51.5);
 
-  // Empfänger - nur Mietername (Wohneinheit ist eigener Bestandteil, s. Betreff/Verteilung)
-  setFont(10.5,'bold',20,20,20);doc.text(p.isLeerstand?'Eigentümer':p.name,L,61);
-  if(e.objekt)doc.text(e.objekt,L,67);
+  // Empfängeradresse (Anschrift des Mieters) bewusst NICHT auf der Nebenkostenabrechnung –
+  // sie erscheint nur im separaten Anschreiben (anschreibenPdf). (User-Wunsch 2026-06-07)
 
   // Datum rechts
   setFont(8.5,'normal',80,80,80);
@@ -5432,7 +5431,7 @@ function buildPeriodContent(doc,we,pe,withWatermark,isFirstPage){
   var datStr=e.datum?new Date(e.datum).toLocaleDateString('de-DE'):new Date().toLocaleDateString('de-DE');
   doc.text((ort?ort+', ':'')+datStr,W-R,50,{align:'right'});
 
-  hLine(L,W-R,79,80,80,80,0.5);y=88;
+  hLine(L,W-R,58,80,80,80,0.5);y=66;
 
   // Betreff
   setFont(11,'bold',CLEAN?DK[0]:AC[0],CLEAN?DK[1]:AC[1],CLEAN?DK[2]:AC[2]);

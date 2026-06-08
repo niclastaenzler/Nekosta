@@ -2459,7 +2459,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                 <button class="btn-secondary" onclick="entferneBriefbogen()" id="briefbogen-remove-btn" style="font-size:.8rem;display:none;color:#c0392b;border-color:#c0392b"><span class="btn-ic" data-icon="trash"></span> Briefbogen entfernen</button>
               </div>
               <div id="briefbogen-msg" style="display:none;margin-top:.7rem;font-size:.8rem;padding:.45rem .7rem;border-radius:6px"></div>
-              <div style="font-size:.72rem;color:var(--muted);margin-top:.7rem">💡 Lokal in diesem Browser gespeichert. Empfohlen: A4 Hochformat, mind. 1240 × 1754 px.</div>
+              <div style="font-size:.72rem;color:var(--muted);margin-top:.7rem">💡 In deinem Konto gespeichert (geräteübergreifend). Empfohlen: A4 Hochformat, mind. 1240 × 1754 px.</div>
             </div>
             <div style="width:150px">
               <div id="briefbogen-preview" style="border:1px dashed var(--border);border-radius:10px;height:212px;display:flex;align-items:center;justify-content:center;background:var(--bg);overflow:hidden">
@@ -4083,9 +4083,13 @@ async function entferneBriefkopf(){
   }catch(e){showToast('Fehler: '+e.message);}
 }
 
-// ── BRIEFBOGEN (ganzseitige A4-Vorlage, lokal gespeichert) ──
+// ── BRIEFBOGEN (ganzseitige A4-Vorlage) – primär in DB (stammdaten.briefbogen), localStorage als Fallback ──
 function _briefbogenKey(){return 'nekosta-briefbogen-'+((typeof currentUser!=='undefined'&&currentUser)?currentUser.id:'anon');}
-function getBriefbogen(){try{return localStorage.getItem(_briefbogenKey())||'';}catch(e){return '';}}
+function _briefbogenLocal(){try{return localStorage.getItem(_briefbogenKey())||'';}catch(e){return '';}}
+function getBriefbogen(){
+  if(typeof stammdaten!=='undefined'&&stammdaten&&stammdaten.briefbogen)return stammdaten.briefbogen;
+  return _briefbogenLocal();
+}
 function renderBriefbogenPreview(){
   var prev=document.getElementById('briefbogen-preview');var rm=document.getElementById('briefbogen-remove-btn');
   if(!prev)return;
@@ -4100,18 +4104,26 @@ function handleBriefbogenUpload(input){
   var reader=new FileReader();
   reader.onload=function(ev){
     var img=new Image();
-    img.onload=function(){
+    img.onload=async function(){
       var maxW=1240; var scale=Math.min(1,maxW/img.width);
       var w=Math.round(img.width*scale), h=Math.round(img.height*scale);
       var c=document.createElement('canvas');c.width=w;c.height=h;
       var ctx=c.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);ctx.drawImage(img,0,0,w,h);
       var dataUrl=c.toDataURL('image/jpeg',0.82);
       try{
-        localStorage.setItem(_briefbogenKey(),dataUrl);
+        var {error}=await sb.from('stammdaten').upsert({user_id:currentUser.id,briefbogen:dataUrl},{onConflict:'user_id'});
+        if(error)throw error;
+        if(stammdaten)stammdaten.briefbogen=dataUrl;
+        try{localStorage.removeItem(_briefbogenKey());}catch(e){}
         renderBriefbogenPreview();
-        show('✅ Briefbogen gespeichert (lokal in diesem Browser).',true);
+        show('✅ Briefbogen in der Datenbank gespeichert.',true);
       }catch(e){
-        show('❌ Zu groß für den lokalen Speicher. Bitte ein kleineres Bild verwenden.',false);
+        // Fallback: lokal speichern, falls DB-Spalte fehlt
+        try{localStorage.setItem(_briefbogenKey(),dataUrl);renderBriefbogenPreview();}catch(e2){}
+        var hint=(e&&/column|briefbogen|schema|does not exist/i.test(e.message||''))
+          ? ' Bitte einmalig in Supabase ausführen: ALTER TABLE stammdaten ADD COLUMN IF NOT EXISTS briefbogen text; (bis dahin lokal gespeichert).'
+          : '';
+        show('⚠️ Konnte nicht in der DB gespeichert werden.'+hint, false);
       }
     };
     img.onerror=function(){show('Bild konnte nicht gelesen werden.',false);};
@@ -4119,7 +4131,12 @@ function handleBriefbogenUpload(input){
   };
   reader.readAsDataURL(file);
 }
-function entferneBriefbogen(){
+async function entferneBriefbogen(){
+  try{
+    var {error}=await sb.from('stammdaten').upsert({user_id:currentUser.id,briefbogen:null},{onConflict:'user_id'});
+    if(error)throw error;
+  }catch(e){}
+  if(stammdaten)stammdaten.briefbogen=null;
   try{localStorage.removeItem(_briefbogenKey());}catch(e){}
   var f=document.getElementById('briefbogen-file');if(f)f.value='';
   renderBriefbogenPreview();

@@ -2447,6 +2447,28 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
       <div style="padding:2rem;max-width:820px">
         <div class="page-header"><div class="page-title">✉️ Anschreiben erstellen</div><div class="page-sub">Professionelle Briefe an Mieter in Sekunden generieren</div></div>
 
+        <!-- BRIEFBOGEN (A4-Vorlage) -->
+        <div class="card">
+          <div class="card-title">📄 Eigener Briefbogen (A4-Vorlage)</div>
+          <div style="font-size:.82rem;color:var(--muted);margin-bottom:1rem">Lade dein Briefpapier als ganzseitiges A4-Bild (PNG/JPG, Hochformat) hoch. Es wird als Hintergrund hinter den Brieftext gelegt; der Text beginnt automatisch unterhalb des Kopfbereichs.</div>
+          <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-start">
+            <div style="flex:1;min-width:240px">
+              <input type="file" id="briefbogen-file" accept="image/png,image/jpeg" onchange="handleBriefbogenUpload(this)" style="font-size:.84rem;font-family:var(--ff)">
+              <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.8rem">
+                <button class="btn-secondary" onclick="downloadBriefbogenBeispiel()" style="font-size:.8rem"><span class="btn-ic" data-icon="download"></span> NEKOSTA-Beispiel herunterladen</button>
+                <button class="btn-secondary" onclick="entferneBriefbogen()" id="briefbogen-remove-btn" style="font-size:.8rem;display:none;color:#c0392b;border-color:#c0392b"><span class="btn-ic" data-icon="trash"></span> Briefbogen entfernen</button>
+              </div>
+              <div id="briefbogen-msg" style="display:none;margin-top:.7rem;font-size:.8rem;padding:.45rem .7rem;border-radius:6px"></div>
+              <div style="font-size:.72rem;color:var(--muted);margin-top:.7rem">💡 Lokal in diesem Browser gespeichert. Empfohlen: A4 Hochformat, mind. 1240 × 1754 px.</div>
+            </div>
+            <div style="width:150px">
+              <div id="briefbogen-preview" style="border:1px dashed var(--border);border-radius:10px;height:212px;display:flex;align-items:center;justify-content:center;background:var(--bg);overflow:hidden">
+                <span style="font-size:.75rem;color:var(--muted);text-align:center;padding:.5rem">Kein Briefbogen<br>hinterlegt</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- VORLAGE WÄHLEN -->
         <div class="card">
           <div class="card-title">📋 Vorlage wählen</div>
@@ -3823,6 +3845,7 @@ function showPage(name){
   }
   if(name==='auftraege'){loadAuftraege();}
   if(name==='dokumente'){loadDokumente();}
+  if(name==='anschreiben'){if(typeof renderBriefbogenPreview==='function')renderBriefbogenPreview();}
 }
 
 // Check if there's unsaved work in the wizard
@@ -4058,6 +4081,77 @@ async function entferneBriefkopf(){
     if(stammdaten)stammdaten.briefkopf=null; renderBriefkopfPreview();
     var f=document.getElementById('briefkopf-file');if(f)f.value=''; showToast('🗑 Briefkopf entfernt');
   }catch(e){showToast('Fehler: '+e.message);}
+}
+
+// ── BRIEFBOGEN (ganzseitige A4-Vorlage, lokal gespeichert) ──
+function _briefbogenKey(){return 'nekosta-briefbogen-'+((typeof currentUser!=='undefined'&&currentUser)?currentUser.id:'anon');}
+function getBriefbogen(){try{return localStorage.getItem(_briefbogenKey())||'';}catch(e){return '';}}
+function renderBriefbogenPreview(){
+  var prev=document.getElementById('briefbogen-preview');var rm=document.getElementById('briefbogen-remove-btn');
+  if(!prev)return;
+  var bg=getBriefbogen();
+  if(bg){prev.innerHTML='<img src="'+bg+'" style="max-width:100%;max-height:100%;display:block">';if(rm)rm.style.display='inline-flex';}
+  else{prev.innerHTML='<span style="font-size:.75rem;color:var(--muted);text-align:center;padding:.5rem">Kein Briefbogen<br>hinterlegt</span>';if(rm)rm.style.display='none';}
+}
+function handleBriefbogenUpload(input){
+  var file=input.files&&input.files[0];if(!file)return;
+  var msg=document.getElementById('briefbogen-msg');
+  var show=function(t,ok){if(msg){msg.textContent=t;msg.style.background=ok?'#e9f9f0':'#fdecea';msg.style.color=ok?'#1a7a4a':'#c0392b';msg.style.display='block';}};
+  var reader=new FileReader();
+  reader.onload=function(ev){
+    var img=new Image();
+    img.onload=function(){
+      var maxW=1240; var scale=Math.min(1,maxW/img.width);
+      var w=Math.round(img.width*scale), h=Math.round(img.height*scale);
+      var c=document.createElement('canvas');c.width=w;c.height=h;
+      var ctx=c.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);ctx.drawImage(img,0,0,w,h);
+      var dataUrl=c.toDataURL('image/jpeg',0.82);
+      try{
+        localStorage.setItem(_briefbogenKey(),dataUrl);
+        renderBriefbogenPreview();
+        show('✅ Briefbogen gespeichert (lokal in diesem Browser).',true);
+      }catch(e){
+        show('❌ Zu groß für den lokalen Speicher. Bitte ein kleineres Bild verwenden.',false);
+      }
+    };
+    img.onerror=function(){show('Bild konnte nicht gelesen werden.',false);};
+    img.src=ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+function entferneBriefbogen(){
+  try{localStorage.removeItem(_briefbogenKey());}catch(e){}
+  var f=document.getElementById('briefbogen-file');if(f)f.value='';
+  renderBriefbogenPreview();
+  showToast('🗑 Briefbogen entfernt');
+}
+// Herunterladbares NEKOSTA-Beispiel als A4-PNG (Format/Maße als Vorlage)
+function downloadBriefbogenBeispiel(){
+  var W=1240,H=1754,p='#6a2d9f';
+  var c=document.createElement('canvas');c.width=W;c.height=H;var ctx=c.getContext('2d');
+  ctx.fillStyle='#ffffff';ctx.fillRect(0,0,W,H);
+  // dezenter Seitenakzent links
+  ctx.save();ctx.globalAlpha=0.08;ctx.fillStyle=p;ctx.fillRect(0,0,16,H);ctx.restore();
+  // Kopf
+  ctx.fillStyle=p;ctx.font='bold 66px Helvetica, Arial, sans-serif';ctx.textBaseline='alphabetic';ctx.textAlign='left';
+  ctx.fillText('NEKOSTA',96,150);
+  ctx.fillStyle=p;ctx.fillRect(96,168,250,6);
+  ctx.fillStyle='#6b7280';ctx.font='22px Helvetica, Arial, sans-serif';ctx.textAlign='right';
+  ctx.fillText('Mustermann Hausverwaltung · Musterstr. 1 · 53881 Euskirchen',W-96,150);
+  ctx.textAlign='left';
+  // Textbereich-Markierung
+  ctx.fillStyle='#cbd5e1';ctx.font='italic 27px Helvetica, Arial, sans-serif';
+  ctx.fillText('— Hier erscheint der Brieftext (Textbereich beginnt ca. hier) —',110,470);
+  // Fuß
+  ctx.strokeStyle='#d1d5db';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(96,H-156);ctx.lineTo(W-96,H-156);ctx.stroke();
+  ctx.fillStyle='#9ca3af';ctx.font='20px Helvetica, Arial, sans-serif';
+  ctx.fillText('Mustermann Hausverwaltung GmbH · Musterstr. 1 · 53881 Euskirchen · Tel. 0123 456789 · info@beispiel.de',96,H-112);
+  ctx.fillText('IBAN DE00 0000 0000 0000 0000 00 · BIC XXXXDEXX · St.-Nr. 000/0000/0000',96,H-82);
+  try{
+    var url=c.toDataURL('image/png');
+    var a=document.createElement('a');a.href=url;a.download='NEKOSTA-Briefbogen-Beispiel.png';document.body.appendChild(a);a.click();a.remove();
+    showToast('⬇️ Beispiel-Briefbogen heruntergeladen');
+  }catch(e){showToast('Fehler beim Erstellen: '+e.message);}
 }
 async function saveStammdaten(){
   const d={user_id:currentUser.id};
@@ -5224,16 +5318,32 @@ function _resItemDetail(e,item){
         +'<span style="font-size:.78rem;font-weight:700;color:var(--p)">⚖️ Vorauszahlung anpassen <span style="font-weight:400;color:#9ca3af">· § 556 Abs. 2 BGB</span></span>'
         +'<span style="font-size:.74rem;font-weight:600;color:'+dCol+'">'+dTxt+'</span>'
       +'</div>'
-      +'<div style="font-size:.76rem;color:#4b5563;margin-top:.35rem">Bisher: <strong>'+_resFmt(vorTot)+'</strong> / Monat&nbsp; →&nbsp; Empfohlen: <strong style="color:var(--p)">'+_resFmt(neuTot)+'</strong> / Monat'+(e.hasHK?' <span style="color:#9ca3af">(BK '+_resFmt(vi.bk)+' · HK '+_resFmt(vi.hk)+')</span>':'')+'</div>'
-      +'<div style="display:flex;gap:.35rem;margin-top:.55rem;flex-wrap:wrap;align-items:center">'
+      +'<div style="font-size:.76rem;color:#4b5563;margin-top:.35rem">Bisher: <strong>'+_resFmt(vorTot)+'</strong> / Monat&nbsp; →&nbsp; '+(vi.einheitId?'Empfohlen':'Vorschlag')+': <strong style="color:var(--p)">'+_resFmt(neuTot)+'</strong> / Monat'+(e.hasHK?' <span style="color:#9ca3af">(BK '+_resFmt(vi.bk)+' · HK '+_resFmt(vi.hk)+')</span>':'')+'</div>';
+    if(!vi.einheitId && item.pi!=null){
+      // Manuelle Abrechnung: Vorauszahlung individuell anpassbar (fließt ins Anschreiben)
+      var inp=function(lbl,which,val){return '<label style="font-size:.72rem;color:#4b5563;display:inline-flex;align-items:center;gap:.3rem">'+lbl+' <input type="number" step="0.01" value="'+(val||0).toFixed(2)+'" onclick="event.stopPropagation()" onchange="setVZManual('+item.wi+','+item.pi+',&#39;'+which+'&#39;,this.value)" style="width:80px;border:1px solid var(--border);border-radius:6px;padding:.25rem .4rem;font-size:.74rem;font-family:var(--ff)"> €/Mon.</label>';};
+      h+='<div style="display:flex;gap:.7rem;margin-top:.5rem;flex-wrap:wrap;align-items:center">'+inp('NK','bk',vi.bk)+(e.hasHK?inp('HZ','hk',vi.hk):'')+'</div>'
+        +'<div style="font-size:.68rem;color:#9ca3af;margin-top:.3rem">Vorschlag frei anpassbar – der Wert fließt ins Anschreiben mit Anpassung.</div>';
+    }
+    h+='<div style="display:flex;gap:.35rem;margin-top:.55rem;flex-wrap:wrap;align-items:center">'
         +(vi.einheitId
           ?'<button class="btn-small gruen" style="font-size:.66rem;padding:3px 9px" onclick="event.stopPropagation();applyVZAnpassung(\''+vi.einheitId+'\','+vi.bk+','+vi.hk+',this)">✓ Ins Mietverhältnis übernehmen</button>'
-          :'<span style="font-size:.7rem;color:#9ca3af;font-style:italic">Manuelle Abrechnung – bitte direkt im Mietverhältnis anpassen.</span>')
-        +(item.pi!=null?'<button class="btn-small" style="font-size:.66rem;padding:3px 9px" onclick="event.stopPropagation();anschreibenFuerPeriode('+item.wi+','+item.pi+',true)">✉️ Anschreiben mit Anpassung</button>':'')
+          :'')
+        +(item.pi!=null?'<button class="btn-small" style="font-size:.66rem;padding:3px 9px" onclick="event.stopPropagation();anschreibenVorschau('+item.wi+','+item.pi+',true)">✉️ Anschreiben mit Anpassung</button>':'')
       +'</div>'
     +'</div>';
   }
   return h;
+}
+// Manuelle VZ-Anpassung: vom Nutzer überschriebener Vorschlag, fließt ins Anschreiben (buildAnschreibenContent vzNeu)
+function setVZManual(wi,pi,which,val){
+  var e=lastErgebnis;if(!e||!e.ergebnisse||!e.ergebnisse[wi])return;
+  var we=e.ergebnisse[wi];
+  var mp=we.perioden.filter(function(p){return !p.periode.isLeerstand;});
+  var pe=mp[pi];if(!pe)return;
+  var v=parseFloat((''+val).replace(',','.'))||0; if(v<0)v=0;
+  if(!pe.periode._vzNeu){var d=empfVZ(we);pe.periode._vzNeu={bkNeu:d.bkNeu,hkNeu:d.hkNeu};}
+  if(which==='hk')pe.periode._vzNeu.hkNeu=v; else pe.periode._vzNeu.bkNeu=v;
 }
 function _resActions(item){
   if(item.type==='leerstand')return '<button class="btn-small" style="background:#888;font-size:.65rem;padding:2px 7px" onclick="event.stopPropagation();handleLeerstandPDF('+item.wi+',&#39;download&#39;)">⬇ Leerstand-PDF</button>';
@@ -5983,7 +6093,7 @@ function buildPeriodPDF(we, pe, withWatermark){
   var {jsPDF}=window.jspdf;
   var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
   if(anschreibenAktiv() && !pe.periode.isLeerstand){
-    buildAnschreibenContent(doc,we,pe,{vz:anschrOpt.vz, kaltmiete:(pe.periode.kaltmiete!=null?pe.periode.kaltmiete:(we.wohnung._kaltmiete||0)), vzNeu:empfVZ(we)});
+    buildAnschreibenContent(doc,we,pe,{vz:anschrOpt.vz, kaltmiete:(pe.periode.kaltmiete!=null?pe.periode.kaltmiete:(we.wohnung._kaltmiete||0)), vzNeu:(pe.periode._vzNeu||empfVZ(we))});
     doc.addPage();
   }
   buildPeriodContent(doc,we,pe,withWatermark,true);
@@ -6001,7 +6111,7 @@ function buildCombinedPDF(periods,withWatermark){
   periods.forEach(function(item,idx){
     if(idx>0)doc.addPage();
     if(anschreibenAktiv() && !item.pe.periode.isLeerstand){
-      buildAnschreibenContent(doc,item.we,item.pe,{vz:anschrOpt.vz, kaltmiete:(item.pe.periode.kaltmiete!=null?item.pe.periode.kaltmiete:(item.we.wohnung._kaltmiete||0)), vzNeu:empfVZ(item.we)});
+      buildAnschreibenContent(doc,item.we,item.pe,{vz:anschrOpt.vz, kaltmiete:(item.pe.periode.kaltmiete!=null?item.pe.periode.kaltmiete:(item.we.wohnung._kaltmiete||0)), vzNeu:(item.pe.periode._vzNeu||empfVZ(item.we))});
       doc.addPage();
     }
     buildPeriodContent(doc,item.we,item.pe,withWatermark,true);
@@ -7915,7 +8025,7 @@ function anschreibenVorschau(wi,pi,withVZ,action){
   var pe=mp[pi]; if(!pe){showToast('Keine Mieterperiode.');return;}
   var {jsPDF}=window.jspdf;
   var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-  buildAnschreibenContent(doc,we,pe,{vz:(withVZ!=null?!!withVZ:anschrOpt.vz), kaltmiete:(pe.periode.kaltmiete!=null?pe.periode.kaltmiete:(we.wohnung._kaltmiete||0)), vzNeu:empfVZ(we)});
+  buildAnschreibenContent(doc,we,pe,{vz:(withVZ!=null?!!withVZ:anschrOpt.vz), kaltmiete:(pe.periode.kaltmiete!=null?pe.periode.kaltmiete:(we.wohnung._kaltmiete||0)), vzNeu:(pe.periode._vzNeu||empfVZ(we))});
   var sm=stammdaten||{};
   var vName=([sm.firma,sm.vname&&sm.nname?sm.vname+' '+sm.nname:'']).filter(Boolean).join(' / ')||'NEKOSTA';
   var vNameLine=[vName,sm.strasse?(sm.strasse+', '+(sm.plz||'')+' '+(sm.ort||'')):'',(sm.steuernr?'St.-Nr.: '+sm.steuernr:'')].filter(Boolean).join('  ·  ');
@@ -8040,9 +8150,17 @@ function anschreibenPdf(action){
   if(!text.trim()){showToast('Bitte zuerst die Angaben ausfüllen.');return;}
   var {jsPDF}=window.jspdf;
   var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-  var y=24;
-  // Eigener Briefkopf (falls hinterlegt) oben einfügen
-  var bk=stammdaten&&stammdaten.briefkopf;
+  // Ganzseitiger Briefbogen (A4-Vorlage) als Hintergrund – hat Vorrang vor dem Briefkopf-Bild
+  var bogen=getBriefbogen();
+  var topMargin=bogen?70:24, bottomLimit=bogen?258:282;
+  var drawBogen=function(){
+    if(!bogen)return;
+    try{var fmt=/^data:image\/png/i.test(bogen)?'PNG':'JPEG';doc.addImage(bogen,fmt,0,0,210,297);}catch(e){}
+  };
+  drawBogen();
+  var y=topMargin;
+  // Eigener Briefkopf (falls hinterlegt) – nur wenn KEIN Briefbogen aktiv
+  var bk=!bogen && stammdaten && stammdaten.briefkopf;
   if(bk){
     try{
       var props=doc.getImageProperties(bk);
@@ -8055,7 +8173,7 @@ function anschreibenPdf(action){
   }
   doc.setFont('helvetica','normal');doc.setFontSize(11);
   var lines=doc.splitTextToSize(text,170);
-  for(var i=0;i<lines.length;i++){ if(y>282){doc.addPage();y=24;} doc.text(lines[i],20,y); y+=6.2; }
+  for(var i=0;i<lines.length;i++){ if(y>bottomLimit){doc.addPage();drawBogen();y=topMargin;} doc.text(lines[i],20,y); y+=6.2; }
   var nm=((document.getElementById('anschr-mieter')||{value:''}).value||'Mieter').replace(/[^a-zA-Z0-9]+/g,'_');
   var fname='Anschreiben_'+nm+'.pdf';
   if(typeof showDoc==='function')showDoc(doc,fname,action||'vorschau'); else doc.save(fname);

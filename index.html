@@ -2033,6 +2033,17 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
           </button>
         </div>
 
+        <!-- GEMEINSAM: Abrechnungsjahr / Zeitraum (in beiden Modi sichtbar) -->
+        <div class="card" id="abr-sektion-zeitraum">
+          <div class="card-title">Abrechnungsjahr &amp; Zeitraum</div>
+          <div class="meta-grid">
+            <div class="field"><label>Abrechnungsjahr *</label><input type="number" id="jahr" min="2000" max="2100" oninput="onJahrChange()"></div>
+            <div class="field"><label>Abrechnungszeitraum von</label><input type="date" id="abrz-von"></div>
+            <div class="field"><label>Abrechnungszeitraum bis</label><input type="date" id="abrz-bis"></div>
+            <div class="field"><label>Erstellt am</label><input type="date" id="datum"></div>
+          </div>
+        </div>
+
         <!-- SEKTION: OBJEKT-BASIERT -->
         <div id="abr-sektion-objekt" class="card">
           <div class="card-title">Objekt auswählen</div>
@@ -2065,10 +2076,8 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
         <div id="abr-sektion-manuell" class="card" style="opacity:.45;pointer-events:none">
           <div class="card-title">Grunddaten manuell</div>
           <div class="meta-grid">
-            <div class="field"><label>Abrechnungsjahr *</label><input type="number" id="jahr" min="2000" max="2100"></div>
             <div class="field"><label>Objekt / Adresse *</label><input type="text" id="objekt" placeholder="z.B. Musterstr. 1, 53881 Euskirchen"></div>
             <div class="field"><label>Gesamtwohnfläche m² *</label><input type="text" inputmode="decimal" id="objekt-flaeche" placeholder="z.B. 215" oninput="sanitizeNumInput(this)"></div>
-            <div class="field"><label>Erstellt am</label><input type="date" id="datum"></div>
             <div class="field" id="f-kunde"><label>Kunde (E-Mail)</label><input type="text" id="kunde-email" placeholder="mieter@email.de"></div>
           </div>
         </div>
@@ -4174,28 +4183,34 @@ function moveWohn(btn,dir){
 }
 
 function getWohnungen(){
-  return Array.from(document.querySelectorAll('.wohn-card')).map(card=>({
-    bez:card.querySelector('.w-bez').value.trim()||'Wohnung',
-    flaeche:parseNum(card.querySelector('.w-flaeche').value),
-    einheitId:card.dataset.einheitId||null,
-    ustPflichtig:!!(card.querySelector('.w-gewerbe-ust')&&card.querySelector('.w-gewerbe-ust').checked),
-    mea:(card.querySelector('.w-mea')||{}).value&&card.querySelector('.w-mea').value.trim()||'',
-    meaNum:parseMEA((card.querySelector('.w-mea')||{}).value&&card.querySelector('.w-mea').value.trim()||''),
-    mieter:Array.from(card.querySelectorAll('.mieter-row')).map(row=>{
-      const anrede=(row.querySelector('.m-anrede')||{}).value||'';
-      const vname=(row.querySelector('.m-vname')||{value:''}).value||'';
-      const nname=(row.querySelector('.m-nname')||{value:''}).value||'';
-      const name=[anrede,vname,nname].filter(Boolean).join(' ');
+  return Array.from(document.querySelectorAll('.wohn-card')).map(function(card){
+    var mieter=Array.from(card.querySelectorAll('.mieter-row')).map(function(row){
+      var anrede=(row.querySelector('.m-anrede')||{}).value||'';
+      var vname=(row.querySelector('.m-vname')||{value:''}).value||'';
+      var nname=(row.querySelector('.m-nname')||{value:''}).value||'';
+      var name=[anrede,vname,nname].filter(Boolean).join(' ');
       return{
-        anrede,vname,nname,name,
+        anrede:anrede,vname:vname,nname:nname,name:name,
         von:row.querySelector('.m-von').value,
         bis:row.querySelector('.m-bis').value,
         personen:parseInt(row.querySelector('.m-pers').value)||1,
         vorauszBK:parseNum(row.querySelector('.m-vbk').value),
         vorauszHK:parseNum(row.querySelector('.m-vhk').value),
+        kaltmiete:parseFloat(row.dataset.kaltmiete)||0
       };
-    }).filter(m=>m.von&&m.bis)
-  }));
+    }).filter(function(m){return m.von&&m.bis;});
+    var _kaltmiete=mieter.reduce(function(s,m){return s+(m.kaltmiete||0);},0);
+    return {
+      bez:card.querySelector('.w-bez').value.trim()||'Wohnung',
+      flaeche:parseNum(card.querySelector('.w-flaeche').value),
+      einheitId:card.dataset.einheitId||null,
+      ustPflichtig:!!(card.querySelector('.w-gewerbe-ust')&&card.querySelector('.w-gewerbe-ust').checked),
+      mea:(card.querySelector('.w-mea')||{}).value&&card.querySelector('.w-mea').value.trim()||'',
+      meaNum:parseMEA((card.querySelector('.w-mea')||{}).value&&card.querySelector('.w-mea').value.trim()||''),
+      mieter:mieter,
+      _kaltmiete:_kaltmiete
+    };
+  });
 }
 
 function parseMEA(s){
@@ -4656,7 +4671,7 @@ function getPerioden(wohnung, jahr){
     const von=m.von<ys?ys:m.von;
     const bis=m.bis>ye?ye:m.bis;
     if(von>bis)return null;
-    return{name:m.name,von,bis,personen:m.personen||1,vorauszBKmonat:m.vorauszBK||0,vorauszHKmonat:m.vorauszHK||0,vorauszBK:0,vorauszHK:0,isLeerstand:false,days:daysBetween(von,bis)};
+    return{name:m.name,von,bis,personen:m.personen||1,vorauszBKmonat:m.vorauszBK||0,vorauszHKmonat:m.vorauszHK||0,vorauszBK:0,vorauszHK:0,kaltmiete:m.kaltmiete||0,isLeerstand:false,days:daysBetween(von,bis)};
   }).filter(Boolean).sort((a,b)=>a.von.localeCompare(b.von));
 
   // Überschneidungen entfernen (immer den ersten Mieter bevorzugen)
@@ -5968,7 +5983,7 @@ function buildPeriodPDF(we, pe, withWatermark){
   var {jsPDF}=window.jspdf;
   var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
   if(anschreibenAktiv() && !pe.periode.isLeerstand){
-    buildAnschreibenContent(doc,we,pe,{vz:anschrOpt.vz, kaltmiete:we.wohnung._kaltmiete||0, vzNeu:empfVZ(we)});
+    buildAnschreibenContent(doc,we,pe,{vz:anschrOpt.vz, kaltmiete:(pe.periode.kaltmiete!=null?pe.periode.kaltmiete:(we.wohnung._kaltmiete||0)), vzNeu:empfVZ(we)});
     doc.addPage();
   }
   buildPeriodContent(doc,we,pe,withWatermark,true);
@@ -5986,7 +6001,7 @@ function buildCombinedPDF(periods,withWatermark){
   periods.forEach(function(item,idx){
     if(idx>0)doc.addPage();
     if(anschreibenAktiv() && !item.pe.periode.isLeerstand){
-      buildAnschreibenContent(doc,item.we,item.pe,{vz:anschrOpt.vz, kaltmiete:item.we.wohnung._kaltmiete||0, vzNeu:empfVZ(item.we)});
+      buildAnschreibenContent(doc,item.we,item.pe,{vz:anschrOpt.vz, kaltmiete:(item.pe.periode.kaltmiete!=null?item.pe.periode.kaltmiete:(item.we.wohnung._kaltmiete||0)), vzNeu:empfVZ(item.we)});
       doc.addPage();
     }
     buildPeriodContent(doc,item.we,item.pe,withWatermark,true);
@@ -6932,7 +6947,7 @@ async function ladeObjektInWizard(){
           wohneinheit:e.bezeichnung, flaeche:e.flaeche||0,
           mea:mv.mea||null,
           anrede:k.anrede||'',vorname:k.vorname||'',nachname:k.nachname||'',
-          vorausz_bk:mv.vorausz_bk||0, vorausz_hk:mv.vorausz_hk||0,
+          vorausz_bk:mv.vorausz_bk||0, vorausz_hk:mv.vorausz_hk||0, kaltmiete:mv.kaltmiete||0,
           aktiv:mv.aktiv, einzug:mv.einzug, auszug:mv.auszug, ustPflichtig:!!e.ust_pflichtig, einheitId:e.id
         });
       });
@@ -6964,6 +6979,7 @@ async function ladeObjektInWizard(){
 async function importiereObjektInStep2(){
   if(!importiertesObjekt||!importiertesObjekt.mieter||!importiertesObjekt.mieter.length)return;
   var jahr=parseInt(document.getElementById('jahr').value)||defaultJahr();
+  var az=getAbrZeitraum();
 
   // Wohnungen leeren
   document.getElementById('wohnCards').innerHTML='';
@@ -6998,8 +7014,8 @@ async function importiereObjektInStep2(){
     var mieterList=card.querySelector('.mieter-list');
     if(mieterList)mieterList.innerHTML='';
     w.mieter.forEach(function(m){
-      var von=m.einzug&&m.einzug>=(jahr+'-01-01')?m.einzug:(jahr+'-01-01');
-      var bis=m.auszug&&m.auszug<=(jahr+'-12-31')?m.auszug:(jahr+'-12-31');
+      var von=m.einzug&&m.einzug>=az.von?m.einzug:az.von;
+      var bis=m.auszug&&m.auszug<=az.bis?m.auszug:az.bis;
       var row=createMieterRow(von,bis);
       var anr=row.querySelector('.m-anrede');if(anr)anr.value=m.anrede||'Herr';
       var vn=row.querySelector('.m-vname');if(vn)vn.value=m.vorname||'';
@@ -7007,10 +7023,12 @@ async function importiereObjektInStep2(){
       var pers=row.querySelector('.m-pers');if(pers)pers.value=1;
       var vbk=row.querySelector('.m-vbk');if(vbk)vbk.value=m.vorausz_bk||'';
       var vhk=row.querySelector('.m-vhk');if(vhk)vhk.value=m.vorausz_hk||'';
+      row.dataset.kaltmiete=m.kaltmiete||0;
       if(mieterList)mieterList.appendChild(row);
     });
   });
 
+  if(typeof applyObjektLock==='function')applyObjektLock();
   showToast('✅ '+Object.keys(wohnMap).length+' Wohneinheiten mit Mietern übernommen!');
   importiertesObjekt=null; // Reset after import
 }
@@ -7897,7 +7915,7 @@ function anschreibenVorschau(wi,pi,withVZ,action){
   var pe=mp[pi]; if(!pe){showToast('Keine Mieterperiode.');return;}
   var {jsPDF}=window.jspdf;
   var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-  buildAnschreibenContent(doc,we,pe,{vz:(withVZ!=null?!!withVZ:anschrOpt.vz), kaltmiete:we.wohnung._kaltmiete||0, vzNeu:empfVZ(we)});
+  buildAnschreibenContent(doc,we,pe,{vz:(withVZ!=null?!!withVZ:anschrOpt.vz), kaltmiete:(pe.periode.kaltmiete!=null?pe.periode.kaltmiete:(we.wohnung._kaltmiete||0)), vzNeu:empfVZ(we)});
   var sm=stammdaten||{};
   var vName=([sm.firma,sm.vname&&sm.nname?sm.vname+' '+sm.nname:'']).filter(Boolean).join(' / ')||'NEKOSTA';
   var vNameLine=[vName,sm.strasse?(sm.strasse+', '+(sm.plz||'')+' '+(sm.ort||'')):'',(sm.steuernr?'St.-Nr.: '+sm.steuernr:'')].filter(Boolean).join('  ·  ');
@@ -12491,6 +12509,7 @@ function _initWizard(){
   var info=document.getElementById('objekt-import-info');if(info)info.style.display='none';
   var sel=document.getElementById('objekt-select');if(sel)sel.value='';
   var jr=document.getElementById('jahr');if(jr)jr.value=defaultJahr();
+  if(typeof onJahrChange==='function')onJahrChange();
   var ob=document.getElementById('objekt');if(ob)ob.value='';
   var of2=document.getElementById('objekt-flaeche');if(of2)of2.value='';
   var dat=document.getElementById('datum');if(dat){dat.value=todayStr();dat.disabled=false;}
@@ -12537,6 +12556,37 @@ function resetAbrSektionen(){
   var sM=document.getElementById('abr-sektion-manuell');
   if(sO){sO.style.display='';sO.style.opacity='1';sO.style.pointerEvents='';}
   if(sM){sM.style.display='';sM.style.opacity='1';sM.style.pointerEvents='';}
+}
+// Abrechnungsjahr geändert -> Abrechnungszeitraum auf das volle Jahr setzen (kann danach eingegrenzt werden)
+function onJahrChange(){
+  var jahr=parseInt((document.getElementById('jahr')||{}).value)||defaultJahr();
+  var vEl=document.getElementById('abrz-von'), bEl=document.getElementById('abrz-bis');
+  if(vEl)vEl.value=jahr+'-01-01';
+  if(bEl)bEl.value=jahr+'-12-31';
+}
+// Abrechnungszeitraum-Grenzen lesen (Fallback: volles Abrechnungsjahr)
+function getAbrZeitraum(){
+  var jahr=parseInt((document.getElementById('jahr')||{}).value)||defaultJahr();
+  var v=(document.getElementById('abrz-von')||{}).value||(jahr+'-01-01');
+  var b=(document.getElementById('abrz-bis')||{}).value||(jahr+'-12-31');
+  return {von:v,bis:b};
+}
+// Im Objekt-Modus: Mietverhältnis-Felder festschreiben – nur NK/HZ-Vorauszahlungen bleiben editierbar
+function _lockMieterRow(row){
+  ['.m-anrede','.m-vname','.m-nname','.m-von','.m-bis','.m-pers'].forEach(function(sel){
+    var el=row.querySelector(sel);
+    if(el){el.disabled=true;el.title='Aus dem Mietverhältnis übernommen – im Objekt-Modus festgeschrieben';el.style.background='#f3f4f6';el.style.color='#6b7280';el.style.cursor='not-allowed';}
+  });
+  var rm=row.querySelector('.btn-remove-mieter');if(rm)rm.style.display='none';
+}
+function applyObjektLock(){
+  if(currentAbrModus!=='objekt')return;
+  document.querySelectorAll('#wohnCards .mieter-row').forEach(function(row){_lockMieterRow(row);});
+  document.querySelectorAll('#wohnCards .wohn-card').forEach(function(card){
+    ['.w-bez','.w-flaeche','.w-mea'].forEach(function(sel){var el=card.querySelector(sel);if(el){el.disabled=true;el.style.background='#f3f4f6';el.style.color='#6b7280';}});
+    var amb=card.querySelector('.btn-add-mieter');if(amb)amb.style.display='none';
+  });
+  var addW=document.getElementById('addWohnBtn');if(addW)addW.style.display='none';
 }
 
 // ════ THEME SYNC ════

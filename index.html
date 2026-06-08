@@ -3845,7 +3845,7 @@ function showPage(name){
   }
   if(name==='auftraege'){loadAuftraege();}
   if(name==='dokumente'){loadDokumente();}
-  if(name==='anschreiben'){if(typeof renderBriefbogenPreview==='function')renderBriefbogenPreview();}
+  if(name==='anschreiben'){if(typeof loadBriefbogen==='function'){loadBriefbogen().then(function(){renderBriefbogenPreview();});}else if(typeof renderBriefbogenPreview==='function'){renderBriefbogenPreview();}}
 }
 
 // Check if there's unsaved work in the wizard
@@ -4083,11 +4083,51 @@ async function entferneBriefkopf(){
   }catch(e){showToast('Fehler: '+e.message);}
 }
 
-// ── BRIEFBOGEN (ganzseitige A4-Vorlage) – primär in DB (stammdaten.briefbogen), localStorage als Fallback ──
+// ── BRIEFBOGEN (ganzseitige A4-Vorlage) – primär in Supabase Storage (Bucket "dokumente"),
+//    DB-Spalte stammdaten.briefbogen + localStorage als automatische Fallbacks ──
+var _briefbogenCache='';            // dataURL im Speicher (Storage ist async, jsPDF braucht sync)
+var _briefbogenLoaded=false;
 function _briefbogenKey(){return 'nekosta-briefbogen-'+((typeof currentUser!=='undefined'&&currentUser)?currentUser.id:'anon');}
 function _briefbogenLocal(){try{return localStorage.getItem(_briefbogenKey())||'';}catch(e){return '';}}
+function _briefbogenDir(){return (currentUser?currentUser.id:'anon')+'/briefbogen';}
+function _dataUrlToBlob(dataUrl){
+  var parts=dataUrl.split(','); var mime=((parts[0]||'').match(/:(.*?);/)||[])[1]||'image/jpeg';
+  var bin=atob(parts[1]||''); var u8=new Uint8Array(bin.length);
+  for(var i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);
+  return new Blob([u8],{type:mime});
+}
+// Aktuelle Briefbogen-Datei im Ordner finden (neueste = höchster Zeitstempel im Namen). list() ist nicht CDN-gecacht.
+async function _briefbogenCurrentName(){
+  var ls=await sb.storage.from('dokumente').list(_briefbogenDir(),{limit:100});
+  if(ls.error||!ls.data)return null;
+  var files=ls.data.filter(function(f){return f.name && f.name.indexOf('.')>0 && f.name!=='.emptyFolderPlaceholder';})
+                   .sort(function(a,b){return b.name.localeCompare(a.name);});
+  return files.length?files[0].name:null;
+}
+// Lädt den Briefbogen aus Storage in den Cache (einmalig bzw. force). Fallback: DB-Spalte, dann localStorage.
+async function loadBriefbogen(force){
+  if(_briefbogenLoaded && !force)return _briefbogenCache;
+  _briefbogenLoaded=true;
+  if(typeof sb!=='undefined' && currentUser){
+    try{
+      var name=await _briefbogenCurrentName();
+      if(name){
+        var dl=await sb.storage.from('dokumente').download(_briefbogenDir()+'/'+name);
+        if(!dl.error && dl.data){
+          _briefbogenCache=await new Promise(function(res,rej){var fr=new FileReader();fr.onload=function(){res(fr.result);};fr.onerror=rej;fr.readAsDataURL(dl.data);});
+          return _briefbogenCache;
+        }
+      } else { _briefbogenCache=''; return ''; }
+    }catch(e){}
+  }
+  // Fallbacks (nicht angemeldet o. Ä.)
+  if(typeof stammdaten!=='undefined' && stammdaten && stammdaten.briefbogen){_briefbogenCache=stammdaten.briefbogen;return _briefbogenCache;}
+  _briefbogenCache=_briefbogenLocal();
+  return _briefbogenCache;
+}
 function getBriefbogen(){
-  if(typeof stammdaten!=='undefined'&&stammdaten&&stammdaten.briefbogen)return stammdaten.briefbogen;
+  if(_briefbogenCache)return _briefbogenCache;
+  if(typeof stammdaten!=='undefined' && stammdaten && stammdaten.briefbogen)return stammdaten.briefbogen;
   return _briefbogenLocal();
 }
 function renderBriefbogenPreview(){
@@ -4110,20 +4150,23 @@ function handleBriefbogenUpload(input){
       var c=document.createElement('canvas');c.width=w;c.height=h;
       var ctx=c.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);ctx.drawImage(img,0,0,w,h);
       var dataUrl=c.toDataURL('image/jpeg',0.82);
+      _briefbogenCache=dataUrl; _briefbogenLoaded=true; renderBriefbogenPreview();
+      if(typeof sb==='undefined' || !currentUser){ try{localStorage.setItem(_briefbogenKey(),dataUrl);}catch(e){} show('✅ Briefbogen gespeichert (lokal – nicht angemeldet).',true); return; }
       try{
-        var {error}=await sb.from('stammdaten').upsert({user_id:currentUser.id,briefbogen:dataUrl},{onConflict:'user_id'});
-        if(error)throw error;
-        if(stammdaten)stammdaten.briefbogen=dataUrl;
+        var blob=_dataUrlToBlob(dataUrl);
+        var dir=_briefbogenDir();
+        // alte Versionen entfernen (eindeutige Dateinamen je Upload -> kein CDN-Stale)
+        try{var old=await sb.storage.from('dokumente').list(dir,{limit:100});
+          if(old.data&&old.data.length){await sb.storage.from('dokumente').remove(old.data.map(function(f){return dir+'/'+f.name;}));}
+        }catch(e){}
+        var fname=Date.now()+'_'+Math.random().toString(36).slice(2,8)+'.jpg';
+        var up=await sb.storage.from('dokumente').upload(dir+'/'+fname,blob,{contentType:'image/jpeg',cacheControl:'0'});
+        if(up.error)throw up.error;
         try{localStorage.removeItem(_briefbogenKey());}catch(e){}
-        renderBriefbogenPreview();
-        show('✅ Briefbogen in der Datenbank gespeichert.',true);
+        show('✅ Briefbogen gespeichert (Supabase Storage – geräteübergreifend).',true);
       }catch(e){
-        // Fallback: lokal speichern, falls DB-Spalte fehlt
-        try{localStorage.setItem(_briefbogenKey(),dataUrl);renderBriefbogenPreview();}catch(e2){}
-        var hint=(e&&/column|briefbogen|schema|does not exist/i.test(e.message||''))
-          ? ' Bitte einmalig in Supabase ausführen: ALTER TABLE stammdaten ADD COLUMN IF NOT EXISTS briefbogen text; (bis dahin lokal gespeichert).'
-          : '';
-        show('⚠️ Konnte nicht in der DB gespeichert werden.'+hint, false);
+        try{localStorage.setItem(_briefbogenKey(),dataUrl);}catch(e2){}
+        show('⚠️ Server-Speicherung fehlgeschlagen ('+(e.message||e)+') – vorerst lokal gesichert.',false);
       }
     };
     img.onerror=function(){show('Bild konnte nicht gelesen werden.',false);};
@@ -4133,11 +4176,12 @@ function handleBriefbogenUpload(input){
 }
 async function entferneBriefbogen(){
   try{
-    var {error}=await sb.from('stammdaten').upsert({user_id:currentUser.id,briefbogen:null},{onConflict:'user_id'});
-    if(error)throw error;
+    if(currentUser){var dir=_briefbogenDir();var ls=await sb.storage.from('dokumente').list(dir,{limit:100});
+      if(ls.data&&ls.data.length)await sb.storage.from('dokumente').remove(ls.data.map(function(f){return dir+'/'+f.name;}));}
   }catch(e){}
-  if(stammdaten)stammdaten.briefbogen=null;
+  if(typeof stammdaten!=='undefined'&&stammdaten)stammdaten.briefbogen=null;
   try{localStorage.removeItem(_briefbogenKey());}catch(e){}
+  _briefbogenCache=''; _briefbogenLoaded=true;
   var f=document.getElementById('briefbogen-file');if(f)f.value='';
   renderBriefbogenPreview();
   showToast('🗑 Briefbogen entfernt');
@@ -8161,10 +8205,12 @@ function generiereAnschreiben(){
 }
 
 // Anschreiben als echtes PDF (Vorschau im Modal via showDoc, oder Download)
-function anschreibenPdf(action){
+async function anschreibenPdf(action){
   try{generiereAnschreiben();}catch(e){}
   var text=(document.getElementById('anschr-text')||{textContent:''}).textContent||'';
   if(!text.trim()){showToast('Bitte zuerst die Angaben ausfüllen.');return;}
+  // Briefbogen ggf. aus Storage nachladen (Cache füllen), damit er im PDF erscheint
+  if(typeof loadBriefbogen==='function' && !_briefbogenLoaded){ try{await loadBriefbogen();}catch(e){} }
   var {jsPDF}=window.jspdf;
   var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
   // Ganzseitiger Briefbogen (A4-Vorlage) als Hintergrund – hat Vorrang vor dem Briefkopf-Bild

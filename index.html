@@ -891,6 +891,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
     </div>
     <select class="ansicht-select" id="ansicht-select" onchange="switchAnsicht(this.value)" style="display:none">
       <option value="verwalter">👔 Verwalter-Ansicht</option>
+      <option value="hausverwalter">🏢 Hausverwalter-Ansicht</option>
       <option value="kunden">👤 Kunden-Ansicht</option>
     </select>
     <span id="user-email"></span><span id="role-badge"></span>
@@ -1177,6 +1178,17 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
         <!-- Ausgeblendete Widgets (nur im Bearbeiten-Modus) -->
         <div id="dash-hidden-bar"></div>
 
+      </div>
+    </div>
+
+    <!-- HAUSVERWALTER-ANSICHT (Portfolio + Vergütung) -->
+    <div id="page-hausverwalter" style="display:none">
+      <div style="padding:2rem">
+        <div style="margin-bottom:1.5rem">
+          <h1 style="font-size:1.5rem;font-weight:700">🏢 Hausverwalter-Übersicht</h1>
+          <div style="font-size:.85rem;color:var(--muted);margin-top:2px">Portfolio aller verwalteten Objekte und monatliche Verwalter-Vergütung</div>
+        </div>
+        <div id="hv-content"><div style="text-align:center;padding:3rem;color:var(--muted)">Wird geladen…</div></div>
       </div>
     </div>
 
@@ -3775,7 +3787,7 @@ function showPage(name){
   else if(name==='tokens'){name='einstellungen';_profilTab='abo';}
   var allPages=['tool','abrechnung','archiv','mahnwesen','stammdaten','anschreiben','kunden','tokens','tarife','auftraege',
     'einstellungen','heizkostenerstellen','impressum','welcome','bearbeitungsnotizen',
-    'adminpanel','dashboard','objekte','weg','weg-cockpit','mieter','objekt-detail','kontakte','dokumente','buchhaltung'];
+    'adminpanel','dashboard','hausverwalter','objekte','weg','weg-cockpit','mieter','objekt-detail','kontakte','dokumente','buchhaltung'];
 
   var adminVisible=document.getElementById('admin-menu').style.display!=='none';
 
@@ -3878,7 +3890,7 @@ function switchAnsicht(val){
 
   var allPages=['tool','archiv','mahnwesen','stammdaten','anschreiben','kunden','tokens','tarife','auftraege',
     'einstellungen','heizkostenerstellen','impressum','bearbeitungsnotizen',
-    'adminpanel','dashboard','objekte','weg','mieter','welcome','kontakte','dokumente','buchhaltung'];
+    'adminpanel','dashboard','hausverwalter','objekte','weg','mieter','welcome','kontakte','dokumente','buchhaltung'];
 
   if(val==='kunden'){
     adminMenu.style.display='none';
@@ -3892,6 +3904,18 @@ function switchAnsicht(val){
     });
     loadDashboard();
     loadKundenAbrechnungen();
+  }else if(val==='hausverwalter'){
+    // Hausverwalter = Ansicht im Verwalter-Konto: Verwalter-Nav bleibt, Portfolio-Seite als Landing
+    adminMenu.style.display='block';
+    kundenMenu.style.display='none';
+    if(pb)pb.style.display='block';
+    document.querySelectorAll('.nav-item').forEach(function(el){el.classList.remove('active');});
+    currentPageName='hausverwalter';
+    allPages.forEach(function(p){
+      var el=document.getElementById('page-'+p);
+      if(el)el.style.display=p==='hausverwalter'?'block':'none';
+    });
+    loadHausverwalterDashboard();
   }else{
     adminMenu.style.display='block';
     kundenMenu.style.display='none';
@@ -9330,6 +9354,81 @@ function setObjekteView(v){
   if(bt){bt.style.background=v==='table'?'var(--p)':'var(--white)';bt.style.color=v==='table'?'#fff':'var(--p)';}
   if(bc){bc.style.background=v==='cards'?'var(--p)':'var(--white)';bc.style.color=v==='cards'?'#fff':'var(--p)';}
   renderObjekteTabelle();
+}
+
+// ════ HAUSVERWALTER-ANSICHT (#59): Portfolio + Vergütungstabelle (#60, Fixbetrag €/Monat je Objekt) ════
+// Vergütung wird je Objekt in objekte.notiz (JSON, Feld verguetung_monat) gespeichert – keine DB-Migration nötig.
+async function loadHausverwalterDashboard(){
+  var c=document.getElementById('hv-content'); if(!c)return;
+  c.innerHTML='<div style="text-align:center;padding:3rem;color:var(--muted)">Wird geladen…</div>';
+  var fmtE=function(n){return (n||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';};
+  try{
+    var [objR,ehR]=await Promise.all([
+      sb.from('objekte').select('id,name,ort,kategorie,einheiten_anzahl,notiz').eq('user_id',currentUser.id).order('name'),
+      sb.from('einheiten').select('id,objekt_id').eq('user_id',currentUser.id)
+    ]);
+    var objekte=objR.data||[], eh=ehR.data||[];
+    var rows=objekte.map(function(o){
+      var meta={}; if(o.notiz){try{meta=JSON.parse(o.notiz);}catch(e){}}
+      var verg=parseFloat(meta.verguetung_monat)||0;
+      var einh=eh.filter(function(e){return e.objekt_id===o.id;}).length || o.einheiten_anzahl || 0;
+      return {id:o.id,name:o.name||'Objekt',ort:o.ort||'',einh:einh,verg:verg};
+    });
+    var objCount=rows.length;
+    var einhCount=rows.reduce(function(s,r){return s+r.einh;},0);
+    var totalMonat=rows.reduce(function(s,r){return s+r.verg;},0);
+    var kpi=function(lbl,val,sub,color){return '<div style="border:1px solid #e5e7eb;border-radius:10px;background:#fff;padding:1rem 1.1rem"><div style="font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#9ca3af">'+lbl+'</div><div style="font-size:1.5rem;font-weight:700;margin-top:.3rem;color:'+(color||'#111827')+';font-variant-numeric:tabular-nums">'+val+'</div><div style="font-size:.72rem;color:#9ca3af;margin-top:.15rem">'+sub+'</div></div>';};
+    var html='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem">'
+      +kpi('Objekte',objCount,'im Portfolio')
+      +kpi('Einheiten',einhCount,'gesamt')
+      +kpi('Vergütung / Monat','<span id="hv-total-monat">'+fmtE(totalMonat)+'</span>','Summe aller Objekte','#7c3aed')
+      +kpi('Vergütung / Jahr','<span id="hv-total-jahr">'+fmtE(totalMonat*12)+'</span>','hochgerechnet','#15803d')
+    +'</div>';
+    html+='<div style="border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;background:#fff">'
+      +'<div style="padding:.85rem 1.1rem;border-bottom:1px solid #eef0f3;font-weight:700;font-size:.95rem">Vergütungstabelle</div>';
+    if(!rows.length){
+      html+='<div style="padding:2rem;text-align:center;color:#9ca3af;font-size:.85rem">Noch keine Objekte angelegt.</div>';
+    }else{
+      html+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.85rem">'
+        +'<thead><tr style="background:#faf9fc">'
+          +'<th style="padding:.6rem 1.1rem;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:#6b7280;text-align:left">Objekt</th>'
+          +'<th style="padding:.6rem .8rem;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:#6b7280;text-align:right">Einheiten</th>'
+          +'<th style="padding:.6rem .8rem;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:#6b7280;text-align:right">Vergütung €/Monat</th>'
+          +'<th style="padding:.6rem 1.1rem;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:#6b7280;text-align:right">€/Jahr</th>'
+        +'</tr></thead><tbody>';
+      rows.forEach(function(r){
+        html+='<tr style="border-top:1px solid #eef0f3">'
+          +'<td style="padding:.55rem 1.1rem"><div style="font-weight:600">'+escapeHtml(r.name)+'</div>'+(r.ort?'<div style="font-size:.72rem;color:#9ca3af">'+escapeHtml(r.ort)+'</div>':'')+'</td>'
+          +'<td style="padding:.55rem .8rem;text-align:right;font-variant-numeric:tabular-nums">'+r.einh+'</td>'
+          +'<td style="padding:.55rem .8rem;text-align:right"><input type="number" min="0" step="0.01" class="hv-verg" data-id="'+r.id+'" value="'+(r.verg?r.verg.toFixed(2):'')+'" placeholder="0,00" oninput="hvRecalc()" onchange="hvSaveVerguetung(\''+r.id+'\',this.value,this)" style="width:110px;text-align:right;border:1px solid var(--border);border-radius:6px;padding:.3rem .5rem;font-size:.84rem;font-family:var(--ff);font-variant-numeric:tabular-nums;outline:none"></td>'
+          +'<td style="padding:.55rem 1.1rem;text-align:right;font-variant-numeric:tabular-nums;color:#6b7280" id="hv-jahr-'+r.id+'">'+fmtE(r.verg*12)+'</td>'
+        +'</tr>';
+      });
+      html+='<tr style="border-top:2px solid #e5e7eb;background:#faf9fc;font-weight:700">'
+        +'<td style="padding:.6rem 1.1rem">Gesamt</td><td></td>'
+        +'<td style="padding:.6rem .8rem;text-align:right;font-variant-numeric:tabular-nums" id="hv-foot-monat">'+fmtE(totalMonat)+'</td>'
+        +'<td style="padding:.6rem 1.1rem;text-align:right;font-variant-numeric:tabular-nums" id="hv-foot-jahr">'+fmtE(totalMonat*12)+'</td></tr>';
+      html+='</tbody></table></div>';
+    }
+    html+='<div style="padding:.7rem 1.1rem;font-size:.72rem;color:#9ca3af;border-top:1px solid #eef0f3">💡 Beträge werden je Objekt gespeichert. Änderungen werden automatisch übernommen.</div></div>';
+    c.innerHTML=html;
+  }catch(e){ c.innerHTML='<div style="padding:2rem;color:#c0392b">Fehler: '+(e.message||e)+'</div>'; }
+}
+function hvRecalc(){
+  var fmtE=function(n){return (n||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';};
+  var total=0;
+  document.querySelectorAll('#hv-content .hv-verg').forEach(function(inp){
+    var v=parseFloat((''+inp.value).replace(',','.'))||0; if(v<0)v=0; total+=v;
+    var jc=document.getElementById('hv-jahr-'+inp.dataset.id); if(jc)jc.textContent=fmtE(v*12);
+  });
+  var setT=function(id,val){var el=document.getElementById(id);if(el)el.textContent=val;};
+  setT('hv-total-monat',fmtE(total)); setT('hv-total-jahr',fmtE(total*12));
+  setT('hv-foot-monat',fmtE(total)); setT('hv-foot-jahr',fmtE(total*12));
+}
+async function hvSaveVerguetung(objId,val,inp){
+  var v=parseFloat((''+val).replace(',','.'))||0; if(v<0)v=0;
+  try{ await _saveObjektMeta(objId,{verguetung_monat:v}); if(inp){inp.style.borderColor='#1a9d5a'; setTimeout(function(){inp.style.borderColor='';},900);} }
+  catch(e){ showToast('❌ Speichern fehlgeschlagen: '+(e.message||e)); if(inp)inp.style.borderColor='#c0392b'; }
 }
 
 async function loadObjekte(){

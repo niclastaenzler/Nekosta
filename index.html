@@ -1371,7 +1371,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
         <!-- LEFT SIDEBAR -->
         <div style="width:300px;min-width:280px;flex-shrink:0;background:var(--white);border-right:1px solid var(--border);padding:1rem;height:100%;overflow-y:auto;box-sizing:border-box">
           <!-- Back -->
-          <button onclick="showPage('objekte')" style="display:flex;align-items:center;gap:.4rem;background:none;border:none;cursor:pointer;font-size:.82rem;color:var(--muted);padding:0;margin-bottom:1rem;font-family:var(--ff)">← Zurück zur Objektübersicht</button>
+          <button id="od-back-btn" onclick="objDetailBack()" style="display:flex;align-items:center;gap:.4rem;background:none;border:none;cursor:pointer;font-size:.82rem;color:var(--muted);padding:0;margin-bottom:1rem;font-family:var(--ff)">← Zurück zur Objektübersicht</button>
 
           <!-- Objekt Info Card -->
           <div style="border:2px solid var(--p);border-radius:12px;padding:1rem;margin-bottom:1.25rem">
@@ -9750,7 +9750,7 @@ function wegcGo(mod){
   if(mod==='hausgeld'){wegcRenderBuchhaltung(c,'hausgeld');return;}
   var tabMap={einheiten:'weg-einheiten',eigentuemer:'weg-eigentuemer'};
   if(tabMap[mod]){
-    var p=openObjektDetail(_wegcCur.id);
+    var p=openObjektDetail(_wegcCur.id,{from:'cockpit'});
     var after=function(){try{showObjektTab(tabMap[mod]);}catch(e){}};
     if(p&&p.then)p.then(after);else setTimeout(after,400);
     return;
@@ -11025,7 +11025,16 @@ async function loadMietverhaeltnisse(objId){
 }
 var aktivesObjekt=null;
 
-async function openObjektDetail(objId){
+// Zurück-Navigation aus der Objekt-Detailansicht: WEG-Objekte (aus dem Cockpit geöffnet) -> zurück ins Cockpit
+function objDetailBack(){
+  if(window._objDetailFrom==='cockpit' && window._objDetailWegId){ openWegCockpit(window._objDetailWegId); }
+  else { showPage('objekte'); }
+}
+async function openObjektDetail(objId,opts){
+  window._objDetailFrom=(opts&&opts.from)||'objekte';
+  if(opts&&opts.from==='cockpit')window._objDetailWegId=objId;
+  var _bb=document.getElementById('od-back-btn');
+  if(_bb)_bb.textContent=(window._objDetailFrom==='cockpit')?'← Zurück zum WEG-Cockpit':'← Zurück zur Objektübersicht';
   try{_wegcRestoreBuha();}catch(e){}
   try{
     var {data,error}=await sb.from('objekte').select('*').eq('id',objId).maybeSingle();

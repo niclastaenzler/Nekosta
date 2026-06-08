@@ -9520,13 +9520,14 @@ async function loadEigentuemerDashboard(){
   c.innerHTML='<div style="text-align:center;padding:3rem;color:var(--muted)">Wird geladen…</div>';
   var fmtE=function(n){return (n||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';};
   try{
-    var [objR,ehR,mvR,mzR]=await Promise.all([
+    var [objR,ehR,mvR,mzR,abrR]=await Promise.all([
       sb.from('objekte').select('id,name,ort,kategorie,einheiten_anzahl').eq('user_id',currentUser.id).order('name'),
       sb.from('einheiten').select('id,objekt_id').eq('user_id',currentUser.id),
       sb.from('mietverhaeltnisse').select('objekt_id,einheit_id,kaltmiete,aktiv').eq('user_id',currentUser.id).eq('aktiv',true),
-      sb.from('mietzahlungen').select('objekt_id,betrag,status').eq('user_id',currentUser.id).in('status',['offen','gemahnt'])
+      sb.from('mietzahlungen').select('objekt_id,betrag,status').eq('user_id',currentUser.id).in('status',['offen','gemahnt']),
+      sb.from('abrechnungen').select('jahr,titel,data').eq('created_by',currentUser.id).is('deleted_at',null)
     ]);
-    var objekte=objR.data||[], eh=ehR.data||[], mv=mvR.data||[], mz=mzR.data||[];
+    var objekte=objR.data||[], eh=ehR.data||[], mv=mvR.data||[], mz=mzR.data||[], abr=abrR.data||[];
     var rows=objekte.map(function(o){
       var units=eh.filter(function(e){return e.objekt_id===o.id;});
       var activeMv=mv.filter(function(m){return m.objekt_id===o.id;});
@@ -9535,7 +9536,10 @@ async function loadEigentuemerDashboard(){
       var verm=Math.min(Object.keys(vermietet).length,total);
       var kalt=activeMv.reduce(function(s,m){return s+(parseFloat(m.kaltmiete)||0);},0);
       var offen=mz.filter(function(z){return z.objekt_id===o.id;}).reduce(function(s,z){return s+(parseFloat(z.betrag)||0);},0);
-      return {id:o.id,name:o.name||'Objekt',ort:o.ort||'',total:total,verm:verm,quote:total>0?Math.round(verm/total*100):0,kalt:kalt,offen:offen};
+      var myAbr=abr.filter(function(a){return a.data&&a.data.objektId===o.id;}).sort(function(a,b){return (b.jahr||0)-(a.jahr||0);});
+      var latest=myAbr[0]||null;
+      var abrInfo=latest?{jahr:latest.jahr, done:((latest.titel||'').indexOf('[Abgerechnet]')>=0)}:null;
+      return {id:o.id,name:o.name||'Objekt',ort:o.ort||'',total:total,verm:verm,quote:total>0?Math.round(verm/total*100):0,kalt:kalt,offen:offen,abr:abrInfo};
     });
     var objCount=rows.length;
     var einhCount=rows.reduce(function(s,r){return s+r.total;},0);
@@ -9560,22 +9564,29 @@ async function loadEigentuemerDashboard(){
           +'<th style="padding:.6rem 1.1rem;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:#6b7280;text-align:left">Objekt</th>'
           +'<th style="padding:.6rem .8rem;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:#6b7280;text-align:right">Belegung</th>'
           +'<th style="padding:.6rem .8rem;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:#6b7280;text-align:right">Kaltmiete/Mon.</th>'
-          +'<th style="padding:.6rem 1.1rem;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:#6b7280;text-align:right">Offen</th>'
+          +'<th style="padding:.6rem .8rem;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:#6b7280;text-align:right">Offen</th>'
+          +'<th style="padding:.6rem 1.1rem;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:#6b7280;text-align:center">Letzte Abrechnung</th>'
         +'</tr></thead><tbody>';
       rows.forEach(function(r){
         var qcol=r.quote>=90?'#15803d':(r.quote>=50?'#d97706':'#dc2626');
+        var abrCell;
+        if(!r.abr){abrCell='<span style="color:#9ca3af">–</span>';}
+        else if(r.abr.done){abrCell='<span style="font-size:.7rem;font-weight:700;background:#e9f9f0;color:#15803d;padding:2px 9px;border-radius:999px">'+r.abr.jahr+' · abgerechnet</span>';}
+        else{abrCell='<span style="font-size:.7rem;font-weight:700;background:#fff7ed;color:#9a3412;padding:2px 9px;border-radius:999px">'+r.abr.jahr+' · Entwurf</span>';}
         html+='<tr style="border-top:1px solid #eef0f3">'
           +'<td style="padding:.55rem 1.1rem"><div style="font-weight:600">'+escapeHtml(r.name)+'</div>'+(r.ort?'<div style="font-size:.72rem;color:#9ca3af">'+escapeHtml(r.ort)+'</div>':'')+'</td>'
           +'<td style="padding:.55rem .8rem;text-align:right;font-variant-numeric:tabular-nums"><span style="color:'+qcol+';font-weight:700">'+r.quote+' %</span> <span style="color:#9ca3af;font-size:.78rem">('+r.verm+'/'+r.total+')</span></td>'
           +'<td style="padding:.55rem .8rem;text-align:right;font-variant-numeric:tabular-nums">'+fmtE(r.kalt)+'</td>'
-          +'<td style="padding:.55rem 1.1rem;text-align:right;font-variant-numeric:tabular-nums;color:'+(r.offen>0.005?'#dc2626':'#9ca3af')+'">'+(r.offen>0.005?fmtE(r.offen):'–')+'</td>'
+          +'<td style="padding:.55rem .8rem;text-align:right;font-variant-numeric:tabular-nums;color:'+(r.offen>0.005?'#dc2626':'#9ca3af')+'">'+(r.offen>0.005?fmtE(r.offen):'–')+'</td>'
+          +'<td style="padding:.55rem 1.1rem;text-align:center">'+abrCell+'</td>'
         +'</tr>';
       });
       html+='<tr style="border-top:2px solid #e5e7eb;background:#faf9fc;font-weight:700">'
         +'<td style="padding:.6rem 1.1rem">Gesamt</td>'
         +'<td style="padding:.6rem .8rem;text-align:right;font-variant-numeric:tabular-nums">'+quoteGes+' % <span style="color:#9ca3af;font-weight:400;font-size:.78rem">('+vermCount+'/'+einhCount+')</span></td>'
         +'<td style="padding:.6rem .8rem;text-align:right;font-variant-numeric:tabular-nums">'+fmtE(kaltTotal)+'</td>'
-        +'<td style="padding:.6rem 1.1rem;text-align:right;font-variant-numeric:tabular-nums;color:'+(offenTotal>0.005?'#dc2626':'#9ca3af')+'">'+(offenTotal>0.005?fmtE(offenTotal):'–')+'</td></tr>';
+        +'<td style="padding:.6rem .8rem;text-align:right;font-variant-numeric:tabular-nums;color:'+(offenTotal>0.005?'#dc2626':'#9ca3af')+'">'+(offenTotal>0.005?fmtE(offenTotal):'–')+'</td>'
+        +'<td></td></tr>';
       html+='</tbody></table></div>';
     }
     html+='</div>';

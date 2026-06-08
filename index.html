@@ -5177,11 +5177,26 @@ function _resPeriodDetail(e,pe){
   h+='<div style="display:flex;justify-content:space-between;padding:.25rem .85rem .55rem;font-size:.82rem"><span>abzügl. Vorauszahlungen</span><span style="color:#1a7a4a;font-variant-numeric:tabular-nums">− '+_resFmt(vz)+'</span></div>';
   return h;
 }
+// Schlanke Saldo-Übersicht ohne komplette Positions-Aufschlüsselung (die steht im PDF) – User-Wunsch 2026-06-08
+function _resPeriodSummary(e,pe){
+  var ges=pe.bkGes+(e.hasHK?pe.hkGes:0), vz=pe.periode.vorauszBK+(e.hasHK?pe.periode.vorauszHK:0);
+  var diff=vz-ges, gut=diff>=0;
+  var row=function(label,val,col,bold){return '<div style="display:flex;justify-content:space-between;padding:.32rem .85rem;font-size:.82rem'+(bold?';font-weight:700':'')+'"><span'+(col?' style="color:'+col+'"':'')+'>'+label+'</span><span style="font-variant-numeric:tabular-nums'+(col?';color:'+col:'')+'">'+val+'</span></div>';};
+  var h='<div style="padding:.4rem 0">';
+  if(e.hasHK){h+=row('Heizkosten-Anteil',_resFmt(pe.hkGes));h+=row('Betriebskosten-Anteil',_resFmt(pe.bkGes));}
+  h+=row('Kostenanteil gesamt',_resFmt(ges),null,true);
+  h+=row('abzügl. Vorauszahlungen','− '+_resFmt(vz),'#1a7a4a');
+  h+='<div style="border-top:1px dashed var(--border);margin:.25rem .85rem"></div>';
+  h+=row(gut?'Erstattung':'Nachzahlung',(gut?'+':'−')+_resFmt(Math.abs(diff)),gut?'#15803d':'#b45309',true);
+  h+='<div style="font-size:.7rem;color:#9ca3af;padding:.3rem .85rem 0">Die vollständige Kostenaufschlüsselung finden Sie im PDF.</div>';
+  h+='</div>';
+  return h;
+}
 function _resItemDetail(e,item){
   var h='';
   (item.perioden||[]).forEach(function(pe){
     if((item.perioden||[]).length>1){var nm=pe.periode.name||'Leerstand';h+='<div style="font-size:.74rem;font-weight:700;color:var(--p);padding:.5rem .85rem;background:#faf8fc;border-bottom:1px solid var(--border)">'+escapeHtml(nm)+' · '+fmtDatum(pe.periode.von)+'–'+fmtDatum(pe.periode.bis)+'</div>';}
-    h+=_resPeriodDetail(e,pe);
+    h+=_resPeriodSummary(e,pe);
   });
   if(!(item.perioden||[]).length)h='<div style="padding:.85rem;color:#9ca3af;font-size:.82rem">Keine Daten.</div>';
   if(item.vzInfo){
@@ -5208,9 +5223,10 @@ function _resItemDetail(e,item){
 function _resActions(item){
   if(item.type==='leerstand')return '<button class="btn-small" style="background:#888;font-size:.65rem;padding:2px 7px" onclick="event.stopPropagation();handleLeerstandPDF('+item.wi+',&#39;download&#39;)">⬇ Leerstand-PDF</button>';
   if(item.pi!=null){
-    return '<button class="btn-small gruen" style="font-size:.65rem;padding:2px 7px" onclick="event.stopPropagation();handlePeriodePDF('+item.wi+','+item.pi+',false,&#39;vorschau&#39;)"><span class="btn-ic" data-icon="eye"></span></button>'
+    return '<button class="btn-small gruen" title="Abrechnung-Vorschau" style="font-size:.65rem;padding:2px 7px" onclick="event.stopPropagation();handlePeriodePDF('+item.wi+','+item.pi+',false,&#39;vorschau&#39;)"><span class="btn-ic" data-icon="eye"></span> Abrechnung</button>'
       +'<button class="btn-small gruen" style="font-size:.65rem;padding:2px 7px" onclick="event.stopPropagation();handlePeriodePDF('+item.wi+','+item.pi+',false,&#39;download&#39;)">⬇ PDF</button>'
-      +'<button class="btn-small" style="font-size:.65rem;padding:2px 7px" onclick="event.stopPropagation();anschreibenFuerPeriode('+item.wi+','+item.pi+')">✉️</button>';
+      +'<button class="btn-small" title="Anschreiben-Vorschau" style="font-size:.65rem;padding:2px 7px" onclick="event.stopPropagation();anschreibenVorschau('+item.wi+','+item.pi+')"><span class="btn-ic" data-icon="eye"></span> Anschreiben</button>'
+      +'<button class="btn-small grau" title="Anschreiben im Editor öffnen" style="font-size:.65rem;padding:2px 7px" onclick="event.stopPropagation();anschreibenFuerPeriode('+item.wi+','+item.pi+')">✉️</button>';
   }
   return '<button class="btn-small gruen" style="font-size:.65rem;padding:2px 7px" onclick="event.stopPropagation();handleWohnPDF('+item.wi+',false,&#39;download&#39;)">⬇ Gesamt-PDF</button>';
 }
@@ -7873,6 +7889,22 @@ function kopierenAnschreiben(){
 
 // ── ANSCHREIBEN GENERIEREN ──
 // Anschreiben automatisch aus dem Abrechnungsergebnis einer Mieterperiode vorbefüllen
+// Vorschau NUR des Anschreibens (Begleitschreiben + optional VZ-Anpassung) als echtes PDF
+function anschreibenVorschau(wi,pi,withVZ,action){
+  if(!lastErgebnis||!lastErgebnis.ergebnisse||!lastErgebnis.ergebnisse[wi]){showToast('Bitte zuerst berechnen.');return;}
+  var e=lastErgebnis, we=e.ergebnisse[wi];
+  var mp=we.perioden.filter(function(p){return !p.periode.isLeerstand;});
+  var pe=mp[pi]; if(!pe){showToast('Keine Mieterperiode.');return;}
+  var {jsPDF}=window.jspdf;
+  var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  buildAnschreibenContent(doc,we,pe,{vz:(withVZ!=null?!!withVZ:anschrOpt.vz), kaltmiete:we.wohnung._kaltmiete||0, vzNeu:empfVZ(we)});
+  var sm=stammdaten||{};
+  var vName=([sm.firma,sm.vname&&sm.nname?sm.vname+' '+sm.nname:'']).filter(Boolean).join(' / ')||'NEKOSTA';
+  var vNameLine=[vName,sm.strasse?(sm.strasse+', '+(sm.plz||'')+' '+(sm.ort||'')):'',(sm.steuernr?'St.-Nr.: '+sm.steuernr:'')].filter(Boolean).join('  ·  ');
+  applyFooter(doc,vNameLine,isWatermark());
+  var nm=(pe.periode.name||'Mieter').replace(/[^a-zA-Z0-9]/g,'_');
+  showDoc(doc,'Anschreiben_'+nm+'.pdf',action||'vorschau');
+}
 function anschreibenFuerPeriode(wi,pi,withVZ){
   if(!lastErgebnis||!lastErgebnis.ergebnisse||!lastErgebnis.ergebnisse[wi]){showToast('Bitte zuerst berechnen.');return;}
   var e=lastErgebnis;var we=e.ergebnisse[wi];

@@ -2702,6 +2702,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
         </div>
         <div id="tarife-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1.1rem;align-items:stretch"></div>
         <div style="text-align:center;margin-top:1.5rem;font-size:.76rem;color:var(--muted)">Die Einheiten-Grenze bezieht sich auf die Summe aller abgerechneten Einheiten · Objekte unbegrenzt.</div>
+        <div id="tarife-addons" style="margin-top:2.25rem"></div>
       </div>
     </div>
 
@@ -3699,6 +3700,7 @@ async function initApp(user){
     document.getElementById('btn-speichern').style.display='block';
     document.getElementById('ansicht-select').style.display='block';
     document.getElementById('btn-probe').style.display='block';
+    if(typeof updateHvAnsichtOption==='function')updateHvAnsichtOption();
     showPage('dashboard');
   }else{
     document.getElementById('kunden-menu').style.display='block';
@@ -3915,7 +3917,17 @@ function switchAnsicht(val){
       var el=document.getElementById('page-'+p);
       if(el)el.style.display=p==='hausverwalter'?'block':'none';
     });
-    loadHausverwalterDashboard();
+    if(typeof hvAddonActive==='function' && !hvAddonActive()){
+      var c=document.getElementById('hv-content');
+      if(c)c.innerHTML='<div style="max-width:560px;margin:2rem auto;text-align:center;background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:2.25rem 1.75rem">'
+        +'<div style="font-size:2.2rem">🏢</div>'
+        +'<div style="font-size:1.15rem;font-weight:800;margin-top:.5rem">Hausverwalter-Ansicht freischalten</div>'
+        +'<div style="font-size:.86rem;color:var(--muted);margin-top:.6rem;line-height:1.55">Portfolio-Überblick und die Vergütungstabelle (monatliche Verwalter-Vergütung je Objekt) sind Teil des Zusatzabos <strong>Hausverwalter-Zuschuss</strong>.</div>'
+        +'<button class="btn-primary" style="margin-top:1.25rem;background:#0e7c7b;border-color:#0e7c7b" onclick="showPage(\'tarife\')">Zum Zusatzabo</button>'
+      +'</div>';
+    }else{
+      loadHausverwalterDashboard();
+    }
   }else{
     adminMenu.style.display='block';
     kundenMenu.style.display='none';
@@ -7496,10 +7508,58 @@ function renderTarife(){
       +'</ul>'+cta
     +'</div>';
   }).join('');
+  if(typeof renderTarifeAddons==='function')renderTarifeAddons();
 }
 function waehleTarif(plan){
   if(plan==='individuell'){ window.location.href='mailto:info@p-t-hausverwaltung.de?subject=NEKOSTA%20-%20Individuelles%20Angebot%20(%C3%BCber%20100%20Einheiten)'; return; }
   setPlan(plan);
+}
+
+// ── ZUSATZABO: Hausverwalter-Zuschuss (#61) – Add-on, schaltet die Hausverwalter-Ansicht (#59/#60) frei ──
+// Status (Mock, echte Zahlung folgt später) lokal je Nutzer; preislich als Add-on neben dem Basistarif.
+var HV_ADDON_PREIS=9.9; // €/Monat (Mock)
+function hvAddonKey(){return 'nekosta-hv-addon-'+((typeof currentUser!=='undefined'&&currentUser)?currentUser.id:'anon');}
+function hvAddonActive(){ if(isAdmin)return true; try{return localStorage.getItem(hvAddonKey())==='1';}catch(e){return false;} }
+function renderTarifeAddons(){
+  var box=document.getElementById('tarife-addons'); if(!box)return;
+  var aktiv=hvAddonActive();
+  var euro=function(n){return n.toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});};
+  var cta=aktiv
+    ? '<button class="btn-secondary" style="background:#e9f9f0;border-color:#1a9d5a;color:#15803d" onclick="toggleHvAddon()">✓ Aktiv – kündigen</button>'
+    : '<button class="btn-primary" style="background:#0e7c7b;border-color:#0e7c7b" onclick="toggleHvAddon()">Zusatzabo aktivieren</button>';
+  box.innerHTML='<div style="max-width:760px;margin:0 auto">'
+    +'<div style="font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);text-align:center;margin-bottom:.85rem">Zusatzabos</div>'
+    +'<div style="background:var(--white);border:2px solid '+(aktiv?'#1a9d5a':'#0e7c7b')+';border-radius:16px;padding:1.5rem 1.5rem;display:flex;gap:1.25rem;flex-wrap:wrap;align-items:center;justify-content:space-between">'
+      +'<div style="flex:1;min-width:240px">'
+        +'<div style="display:flex;align-items:center;gap:.5rem"><span style="font-size:1.3rem">🏢</span><span style="font-size:1.05rem;font-weight:800;color:#0e7c7b">Hausverwalter-Zuschuss</span>'+(aktiv?'<span style="background:#e9f9f0;color:#15803d;font-size:.62rem;font-weight:800;padding:2px 9px;border-radius:999px;text-transform:uppercase;letter-spacing:.05em">Aktiv</span>':'')+'</div>'
+        +'<div style="font-size:.84rem;color:var(--muted);margin-top:.5rem;line-height:1.5">Schaltet die <strong>Hausverwalter-Ansicht</strong> frei: Portfolio-Übersicht und die <strong>Vergütungstabelle</strong> mit der monatlichen Verwalter-Vergütung je Objekt.</div>'
+      +'</div>'
+      +'<div style="text-align:right;min-width:160px">'
+        +'<div style="margin-bottom:.6rem"><span style="font-size:1.7rem;font-weight:800;color:#0e7c7b">'+euro(HV_ADDON_PREIS)+' €</span><span style="font-size:.8rem;color:var(--muted)"> /Monat</span><div style="font-size:.7rem;color:var(--muted)">zusätzlich zum Tarif · monatlich kündbar</div></div>'
+        +cta
+      +'</div>'
+    +'</div></div>';
+}
+function toggleHvAddon(){
+  var aktiv=hvAddonActive();
+  if(!aktiv){
+    var ok=confirm('Zusatzabo „Hausverwalter-Zuschuss" für '+HV_ADDON_PREIS.toLocaleString('de-DE',{minimumFractionDigits:2})+' €/Monat aktivieren?\n\n(In der Live-Version folgt hier der Bezahlvorgang.)');
+    if(!ok)return;
+    try{localStorage.setItem(hvAddonKey(),'1');}catch(e){}
+    showToast('✅ Hausverwalter-Zuschuss aktiviert');
+  }else{
+    var ok2=confirm('Zusatzabo „Hausverwalter-Zuschuss" wirklich kündigen?');
+    if(!ok2)return;
+    try{localStorage.setItem(hvAddonKey(),'0');}catch(e){}
+    showToast('Zusatzabo gekündigt');
+  }
+  renderTarifeAddons();
+  updateHvAnsichtOption();
+}
+// Hausverwalter-Ansicht-Option im Header nur zeigen, wenn Add-on aktiv (oder Admin)
+function updateHvAnsichtOption(){
+  var opt=document.querySelector('#ansicht-select option[value=hausverwalter]');
+  if(opt)opt.style.display=hvAddonActive()?'':'none';
 }
 
 // ── Token-/Rabatt-/Unlock-Altsystem entfernt (2026-05-30) ──

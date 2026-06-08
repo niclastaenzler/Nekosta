@@ -892,6 +892,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
     <select class="ansicht-select" id="ansicht-select" onchange="switchAnsicht(this.value)" style="display:none">
       <option value="verwalter">👔 Verwalter-Ansicht</option>
       <option value="hausverwalter">🏢 Hausverwalter-Ansicht</option>
+      <option value="eigentuemer">🏠 Eigentümer-Ansicht</option>
       <option value="kunden">👤 Kunden-Ansicht</option>
     </select>
     <span id="user-email"></span><span id="role-badge"></span>
@@ -1189,6 +1190,17 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
           <div style="font-size:.85rem;color:var(--muted);margin-top:2px">Portfolio aller verwalteten Objekte und monatliche Verwalter-Vergütung</div>
         </div>
         <div id="hv-content"><div style="text-align:center;padding:3rem;color:var(--muted)">Wird geladen…</div></div>
+      </div>
+    </div>
+
+    <!-- EIGENTÜMER-ANSICHT (Portfolio-Einnahmen/Belegung) -->
+    <div id="page-eigentuemer" style="display:none">
+      <div style="padding:2rem">
+        <div style="margin-bottom:1.5rem">
+          <h1 style="font-size:1.5rem;font-weight:700">🏠 Eigentümer-Übersicht</h1>
+          <div style="font-size:.85rem;color:var(--muted);margin-top:2px">Ihre Objekte: Belegung, Mieteinnahmen und offene Posten</div>
+        </div>
+        <div id="eig-content"><div style="text-align:center;padding:3rem;color:var(--muted)">Wird geladen…</div></div>
       </div>
     </div>
 
@@ -3789,7 +3801,7 @@ function showPage(name){
   else if(name==='tokens'){name='einstellungen';_profilTab='abo';}
   var allPages=['tool','abrechnung','archiv','mahnwesen','stammdaten','anschreiben','kunden','tokens','tarife','auftraege',
     'einstellungen','heizkostenerstellen','impressum','welcome','bearbeitungsnotizen',
-    'adminpanel','dashboard','hausverwalter','objekte','weg','weg-cockpit','mieter','objekt-detail','kontakte','dokumente','buchhaltung'];
+    'adminpanel','dashboard','hausverwalter','eigentuemer','objekte','weg','weg-cockpit','mieter','objekt-detail','kontakte','dokumente','buchhaltung'];
 
   var adminVisible=document.getElementById('admin-menu').style.display!=='none';
 
@@ -3892,7 +3904,7 @@ function switchAnsicht(val){
 
   var allPages=['tool','archiv','mahnwesen','stammdaten','anschreiben','kunden','tokens','tarife','auftraege',
     'einstellungen','heizkostenerstellen','impressum','bearbeitungsnotizen',
-    'adminpanel','dashboard','hausverwalter','objekte','weg','mieter','welcome','kontakte','dokumente','buchhaltung'];
+    'adminpanel','dashboard','hausverwalter','eigentuemer','objekte','weg','mieter','welcome','kontakte','dokumente','buchhaltung'];
 
   if(val==='kunden'){
     adminMenu.style.display='none';
@@ -3928,6 +3940,17 @@ function switchAnsicht(val){
     }else{
       loadHausverwalterDashboard();
     }
+  }else if(val==='eigentuemer'){
+    adminMenu.style.display='block';
+    kundenMenu.style.display='none';
+    if(pb)pb.style.display='block';
+    document.querySelectorAll('.nav-item').forEach(function(el){el.classList.remove('active');});
+    currentPageName='eigentuemer';
+    allPages.forEach(function(p){
+      var el=document.getElementById('page-'+p);
+      if(el)el.style.display=p==='eigentuemer'?'block':'none';
+    });
+    loadEigentuemerDashboard();
   }else{
     adminMenu.style.display='block';
     kundenMenu.style.display='none';
@@ -9489,6 +9512,75 @@ async function hvSaveVerguetung(objId,val,inp){
   var v=parseFloat((''+val).replace(',','.'))||0; if(v<0)v=0;
   try{ await _saveObjektMeta(objId,{verguetung_monat:v}); if(inp){inp.style.borderColor='#1a9d5a'; setTimeout(function(){inp.style.borderColor='';},900);} }
   catch(e){ showToast('❌ Speichern fehlgeschlagen: '+(e.message||e)); if(inp)inp.style.borderColor='#c0392b'; }
+}
+
+// ════ EIGENTÜMER-ANSICHT (#59, Teil 2): Portfolio – Belegung, Mieteinnahmen, offene Posten ════
+async function loadEigentuemerDashboard(){
+  var c=document.getElementById('eig-content'); if(!c)return;
+  c.innerHTML='<div style="text-align:center;padding:3rem;color:var(--muted)">Wird geladen…</div>';
+  var fmtE=function(n){return (n||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';};
+  try{
+    var [objR,ehR,mvR,mzR]=await Promise.all([
+      sb.from('objekte').select('id,name,ort,kategorie,einheiten_anzahl').eq('user_id',currentUser.id).order('name'),
+      sb.from('einheiten').select('id,objekt_id').eq('user_id',currentUser.id),
+      sb.from('mietverhaeltnisse').select('objekt_id,einheit_id,kaltmiete,aktiv').eq('user_id',currentUser.id).eq('aktiv',true),
+      sb.from('mietzahlungen').select('objekt_id,betrag,status').eq('user_id',currentUser.id).in('status',['offen','gemahnt'])
+    ]);
+    var objekte=objR.data||[], eh=ehR.data||[], mv=mvR.data||[], mz=mzR.data||[];
+    var rows=objekte.map(function(o){
+      var units=eh.filter(function(e){return e.objekt_id===o.id;});
+      var activeMv=mv.filter(function(m){return m.objekt_id===o.id;});
+      var vermietet={}; activeMv.forEach(function(m){if(m.einheit_id)vermietet[m.einheit_id]=true;});
+      var total=units.length||o.einheiten_anzahl||0;
+      var verm=Math.min(Object.keys(vermietet).length,total);
+      var kalt=activeMv.reduce(function(s,m){return s+(parseFloat(m.kaltmiete)||0);},0);
+      var offen=mz.filter(function(z){return z.objekt_id===o.id;}).reduce(function(s,z){return s+(parseFloat(z.betrag)||0);},0);
+      return {id:o.id,name:o.name||'Objekt',ort:o.ort||'',total:total,verm:verm,quote:total>0?Math.round(verm/total*100):0,kalt:kalt,offen:offen};
+    });
+    var objCount=rows.length;
+    var einhCount=rows.reduce(function(s,r){return s+r.total;},0);
+    var vermCount=rows.reduce(function(s,r){return s+r.verm;},0);
+    var kaltTotal=rows.reduce(function(s,r){return s+r.kalt;},0);
+    var offenTotal=rows.reduce(function(s,r){return s+r.offen;},0);
+    var quoteGes=einhCount>0?Math.round(vermCount/einhCount*100):0;
+    var kpi=function(lbl,val,sub,color){return '<div style="border:1px solid #e5e7eb;border-radius:10px;background:#fff;padding:1rem 1.1rem"><div style="font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#9ca3af">'+lbl+'</div><div style="font-size:1.5rem;font-weight:700;margin-top:.3rem;color:'+(color||'#111827')+';font-variant-numeric:tabular-nums">'+val+'</div><div style="font-size:.72rem;color:#9ca3af;margin-top:.15rem">'+sub+'</div></div>';};
+    var html='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:1rem;margin-bottom:1.5rem">'
+      +kpi('Objekte',objCount,'im Eigentum')
+      +kpi('Vermietung',quoteGes+' %',vermCount+' von '+einhCount+' Einheiten','#7c3aed')
+      +kpi('Kaltmiete / Monat',fmtE(kaltTotal),'aktive Mietverhältnisse','#15803d')
+      +kpi('Offene Posten',fmtE(offenTotal),'unbezahlt / gemahnt',offenTotal>0.005?'#dc2626':'#111827')
+    +'</div>';
+    html+='<div style="border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;background:#fff">'
+      +'<div style="padding:.85rem 1.1rem;border-bottom:1px solid #eef0f3;font-weight:700;font-size:.95rem">Objekte im Detail</div>';
+    if(!rows.length){
+      html+='<div style="padding:2rem;text-align:center;color:#9ca3af;font-size:.85rem">Noch keine Objekte angelegt.</div>';
+    }else{
+      html+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.85rem">'
+        +'<thead><tr style="background:#faf9fc">'
+          +'<th style="padding:.6rem 1.1rem;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:#6b7280;text-align:left">Objekt</th>'
+          +'<th style="padding:.6rem .8rem;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:#6b7280;text-align:right">Belegung</th>'
+          +'<th style="padding:.6rem .8rem;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:#6b7280;text-align:right">Kaltmiete/Mon.</th>'
+          +'<th style="padding:.6rem 1.1rem;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:#6b7280;text-align:right">Offen</th>'
+        +'</tr></thead><tbody>';
+      rows.forEach(function(r){
+        var qcol=r.quote>=90?'#15803d':(r.quote>=50?'#d97706':'#dc2626');
+        html+='<tr style="border-top:1px solid #eef0f3">'
+          +'<td style="padding:.55rem 1.1rem"><div style="font-weight:600">'+escapeHtml(r.name)+'</div>'+(r.ort?'<div style="font-size:.72rem;color:#9ca3af">'+escapeHtml(r.ort)+'</div>':'')+'</td>'
+          +'<td style="padding:.55rem .8rem;text-align:right;font-variant-numeric:tabular-nums"><span style="color:'+qcol+';font-weight:700">'+r.quote+' %</span> <span style="color:#9ca3af;font-size:.78rem">('+r.verm+'/'+r.total+')</span></td>'
+          +'<td style="padding:.55rem .8rem;text-align:right;font-variant-numeric:tabular-nums">'+fmtE(r.kalt)+'</td>'
+          +'<td style="padding:.55rem 1.1rem;text-align:right;font-variant-numeric:tabular-nums;color:'+(r.offen>0.005?'#dc2626':'#9ca3af')+'">'+(r.offen>0.005?fmtE(r.offen):'–')+'</td>'
+        +'</tr>';
+      });
+      html+='<tr style="border-top:2px solid #e5e7eb;background:#faf9fc;font-weight:700">'
+        +'<td style="padding:.6rem 1.1rem">Gesamt</td>'
+        +'<td style="padding:.6rem .8rem;text-align:right;font-variant-numeric:tabular-nums">'+quoteGes+' % <span style="color:#9ca3af;font-weight:400;font-size:.78rem">('+vermCount+'/'+einhCount+')</span></td>'
+        +'<td style="padding:.6rem .8rem;text-align:right;font-variant-numeric:tabular-nums">'+fmtE(kaltTotal)+'</td>'
+        +'<td style="padding:.6rem 1.1rem;text-align:right;font-variant-numeric:tabular-nums;color:'+(offenTotal>0.005?'#dc2626':'#9ca3af')+'">'+(offenTotal>0.005?fmtE(offenTotal):'–')+'</td></tr>';
+      html+='</tbody></table></div>';
+    }
+    html+='</div>';
+    c.innerHTML=html;
+  }catch(e){ c.innerHTML='<div style="padding:2rem;color:#c0392b">Fehler: '+(e.message||e)+'</div>'; }
 }
 
 async function loadObjekte(){

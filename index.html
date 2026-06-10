@@ -681,6 +681,106 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
   .lp-nav-links{display:none}
 }
 @media(prefers-reduced-motion:reduce){#landing *{animation:none!important;transition:none!important}.lp-reveal{opacity:1;transform:none}}
+
+/* ════════ LANDING v2 – super modern / distinctive ════════ */
+#landing{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#0c0718;-webkit-font-smoothing:antialiased}
+#landing ::selection{background:#a855f7;color:#fff}
+.lp-logo span{color:#22d3ee}
+.lp-btn{font-family:inherit;letter-spacing:-.01em}
+.lp-btn-primary{background:linear-gradient(135deg,#a855f7 0%,#7c3aed 52%,#6366f1 100%);box-shadow:0 10px 30px rgba(124,58,237,.45),inset 0 1px 0 rgba(255,255,255,.28)}
+.lp-btn-primary:hover{transform:translateY(-2px);box-shadow:0 16px 42px rgba(124,58,237,.6),inset 0 1px 0 rgba(255,255,255,.32)}
+.lp-nav.scrolled{background:rgba(251,250,255,.8);backdrop-filter:saturate(180%) blur(16px);box-shadow:0 1px 0 rgba(124,58,237,.08),0 8px 30px rgba(124,58,237,.07)}
+/* HERO – multi-color mesh + grid */
+.lp-hero{min-height:100vh;background:
+  radial-gradient(900px 520px at 80% -10%,rgba(168,85,247,.5),transparent 60%),
+  radial-gradient(720px 520px at 8% 16%,rgba(34,211,238,.22),transparent 55%),
+  radial-gradient(620px 620px at 58% 116%,rgba(99,102,241,.34),transparent 60%),
+  linear-gradient(165deg,#0b0617 0%,#160a2e 46%,#1d1040 100%)}
+.lp-grid-ovl{position:absolute;inset:0;z-index:1;pointer-events:none;
+  background-image:linear-gradient(rgba(255,255,255,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.055) 1px,transparent 1px);
+  background-size:48px 48px;
+  -webkit-mask-image:radial-gradient(1000px 640px at 72% 8%,#000,transparent 78%);mask-image:radial-gradient(1000px 640px at 72% 8%,#000,transparent 78%)}
+.lp-blob{filter:blur(80px);opacity:.5}
+.lp-blob.b1{background:#a855f7}.lp-blob.b2{background:#22d3ee}.lp-blob.b3{background:#6366f1}
+.lp-eyebrow{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);color:#ecd9ff;backdrop-filter:blur(8px)}
+.lp-h1{font-size:clamp(2.6rem,5.8vw,4.4rem);font-weight:850;letter-spacing:-.035em;line-height:1.03}
+.lp-h1 .grad{background:linear-gradient(95deg,#c4b5fd,#22d3ee,#c4b5fd);background-size:200% auto;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:lpShine 5s linear infinite}
+.lp-sub{font-size:1.16rem;color:rgba(255,255,255,.74);max-width:548px}
+.lp-mock{border-radius:22px;border:1px solid rgba(255,255,255,.55);box-shadow:0 44px 100px rgba(8,3,20,.6),0 0 0 1px rgba(168,85,247,.10);transition:transform .3s cubic-bezier(.2,.7,.2,1)}
+.lp-hero-grid>div:last-child:hover .lp-mock{transform:translateY(-6px) rotate(.4deg) scale(1.015)}
+.lp-mock-total{background:linear-gradient(135deg,#efe4fb,#e6f7fb)}
+.lp-mock-bar{height:6px;border-radius:999px;background:#eee;overflow:hidden;margin-top:.85rem}
+.lp-mock-bar i{display:block;height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,#a855f7,#22d3ee);animation:lpBar 2.6s ease-in-out infinite}
+@keyframes lpBar{0%{width:8%}55%{width:100%}100%{width:100%}}
+.lp-chip-float{border:1px solid rgba(0,0,0,.05);box-shadow:0 16px 36px rgba(8,3,20,.22)}
+/* TRUST MARQUEE */
+.lp-marquee{position:relative;z-index:5;margin-top:2.2rem;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)}
+.lp-marquee-track{display:flex;gap:1rem;width:max-content;animation:lpMarq 26s linear infinite}
+.lp-marquee:hover .lp-marquee-track{animation-play-state:paused}
+.lp-marq-item{display:inline-flex;align-items:center;gap:.5rem;white-space:nowrap;font-weight:700;font-size:.9rem;color:#4a3d6b;background:#fff;border:1px solid #ece5f7;border-radius:999px;padding:.55rem 1.1rem;box-shadow:0 4px 14px rgba(124,58,237,.06)}
+.lp-marq-item .d{width:7px;height:7px;border-radius:50%;background:linear-gradient(135deg,#a855f7,#22d3ee)}
+@keyframes lpMarq{to{transform:translateX(-50%)}}
+/* SECTIONS */
+.lp-section{background:#fbfaff}
+#lp-steps,#lp-faq{background:#f4eefe!important}
+.lp-kicker{display:inline-flex;align-items:center;gap:.5rem;justify-content:center;width:100%}
+.lp-kicker::before,.lp-kicker::after{content:"";height:1px;width:26px;background:linear-gradient(90deg,transparent,#c4b5fd)}
+.lp-kicker::after{background:linear-gradient(90deg,#c4b5fd,transparent)}
+.lp-h2{position:relative;padding-bottom:.9rem}
+.lp-h2::after{content:"";position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:64px;height:4px;border-radius:999px;background:linear-gradient(90deg,#a855f7,#22d3ee)}
+/* STATS */
+.lp-stats{background:linear-gradient(135deg,#1c0f3a,#2a1257);border:1px solid rgba(168,85,247,.22);border-radius:28px;box-shadow:0 30px 70px rgba(28,15,58,.35)}
+.lp-stat .n{background:linear-gradient(90deg,#fff,#c4b5fd);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+/* BENTO FEATURES */
+.lp-feat-grid{grid-template-columns:repeat(4,1fr);gap:1.1rem}
+.lp-feat{border-radius:22px;border:1px solid #ece5f7;position:relative;overflow:hidden}
+.lp-feat::after{content:"";position:absolute;inset:0;border-radius:22px;padding:1px;pointer-events:none;background:linear-gradient(135deg,rgba(168,85,247,.4),transparent 40%);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:0;transition:opacity .25s}
+.lp-feat:hover{transform:translateY(-6px);box-shadow:0 26px 54px rgba(124,58,237,.18);border-color:#cbb5ee}
+.lp-feat:hover::after{opacity:1}
+.lp-feat.wide{grid-column:span 2}
+.lp-feat.dark{background:linear-gradient(150deg,#1c0f3a,#2a1257);border-color:transparent;color:#fff}
+.lp-feat.dark h3{color:#fff}.lp-feat.dark p{color:rgba(255,255,255,.72)}
+.lp-feat.grad{background:linear-gradient(150deg,#7c3aed,#6366f1);border-color:transparent;color:#fff}
+.lp-feat.grad h3{color:#fff}.lp-feat.grad p{color:rgba(255,255,255,.86)}
+.lp-feat-ic{border-radius:15px;background:linear-gradient(135deg,#a855f7,#6366f1);color:#fff;box-shadow:0 10px 22px rgba(124,58,237,.32);filter:saturate(1.1)}
+.lp-feat.dark .lp-feat-ic,.lp-feat.grad .lp-feat-ic{background:rgba(255,255,255,.16);box-shadow:none}
+.lp-feat.wide h3{font-size:1.2rem}
+/* STEPS connector */
+.lp-step-n{background:linear-gradient(135deg,#a855f7,#6366f1);box-shadow:0 14px 32px rgba(124,58,237,.38)}
+/* PRICING */
+.lp-price{border-radius:24px;border:1.5px solid #ece5f7}
+.lp-price.feat{border:2px solid transparent;background:linear-gradient(#fff,#fff) padding-box,linear-gradient(135deg,#a855f7,#22d3ee) border-box;box-shadow:0 26px 64px rgba(124,58,237,.22)}
+.lp-price-pop{background:linear-gradient(135deg,#a855f7,#6366f1)}
+.lp-price .pp{background:linear-gradient(135deg,#1a1430,#6a2d9f);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.lp-price .pp small{-webkit-text-fill-color:#6b6580;color:#6b6580}
+/* CTA + FOOTER */
+.lp-cta{background:radial-gradient(720px 400px at 50% -12%,rgba(168,85,247,.5),transparent),linear-gradient(135deg,#160a2e,#241052);border:1px solid rgba(168,85,247,.25)}
+.lp-footer{background:#0a0518}
+@media(max-width:880px){.lp-feat-grid{grid-template-columns:1fr}.lp-feat.wide{grid-column:auto}}
+
+/* ════════ OBJEKTE v2 – moderner Reiter ════════ */
+#page-objekte .obj-title{font-size:1.6rem;font-weight:800;letter-spacing:-.015em;color:#111827}
+#page-objekte .obj-sub{font-size:.85rem;color:#6b7280;margin-top:2px}
+.obj-kpi{background:var(--white);border:1px solid #e5e7eb;border-radius:14px;padding:.95rem 1.05rem;display:flex;align-items:center;gap:.85rem;transition:transform .18s,box-shadow .18s}
+.obj-kpi:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(106,45,159,.10)}
+.obj-kpi .ic{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.obj-kpi .ic svg{width:20px;height:20px}
+.obj-kpi .v{font-size:1.3rem;font-weight:800;line-height:1.1;color:#111827;font-variant-numeric:tabular-nums;white-space:nowrap}
+.obj-kpi .l{font-size:.68rem;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-top:2px;font-weight:600}
+#objekte-search{transition:border-color .15s,box-shadow .15s}
+#objekte-search:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(106,45,159,.12)}
+.obj-pill{display:inline-flex;align-items:center;gap:.4rem;font-size:.7rem;font-weight:700;padding:3px 10px;border-radius:999px;white-space:nowrap}
+.obj-pill .d{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.75;flex-shrink:0}
+.obj-prog{height:7px;background:#eef0f3;border-radius:999px;overflow:hidden}
+.obj-prog i{display:block;height:100%;border-radius:999px;transition:width .4s ease}
+.obj-row{cursor:pointer;border-bottom:1px solid #f1f0f5;transition:background .12s}
+.obj-row:hover{background:#faf8fd}
+.obj-av{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;flex-shrink:0;letter-spacing:.02em;box-shadow:inset 0 0 0 1px rgba(0,0,0,.04)}
+.obj-pgbtn{border:1px solid var(--border);background:var(--white);border-radius:8px;padding:.35rem .85rem;cursor:pointer;font-size:.85rem;font-family:var(--ff);color:#374151;transition:background .15s,color .15s,border-color .15s}
+.obj-pgbtn:hover{background:var(--p);color:#fff;border-color:var(--p)}
+.obj-card{background:var(--white);border:1px solid #e5e7eb;border-radius:16px;padding:1.15rem;cursor:pointer;position:relative;overflow:hidden;transition:transform .18s,box-shadow .18s,border-color .18s}
+.obj-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--obj-acc,linear-gradient(90deg,#a855f7,#6366f1))}
+.obj-card:hover{transform:translateY(-3px);box-shadow:0 16px 38px rgba(106,45,159,.14);border-color:#d9c8f0}
 </style>
 
 <div id="landing">
@@ -702,6 +802,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
   <!-- HERO -->
   <header class="lp-hero">
     <div class="lp-blob b1"></div><div class="lp-blob b2"></div><div class="lp-blob b3"></div>
+    <div class="lp-grid-ovl"></div>
     <div class="lp-wrap lp-hero-grid">
       <div>
         <div class="lp-eyebrow"><span class="dot"></span> Nebenkostenabrechnung – einfach &amp; rechtssicher</div>
@@ -711,7 +812,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
           <button class="lp-btn lp-btn-primary lp-btn-lg" onclick="lpOpenLogin(true)">Jetzt kostenlos starten →</button>
           <button class="lp-btn lp-btn-ghost lp-btn-lg" onclick="lpScroll('lp-features')">Funktionen ansehen</button>
         </div>
-        <div class="lp-hero-note">✓ 30 Tage gratis &nbsp;·&nbsp; ✓ Keine Kreditkarte &nbsp;·&nbsp; ✓ Sofort startklar</div>
+        <div class="lp-hero-note">✓ 14 Tage gratis &nbsp;·&nbsp; ✓ Keine Kreditkarte &nbsp;·&nbsp; ✓ Sofort startklar</div>
       </div>
       <div style="position:relative">
         <div class="lp-mock">
@@ -723,6 +824,7 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
           <div class="lp-mock-row"><span>Heizung (tagegenau)</span><b>684,15 €</b></div>
           <div class="lp-mock-row"><span>Müll &amp; Hausreinigung</span><b>196,00 €</b></div>
           <div class="lp-mock-total"><span style="font-weight:700">Ihr Anteil</span><span class="v">1.431,45 €</span></div>
+          <div class="lp-mock-bar"><i></i></div>
         </div>
       </div>
     </div>
@@ -734,7 +836,13 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
       <div class="lp-stat"><div class="n" data-count="365" data-suffix="">0</div><div class="l">Tage tagegenau abgerechnet</div></div>
       <div class="lp-stat"><div class="n" data-count="4" data-suffix="">0</div><div class="l">Profi PDF-Layouts</div></div>
       <div class="lp-stat"><div class="n" data-count="100" data-suffix="%">0</div><div class="l">im Browser, kein Setup</div></div>
-      <div class="lp-stat"><div class="n" data-count="30" data-suffix=" Tage">0</div><div class="l">kostenlos testen</div></div>
+      <div class="lp-stat"><div class="n" data-count="14" data-suffix=" Tage">0</div><div class="l">kostenlos testen</div></div>
+    </div>
+    <div class="lp-marquee lp-reveal">
+      <div class="lp-marquee-track">
+        <span class="lp-marq-item"><span class="d"></span>Vermieter</span><span class="lp-marq-item"><span class="d"></span>Hausverwaltungen</span><span class="lp-marq-item"><span class="d"></span>WEG-Verwalter</span><span class="lp-marq-item"><span class="d"></span>Eigentümer</span><span class="lp-marq-item"><span class="d"></span>Tagegenaue Verteilung</span><span class="lp-marq-item"><span class="d"></span>§ 556 / § 560 BGB</span><span class="lp-marq-item"><span class="d"></span>Heiz- &amp; Betriebskosten</span><span class="lp-marq-item"><span class="d"></span>Rechtssichere PDFs</span>
+        <span class="lp-marq-item"><span class="d"></span>Vermieter</span><span class="lp-marq-item"><span class="d"></span>Hausverwaltungen</span><span class="lp-marq-item"><span class="d"></span>WEG-Verwalter</span><span class="lp-marq-item"><span class="d"></span>Eigentümer</span><span class="lp-marq-item"><span class="d"></span>Tagegenaue Verteilung</span><span class="lp-marq-item"><span class="d"></span>§ 556 / § 560 BGB</span><span class="lp-marq-item"><span class="d"></span>Heiz- &amp; Betriebskosten</span><span class="lp-marq-item"><span class="d"></span>Rechtssichere PDFs</span>
+      </div>
     </div>
   </div>
 
@@ -745,12 +853,12 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
       <h2 class="lp-h2 lp-reveal">Von der Kostenerfassung bis zum fertigen PDF</h2>
       <p class="lp-lead lp-reveal">Schluss mit Excel-Chaos. NEKOSTA verbindet Abrechnung, Objekt- und Mieterverwaltung in einer modernen Oberfläche.</p>
       <div class="lp-feat-grid">
-        <div class="lp-feat lp-reveal"><div class="lp-feat-ic">📊</div><h3>Tagegenaue Verteilung</h3><p>Nach Fläche, Personen, Miteigentumsanteil oder Einheiten – auch bei Mieterwechsel und Leerstand exakt aufgeteilt.</p></div>
+        <div class="lp-feat wide dark lp-reveal"><div class="lp-feat-ic">📊</div><h3>Tagegenaue Verteilung</h3><p>Nach Fläche, Personen, Miteigentumsanteil oder Einheiten – auch bei Mieterwechsel und Leerstand auf den Tag genau aufgeteilt. Der Kern, den Excel nicht sauber hinbekommt.</p></div>
         <div class="lp-feat lp-reveal"><div class="lp-feat-ic">🔥</div><h3>Heiz- &amp; Betriebskosten</h3><p>Beide Kostenarten in einem Durchlauf, mit Vorauszahlungen und automatischem Nachzahlungs-/Guthaben-Saldo.</p></div>
         <div class="lp-feat lp-reveal"><div class="lp-feat-ic">🏢</div><h3>Objekt- &amp; Einheitenverwaltung</h3><p>Mehrere Objekte, Wohn- und Gewerbeeinheiten, Vermietungsquote und Kennzahlen auf einen Blick.</p></div>
         <div class="lp-feat lp-reveal"><div class="lp-feat-ic">👥</div><h3>Mieter &amp; Mietverhältnisse</h3><p>Kontakte, Ein- und Auszüge, Kaltmiete und Vorauszahlungen – sauber pro Einheit verwaltet.</p></div>
         <div class="lp-feat lp-reveal"><div class="lp-feat-ic">💳</div><h3>Soll-/Ist Mietzahlungen</h3><p>Monatliche Mieten verfolgen, offene Posten erkennen und den Zahlungsstatus im Blick behalten.</p></div>
-        <div class="lp-feat lp-reveal"><div class="lp-feat-ic">📄</div><h3>Rechtssichere PDFs &amp; Excel</h3><p>Professionelle Abrechnungen als PDF in vier Layouts, dazu Excel-Export und Anschreiben-Generator.</p></div>
+        <div class="lp-feat wide grad lp-reveal"><div class="lp-feat-ic">📄</div><h3>Rechtssichere PDFs &amp; Anschreiben</h3><p>Professionelle Abrechnungen als PDF in vier Layouts, Excel-Export, eigener Briefbogen und Anschreiben-Generator – fertig zum Versenden in einem Klick.</p></div>
       </div>
     </div>
   </section>
@@ -804,8 +912,8 @@ input.error{border-color:var(--danger)!important;background:#fff8f8!important}
       <div class="lp-faq" style="margin-top:2.5rem">
         <div class="lp-faq-item lp-reveal"><div class="lp-faq-q" onclick="lpFaq(this)">Ist die Abrechnung rechtssicher?<span class="ic">+</span></div><div class="lp-faq-a"><div>NEKOSTA verteilt Kosten tagegenau nach den gängigen Schlüsseln (Fläche, Personen, MEA, Einheiten) und berücksichtigt Mieterwechsel und Leerstand – die Grundlage für eine nachvollziehbare, rechtssichere Abrechnung.</div></div></div>
         <div class="lp-faq-item lp-reveal"><div class="lp-faq-q" onclick="lpFaq(this)">Muss ich etwas installieren?<span class="ic">+</span></div><div class="lp-faq-a"><div>Nein. NEKOSTA läuft komplett im Browser. Einfach registrieren und sofort loslegen – deine Daten werden sicher in der Cloud gespeichert.</div></div></div>
-        <div class="lp-faq-item lp-reveal"><div class="lp-faq-q" onclick="lpFaq(this)">Kann ich mehrere Objekte verwalten?<span class="ic">+</span></div><div class="lp-faq-a"><div>Ja. Im Free-Tarif bis zu 2 Objekte, im Pro-Tarif bis zu 15 und im Business-Tarif unbegrenzt – inklusive Einheiten, Mietern und Zahlungsverwaltung.</div></div></div>
-        <div class="lp-faq-item lp-reveal"><div class="lp-faq-q" onclick="lpFaq(this)">Was kostet es zum Start?<span class="ic">+</span></div><div class="lp-faq-a"><div>Nichts. Du startest 30 Tage kostenlos ohne Kreditkarte und entscheidest danach in Ruhe, ob ein bezahlter Tarif für dich passt.</div></div></div>
+        <div class="lp-faq-item lp-reveal"><div class="lp-faq-q" onclick="lpFaq(this)">Kann ich mehrere Objekte verwalten?<span class="ic">+</span></div><div class="lp-faq-a"><div>Ja. Objekte sind in allen Tarifen unbegrenzt – die Tarife unterscheiden sich nach der Zahl der abgerechneten Einheiten (Basis 10, Plus 50, Pro 100). Inklusive Einheiten, Mietern und Zahlungsverwaltung.</div></div></div>
+        <div class="lp-faq-item lp-reveal"><div class="lp-faq-q" onclick="lpFaq(this)">Was kostet es zum Start?<span class="ic">+</span></div><div class="lp-faq-a"><div>Nichts. Du startest 14 Tage kostenlos ohne Kreditkarte und entscheidest danach in Ruhe, ob ein bezahlter Tarif für dich passt.</div></div></div>
         <div class="lp-faq-item lp-reveal"><div class="lp-faq-q" onclick="lpFaq(this)">Kann ich Heiz- und Betriebskosten zusammen abrechnen?<span class="ic">+</span></div><div class="lp-faq-a"><div>Ja, beide Kostenarten werden in einem Durchgang erfasst und korrekt verteilt – mit getrennten Vorauszahlungen und einem klaren Gesamt-Saldo je Mieter.</div></div></div>
       </div>
     </div>
@@ -1208,15 +1316,18 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
     <div id="page-objekte" style="display:none">
       <div style="padding:2rem">
         <!-- HEADER -->
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:.75rem">
-          <h1 style="font-size:1.5rem;font-weight:700">Objekte</h1>
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:1.5rem;flex-wrap:wrap;gap:.75rem">
+          <div>
+            <h1 class="obj-title">Objekte</h1>
+            <div class="obj-sub">Dein Portfolio – Einheiten, Vermietung und offene Posten auf einen Blick</div>
+          </div>
           <button class="btn-primary" onclick="openObjektModal()" style="display:flex;align-items:center;gap:.4rem">
             <span class="btn-ic" data-icon="plus"></span> Objekt hinzufügen
           </button>
         </div>
 
         <!-- KPI-ÜBERBLICK -->
-        <div id="objekte-kpis" style="display:none;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.75rem;margin-bottom:1.25rem"></div>
+        <div id="objekte-kpis" style="display:none;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:.85rem;margin-bottom:1.25rem"></div>
 
         <!-- SUCHE + FILTER -->
         <div style="display:flex;gap:.75rem;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap">
@@ -1278,10 +1389,10 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
           <!-- PAGINATION -->
           <div style="display:flex;justify-content:space-between;align-items:center;padding:.75rem 1.25rem;border-top:1px solid var(--border);font-size:.82rem;color:var(--muted)">
             <span id="objekte-count">0 Einträge</span>
-            <div style="display:flex;gap:.4rem">
-              <button onclick="objektePage(-1)" style="border:1px solid var(--border);background:var(--white);border-radius:6px;padding:.3rem .7rem;cursor:pointer;font-size:.82rem">‹</button>
+            <div style="display:flex;gap:.4rem;align-items:center">
+              <button class="obj-pgbtn" onclick="objektePage(-1)">‹</button>
               <span id="objekte-page-info" style="padding:.3rem .7rem;font-size:.82rem">Seite 1</span>
-              <button onclick="objektePage(1)" style="border:1px solid var(--border);background:var(--white);border-radius:6px;padding:.3rem .7rem;cursor:pointer;font-size:.82rem">›</button>
+              <button class="obj-pgbtn" onclick="objektePage(1)">›</button>
             </div>
           </div>
         </div>
@@ -9126,7 +9237,7 @@ async function loadDashboardChart(){
 }
 async function loadDashboard(){
   try{
-    loadDashLayout();applyDashLayout();
+    loadDashLayout();applyDashLayout();loadDashLayoutRemote();
     dashAnimateIn();
     loadDashboardChart();
     // Date + greeting
@@ -9242,19 +9353,47 @@ var DASH_WIDGETS=[
 var _dashLayout=null, _dashDragId=null, _dashDnDReady=false;
 function dashLayoutKey(){return 'nekosta_dash_layout_'+(typeof currentUser!=='undefined'&&currentUser?currentUser.id:'anon');}
 function dashDefaultLayout(){return {order:DASH_WIDGETS.map(function(w){return w.id;}),hidden:{},span:{}};}
-function loadDashLayout(){
-  try{var raw=localStorage.getItem(dashLayoutKey());_dashLayout=raw?JSON.parse(raw):null;}catch(e){_dashLayout=null;}
-  if(!_dashLayout||!_dashLayout.order)_dashLayout=dashDefaultLayout();
-  if(!_dashLayout.hidden)_dashLayout.hidden={};
-  if(!_dashLayout.span)_dashLayout.span={};
+function _dashSanitize(l){
+  if(!l||!l.order)l=dashDefaultLayout();
+  if(!l.hidden)l.hidden={};
+  if(!l.span)l.span={};
   // Neue Widgets, die noch nicht im gespeicherten Layout sind, hinten anhängen
-  DASH_WIDGETS.forEach(function(w){if(_dashLayout.order.indexOf(w.id)<0)_dashLayout.order.push(w.id);});
+  DASH_WIDGETS.forEach(function(w){if(l.order.indexOf(w.id)<0)l.order.push(w.id);});
   // Verwaiste IDs (entfernte Widgets) aus der Reihenfolge filtern
   var valid={};DASH_WIDGETS.forEach(function(w){valid[w.id]=1;});
-  _dashLayout.order=_dashLayout.order.filter(function(id){return valid[id];});
+  l.order=l.order.filter(function(id){return valid[id];});
+  return l;
+}
+function loadDashLayout(){
+  try{var raw=localStorage.getItem(dashLayoutKey());_dashLayout=raw?JSON.parse(raw):null;}catch(e){_dashLayout=null;}
+  _dashLayout=_dashSanitize(_dashLayout);
   return _dashLayout;
 }
-function saveDashLayout(){try{localStorage.setItem(dashLayoutKey(),JSON.stringify(_dashLayout));}catch(e){}}
+var _dashRemoteLoaded=false;
+async function loadDashLayoutRemote(){
+  // Layout aus Supabase holen (geräteübergreifend) – localStorage bleibt der schnelle Cache
+  if(_dashRemoteLoaded||typeof sb==='undefined'||typeof currentUser==='undefined'||!currentUser)return;
+  _dashRemoteLoaded=true;
+  try{
+    var r=await sb.from('user_dashboard_layout').select('layout').eq('user_id',currentUser.id).maybeSingle();
+    if(r.error||!r.data||!r.data.layout)return;
+    var remote=_dashSanitize(r.data.layout);
+    if(JSON.stringify(remote)===JSON.stringify(_dashLayout))return;
+    _dashLayout=remote;
+    try{localStorage.setItem(dashLayoutKey(),JSON.stringify(_dashLayout));}catch(e){}
+    applyDashLayout();renderDashHiddenBar();
+  }catch(e){}
+}
+var _dashSaveT=null;
+function saveDashLayout(){
+  try{localStorage.setItem(dashLayoutKey(),JSON.stringify(_dashLayout));}catch(e){}
+  if(typeof sb==='undefined'||typeof currentUser==='undefined'||!currentUser)return;
+  clearTimeout(_dashSaveT);
+  _dashSaveT=setTimeout(function(){
+    sb.from('user_dashboard_layout').upsert({user_id:currentUser.id,layout:_dashLayout,updated_at:new Date().toISOString()})
+      .then(function(r){if(r.error)console.warn('Dashboard-Layout-Sync fehlgeschlagen:',r.error.message);});
+  },800);
+}
 function applyDashLayout(){
   var grid=document.getElementById('dash-grid');
   if(!grid)return;
@@ -9648,11 +9787,11 @@ function renderObjekteKPIs(){
   var verm=mietObj.reduce(function(s,o){return s+(o._vermietet||0);},0);
   var quote=einh>0?Math.round((verm/einh)*100):0;
   var offen=mietObj.reduce(function(s,o){return s+(o._offen||0);},0);
-  var card=function(val,label,color){return '<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:.85rem 1rem"><div style="font-size:1.5rem;font-weight:800;color:'+(color||'var(--p)')+';line-height:1.1">'+val+'</div><div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:2px">'+label+'</div></div>';};
-  el.innerHTML=card(n,'Objekte')
-    +card(einh,'Einheiten')
-    +card(quote+'%','Ø Vermietung',quoteColor(quote))
-    +card(fmtEuro(offen),'Offener Saldo',offen>0?'#c0392b':'#1a7a4a');
+  var card=function(val,label,icon,fg,bg){return '<div class="obj-kpi"><div class="ic" style="background:'+bg+';color:'+fg+'"><span data-icon="'+icon+'"></span></div><div style="min-width:0"><div class="v">'+val+'</div><div class="l">'+label+'</div></div></div>';};
+  el.innerHTML=card(n,'Objekte','building2','#7c3aed','#f3e8ff')
+    +card(einh,'Einheiten','grid','#2563eb','#eff6ff')
+    +card(quote+'%','Ø Vermietung','percent',quoteColor(quote),quote>=80?'#ecfdf5':(quote>=50?'#fff7ed':'#fef2f2'))
+    +card(fmtEuro(offen),'Offener Saldo','euro',offen>0?'#dc2626':'#15803d',offen>0?'#fef2f2':'#ecfdf5');
 }
 
 // ── WEG-VERWALTUNG (eigenes Modul) ──
@@ -10259,11 +10398,13 @@ function renderObjekteTabelle(){
   var initials=function(o){return (o.name||'?').replace(/[^A-Za-z0-9ÄÖÜäöü ]/g,'').trim().slice(0,2).toUpperCase()||'OB';};
   var vermietBar=function(o){
     var q=o._quote||0,c=quoteColor(q);
+    var grad=q>=80?'linear-gradient(90deg,#34d399,#15803d)':(q>=50?'linear-gradient(90deg,#fbbf24,#e67e22)':'linear-gradient(90deg,#f87171,#c0392b)');
     return '<div style="min-width:110px;max-width:160px">'
-      +'<div style="display:flex;justify-content:space-between;font-size:.72rem;margin-bottom:3px"><span style="color:var(--muted)">'+(o._vermietet||0)+'/'+(o._einheiten||0)+' vermietet</span><strong style="color:'+c+'">'+q+'%</strong></div>'
-      +'<div style="height:6px;background:#eee;border-radius:4px;overflow:hidden"><div style="height:100%;width:'+q+'%;background:'+c+'"></div></div>'
+      +'<div style="display:flex;justify-content:space-between;font-size:.72rem;margin-bottom:4px"><span style="color:var(--muted)">'+(o._vermietet||0)+'/'+(o._einheiten||0)+' vermietet</span><strong style="color:'+c+'">'+q+'%</strong></div>'
+      +'<div class="obj-prog"><i style="width:'+q+'%;background:'+grad+'"></i></div>'
       +'</div>';
   };
+  var katPill=function(o){var cc=objKatColor(o._kategorie);return '<span class="obj-pill" style="background:'+cc[0]+';color:'+cc[1]+'"><span class="d"></span>'+objKatLabel(o._kategorie)+'</span>';};
   var safeName=function(o){return (o.name||'').replace(/'/g,'');};
   var kebab=function(o){
     return '<div style="position:relative;display:inline-block">'
@@ -10284,14 +10425,14 @@ function renderObjekteTabelle(){
     else cardsEl.innerHTML=page.map(function(o){
       var adr=[o.strasse,o.plz&&o.ort?o.plz+' '+o.ort:o.ort].filter(Boolean).join(', ');
       var cc=objKatColor(o._kategorie);
-      return '<div onclick="openObjektDetail(\''+o.id+'\')" style="background:var(--white);border:1px solid var(--border);border-radius:14px;padding:1.1rem;cursor:pointer;transition:box-shadow .15s,transform .15s" onmouseover="this.style.boxShadow=\'0 8px 24px rgba(106,45,159,.12)\';this.style.transform=\'translateY(-2px)\'" onmouseout="this.style.boxShadow=\'\';this.style.transform=\'\'">'
+      return '<div class="obj-card" onclick="openObjektDetail(\''+o.id+'\')" style="--obj-acc:linear-gradient(90deg,'+cc[1]+',transparent)">'
         +'<div style="display:flex;align-items:flex-start;gap:.75rem;margin-bottom:.85rem">'
-          +'<div style="width:42px;height:42px;border-radius:10px;background:'+cc[0]+';color:'+cc[1]+';display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:800;flex-shrink:0">'+initials(o)+'</div>'
+          +'<div class="obj-av" style="width:42px;height:42px;font-size:.82rem;background:'+cc[0]+';color:'+cc[1]+'">'+initials(o)+'</div>'
           +'<div style="flex:1;min-width:0">'
             +'<div style="font-weight:700;font-size:.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+o.name+'</div>'
             +'<div style="font-size:.75rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(adr||'—')+'</div>'
           +'</div>'
-          +'<span style="background:'+cc[0]+';color:'+cc[1]+';font-size:.66rem;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap">'+objKatLabel(o._kategorie)+'</span>'
+          +katPill(o)
         +'</div>'
         +vermietBar(o)
         +'<div style="display:flex;justify-content:space-between;margin-top:.85rem;padding-top:.75rem;border-top:1px solid var(--border);font-size:.82rem">'
@@ -10315,15 +10456,15 @@ function renderObjekteTabelle(){
         var cc=objKatColor(o._kategorie);
         var vz=o._vorausz||0;
         var vzHtml=vz>0?'<strong style="font-size:.85rem">'+fmtEuro(vz)+'</strong>':'<span style="color:var(--muted);font-size:.82rem">–</span>';
-        html+='<tr style="border-bottom:1px solid var(--border);cursor:pointer" onclick="openObjektDetail(\''+o.id+'\')" onmouseover="this.style.background=\'var(--p-light)\'" onmouseout="this.style.background=\'\'">'
+        html+='<tr class="obj-row" onclick="openObjektDetail(\''+o.id+'\')">'
           +'<td style="padding:.75rem 1rem" onclick="event.stopPropagation()"><input type="checkbox" class="obj-check" data-id="'+o.id+'" data-name="'+escapeHtml(o.name||'')+'" onchange="updateObjektSelection()" style="cursor:pointer"></td>'
           +'<td style="padding:.75rem .5rem"><div style="display:flex;align-items:center;gap:.65rem">'
-            +'<div style="width:36px;height:36px;border-radius:8px;background:'+cc[0]+';color:'+cc[1]+';display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;flex-shrink:0">'+initials(o)+'</div>'
+            +'<div class="obj-av" style="background:'+cc[0]+';color:'+cc[1]+'">'+initials(o)+'</div>'
             +'<div><div style="font-weight:700;font-size:.9rem">'+o.name+'</div><div style="font-size:.75rem;color:var(--muted)">'+(adr||'—')+'</div></div>'
           +'</div></td>'
           +'<td style="padding:.75rem .5rem;text-align:center;font-size:.88rem;font-weight:600">'+(o._einheiten||0)+(o.gesamtflaeche?'<div style="font-size:.68rem;color:var(--muted);font-weight:400">'+o.gesamtflaeche.toLocaleString('de-DE')+' m²</div>':'')+'</td>'
           +'<td style="padding:.75rem .5rem">'+vermietBar(o)+'</td>'
-          +'<td style="padding:.75rem .5rem"><span style="background:'+cc[0]+';color:'+cc[1]+';font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:12px;white-space:nowrap">'+objKatLabel(o._kategorie)+'</span></td>'
+          +'<td style="padding:.75rem .5rem">'+katPill(o)+'</td>'
           +'<td style="padding:.75rem 1rem;text-align:right">'+vzHtml+'</td>'
           +'<td style="padding:.75rem .5rem;text-align:right" onclick="event.stopPropagation()">'
             +'<div style="display:flex;gap:.3rem;justify-content:flex-end">'

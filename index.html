@@ -5581,30 +5581,134 @@ function buildPeriodContent(doc,we,pe,withWatermark,isFirstPage){
   // Kein Absender-/Empfängerblock auf der Nebenkostenabrechnung – Anschrift/Briefkopf
   // erscheinen nur im separaten Anschreiben (anschreibenPdf). (User-Wunsch 2026-06-08)
 
-  // Datum oben links, darunter der große Trennstrich
-  setFont(8.5,'normal',80,80,80);
+  // ── KOPF: Absender dezent + Datum rechts, großer Titel, Meta-Zeile ──
   var ort=sm.ort||'';
   var datStr=e.datum?new Date(e.datum).toLocaleDateString('de-DE'):new Date().toLocaleDateString('de-DE');
-  doc.text((ort?ort+', ':'')+datStr,L,50);
+  var headY=TH.band?20:(TH.serif?22:20);
+  setFont(7.5,'normal',135,135,140);
+  if(!TH.band)doc.text(vName,L,headY);
+  doc.text((ort?ort+', ':'')+datStr,W-R,headY,{align:'right'});
 
-  hLine(L,W-R,58,80,80,80,0.5);y=66;
+  y=headY+12;
+  var ttl=p.isLeerstand?'Leerstand-Abrechnung':TH.title;
+  setFont(17,'bold',28,28,34);
+  doc.text(ttl,L,y);
+  var ttlW=doc.getTextWidth(ttl+' ');
+  setFont(17,'bold',AC[0],AC[1],AC[2]);
+  doc.text(String(e.jahr),L+ttlW,y);
+  y+=7;
+  // Meta-Zeile: Einheit fett, Mieter + Zeitraum dezent – bei Überlänge zweizeilig
+  setFont(9.5,'bold',55,55,60);
+  var metaA=we.wohnung.bez||'';
+  var metaB='   ·   '+(p.isLeerstand?'Leerstand':p.name)+'   ·   '+fmtDatum(p.von)+' – '+fmtDatum(p.bis)+' ('+p.days+' Tage)';
+  var wA=doc.getTextWidth(metaA);
+  setFont(9.5,'normal',120,120,125);
+  if(wA+doc.getTextWidth(metaB)<=C){
+    setFont(9.5,'bold',55,55,60);doc.text(metaA,L,y);
+    setFont(9.5,'normal',120,120,125);doc.text(metaB,L+wA,y);
+  }else{
+    setFont(9.5,'bold',55,55,60);doc.text(metaA,L,y,{maxWidth:C});y+=4.8;
+    setFont(9,'normal',120,120,125);doc.text(metaB.replace(/^\s+·\s+/,''),L,y,{maxWidth:C});
+  }
+  y+=9;
 
-  // Betreff
-  setFont(11,'bold',CLEAN?DK[0]:AC[0],CLEAN?DK[1]:AC[1],CLEAN?DK[2]:AC[2]);
-  doc.text((p.isLeerstand?'Leerstand-Abrechnung ':TH.title+' ')+e.jahr,L,y);y+=5;
-  // Wohneinheit als eigener, klar deklarierter Bestandteil
-  setFont(9,'bold',55,55,60);doc.text('Wohneinheit: '+we.wohnung.bez,L,y);y+=5;
-  setFont(8.5,'normal',80,80,80);
-  var zeitText='Zeitraum: '+fmtDatum(p.von)+' - '+fmtDatum(p.bis)+' ('+p.days+' Tage)';
-  if(!p.isLeerstand&&p.personen)zeitText+='  |  '+p.personen+' Person'+((p.personen!==1)?'en':'');
-  doc.text(zeitText,L,y);y+=10;
+  // ── ERGEBNIS-KARTE: das Wichtigste zuerst ──
+  var heroBK=(pe.bkPos||[]).reduce(function(s,x){return s+(x.anteil||0);},0);
+  var heroHK=e.hasHK?(pe.hkPos||[]).reduce(function(s,x){return s+(x.anteil||0);},0):0;
+  var heroGes=heroBK+heroHK;
+  var heroVZ=p.isLeerstand?0:((p.vorauszBK||0)+(e.hasHK?(p.vorauszHK||0):0));
+  var heroDiff=heroVZ-heroGes;
+  var hh=26;
+  if(!p.isLeerstand){
+    var hg=heroDiff>=-0.005;
+    var hbg=hg?[238,250,243]:[254,243,242], hbd=hg?[178,224,196]:[246,202,196], hcol=hg?[21,127,60]:[182,41,35];
+    doc.setFillColor(hbg[0],hbg[1],hbg[2]);doc.setDrawColor(hbd[0],hbd[1],hbd[2]);doc.setLineWidth(0.35);
+    doc.roundedRect(L,y,C,hh,2.5,2.5,'FD');
+    setFont(7,'bold',hcol[0],hcol[1],hcol[2]);
+    doc.text(hg?'IHR GUTHABEN':'IHRE NACHZAHLUNG',L+7,y+8.5);
+    setFont(19,'bold',hcol[0],hcol[1],hcol[2]);
+    doc.text(fmt(Math.abs(heroDiff)),L+7,y+19);
+    // rechts: Herleitung kompakt (Kosten vs. Vorauszahlungen)
+    doc.setDrawColor(hbd[0],hbd[1],hbd[2]);doc.setLineWidth(0.35);
+    doc.line(L+C*0.46,y+5,L+C*0.46,y+hh-5);
+    var statX1=L+C*0.72, statX2=W-R-7;
+    setFont(6.3,'bold',125,125,130);
+    doc.text('IHRE GESAMTKOSTEN',statX1,y+9.5,{align:'right'});
+    doc.text('VORAUSZAHLUNGEN',statX2,y+9.5,{align:'right'});
+    setFont(10.5,'bold',55,55,60);
+    doc.text(fmt(heroGes),statX1,y+16.5,{align:'right'});
+    doc.text(fmt(heroVZ),statX2,y+16.5,{align:'right'});
+  }else{
+    doc.setFillColor(246,246,248);doc.setDrawColor(220,220,224);doc.setLineWidth(0.35);
+    doc.roundedRect(L,y,C,hh,2.5,2.5,'FD');
+    setFont(7,'bold',110,110,115);doc.text('LEERSTAND – KOSTEN ZU LASTEN DES EIGENTÜMERS',L+7,y+8.5);
+    setFont(19,'bold',70,70,78);doc.text(fmt(heroGes),L+7,y+19);
+  }
+  y+=hh+7;
+
+  // ── ECKDATEN KOMPAKT (ersetzt die frühere Tabelle „Angaben zur Verteilung") ──
+  var objektFlaeche=e.objektFlaeche||0;
+  var anteilPct=objektFlaeche>0?((we.wohnung.flaeche/objektFlaeche)*100).toFixed(1).replace('.',',')+' %':'–';
+  var infoCols=[
+    ['Ihre Fläche',(we.wohnung.flaeche||0).toLocaleString('de-DE')+' m²'],
+    ['Objekt gesamt',objektFlaeche>0?objektFlaeche.toLocaleString('de-DE')+' m²':'–'],
+    ['Flächenanteil',anteilPct],
+    ['Nutzungstage',p.days+' / 365'],
+    ['Personen',p.isLeerstand?'0':String(p.personen||0)]
+  ];
+  if(we.wohnung.mea)infoCols.push(['MEA',String(we.wohnung.mea)]);
+  hLine(L,W-R,y,MD[0],MD[1],MD[2],0.4);
+  var icw=C/infoCols.length;
+  infoCols.forEach(function(ic,i){
+    var ix=L+icw*i;
+    if(i>0){doc.setDrawColor(MD[0],MD[1],MD[2]);doc.setLineWidth(0.25);doc.line(ix,y+2.5,ix,y+11);}
+    setFont(6.3,'bold',135,135,140);doc.text(ic[0].toUpperCase(),ix+(i>0?3:0),y+5);
+    setFont(9,'bold',45,45,52);doc.text(ic[1],ix+(i>0?3:0),y+10);
+  });
+  hLine(L,W-R,y+13,MD[0],MD[1],MD[2],0.4);
+  y+=19;
+
+  // ── KOSTENSTRUKTUR-BALKEN (Infografik) ──
+  if(heroGes>0.005){
+    var segs=[];
+    if(e.hasHK&&heroHK>0.005){
+      segs=[{n:'Betriebskosten',v:heroBK,c:AC},{n:'Heizkosten',v:heroHK,c:tint(0.45)}];
+    }else{
+      var bkSorted=(pe.bkPos||[]).slice().sort(function(a,b){return (b.anteil||0)-(a.anteil||0);});
+      var bkTop=bkSorted.slice(0,3),bkRest=bkSorted.slice(3).reduce(function(s,x){return s+(x.anteil||0);},0);
+      var shades=[AC,tint(0.62),tint(0.38)];
+      bkTop.forEach(function(t,i){segs.push({n:t.name,v:t.anteil||0,c:shades[i]});});
+      if(bkRest>0.005)segs.push({n:'Weitere',v:bkRest,c:tint(0.18)});
+    }
+    setFont(6.3,'bold',135,135,140);doc.text('IHRE KOSTEN IM ÜBERBLICK',L,y+2);
+    var barY=y+4.5,barH=4,bx=L;
+    segs.forEach(function(s){
+      var wseg=C*(s.v/heroGes);
+      doc.setFillColor(s.c[0],s.c[1],s.c[2]);doc.rect(bx,barY,wseg,barH,'F');
+      bx+=wseg;
+    });
+    var lx=L,ly=barY+barH+5;
+    segs.forEach(function(s){
+      var nm=s.n.length>22?s.n.slice(0,21)+'…':s.n;
+      var pct=Math.round(s.v/heroGes*100);
+      var txt=nm+'  '+fmt(s.v)+' ('+pct+' %)';
+      setFont(7,'normal',80,80,85);
+      var itemW=4+doc.getTextWidth(txt)+7;
+      if(lx+itemW>W-R&&lx>L){lx=L;ly+=5;}
+      doc.setFillColor(s.c[0],s.c[1],s.c[2]);doc.rect(lx,ly-2.4,2.8,2.8,'F');
+      doc.text(txt,lx+4,ly);
+      lx+=itemW;
+    });
+    y=ly+9;
+  }
 
   // Abschnitts-Header
   var secH=function(title){
-    npi(12);
+    npi(14);
     if(CLEAN){
-      // Clean: schlichte Überschrift mit feiner Unterlinie (keine Farbfläche)
-      setFont(9.5,'bold',DK[0],DK[1],DK[2]);doc.text(title.toUpperCase(),L,y+4);
+      // Clean: Überschrift mit kleinem Akzent-Tick + feiner Unterlinie
+      fillR(L,y+0.4,1.6,4.6,AC[0],AC[1],AC[2]);
+      setFont(9.5,'bold',DK[0],DK[1],DK[2]);doc.text(title.toUpperCase(),L+4,y+4);
       hLine(L,W-R,y+6.5,MD[0],MD[1],MD[2],0.4);
       y+=10;
     }else if(TH.band){
@@ -5619,36 +5723,6 @@ function buildPeriodContent(doc,we,pe,withWatermark,isFirstPage){
     }
   };
 
-  // ANGABEN ZUR VERTEILUNG
-  secH('Angaben zur Verteilung');
-  var objektFlaeche=e.objektFlaeche||0;
-  var anteilPct=objektFlaeche>0?((we.wohnung.flaeche/objektFlaeche)*100).toFixed(1)+'%':'--';
-  var skLabels={flaeche:'Wohnflaeche',person:'Personenanzahl',mea:'MEA',einheiten:'Einheiten (gleich)',direkt:'Direkte Zuordnung',hkv:'Verbrauch + Grundkosten (HeizkostenV)',auswahl:'Ausgewaehlte Einheiten'};
-  var schluessel=[];
-  var allKosten=(e.bkKosten||[]).concat(e.hkKosten||[]);
-  allKosten.forEach(function(k){if(schluessel.indexOf(k.schluessel)<0)schluessel.push(k.schluessel);});
-
-  var vRows=[
-    ['Wohneinheit',we.wohnung.bez,''],
-    ['Mietername',p.isLeerstand?'Leerstand':p.name,''],
-    ['Wohnflaeche Objekt',objektFlaeche>0?objektFlaeche.toLocaleString('de-DE')+' m²':'--','Ihre Flaeche: '+we.wohnung.flaeche+' m² ('+anteilPct+')'],
-    ['Zeitraum',fmtDatum(p.von)+' - '+fmtDatum(p.bis),'Tage: '+p.days+' von 365'],
-    ['Personen',p.isLeerstand?'0':(p.personen+' Person'+((p.personen!==1)?'en':'')), ''],
-  ];
-  if(we.wohnung.mea)vRows.push(['Miteigentumsanteil',we.wohnung.mea,'']);
-  vRows.push(['Verteilungsschluessel',schluessel.map(function(s){return skLabels[s]||s;}).join(', '),'']);
-
-  vRows.forEach(function(row,ri){
-    npi(7);
-    if(ri%2===0)cfill(L,y,C,6,LT[0],LT[1],LT[2]);
-    hLine(L,W-R,y+6,MD[0],MD[1],MD[2]);
-    setFont(8,'normal',60,60,60);doc.text(row[0],L+2,y+4.2);
-    setFont(8,'bold',30,30,30);doc.text(row[1],L+C*0.38,y+4.2);
-    setFont(7.5,'normal',100,100,100);if(row[2])doc.text(row[2],L+C*0.7,y+4.2);
-    y+=6;
-  });
-  y+=5;
-
   // KOSTEN TABELLE
   secH('Aufteilung der Gesamtkosten');
   npi(8);
@@ -5658,7 +5732,7 @@ function buildPeriodContent(doc,we,pe,withWatermark,isFirstPage){
   doc.text('Kostenart',L+2,y+4.8);
   doc.text('Hinweis',L+C*0.32,y+4.8);
   doc.text('Gesamt',L+C*0.55,y+4.8);
-  doc.text('Schluessel',L+C*0.68,y+4.8);
+  doc.text('Schlüssel',L+C*0.68,y+4.8);
   doc.text('Ihr Anteil',W-R-1,y+4.8,{align:'right'});
   y+=7;
 
@@ -5723,6 +5797,7 @@ function buildPeriodContent(doc,we,pe,withWatermark,isFirstPage){
 
   // ABRECHNUNG
   if(!p.isLeerstand){
+    npi(e.hasHK?85:60); // Abrechnungsblock möglichst nicht über den Seitenumbruch reißen
     secH('Ihre Abrechnung');
     var gesamtAnteil=bkSubtotal+(e.hasHK?hkSubtotal:0);
     var totalVorausz=p.vorauszBK+(e.hasHK?p.vorauszHK:0);
@@ -5768,13 +5843,13 @@ function buildPeriodContent(doc,we,pe,withWatermark,isFirstPage){
     hLine(L+C*0.5,W-R,y,MD[0],MD[1],MD[2],0.5);y+=4;
 
     // ERGEBNIS – ohne farbige Fläche, nur farbige Schrift + feine Trennlinien (User-Wunsch 2026-06-08)
-    npi(10);y+=2;
+    npi(11);y+=2;
     var gr=gesamtDiff>=0;
     hLine(L,W-R,y,MD[0],MD[1],MD[2],0.5);
-    setFont(10,'bold',gr?34:176,gr?139:58,gr?76:46);
-    doc.text(gr?'Gesamtguthaben':'Gesamtnachzahlung',L+3,y+6);
-    doc.text(fmt(Math.abs(gesamtDiff)),W-R-1,y+6,{align:'right'});
-    hLine(L,W-R,y+9,MD[0],MD[1],MD[2],0.5);y+=13;
+    setFont(11.5,'bold',gr?21:182,gr?127:41,gr?60:35);
+    doc.text(gr?'Gesamtguthaben':'Gesamtnachzahlung',L+3,y+6.5);
+    doc.text(fmt(Math.abs(gesamtDiff)),W-R-1,y+6.5,{align:'right'});
+    hLine(L,W-R,y+9.5,MD[0],MD[1],MD[2],0.5);y+=13.5;
 
     // USt-Ausweis (nur Gewerbeeinheiten mit USt-Option) – Aufteilung nach Steuersatz
     if(pe.ustPflichtig&&pe.ust){
@@ -5862,12 +5937,8 @@ function buildPeriodContent(doc,we,pe,withWatermark,isFirstPage){
     if(!gr&&sm.iban){
       // Zahlungshinweis im Anschreiben – nicht im PDF
     }
-  } else {
-    var leerTotal=bkSubtotal+(e.hasHK?hkSubtotal:0);
-    npi(12);fillR(L,y,C,10,248,248,248);
-    setFont(8.5,'italic',100,100,100);
-    doc.text('Leerstand-Anteil: '+fmt(leerTotal)+' - Kosten zu Lasten des Eigentuemers.',L+3,y+6);y+=12;
   }
+  // Leerstand: kein zusätzlicher Block – die Ergebnis-Karte oben weist den Anteil bereits aus
 
   // Unterschriftsfeld entfernt
 
@@ -13237,14 +13308,16 @@ function wizardVorschau(){
 function vorschauPdfLayout(layout){
   setPdfLayout(layout);
   var musterWE={wohnung:{bez:'Musterstraße 10, EG links',flaeche:65,mea:'',meaNum:0},perioden:[{
-    periode:{name:'Herr Max Mustermann',von:'2024-01-01',bis:'2024-12-31',personen:2,vorauszBK:1440,vorauszHK:600,isLeerstand:false,days:366},
-    bkGes:1320.50,hkGes:580.00,
-    bkPos:[{name:'Grundsteuer B',betrag:220,anteil:65,anteilGes:215,schluessel:'flaeche',mieterAnteil:66.51},{name:'Wasserversorgung',betrag:380,anteil:65,anteilGes:215,schluessel:'flaeche',mieterAnteil:114.88},{name:'Müllbeseitigung',betrag:240,anteil:65,anteilGes:215,schluessel:'flaeche',mieterAnteil:72.56},{name:'Gebäudeversicherung',betrag:420,anteil:65,anteilGes:215,schluessel:'flaeche',mieterAnteil:126.98},{name:'Hausmeister',betrag:480,anteil:65,anteilGes:215,schluessel:'flaeche',mieterAnteil:145.58},{name:'Allgemeinstrom',betrag:180,anteil:65,anteilGes:215,schluessel:'flaeche',mieterAnteil:56.28}],
-    hkPos:[{name:'Heizung gesamt',betrag:960,anteil:65,anteilGes:215,schluessel:'flaeche',mieterAnteil:290.23},{name:'Warmwasser',betrag:460,anteil:65,anteilGes:215,schluessel:'flaeche',mieterAnteil:139.07}],
-    saldo:-60.50
+    periode:{name:'Herr Max Mustermann',von:'2024-01-01',bis:'2024-12-31',personen:2,vorauszBK:540,vorauszHK:360,isLeerstand:false,days:366},
+    bkGes:582.79,hkGes:429.30,
+    bkPos:[{name:'Grundsteuer B',betrag:220,anteil:66.51,anteilGes:215,schluessel:'flaeche',mieterAnteil:66.51},{name:'Wasserversorgung',betrag:380,anteil:114.88,anteilGes:215,schluessel:'flaeche',mieterAnteil:114.88},{name:'Müllbeseitigung',betrag:240,anteil:72.56,anteilGes:215,schluessel:'flaeche',mieterAnteil:72.56},{name:'Gebäudeversicherung',betrag:420,anteil:126.98,anteilGes:215,schluessel:'flaeche',mieterAnteil:126.98},{name:'Hausmeister',betrag:480,anteil:145.58,anteilGes:215,schluessel:'flaeche',mieterAnteil:145.58},{name:'Allgemeinstrom',betrag:180,anteil:56.28,anteilGes:215,schluessel:'flaeche',mieterAnteil:56.28}],
+    hkPos:[{name:'Heizung gesamt',betrag:960,anteil:290.23,anteilGes:215,schluessel:'flaeche',mieterAnteil:290.23},{name:'Warmwasser',betrag:460,anteil:139.07,anteilGes:215,schluessel:'flaeche',mieterAnteil:139.07}],
+    saldo:-112.09
   }]};
   var prevErg=lastErgebnis;
-  lastErgebnis={jahr:2024,objekt:'Musterstraße 10, 53881 Euskirchen',datum:todayStr(),objektFlaeche:215,hasHK:true,ergebnisse:[musterWE]};
+  lastErgebnis={jahr:2024,objekt:'Musterstraße 10, 53881 Euskirchen',datum:todayStr(),objektFlaeche:215,hasHK:true,ergebnisse:[musterWE],
+    bkKosten:[{name:'Grundsteuer B',betrag:220,schluessel:'flaeche'},{name:'Wasserversorgung',betrag:380,schluessel:'flaeche'},{name:'Müllbeseitigung',betrag:240,schluessel:'flaeche'},{name:'Gebäudeversicherung',betrag:420,schluessel:'flaeche'},{name:'Hausmeister',betrag:480,schluessel:'flaeche'},{name:'Allgemeinstrom',betrag:180,schluessel:'flaeche'}],
+    hkKosten:[{name:'Heizung gesamt',betrag:960,schluessel:'flaeche'},{name:'Warmwasser',betrag:460,schluessel:'flaeche'}]};
   try{var doc=buildPeriodPDF(musterWE,musterWE.perioden[0],true);showDoc(doc,'Muster_'+layout+'.pdf','vorschau');}
   catch(e){showToast('⚠️ Fehler: '+e.message);console.error(e);}
   lastErgebnis=prevErg;

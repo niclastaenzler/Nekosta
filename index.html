@@ -95,6 +95,11 @@ body{font-family:var(--ff);background:var(--bg);color:var(--text);font-size:15px
 .buha-inp:focus{border-color:var(--p);box-shadow:0 0 0 2px var(--p-light)}
 .buha-inp.err{border-color:#c0392b;background:#fdf0ef}
 #buha-maske label{font-size:.6rem;font-weight:700;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:1px}
+/* ── WEG-COCKPIT VOLLBILD: globale Sidebar weicht der Cockpit-Modul-Nav ── */
+@media(min-width:861px){
+  body.wegc-mode .sidebar{display:none}
+  body.wegc-mode .app-layout{padding-left:0}
+}
 /* ── MOBILE-NAVIGATION (Hamburger) ── */
 #nav-toggle{display:none}
 #sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(20,10,40,.45);z-index:150;opacity:0;transition:opacity .25s}
@@ -3948,6 +3953,9 @@ function showPage(name){
     var el=document.getElementById('page-'+p);
     if(el)el.style.display=p===name?'block':'none';
   });
+
+  // WEG-Cockpit nutzt den vollen Platz (globale Sidebar weicht der Modul-Nav)
+  document.body.classList.toggle('wegc-mode',name==='weg-cockpit');
 
   // Hilfe-/Kontakt-Blase nur im Dashboard zeigen
   var _fab=document.getElementById('help-fab');
@@ -11215,6 +11223,7 @@ async function openObjektDetail(objId,opts){
       var el=document.getElementById('page-'+p);
       if(el)el.style.display=p==='objekt-detail'?'block':'none';
     });
+    document.body.classList.remove('wegc-mode');
     // Update nav
     document.querySelectorAll('.nav-item').forEach(function(el){el.classList.remove('active');});
 

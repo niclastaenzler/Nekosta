@@ -10369,7 +10369,115 @@ async function wegcRenderAbrechnung(c){
   html+='<div style="font-size:.72rem;color:#9ca3af;line-height:1.5;padding:0 .2rem">Vereinfachte Verteilung der Gesamtausgaben nach '+basis+'. Das Ergebnis zeigt Hausgeld-Soll minus Kostenanteil (vor Rücklagenzuführung). Objektspezifische Schlüssel je Kostenart und der Vermögensbericht folgen in einer späteren Ausbaustufe.</div>';
   c.innerHTML=html;
 }
-function wegcAbrechnungPdf(){showToast('Das PDF der Jahresabrechnung kommt im nächsten Schritt.');}
+function wegcAbrechnungPdf(){
+  var d=_wegcAbrData;
+  if(!d){showToast('Bitte zuerst die Jahresabrechnung öffnen.');return;}
+  try{
+    var jsPDF=window.jspdf.jsPDF;
+    var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    var W=210,L=20,R=20,C=W-L-R, AC=[123,31,162];
+    var sm=stammdaten||{}, weg=d.weg||{};
+    var vName=([sm.firma,sm.vname&&sm.nname?sm.vname+' '+sm.nname:'']).filter(Boolean).join(' / ')||'NEKOSTA';
+    var adr=[weg.strasse,weg.plz&&weg.ort?weg.plz+' '+weg.ort:weg.ort].filter(Boolean).join(', ');
+    var datStr=new Date().toLocaleDateString('de-DE');
+    var fmt=function(v){return (parseFloat(v)||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';};
+    var sf=function(sz,st,r,g,b){doc.setFontSize(sz);doc.setFont('helvetica',st||'normal');doc.setTextColor(r==null?40:r,g==null?40:g,b==null?45:b);};
+    var line=function(x1,x2,yy,col,lw){col=col||[214,214,218];doc.setDrawColor(col[0],col[1],col[2]);doc.setLineWidth(lw||0.3);doc.line(x1,yy,x2,yy);};
+    var y=20;
+    var npi=function(n){if(y+(n||8)>276){doc.addPage();y=22;}};
+    var head=function(title,sub){
+      y=20;
+      sf(7.5,'normal',135,135,140);doc.text(vName,L,y);doc.text(datStr,W-R,y,{align:'right'});
+      y=32; sf(17,'bold',28,28,34);doc.text(title,L,y);
+      var tw=doc.getTextWidth(title+' ');sf(17,'bold',AC[0],AC[1],AC[2]);doc.text(String(d.jahr),L+tw,y);
+      y+=7; sf(9.5,'bold',55,55,60);doc.text(weg.name||'WEG',L,y);
+      if(sub){var nw=doc.getTextWidth(weg.name||'WEG');sf(9.5,'normal',120,120,125);doc.text('   ·   '+sub,L+nw,y);}
+      if(adr){y+=5;sf(8.5,'normal',130,130,135);doc.text(adr,L,y);}
+      y+=9;
+    };
+    var secH=function(t){npi(14);sf(9.5,'bold',AC[0],AC[1],AC[2]);doc.text(t.toUpperCase(),L,y+4);line(L,W-R,y+6.5,null,0.4);y+=11;};
+    var kostRow=function(c1,c2,c3,val,opt){opt=opt||{};npi(7);
+      sf(8.5,opt.bold?'bold':'normal',opt.bold?40:60,opt.bold?40:60,opt.bold?45:65);
+      doc.text(c1,L+1,y); if(c2)doc.text(c2,L+C*0.16,y,{maxWidth:C*0.42});
+      if(c3){sf(7.5,'normal',150,150,155);doc.text(c3,L+C*0.62,y);}
+      sf(8.5,opt.bold?'bold':'normal',opt.col?opt.col[0]:40,opt.col?opt.col[1]:40,opt.col?opt.col[2]:45);
+      doc.text(fmt(val),W-R-1,y,{align:'right'});
+      if(opt.bg){/* schlichte Linie statt Fläche */}
+      y+= opt.bold?7.5:6; if(opt.rule)line(L,W-R,y-2,null,0.3);
+    };
+
+    // ── SEITE 1: GESAMTABRECHNUNG ──
+    head('Jahresabrechnung','Gesamtabrechnung');
+    var ergebnis=d.gesamtErtrag-d.gesamtKosten;
+    // Kurzueberblick
+    sf(8.5,'normal',90,90,95);
+    doc.text('Gesamtausgaben',L+1,y); doc.text(fmt(d.gesamtKosten),L+C*0.42,y,{align:'right'});
+    doc.text('Einnahmen',L+C*0.52,y); doc.text(fmt(d.gesamtErtrag),W-R-1,y,{align:'right'}); y+=6;
+    line(L,W-R,y-2,null,0.3);
+    sf(9,'bold',ergebnis>=0?[21,127,60][0]:182, ergebnis>=0?127:41, ergebnis>=0?60:35);
+    doc.text(ergebnis>=0?'Einnahmenüberschuss':'Ausgabenüberschuss',L+1,y+2);
+    sf(9,'bold',ergebnis>=0?21:182,ergebnis>=0?127:41,ergebnis>=0?60:35);
+    doc.text((ergebnis>=0?'+':'- ')+fmt(Math.abs(ergebnis)),W-R-1,y+2,{align:'right'}); y+=10;
+
+    secH('Ausgaben');
+    if(!d.kostenZeilen.length){sf(8.5,'normal',150,150,155);doc.text('keine',L+1,y);y+=6;}
+    d.kostenZeilen.forEach(function(r){kostRow(r.nr,r.name,(r.umlf?'umlagefähig':'nicht umlagefähig'),r.betrag);});
+    line(L,W-R,y-1,null,0.4); kostRow('','Summe Ausgaben','',d.gesamtKosten,{bold:true,col:[154,52,18]});
+    y+=3;
+    secH('Einnahmen');
+    if(!d.ertragZeilen.length){sf(8.5,'normal',150,150,155);doc.text('keine',L+1,y);y+=6;}
+    d.ertragZeilen.forEach(function(r){kostRow(r.nr,r.name,'',r.betrag);});
+    line(L,W-R,y-1,null,0.4); kostRow('','Summe Einnahmen','',d.gesamtErtrag,{bold:true,col:[21,127,60]});
+    y+=5;
+
+    secH('Entwicklung der Instandhaltungsrücklage');
+    var rl=d.rl;
+    [['Anfangsbestand',rl.anf,null],['+ Zuführung',rl.zuf,[21,127,60]],['- Entnahme',rl.ent,[182,41,35]]].forEach(function(it){
+      npi(6);sf(8.5,'normal',60,60,65);doc.text(it[0],L+1,y);
+      sf(8.5,'normal',it[2]?it[2][0]:40,it[2]?it[2][1]:40,it[2]?it[2][2]:45);doc.text(fmt(it[1]),W-R-1,y,{align:'right'});y+=6;
+    });
+    line(L,W-R,y-1,null,0.4);
+    sf(9,'bold',AC[0],AC[1],AC[2]);doc.text('= Endbestand '+d.jahr,L+1,y+2);doc.text(fmt(rl.ende),W-R-1,y+2,{align:'right'});y+=8;
+
+    // ── SEITEN 2..n: EINZELABRECHNUNG JE EIGENTÜMER ──
+    d.einzel.forEach(function(e){
+      doc.addPage();
+      head('Einzelabrechnung', e.name+' · '+e.einheit);
+      // Ergebnis-Karte
+      var guth=e.ergebnis>=-0.005, hh=24;
+      var hbg=guth?[238,250,243]:[254,243,242], hbd=guth?[178,224,196]:[246,202,196], hcol=guth?[21,127,60]:[182,41,35];
+      doc.setFillColor(hbg[0],hbg[1],hbg[2]);doc.setDrawColor(hbd[0],hbd[1],hbd[2]);doc.setLineWidth(0.35);
+      doc.roundedRect(L,y,C,hh,2.5,2.5,'FD');
+      sf(7,'bold',hcol[0],hcol[1],hcol[2]);doc.text(guth?'IHR GUTHABEN':'IHRE NACHZAHLUNG',L+7,y+8.5);
+      sf(18,'bold',hcol[0],hcol[1],hcol[2]);doc.text(fmt(Math.abs(e.ergebnis)),L+7,y+18.5);
+      sf(6.5,'normal',120,120,125);doc.text('Miteigentumsanteil',W-R-7,y+8.5,{align:'right'});
+      sf(11,'bold',55,55,60);doc.text(e.anteilPct.toFixed(1).replace('.',',')+' %',W-R-7,y+17,{align:'right'});
+      y+=hh+9;
+      secH('Ihre Abrechnung '+d.jahr);
+      var er2=function(lbl,val,opt){opt=opt||{};npi(7);sf(opt.bold?9:8.5,opt.bold?'bold':'normal',opt.col?opt.col[0]:55,opt.col?opt.col[1]:55,opt.col?opt.col[2]:60);doc.text(lbl,L+1,y);doc.text((opt.minus?'- ':'')+fmt(val),W-R-1,y,{align:'right'});y+=opt.bold?8:6.4;};
+      er2('Anteil an den Gesamtausgaben ('+e.anteilPct.toFixed(1).replace('.',',')+' % nach '+d.basis+')',e.kostenanteil);
+      line(L,W-R,y-1,null,0.3);
+      er2('Hausgeld-Vorauszahlungen (Soll '+d.jahr+')',e.soll);
+      er2('davon gezahlt',e.bez);
+      line(L,W-R,y+0.5,null,0.5);y+=3;
+      er2(guth?'Guthaben zu Ihren Gunsten':'Nachzahlung',Math.abs(e.ergebnis),{bold:true,col:guth?[21,127,60]:[182,41,35]});
+      if(e.offen>0.005){y+=2;sf(7.5,'italic',150,120,40);doc.text('Hinweis: offene Hausgeld-Forderung '+fmt(e.offen)+' (separat zu begleichen).',L+1,y,{maxWidth:C});y+=6;}
+      y+=4;sf(7,'italic',150,150,155);
+      doc.text('Vereinfachte Verteilung der Gesamtausgaben nach '+d.basis+' (vor Rücklagenzuführung). Maßgeblich ist der von der Eigentümerversammlung beschlossene Verteilerschlüssel.',L,y,{maxWidth:C});
+    });
+
+    // Footer auf allen Seiten
+    var pages=doc.internal.getNumberOfPages();
+    for(var i=1;i<=pages;i++){doc.setPage(i);
+      line(L,W-R,283,[200,200,200],0.3);
+      sf(7.5,'normal',150,150,150);
+      var fl=[vName,adr,(sm.steuernr?'St.-Nr.: '+sm.steuernr:'')].filter(Boolean).join('  ·  ');
+      doc.text(fl,W/2,288,{align:'center',maxWidth:C});
+      doc.text('Seite '+i+' von '+pages,W-R,288,{align:'right'});
+    }
+    showDoc(doc,'WEG-Jahresabrechnung_'+(weg.name||'WEG').replace(/[^a-zA-Z0-9]+/g,'_')+'_'+d.jahr+'.pdf','vorschau');
+  }catch(e){console.error('Abrechnungs-PDF:',e);showToast('⚠️ PDF-Fehler: '+(e.message||e));}
+}
 
 // ── WEG-Cockpit: Buchhaltung nativ einbetten (bestehenden #tab-content-buchhaltung wiederverwenden) ──
 var _buhaHomeParent=null;

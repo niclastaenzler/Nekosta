@@ -3164,7 +3164,12 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
           <div><label style="font-size:.72rem;font-weight:700;color:var(--muted)">Typ</label><select id="konto-typ" style="border:1px solid var(--border);border-radius:7px;padding:.5rem;font-size:.88rem;font-family:var(--ff);width:100%;outline:none"><option value="aktiv">Aktiv (Bestand)</option><option value="passiv">Passiv (Bestand)</option><option value="aufwand">Aufwand (Kosten)</option><option value="ertrag">Ertrag (Einnahmen)</option></select></div>
           <div><label style="font-size:.72rem;font-weight:700;color:var(--muted)">USt %</label><select id="konto-ust" style="border:1px solid var(--border);border-radius:7px;padding:.5rem;font-size:.88rem;font-family:var(--ff);width:100%;outline:none"><option value="0">0 %</option><option value="7">7 %</option><option value="19">19 %</option></select></div>
         </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.6rem">
+          <div><label style="font-size:.72rem;font-weight:700;color:var(--muted)">Verteilerschlüssel</label><select id="konto-verteiler" style="border:1px solid var(--border);border-radius:7px;padding:.5rem;font-size:.88rem;font-family:var(--ff);width:100%;outline:none"><option value="mea">Eigentumsanteil (MEA)</option><option value="einheiten">Einheiten (gleich)</option><option value="pxt">Personen × Tage</option><option value="festbetrag">Festbetrag je Eigentümer</option></select></div>
+          <div><label style="font-size:.72rem;font-weight:700;color:var(--muted)">Nur Haus</label><select id="konto-haus" style="border:1px solid var(--border);border-radius:7px;padding:.5rem;font-size:.88rem;font-family:var(--ff);width:100%;outline:none"><option value="">Gesamte WEG</option></select></div>
+        </div>
         <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;margin-bottom:1rem;cursor:pointer"><input type="checkbox" id="konto-umlage" checked> umlagefähig (auf Eigentümer/Mieter umlegbar)</label>
+        <div style="font-size:.7rem;color:var(--muted);margin:-.6rem 0 1rem">Steuert die Hausgeldabrechnung: nicht-umlagefähige Konten erscheinen im Block „Nicht zur Umlage", umlagefähige im Block „Zur Umlage auf Bewohner". „Nur Haus" verteilt die Kosten ausschließlich innerhalb dieses Hauses.</div>
         <div style="display:flex;gap:.65rem"><button class="btn-primary" style="flex:1" onclick="saveKonto()"><span class="btn-ic" data-icon="check"></span> Speichern</button><button class="btn-secondary" style="flex:1" onclick="closeKontoModal()">Abbrechen</button></div>
       </div>
     </div>
@@ -8715,6 +8720,9 @@ function openKontoModal(id){
   document.getElementById('konto-typ').value=k?k.typ:'aufwand';
   document.getElementById('konto-ust').value=k?(k.ust_satz||0):'0';
   document.getElementById('konto-umlage').checked=k?(k.umlagefaehig!==false):true;
+  document.getElementById('konto-verteiler').value=k&&k.verteiler?k.verteiler:'mea';
+  var hSel=document.getElementById('konto-haus');
+  if(hSel){hSel.innerHTML='<option value="">Gesamte WEG</option>'+(buha.ugListe||[]).map(function(u){return '<option value="'+u.id+'">'+escapeHtml(u.name)+'</option>';}).join('');hSel.value=k&&k.haus_id?k.haus_id:'';}
   document.getElementById('konto-modal').style.display='flex';
 }
 function closeKontoModal(){document.getElementById('konto-modal').style.display='none';}
@@ -8725,7 +8733,9 @@ async function saveKonto(){
   if(!nummer||!name){showToast('Bitte Nummer und Bezeichnung angeben.');return;}
   var row={nummer:nummer,name:name,typ:document.getElementById('konto-typ').value,
     ust_satz:parseFloat(document.getElementById('konto-ust').value)||0,
-    umlagefaehig:document.getElementById('konto-umlage').checked};
+    umlagefaehig:document.getElementById('konto-umlage').checked,
+    verteiler:document.getElementById('konto-verteiler').value||'mea',
+    haus_id:document.getElementById('konto-haus').value||null};
   var res = id ? await sb.from('weg_konten').update(row).eq('id',id) : await sb.from('weg_konten').insert(Object.assign({user_id:currentUser.id},row));
   if(res.error){showToast('❌ '+res.error.message);return;}
   await logAudit(id?'konto_geaendert':'konto_erstellt','konto',id||null,{nummer:nummer,name:name});

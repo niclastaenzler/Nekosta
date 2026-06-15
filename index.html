@@ -1881,6 +1881,8 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
             <div class="field" style="grid-column:1/-1"><label>Stockwerk / Lage</label><input type="text" id="weg-ein-stockwerk" placeholder="1. OG links"></div>
             <div class="field"><label>Miteigentumsanteil (Zähler)</label><input type="number" id="weg-ein-mea-z" placeholder="250"></div>
             <div class="field"><label>von (Nenner)</label><input type="number" id="weg-ein-mea-n" value="1000"></div>
+            <div class="field"><label>Personen</label><input type="number" id="weg-ein-personen" placeholder="0" min="0" step="1"></div>
+            <div class="field"><label>Haus</label><select id="weg-ein-haus" style="border:1px solid var(--border);border-radius:7px;padding:.45rem .65rem;font-size:.85rem;font-family:var(--ff);width:100%;background:var(--bg);outline:none"><option value="">— ohne —</option></select></div>
           </div>
           <div style="font-size:.72rem;color:var(--muted);margin-bottom:.85rem">💡 Der Miteigentumsanteil (MEA) gibt den Anteil am Gemeinschaftseigentum an, z. B. 250/1000 = 25%.</div>
           <div style="display:flex;gap:.75rem">
@@ -1901,9 +1903,22 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
         <div style="padding:1.5rem">
           <input type="hidden" id="weg-eig-edit-id">
           <div style="display:grid;grid-template-columns:1fr;gap:.7rem;margin-bottom:.7rem">
-            <div class="field"><label>Kontakt (Eigentümer) *</label>
+            <input type="hidden" id="weg-eig-neu-flag">
+            <div class="field" id="weg-eig-kontakt-wrap"><label>Eigentümer (Kontakt) *</label>
               <select id="weg-eig-kontakt" style="border:1px solid var(--border);border-radius:7px;padding:.45rem .65rem;font-size:.85rem;font-family:var(--ff);width:100%;background:var(--bg);outline:none"></select>
-              <div style="font-size:.7rem;color:var(--muted);margin-top:.3rem">Kontakt nicht dabei? <a href="#" onclick="closeWegEigentuemerModal();showPage('kontakte');return false" style="color:var(--p)">Erst Kontakt anlegen →</a></div>
+              <div style="font-size:.7rem;color:var(--muted);margin-top:.3rem">Nicht dabei? <a href="#" onclick="wegEigToggleNeu(true);return false" style="color:var(--p)">+ Neuen Eigentümer anlegen</a></div>
+            </div>
+            <div id="weg-eig-neu" style="display:none;border:1px dashed var(--border);border-radius:8px;padding:.75rem;background:var(--bg)">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.55rem"><strong style="font-size:.8rem">Neuer Eigentümer</strong><a href="#" onclick="wegEigToggleNeu(false);return false" style="font-size:.7rem;color:var(--p)">← bestehenden wählen</a></div>
+              <div style="display:grid;grid-template-columns:90px 1fr 1fr;gap:.5rem">
+                <div class="field"><label>Anrede</label><select id="weg-eig-neu-anrede" style="border:1px solid var(--border);border-radius:7px;padding:.45rem .5rem;font-size:.82rem;font-family:var(--ff);width:100%;background:var(--white);outline:none"><option value="">–</option><option>Herr</option><option>Frau</option><option>Eheleute</option><option>Familie</option><option>Firma</option></select></div>
+                <div class="field"><label>Vorname</label><input type="text" id="weg-eig-neu-vorname" placeholder="Max"></div>
+                <div class="field"><label>Nachname *</label><input type="text" id="weg-eig-neu-nachname" placeholder="Mustermann"></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.5rem">
+                <div class="field"><label>E-Mail</label><input type="email" id="weg-eig-neu-email" placeholder="max@example.de"></div>
+                <div class="field"><label>Telefon</label><input type="text" id="weg-eig-neu-tel" placeholder="0151 …"></div>
+              </div>
             </div>
             <div class="field"><label>WEG-Einheit *</label>
               <select id="weg-eig-einheit" style="border:1px solid var(--border);border-radius:7px;padding:.45rem .65rem;font-size:.85rem;font-family:var(--ff);width:100%;background:var(--bg);outline:none"></select>
@@ -10077,17 +10092,14 @@ function renderWegcNav(active){
 }
 function wegcGo(mod){
   if(!_wegcCur)return;
-  if(mod!=='buchhaltung'&&mod!=='hausgeld')_wegcRestoreBuha();
+  // Eingebettete Objekt-Detail-Knoten zuerst zurückschieben (außer der, der jetzt gebraucht wird)
+  var _embMap={buchhaltung:'tab-content-buchhaltung',hausgeld:'tab-content-buchhaltung',einheiten:'tab-content-weg-einheiten',eigentuemer:'tab-content-weg-eigentuemer'};
+  _wegcRestoreEmbedsExcept(_embMap[mod]||null);
   var c=document.getElementById('wegc-content'); if(!c)return;
   if(mod==='buchhaltung'){wegcRenderBuchhaltung(c);return;}
   if(mod==='hausgeld'){wegcRenderBuchhaltung(c,'hausgeld');return;}
-  var tabMap={einheiten:'weg-einheiten',eigentuemer:'weg-eigentuemer'};
-  if(tabMap[mod]){
-    var p=openObjektDetail(_wegcCur.id,{from:'cockpit'});
-    var after=function(){try{showObjektTab(tabMap[mod]);}catch(e){}};
-    if(p&&p.then)p.then(after);else setTimeout(after,400);
-    return;
-  }
+  if(mod==='einheiten'){wegcRenderEinheiten(c);return;}
+  if(mod==='eigentuemer'){wegcRenderEigentuemer(c);return;}
   renderWegcNav(mod);
   if(mod==='dashboard'){wegcRenderDashboard(c);return;}
   if(mod==='haeuser'){wegcRenderHaeuser(c);return;}
@@ -10592,15 +10604,28 @@ async function wegcHausAssign(einheitId,hausId){
   }catch(e){showToast('Fehler: '+e.message);}
 }
 
-// ── WEG-Cockpit: Buchhaltung nativ einbetten (bestehenden #tab-content-buchhaltung wiederverwenden) ──
+// ── WEG-Cockpit: bestehende Objekt-Detail-Tabs nativ ins Cockpit einbetten (Buchhaltung/Einheiten/Eigentümer) ──
 var _buhaHomeParent=null;
-function _wegcRestoreBuha(){
+var _wegcEmbedHome={}; // nodeId -> ursprünglicher Eltern-Knoten (Objekt-Detail)
+function _wegcEmbed(c,nodeId){
+  var node=document.getElementById(nodeId); if(!node)return null;
+  if(!_wegcEmbedHome[nodeId])_wegcEmbedHome[nodeId]=node.parentNode;
+  c.appendChild(node); node.style.display='block'; return node;
+}
+// Alle eingebetteten Knoten (außer keepId) zurück an ihren Heimat-Platz schieben, bevor wegc-content neu gerendert wird
+function _wegcRestoreEmbedsExcept(keepId){
   try{
-    var node=document.getElementById('tab-content-buchhaltung');
-    var wc=document.getElementById('wegc-content');
-    if(node&&_buhaHomeParent&&wc&&node.parentNode===wc){node.style.display='none';_buhaHomeParent.appendChild(node);}
+    var wc=document.getElementById('wegc-content'); if(!wc)return;
+    var map={'tab-content-buchhaltung':_buhaHomeParent};
+    Object.keys(_wegcEmbedHome).forEach(function(id){map[id]=_wegcEmbedHome[id];});
+    Object.keys(map).forEach(function(id){
+      if(id===keepId)return;
+      var n=document.getElementById(id),home=map[id];
+      if(n&&home&&n.parentNode===wc){n.style.display='none';home.appendChild(n);}
+    });
   }catch(e){}
 }
+function _wegcRestoreBuha(){_wegcRestoreEmbedsExcept(null);} // externer Hook (showPage/openObjektDetail) – stellt ALLES wieder her
 async function wegcRenderBuchhaltung(c,subtab){
   if(!_wegcCur)return;
   if(!c)c=document.getElementById('wegc-content'); if(!c)return;
@@ -10614,6 +10639,26 @@ async function wegcRenderBuchhaltung(c,subtab){
   aktivesObjekt=_wegcCur;
   try{ await ladeBuchhaltung(_wegcCur.id); }catch(e){ console.warn('buha load:',e); }
   try{ buhaTab(subtab==='hausgeld'?'hausgeld':'buchen'); }catch(e){}
+}
+async function wegcRenderEinheiten(c){
+  if(!_wegcCur)return;
+  if(!c)c=document.getElementById('wegc-content'); if(!c)return;
+  renderWegcNav('einheiten');
+  aktivesObjekt=_wegcCur;
+  c.innerHTML='<div style="margin-bottom:1.1rem"><h1 style="font-size:1.6rem;font-weight:800;color:#111827">Einheiten</h1><div style="font-size:.85rem;color:#6b7280;margin-top:2px">Sondereigentum · '+escapeHtml(_wegcCur.name||'WEG')+'</div></div>';
+  var node=_wegcEmbed(c,'tab-content-weg-einheiten');
+  if(!node){c.innerHTML+='<div style="color:#dc2626;font-size:.85rem">Einheiten-Modul nicht gefunden.</div>';return;}
+  try{ await loadWegEinheiten(_wegcCur.id); }catch(e){console.warn('einheiten load:',e);}
+}
+async function wegcRenderEigentuemer(c){
+  if(!_wegcCur)return;
+  if(!c)c=document.getElementById('wegc-content'); if(!c)return;
+  renderWegcNav('eigentuemer');
+  aktivesObjekt=_wegcCur;
+  c.innerHTML='<div style="margin-bottom:1.1rem"><h1 style="font-size:1.6rem;font-weight:800;color:#111827">Eigentümer</h1><div style="font-size:.85rem;color:#6b7280;margin-top:2px">'+escapeHtml(_wegcCur.name||'WEG')+'</div></div>';
+  var node=_wegcEmbed(c,'tab-content-weg-eigentuemer');
+  if(!node){c.innerHTML+='<div style="color:#dc2626;font-size:.85rem">Eigentümer-Modul nicht gefunden.</div>';return;}
+  try{ await loadWegEigentuemer(_wegcCur.id); }catch(e){console.warn('eig load:',e);}
 }
 // ── WEG-Cockpit: Beschlüsse / Versammlung (§24 WEG Beschlusssammlung) ──
 function _wegcKpi(v,l,ic,col){return '<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:1rem;box-shadow:0 1px 2px rgba(16,24,40,.05)"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.02em;color:#6b7280;margin-bottom:.35rem">'+l+'</div><div style="font-size:1.5rem;font-weight:700;color:'+col+';line-height:1.2">'+v+'</div></div><span style="width:38px;height:38px;border-radius:10px;background:'+col+'18;color:'+col+';display:flex;align-items:center;justify-content:center;flex-shrink:0"><span class="mini-ic" data-icon="'+ic+'" style="width:18px;height:18px"></span></span></div></div>';}
@@ -12106,12 +12151,20 @@ async function loadWegEinheiten(objId){
     +(Math.abs(totalMEA-1)>0.01?'<div style="margin-top:.6rem;font-size:.75rem;color:#e67e22">⚠️ Die Summe der Miteigentumsanteile sollte 100% (1000/1000) ergeben.</div>':'<div style="margin-top:.6rem;font-size:.75rem;color:#1a7a4a">✅ MEA-Summe korrekt (100%).</div>');
 }
 
-function openWegEinheitModal(){
+async function _fillWegEinheitHaus(sel){
+  var el=document.getElementById('weg-ein-haus'); if(!el||!aktivesObjekt)return;
+  try{var r=await sb.from('weg_untergemeinschaften').select('id,name').eq('user_id',currentUser.id).eq('objekt_id',aktivesObjekt.id).order('sortierung');
+    el.innerHTML='<option value="">— ohne —</option>'+(r.data||[]).map(function(h){return '<option value="'+h.id+'">'+escapeHtml(h.name)+'</option>';}).join('');
+  }catch(e){}
+  el.value=sel||'';
+}
+async function openWegEinheitModal(){
   document.getElementById('weg-einheit-edit-id').value='';
-  ['weg-ein-bez','weg-ein-flaeche','weg-ein-stockwerk','weg-ein-mea-z','weg-ein-mea-n'].forEach(function(id){
+  ['weg-ein-bez','weg-ein-flaeche','weg-ein-stockwerk','weg-ein-mea-z','weg-ein-mea-n','weg-ein-personen'].forEach(function(id){
     var el=document.getElementById(id);if(el)el.value=id==='weg-ein-mea-n'?'1000':'';
   });
   document.getElementById('weg-ein-typ').value='Wohnung';
+  await _fillWegEinheitHaus('');
   document.getElementById('weg-einheit-modal').style.display='flex';
 }
 function closeWegEinheitModal(){document.getElementById('weg-einheit-modal').style.display='none';}
@@ -12125,6 +12178,8 @@ async function editWegEinheit(id){
   document.getElementById('weg-ein-stockwerk').value=data.stockwerk||'';
   document.getElementById('weg-ein-mea-z').value=data.mea_zaehler||'';
   document.getElementById('weg-ein-mea-n').value=data.mea_nenner||'1000';
+  var pEl=document.getElementById('weg-ein-personen');if(pEl)pEl.value=data.personen||'';
+  await _fillWegEinheitHaus(data.untergemeinschaft_id||'');
   document.getElementById('weg-einheit-modal').style.display='flex';
 }
 async function saveWegEinheit(){
@@ -12136,7 +12191,9 @@ async function saveWegEinheit(){
     flaeche:parseFloat(document.getElementById('weg-ein-flaeche').value)||null,
     stockwerk:document.getElementById('weg-ein-stockwerk').value.trim()||null,
     mea_zaehler:parseInt(document.getElementById('weg-ein-mea-z').value)||0,
-    mea_nenner:parseInt(document.getElementById('weg-ein-mea-n').value)||1000};
+    mea_nenner:parseInt(document.getElementById('weg-ein-mea-n').value)||1000,
+    personen:parseInt(document.getElementById('weg-ein-personen').value)||0,
+    untergemeinschaft_id:document.getElementById('weg-ein-haus').value||null};
   var r=id?await sb.from('weg_einheiten').update(d).eq('id',id):await sb.from('weg_einheiten').insert(d);
   if(r.error){showToast('Fehler: '+r.error.message);return;}
   closeWegEinheitModal();showToast('✅ WEG-Einheit gespeichert!');
@@ -12193,10 +12250,19 @@ async function loadWegEigentuemer(objId){
     +'</tbody></table></div>';
 }
 
+function wegEigToggleNeu(on){
+  var neu=document.getElementById('weg-eig-neu'), wrap=document.getElementById('weg-eig-kontakt-wrap');
+  if(neu)neu.style.display=on?'block':'none';
+  if(wrap)wrap.style.display=on?'none':'block';
+  var f=document.getElementById('weg-eig-neu-flag'); if(f)f.value=on?'1':'';
+}
 async function openWegEigentuemerModal(){
   document.getElementById('weg-eig-edit-id').value='';
   document.getElementById('weg-eig-hausgeld').value='';
   document.getElementById('weg-eig-seit').value='';
+  ['weg-eig-neu-vorname','weg-eig-neu-nachname','weg-eig-neu-email','weg-eig-neu-tel'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  var an=document.getElementById('weg-eig-neu-anrede');if(an)an.value='';
+  wegEigToggleNeu(false);
   // Load contacts and WEG units into dropdowns
   await fillWegEigentuemerDropdowns();
   document.getElementById('weg-eigentuemer-modal').style.display='flex';
@@ -12234,7 +12300,21 @@ async function saveWegEigentuemer(){
   var id=document.getElementById('weg-eig-edit-id').value;
   var kontaktId=document.getElementById('weg-eig-kontakt').value;
   var einheitId=document.getElementById('weg-eig-einheit').value;
-  if(!kontaktId){showToast('Bitte einen Kontakt wählen.');return;}
+  // Neuen Kontakt (Eigentümer) inline anlegen, falls aktiviert
+  if(document.getElementById('weg-eig-neu-flag').value==='1'){
+    var nn=(document.getElementById('weg-eig-neu-nachname').value||'').trim();
+    if(!nn){showToast('Bitte Nachname des neuen Eigentümers angeben.');return;}
+    var kr=await sb.from('kontakte').insert({user_id:currentUser.id,
+      anrede:document.getElementById('weg-eig-neu-anrede').value||null,
+      vorname:(document.getElementById('weg-eig-neu-vorname').value||'').trim()||null,
+      nachname:nn,
+      email:(document.getElementById('weg-eig-neu-email').value||'').trim()||null,
+      telefon:(document.getElementById('weg-eig-neu-tel').value||'').trim()||null,
+      notiz:'[Eigentümer]'}).select('id').single();
+    if(kr.error){showToast('Fehler beim Anlegen des Kontakts: '+kr.error.message);return;}
+    kontaktId=kr.data.id;
+  }
+  if(!kontaktId){showToast('Bitte einen Kontakt wählen oder neu anlegen.');return;}
   if(!einheitId){showToast('Bitte eine WEG-Einheit wählen.');return;}
   var d={user_id:currentUser.id,objekt_id:aktivesObjekt.id,
     kontakt_id:kontaktId,weg_einheit_id:einheitId,

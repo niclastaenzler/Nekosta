@@ -2958,9 +2958,51 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
             <button type="button" class="btn-secondary" onclick="resetLayoutSettings()"><span class="btn-ic" data-icon="refresh"></span> Layout zurücksetzen</button>
           </div>
 
+          <!-- NK-ABRECHNUNG AUFBAU (modern vs. klassisch) -->
+          <div class="card">
+            <div class="card-title"><span class="h1-ic" data-icon="filetext" style="vertical-align:-4px"></span> Abrechnung – Aufbau</div>
+            <div style="font-size:.82rem;color:var(--muted);margin-bottom:1rem">Bestimmt die Struktur der PDF-Abrechnung. Die Farb-Variante wählen Sie darunter.</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.85rem;margin-bottom:1rem">
+              <!-- Modern -->
+              <div id="pdf-style-modern" onclick="setPdfStyle('modern')"
+                style="border:2px solid var(--p);border-radius:10px;padding:.85rem;cursor:pointer;background:var(--p-light)">
+                <div style="background:#fff;border-radius:6px;padding:.6rem;margin-bottom:.5rem;border:1px solid var(--border)">
+                  <div style="height:4px;background:#111827;border-radius:2px;margin-bottom:5px;width:55%"></div>
+                  <div style="height:13px;background:#eaf7ef;border:1px solid #bfe3cc;border-radius:4px;margin-bottom:5px"></div>
+                  <div style="display:flex;gap:3px;margin-bottom:5px">
+                    <div style="flex:1;height:3px;background:#eee;border-radius:2px"></div>
+                    <div style="flex:1;height:3px;background:#eee;border-radius:2px"></div>
+                    <div style="flex:1;height:3px;background:#eee;border-radius:2px"></div>
+                  </div>
+                  <div style="display:flex;height:4px;border-radius:2px;overflow:hidden"><div style="width:60%;background:var(--p)"></div><div style="width:40%;background:var(--p-accent)"></div></div>
+                </div>
+                <div style="font-size:.8rem;font-weight:700;color:var(--p)">Modern</div>
+                <div style="font-size:.68rem;color:var(--muted)">Ergebnis zuerst, mit Kostenbalken</div>
+              </div>
+              <!-- Klassisch -->
+              <div id="pdf-style-klassisch" onclick="setPdfStyle('klassisch')"
+                style="border:2px solid var(--border);border-radius:10px;padding:.85rem;cursor:pointer">
+                <div style="background:#fff;border-radius:6px;padding:.6rem;margin-bottom:.5rem;border:1px solid var(--border)">
+                  <div style="height:4px;background:#111827;border-radius:2px;margin-bottom:2px;width:55%"></div>
+                  <div style="height:2px;background:#eee;border-radius:1px;margin-bottom:5px;width:75%"></div>
+                  <div style="height:3px;background:#eee;border-radius:2px;margin-bottom:2px"></div>
+                  <div style="height:3px;background:#eee;border-radius:2px;margin-bottom:2px"></div>
+                  <div style="height:3px;background:#eee;border-radius:2px;margin-bottom:2px"></div>
+                  <div style="height:5px;background:#eaf7ef;border:1px solid #bfe3cc;border-radius:2px;width:50%;margin-left:auto"></div>
+                </div>
+                <div style="font-size:.8rem;font-weight:700">Klassisch</div>
+                <div style="font-size:.68rem;color:var(--muted)">Aufbau wie bisher, Ergebnis unten</div>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div style="font-size:.75rem;color:var(--p);font-style:italic" id="pdf-style-active-label">Aktiv: Modern</div>
+              <button onclick="vorschauPdfLayout(currentPdfLayout||'standard')" class="btn-small" style="font-size:.7rem"><span class="btn-ic" data-icon="eye"></span> Vorschau</button>
+            </div>
+          </div>
+
           <!-- NK-ABRECHNUNG LAYOUTS -->
           <div class="card">
-            <div class="card-title">📄 Nebenkostenabrechnung – Layout</div>
+            <div class="card-title">📄 Nebenkostenabrechnung – Farbvariante</div>
             <div style="font-size:.82rem;color:var(--muted);margin-bottom:1rem">Wählen Sie das Erscheinungsbild Ihrer PDF-Abrechnungen.</div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:.85rem;margin-bottom:1rem">
               <!-- Layout 1: Standard -->
@@ -5581,6 +5623,31 @@ function buildPeriodContent(doc,we,pe,withWatermark,isFirstPage){
   // Kein Absender-/Empfängerblock auf der Nebenkostenabrechnung – Anschrift/Briefkopf
   // erscheinen nur im separaten Anschreiben (anschreibenPdf). (User-Wunsch 2026-06-08)
 
+  // Aufbau-Variante: 'modern' (Ergebnis zuerst, Eckdaten-Streifen, Kostenbalken) vs. 'klassisch' (wie vor dem Redesign)
+  var MODERN=(currentPdfStyle!=='klassisch');
+  var objektFlaeche=e.objektFlaeche||0;
+  var anteilPct=objektFlaeche>0?((we.wohnung.flaeche/objektFlaeche)*100).toFixed(1).replace('.',',')+' %':'–';
+
+  // Abschnitts-Header (Akzent-Tick nur im modernen Aufbau)
+  var secH=function(title){
+    npi(14);
+    if(CLEAN){
+      if(MODERN)fillR(L,y+0.4,1.6,4.6,AC[0],AC[1],AC[2]);
+      setFont(9.5,'bold',DK[0],DK[1],DK[2]);doc.text(title.toUpperCase(),L+(MODERN?4:0),y+4);
+      hLine(L,W-R,y+6.5,MD[0],MD[1],MD[2],0.4);
+      y+=10;
+    }else if(TH.band){
+      fillR(L,y,C,7,AC[0],AC[1],AC[2]);
+      setFont(9,'bold',255,255,255);doc.text(title,L+2,y+5);
+      y+=9;
+    }else{
+      fillR(L,y,C,7,HB[0],HB[1],HB[2]);
+      setFont(9,'bold',HT[0],HT[1],HT[2]);doc.text(title,L+2,y+5);
+      y+=9;
+    }
+  };
+
+  if(MODERN){
   // ── KOPF: Absender dezent + Datum rechts, großer Titel, Meta-Zeile ──
   var ort=sm.ort||'';
   var datStr=e.datum?new Date(e.datum).toLocaleDateString('de-DE'):new Date().toLocaleDateString('de-DE');
@@ -5647,8 +5714,6 @@ function buildPeriodContent(doc,we,pe,withWatermark,isFirstPage){
   y+=hh+7;
 
   // ── ECKDATEN KOMPAKT (ersetzt die frühere Tabelle „Angaben zur Verteilung") ──
-  var objektFlaeche=e.objektFlaeche||0;
-  var anteilPct=objektFlaeche>0?((we.wohnung.flaeche/objektFlaeche)*100).toFixed(1).replace('.',',')+' %':'–';
   var infoCols=[
     ['Ihre Fläche',(we.wohnung.flaeche||0).toLocaleString('de-DE')+' m²'],
     ['Objekt gesamt',objektFlaeche>0?objektFlaeche.toLocaleString('de-DE')+' m²':'–'],
@@ -5701,27 +5766,46 @@ function buildPeriodContent(doc,we,pe,withWatermark,isFirstPage){
     });
     y=ly+9;
   }
+  } else {
+    // ── KLASSISCHER AUFBAU (wie vor dem Redesign): Datum, Betreff, Angaben-zur-Verteilung-Tabelle ──
+    setFont(8.5,'normal',80,80,80);
+    var ortK=sm.ort||'';
+    var datStrK=e.datum?new Date(e.datum).toLocaleDateString('de-DE'):new Date().toLocaleDateString('de-DE');
+    doc.text((ortK?ortK+', ':'')+datStrK,L,50);
+    hLine(L,W-R,58,80,80,80,0.5);y=66;
+    setFont(11,'bold',CLEAN?DK[0]:AC[0],CLEAN?DK[1]:AC[1],CLEAN?DK[2]:AC[2]);
+    doc.text((p.isLeerstand?'Leerstand-Abrechnung ':TH.title+' ')+e.jahr,L,y);y+=5;
+    setFont(9,'bold',55,55,60);doc.text('Wohneinheit: '+we.wohnung.bez,L,y);y+=5;
+    setFont(8.5,'normal',80,80,80);
+    var zeitText='Zeitraum: '+fmtDatum(p.von)+' - '+fmtDatum(p.bis)+' ('+p.days+' Tage)';
+    if(!p.isLeerstand&&p.personen)zeitText+='  |  '+p.personen+' Person'+((p.personen!==1)?'en':'');
+    doc.text(zeitText,L,y);y+=10;
 
-  // Abschnitts-Header
-  var secH=function(title){
-    npi(14);
-    if(CLEAN){
-      // Clean: Überschrift mit kleinem Akzent-Tick + feiner Unterlinie
-      fillR(L,y+0.4,1.6,4.6,AC[0],AC[1],AC[2]);
-      setFont(9.5,'bold',DK[0],DK[1],DK[2]);doc.text(title.toUpperCase(),L+4,y+4);
-      hLine(L,W-R,y+6.5,MD[0],MD[1],MD[2],0.4);
-      y+=10;
-    }else if(TH.band){
-      // Modern: full accent bar with white text
-      fillR(L,y,C,7,AC[0],AC[1],AC[2]);
-      setFont(9,'bold',255,255,255);doc.text(title,L+2,y+5);
-      y+=9;
-    }else{
-      fillR(L,y,C,7,HB[0],HB[1],HB[2]);
-      setFont(9,'bold',HT[0],HT[1],HT[2]);doc.text(title,L+2,y+5);
-      y+=9;
-    }
-  };
+    secH('Angaben zur Verteilung');
+    var skLabels={flaeche:'Wohnflaeche',person:'Personenanzahl',mea:'MEA',einheiten:'Einheiten (gleich)',direkt:'Direkte Zuordnung',hkv:'Verbrauch + Grundkosten (HeizkostenV)',auswahl:'Ausgewaehlte Einheiten'};
+    var schluessel=[];
+    var allKostenK=(e.bkKosten||[]).concat(e.hkKosten||[]);
+    allKostenK.forEach(function(k){if(schluessel.indexOf(k.schluessel)<0)schluessel.push(k.schluessel);});
+    var vRows=[
+      ['Wohneinheit',we.wohnung.bez,''],
+      ['Mietername',p.isLeerstand?'Leerstand':p.name,''],
+      ['Wohnflaeche Objekt',objektFlaeche>0?objektFlaeche.toLocaleString('de-DE')+' m²':'--','Ihre Flaeche: '+we.wohnung.flaeche+' m² ('+anteilPct+')'],
+      ['Zeitraum',fmtDatum(p.von)+' - '+fmtDatum(p.bis),'Tage: '+p.days+' von 365'],
+      ['Personen',p.isLeerstand?'0':(p.personen+' Person'+((p.personen!==1)?'en':'')), ''],
+    ];
+    if(we.wohnung.mea)vRows.push(['Miteigentumsanteil',we.wohnung.mea,'']);
+    vRows.push(['Verteilungsschluessel',schluessel.map(function(s){return skLabels[s]||s;}).join(', '),'']);
+    vRows.forEach(function(row,ri){
+      npi(7);
+      if(ri%2===0)cfill(L,y,C,6,LT[0],LT[1],LT[2]);
+      hLine(L,W-R,y+6,MD[0],MD[1],MD[2]);
+      setFont(8,'normal',60,60,60);doc.text(row[0],L+2,y+4.2);
+      setFont(8,'bold',30,30,30);doc.text(row[1],L+C*0.38,y+4.2);
+      setFont(7.5,'normal',100,100,100);if(row[2])doc.text(row[2],L+C*0.7,y+4.2);
+      y+=6;
+    });
+    y+=5;
+  }
 
   // KOSTEN TABELLE
   secH('Aufteilung der Gesamtkosten');
@@ -6708,6 +6792,23 @@ function applyLayoutSettings(){
   localStorage.setItem('nekosta-layout',JSON.stringify({compact:compact,largeFont:largeFont,width:width}));
 }
 var currentPdfLayout=localStorage.getItem('nekosta-pdf-layout')||'standard';
+// PDF-Aufbau: 'modern' (Ergebnis-Karte zuerst, Eckdaten-Streifen, Kostenbalken) | 'klassisch' (wie vor dem Redesign)
+var currentPdfStyle=localStorage.getItem('nekosta-pdf-style')||'modern';
+
+function setPdfStyle(style,silent){
+  if(style!=='klassisch')style='modern';
+  currentPdfStyle=style;
+  localStorage.setItem('nekosta-pdf-style',style);
+  ['modern','klassisch'].forEach(function(s){
+    var el=document.getElementById('pdf-style-'+s);
+    if(!el)return;
+    if(s===style){el.style.borderColor='var(--p)';el.style.background='var(--p-light)';}
+    else{el.style.borderColor='var(--border)';el.style.background='var(--white)';}
+  });
+  var lbl=document.getElementById('pdf-style-active-label');
+  if(lbl)lbl.textContent='Aktiv: '+(style==='klassisch'?'Klassisch':'Modern');
+  if(!silent)showToast('✅ PDF-Aufbau: '+(style==='klassisch'?'Klassisch (wie vorher)':'Modern (Ergebnis zuerst)'));
+}
 
 function setPdfLayout(layout){
   // Normalize legacy names
@@ -6741,6 +6842,7 @@ function vorschauAktuellesLayout(){
 
 function loadPdfLayoutUI(){
   setPdfLayout(currentPdfLayout);
+  setPdfStyle(currentPdfStyle,true);
 }
 
 function resetLayoutSettings(){

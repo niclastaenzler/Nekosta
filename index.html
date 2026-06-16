@@ -10120,18 +10120,11 @@ function wegcGo(mod){
   if(mod==='beschluesse'){wegcRenderBeschluesse(c);return;}
   if(mod==='schaeden'){wegcRenderSchaeden(c);return;}
   if(mod==='dienstleister'){wegcRenderDienstleister(c);return;}
-  var info={
-    beschluesse:['Beschlüsse & Versammlung','clipboard','Eigentümerversammlungen planen, Beschlüsse fassen und die Beschlusssammlung (§ 24 WEG) pflegen.'],
-    ruecklagen:['Rücklagen','shield','Instandhaltungsrücklage verwalten: Stand, Zuführungen und Entnahmen je Wirtschaftsjahr.'],
-    schaeden:['Schäden','alerttriangle','Schadensmeldungen erfassen, Versicherungsfälle dokumentieren und Status verfolgen.'],
-    dienstleister:['Dienstleister','wrench','Verträge mit Hausmeister, Reinigung, Wartung & Versicherung an einem Ort.']
-  };
-  var t=info[mod]||['Modul','folder',''];
+  // Fallback nur für unbekannte Modul-IDs – alle bekannten Module werden oben gerendert.
   c.innerHTML='<div style="text-align:center;padding:3.5rem 1.5rem;max-width:540px;margin:0 auto">'
-    +'<div style="width:64px;height:64px;border-radius:16px;background:#f3e5f5;color:#7b1fa2;display:flex;align-items:center;justify-content:center;margin:0 auto 1.1rem"><span class="ic-lg" data-icon="'+t[1]+'"></span></div>'
-    +'<h2 style="font-size:1.3rem;font-weight:800;margin-bottom:.45rem">'+t[0]+'</h2>'
-    +'<p style="color:var(--muted);font-size:.9rem;line-height:1.5;margin-bottom:1.4rem">'+t[2]+'</p>'
-    +'<div style="display:inline-flex;align-items:center;gap:.45rem;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;font-size:.82rem;font-weight:600;padding:.6rem 1rem;border-radius:9px"><span class="mini-ic" data-icon="clock"></span> Bald verfügbar – als eigenes Modul geplant</div>'
+    +'<div style="width:64px;height:64px;border-radius:16px;background:#f3e5f5;color:#7b1fa2;display:flex;align-items:center;justify-content:center;margin:0 auto 1.1rem"><span class="ic-lg" data-icon="folder"></span></div>'
+    +'<h2 style="font-size:1.3rem;font-weight:800;margin-bottom:.45rem">Modul nicht gefunden</h2>'
+    +'<p style="color:var(--muted);font-size:.9rem;line-height:1.5;margin-bottom:1.4rem">Bitte wähle links ein Modul aus der Navigation.</p>'
   +'</div>';
 }
 async function wegcRenderDashboard(c){

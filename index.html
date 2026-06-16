@@ -10298,9 +10298,10 @@ function wegcRueckDel(id){
     ]});
 }
 // ── WEG-Cockpit: JAHRESABRECHNUNG (§ 28 WEG) – Gesamt + Einzel je Eigentümer (MEA-Verteilung) ──
-var _wegcAbrJahr=null, _wegcAbrData=null, _wegcAbrEig=null;
+var _wegcAbrJahr=null, _wegcAbrData=null, _wegcAbrEig=null, _wegcAbrStep=1;
 function wegcAbrSetJahr(j){_wegcAbrJahr=parseInt(j)||(new Date().getFullYear()-1);_wegcAbrEig=null;wegcRenderAbrechnung();}
 function wegcAbrSetEig(id){_wegcAbrEig=id||null;wegcRenderAbrechnung();}
+function wegcAbrStep(n){_wegcAbrStep=Math.max(1,Math.min(4,parseInt(n)||1));wegcRenderAbrechnung();}
 function _wegcTage(j){return ((j%4===0&&j%100!==0)||j%400===0)?366:365;}
 var _wegcVtLabel={mea:'Eigentumsanteil',einheiten:'Einheiten',pxt:'Personen × Tage',festbetrag:'Festbetrag'};
 var _wegcVtEinh={mea:'MEA',einheiten:'Einh.',pxt:'PxT',festbetrag:'EUR'};
@@ -10366,56 +10367,146 @@ async function wegcRenderAbrechnung(c){
   var P=_wegcAbrEnrich(positions,units,festByPos,haeuserById,tage);
   _wegcAbrData={jahr:jahr,weg:_wegcCur,P:P,owners:owners,festByPos:festByPos,sollByEig:sollByEig,haeuserById:haeuserById,tage:tage};
 
+  // ── Ergebnis je Eigentümer (für Übersicht/Zusammenfassung) ──
+  var results=owners.map(function(o){
+    var anteil=P.reduce(function(s,Pp){return s+_wegcAbrRow(Pp,o,festByPos).ownerEUR;},0);
+    var soll=sollByEig[o.id]||0;
+    return {o:o,name:_wegcEigName(o),einheit:(o.weg_einheiten&&o.weg_einheiten.bezeichnung)||'–',anteil:anteil,soll:soll,diff:soll-anteil};
+  });
+  var sumKosten=P.reduce(function(s,x){return s+x.gesamtEUR;},0);
+  var sumVz=results.reduce(function(s,r){return s+r.soll;},0);
+  var sumAnteil=results.reduce(function(s,r){return s+r.anteil;},0);
+  var nNach=results.filter(function(r){return r.diff<-0.005;}).length;
+  var nGut=results.filter(function(r){return r.diff>=-0.005;}).length;
+  var ready=owners.length&&P.length;
+
+  var step=_wegcAbrStep||1;
   var jahre=[];var jy=new Date().getFullYear();for(var z=0;z<6;z++)jahre.push(jy-z);
   var jahrSel='<select class="buha-inp" style="max-width:110px" onchange="wegcAbrSetJahr(this.value)">'+jahre.map(function(j){return '<option value="'+j+'"'+(j===jahr?' selected':'')+'>'+j+'</option>';}).join('')+'</select>';
-  var html='<div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:1rem;margin-bottom:1.25rem">'
-    +'<div><h1 style="font-size:1.6rem;font-weight:800;color:#111827">Hausgeldabrechnung</h1><div style="font-size:.85rem;color:#6b7280;margin-top:2px">§ 28 WEG · '+escapeHtml(_wegcCur.name||'WEG')+'</div></div>'
-    +'<div style="display:flex;gap:.6rem;align-items:flex-end">'+_wegcFld('Wirtschaftsjahr',jahrSel)
-      +'<button class="btn-primary" style="padding:.5rem 1rem;white-space:nowrap" onclick="wegcAbrechnungPdf()"'+((owners.length&&P.length)?'':' disabled')+'><span class="btn-ic" data-icon="download"></span> PDF (alle)</button></div>'
-  +'</div>';
-  // Kostenpositionen-Editor
   var hausOpt='<option value="">Gesamte WEG</option>'+haeuser.map(function(h){return '<option value="'+h.id+'">'+escapeHtml(h.name)+'</option>';}).join('');
-  html+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:1rem 1.1rem;margin-bottom:1.25rem;box-shadow:0 1px 2px rgba(16,24,40,.05)">'
-    +'<div style="font-size:.85rem;font-weight:700;margin-bottom:.7rem;color:#111827">Kostenposition hinzufügen ('+jahr+')</div>'
-    +'<div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:flex-end">'
-      +_wegcFld('Bezeichnung','<input id="wegc-pos-bez" type="text" placeholder="z. B. Gebäudeversicherung" class="buha-inp" style="min-width:160px">')
-      +_wegcFld('Betrag (€)','<input id="wegc-pos-betrag" type="text" inputmode="decimal" placeholder="0,00" class="buha-inp" style="max-width:100px" onkeydown="if(event.key===\'Enter\')wegcAbrPosSave()">')
-      +_wegcFld('Verteiler','<select id="wegc-pos-vt" class="buha-inp"><option value="mea">Eigentumsanteil (MEA)</option><option value="einheiten">Einheiten (gleich)</option><option value="pxt">Personen × Tage</option><option value="festbetrag">Festbetrag je Eigentümer</option></select>')
-      +_wegcFld('Nur Haus','<select id="wegc-pos-haus" class="buha-inp">'+hausOpt+'</select>')
-      +_wegcFld('Umlage','<select id="wegc-pos-umlf" class="buha-inp"><option value="1">umlagefähig</option><option value="0">nicht umlagefähig</option></select>')
-      +'<button class="btn-primary" style="padding:.5rem 1rem;white-space:nowrap" onclick="wegcAbrPosSave()"><span class="btn-ic" data-icon="plus"></span> Hinzufügen</button>'
-    +'</div><div style="font-size:.7rem;color:var(--muted);margin-top:.5rem">„Festbetrag" = Betrag je Eigentümer direkt eingeben (z. B. externe Heizkostenabrechnung). „Nur Haus" verteilt die Kosten ausschließlich innerhalb dieses Hauses. „umlagefähig/nicht" steuert die beiden Blöcke der Abrechnung.</div></div>';
 
-  if(!owners.length){html+='<div style="text-align:center;color:var(--muted);font-size:.88rem;padding:2rem;background:var(--white);border:1px solid #eef0f4;border-radius:12px">Lege zuerst <strong>Eigentümer</strong> (mit Einheit/MEA) an – Reiter „Eigentümer".</div>';c.innerHTML=html;return;}
+  // ── Kopf + Stepper ──
+  var html='<div style="margin-bottom:1rem"><h1 style="font-size:1.5rem;font-weight:800;color:#111827">Hausgeldabrechnung <span style="font-size:.95rem;font-weight:600;color:#9ca3af">· '+jahr+'</span></h1><div style="font-size:.83rem;color:#6b7280;margin-top:2px">§ 28 WEG · '+escapeHtml(_wegcCur.name||'WEG')+'</div></div>';
+  var steps=[['Wirtschaftsjahr'],['Kostenpositionen'],['Vorschau'],['Abschluss & PDF']];
+  html+='<div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1.4rem">'+steps.map(function(s,i){var n=i+1;var done=n<step,act=n===step;
+    var bg=act?'linear-gradient(135deg,#8e44c0,#6a2d9f)':(done?'#ede4f6':'#f3f4f6');
+    var fg=act?'#fff':(done?'#6a2d9f':'#9ca3af');
+    return '<button onclick="wegcAbrStep('+n+')" style="flex:1;min-width:128px;display:flex;align-items:center;gap:.5rem;border:none;cursor:pointer;border-radius:10px;padding:.55rem .7rem;background:'+bg+';color:'+fg+';font-family:var(--ff);text-align:left">'
+      +'<span style="width:23px;height:23px;border-radius:50%;background:'+(act?'rgba(255,255,255,.25)':'#fff')+';display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.76rem;flex-shrink:0">'+(done?'✓':n)+'</span>'
+      +'<span style="font-size:.77rem;font-weight:700;line-height:1.1">'+s[0]+'</span></button>';
+  }).join('')+'</div>';
 
-  var posBlock=function(list,title,col){
-    var sub=list.reduce(function(s,x){return s+x.gesamtEUR;},0);
-    var h='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;overflow:hidden;margin-bottom:1rem">'
-      +'<div style="padding:.6rem 1rem;font-weight:700;font-size:.82rem;color:'+col+';border-bottom:1px solid #eef0f4">'+title+'</div><table style="width:100%;border-collapse:collapse;font-size:.83rem"><tbody>';
-    if(!list.length)h+='<tr><td style="padding:.7rem .9rem;color:var(--muted);font-size:.8rem">keine Positionen</td></tr>';
-    list.forEach(function(x){
-      h+='<tr style="border-bottom:1px solid #f3f4f6"><td style="padding:.45rem .9rem;font-weight:600">'+escapeHtml(x.name)+'</td>'
-        +'<td style="padding:.45rem .9rem;color:#6b7280;font-size:.76rem">'+escapeHtml(x.vn)+'</td>'
-        +'<td style="padding:.45rem .9rem;text-align:right;font-weight:600">'+fmtEuro(x.gesamtEUR)+'</td>'
-        +'<td style="padding:.45rem .9rem;text-align:right;width:40px"><button class="oa-btn" title="Löschen" onclick="wegcAbrPosDel(\''+x.id+'\')"><span class="mini-ic" data-icon="trash"></span></button></td></tr>';
-      if(x.isFest){
-        h+='<tr style="background:#faf7fe"><td colspan="4" style="padding:.4rem .9rem .6rem"><div style="font-size:.7rem;color:#7b1fa2;font-weight:700;margin-bottom:.35rem">Beträge je Eigentümer eingeben</div><div style="display:flex;flex-wrap:wrap;gap:.4rem">'
-          +owners.map(function(o){var v=(festByPos[x.id]||{})[o.id];return '<span style="display:inline-flex;align-items:center;gap:.3rem;font-size:.72rem;background:#fff;border:1px solid #e4d3f0;border-radius:7px;padding:.15rem .4rem">'+escapeHtml((o.weg_einheiten&&o.weg_einheiten.bezeichnung)||_wegcEigName(o))+' <input type="text" inputmode="decimal" value="'+(v!=null&&v!==''?(''+v).replace('.',','):'')+'" onchange="wegcAbrFestSave(\''+x.id+'\',\''+o.id+'\',this.value)" style="width:74px;border:1px solid var(--border);border-radius:5px;padding:2px 5px;font-size:.72rem;font-family:var(--ff)"></span>';}).join('')+'</div></td></tr>';
-      }
-    });
-    h+='<tr style="background:#fafafa;font-weight:700"><td colspan="2" style="padding:.5rem .9rem">Summe</td><td style="padding:.5rem .9rem;text-align:right">'+fmtEuro(sub)+'</td><td></td></tr></tbody></table></div>';
-    return h;
-  };
-  html+=posBlock(P.filter(function(x){return !x.umlf;}),'Nicht zur Umlage bestimmte Kosten (Eigentümer)','#9a3412');
-  html+=posBlock(P.filter(function(x){return x.umlf;}),'Zur Umlage auf Bewohner bestimmte Kosten','#166534');
+  var warnNoOwners='<div style="text-align:center;color:#92400e;font-size:.88rem;padding:1.5rem;background:#fffbeb;border:1px solid #fde68a;border-radius:12px">Lege zuerst <strong>Eigentümer</strong> (mit Einheit/MEA) im Reiter „Eigentümer" an – ohne Eigentümer kann keine Abrechnung erstellt werden.</div>';
+  var kpi=function(v,l,col){return '<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:.85rem 1rem;box-shadow:0 1px 2px rgba(16,24,40,.05)"><div style="font-size:.66rem;font-weight:600;text-transform:uppercase;letter-spacing:.02em;color:#6b7280;margin-bottom:.3rem">'+l+'</div><div style="font-size:1.35rem;font-weight:800;color:'+(col||'#111827')+';line-height:1.1">'+v+'</div></div>';};
 
-  if(P.length){
-    if(!_wegcAbrEig||!owners.some(function(o){return o.id===_wegcAbrEig;}))_wegcAbrEig=owners[0].id;
-    var eigSel='<select class="buha-inp" style="max-width:240px" onchange="wegcAbrSetEig(this.value)">'+owners.map(function(o){return '<option value="'+o.id+'"'+(o.id===_wegcAbrEig?' selected':'')+'>'+escapeHtml(_wegcEigName(o)+' · '+((o.weg_einheiten&&o.weg_einheiten.bezeichnung)||''))+'</option>';}).join('')+'</select>';
-    html+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;overflow:hidden"><div style="padding:.7rem 1rem;border-bottom:1px solid #eef0f4;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem"><span style="font-weight:700;font-size:.9rem;color:#111827">Einzelabrechnung – Vorschau</span>'+eigSel+'</div><div style="overflow-x:auto">'+_wegcAbrEinzelHtml(owners.filter(function(x){return x.id===_wegcAbrEig;})[0])+'</div></div>';
+  if(step===1){
+    // Schritt 1: Wirtschaftsjahr + Überblick
+    html+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:1rem 1.1rem;margin-bottom:1.25rem;box-shadow:0 1px 2px rgba(16,24,40,.05)">'
+      +'<div style="font-size:.85rem;font-weight:700;margin-bottom:.7rem;color:#111827">1. Wirtschaftsjahr wählen</div>'
+      +'<div style="display:flex;gap:.6rem;align-items:flex-end;flex-wrap:wrap">'+_wegcFld('Wirtschaftsjahr',jahrSel)
+      +'<div style="font-size:.78rem;color:#6b7280;max-width:480px">Wähle das abzurechnende Jahr. Kostenpositionen und Vorauszahlungen werden je Wirtschaftsjahr getrennt gespeichert.</div></div></div>';
+    html+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.8rem;margin-bottom:1.25rem">'
+      +kpi(owners.length,'Eigentümer',owners.length?'#111827':'#dc2626')
+      +kpi(haeuser.length,'Untergemeinschaften')
+      +kpi(P.length,'Kostenpositionen')
+      +kpi(fmtEuro(sumVz),'Vorauszahlungen',sumVz>0?'#157f3c':'#9ca3af')
+    +'</div>';
+    var hints='';
+    if(!owners.length)hints+='<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:.7rem .9rem;font-size:.8rem;color:#92400e;margin-bottom:.6rem">⚠️ Noch keine Eigentümer angelegt. Reiter „Eigentümer" → Eigentümer mit Einheit/MEA anlegen.</div>';
+    if(!P.length)hints+='<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:.7rem .9rem;font-size:.8rem;color:#1e40af;margin-bottom:.6rem">ℹ️ Noch keine Kostenpositionen für '+jahr+'. Im <strong>Schritt 2</strong> erfasst du sie.</div>';
+    if(sumVz<=0)hints+='<div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:.7rem .9rem;font-size:.8rem;color:#5b21b6;margin-bottom:.6rem">💡 Noch keine Hausgeld-Vorauszahlungen gebucht. Diese entstehen im <strong>Wirtschaftsplan</strong> über „Hausgeld buchen" und fließen hier als Vorauszahlung ein.</div>';
+    if(hints)html+=hints;
+  } else if(step===2){
+    // Schritt 2: Kostenpositionen
+    if(!owners.length){html+=warnNoOwners;}
+    else{
+      html+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:1rem 1.1rem;margin-bottom:1.25rem;box-shadow:0 1px 2px rgba(16,24,40,.05)">'
+        +'<div style="font-size:.85rem;font-weight:700;margin-bottom:.7rem;color:#111827">Kostenposition hinzufügen ('+jahr+')</div>'
+        +'<div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:flex-end">'
+          +_wegcFld('Bezeichnung','<input id="wegc-pos-bez" type="text" placeholder="z. B. Gebäudeversicherung" class="buha-inp" style="min-width:160px">')
+          +_wegcFld('Betrag (€)','<input id="wegc-pos-betrag" type="text" inputmode="decimal" placeholder="0,00" class="buha-inp" style="max-width:100px" onkeydown="if(event.key===\'Enter\')wegcAbrPosSave()">')
+          +_wegcFld('Verteiler','<select id="wegc-pos-vt" class="buha-inp"><option value="mea">Eigentumsanteil (MEA)</option><option value="einheiten">Einheiten (gleich)</option><option value="pxt">Personen × Tage</option><option value="festbetrag">Festbetrag je Eigentümer</option></select>')
+          +_wegcFld('Nur Haus','<select id="wegc-pos-haus" class="buha-inp">'+hausOpt+'</select>')
+          +_wegcFld('Umlage','<select id="wegc-pos-umlf" class="buha-inp"><option value="1">umlagefähig</option><option value="0">nicht umlagefähig</option></select>')
+          +'<button class="btn-primary" style="padding:.5rem 1rem;white-space:nowrap" onclick="wegcAbrPosSave()"><span class="btn-ic" data-icon="plus"></span> Hinzufügen</button>'
+        +'</div><div style="font-size:.7rem;color:var(--muted);margin-top:.5rem">„Festbetrag" = Betrag je Eigentümer direkt eingeben (z. B. externe Heizkostenabrechnung). „Nur Haus" verteilt die Kosten ausschließlich innerhalb dieses Hauses. „umlagefähig/nicht" steuert die beiden Blöcke der Abrechnung.</div></div>';
+      var posBlock=function(list,title,col){
+        var sub=list.reduce(function(s,x){return s+x.gesamtEUR;},0);
+        var h='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;overflow:hidden;margin-bottom:1rem">'
+          +'<div style="padding:.6rem 1rem;font-weight:700;font-size:.82rem;color:'+col+';border-bottom:1px solid #eef0f4">'+title+'</div><table style="width:100%;border-collapse:collapse;font-size:.83rem"><tbody>';
+        if(!list.length)h+='<tr><td style="padding:.7rem .9rem;color:var(--muted);font-size:.8rem">keine Positionen</td></tr>';
+        list.forEach(function(x){
+          h+='<tr style="border-bottom:1px solid #f3f4f6"><td style="padding:.45rem .9rem;font-weight:600">'+escapeHtml(x.name)+'</td>'
+            +'<td style="padding:.45rem .9rem;color:#6b7280;font-size:.76rem">'+escapeHtml(x.vn)+'</td>'
+            +'<td style="padding:.45rem .9rem;text-align:right;font-weight:600">'+fmtEuro(x.gesamtEUR)+'</td>'
+            +'<td style="padding:.45rem .9rem;text-align:right;width:40px"><button class="oa-btn" title="Löschen" onclick="wegcAbrPosDel(\''+x.id+'\')"><span class="mini-ic" data-icon="trash"></span></button></td></tr>';
+          if(x.isFest){
+            h+='<tr style="background:#faf7fe"><td colspan="4" style="padding:.4rem .9rem .6rem"><div style="font-size:.7rem;color:#7b1fa2;font-weight:700;margin-bottom:.35rem">Beträge je Eigentümer eingeben</div><div style="display:flex;flex-wrap:wrap;gap:.4rem">'
+              +owners.map(function(o){var v=(festByPos[x.id]||{})[o.id];return '<span style="display:inline-flex;align-items:center;gap:.3rem;font-size:.72rem;background:#fff;border:1px solid #e4d3f0;border-radius:7px;padding:.15rem .4rem">'+escapeHtml((o.weg_einheiten&&o.weg_einheiten.bezeichnung)||_wegcEigName(o))+' <input type="text" inputmode="decimal" value="'+(v!=null&&v!==''?(''+v).replace('.',','):'')+'" onchange="wegcAbrFestSave(\''+x.id+'\',\''+o.id+'\',this.value)" style="width:74px;border:1px solid var(--border);border-radius:5px;padding:2px 5px;font-size:.72rem;font-family:var(--ff)"></span>';}).join('')+'</div></td></tr>';
+          }
+        });
+        h+='<tr style="background:#fafafa;font-weight:700"><td colspan="2" style="padding:.5rem .9rem">Summe</td><td style="padding:.5rem .9rem;text-align:right">'+fmtEuro(sub)+'</td><td></td></tr></tbody></table></div>';
+        return h;
+      };
+      html+=posBlock(P.filter(function(x){return !x.umlf;}),'Nicht zur Umlage bestimmte Kosten (Eigentümer)','#9a3412');
+      html+=posBlock(P.filter(function(x){return x.umlf;}),'Zur Umlage auf Bewohner bestimmte Kosten','#166534');
+      if(P.length)html+='<div style="text-align:right;font-size:.9rem;font-weight:800;color:#111827;padding:.2rem .3rem">Gesamtkosten '+jahr+': '+fmtEuro(sumKosten)+'</div>';
+    }
+  } else if(step===3){
+    // Schritt 3: Vorschau (Ergebnistabelle aller Eigentümer + Einzelabrechnung)
+    if(!ready){html+='<div style="text-align:center;color:var(--muted);font-size:.86rem;padding:1.6rem;background:var(--white);border:1px solid #eef0f4;border-radius:12px">'+(!owners.length?'Lege zuerst Eigentümer an.':'Noch keine Kostenpositionen – zurück zu <strong>Schritt 2</strong>.')+'</div>';}
+    else{
+      html+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;overflow:hidden;margin-bottom:1.25rem">'
+        +'<div style="padding:.7rem 1rem;font-weight:700;font-size:.9rem;color:#111827;border-bottom:1px solid #eef0f4">Ergebnis je Eigentümer</div>'
+        +'<table style="width:100%;border-collapse:collapse;font-size:.83rem"><thead><tr style="border-bottom:1px solid var(--border)">'
+        +'<th style="padding:.5rem .9rem;text-align:left;font-size:.64rem;text-transform:uppercase;color:var(--muted)">Eigentümer</th>'
+        +'<th style="padding:.5rem .9rem;text-align:left;font-size:.64rem;text-transform:uppercase;color:var(--muted)">Einheit</th>'
+        +'<th style="padding:.5rem .9rem;text-align:right;font-size:.64rem;text-transform:uppercase;color:var(--muted)">Kostenanteil</th>'
+        +'<th style="padding:.5rem .9rem;text-align:right;font-size:.64rem;text-transform:uppercase;color:var(--muted)">Vorauszahlung</th>'
+        +'<th style="padding:.5rem .9rem;text-align:right;font-size:.64rem;text-transform:uppercase;color:var(--muted)">Nachz./Guthaben</th></tr></thead><tbody>';
+      results.forEach(function(r){var neg=r.diff<-0.005;
+        html+='<tr style="border-bottom:1px solid #f3f4f6"><td style="padding:.45rem .9rem;font-weight:600">'+escapeHtml(r.name)+'</td>'
+          +'<td style="padding:.45rem .9rem;color:#6b7280">'+escapeHtml(r.einheit)+'</td>'
+          +'<td style="padding:.45rem .9rem;text-align:right">'+fmtEuro(r.anteil)+'</td>'
+          +'<td style="padding:.45rem .9rem;text-align:right;color:#6b7280">'+fmtEuro(r.soll)+'</td>'
+          +'<td style="padding:.45rem .9rem;text-align:right;font-weight:700;color:'+(neg?'#b62923':'#157f3c')+'">'+(neg?'Nachz. ':'Guth. ')+fmtEuro(Math.abs(r.diff))+'</td></tr>';
+      });
+      html+='<tr style="background:#fafafa;font-weight:800"><td colspan="2" style="padding:.5rem .9rem">Summe</td>'
+        +'<td style="padding:.5rem .9rem;text-align:right">'+fmtEuro(sumAnteil)+'</td>'
+        +'<td style="padding:.5rem .9rem;text-align:right">'+fmtEuro(sumVz)+'</td>'
+        +'<td style="padding:.5rem .9rem;text-align:right">'+fmtEuro(sumVz-sumAnteil)+'</td></tr></tbody></table></div>';
+      if(!_wegcAbrEig||!owners.some(function(o){return o.id===_wegcAbrEig;}))_wegcAbrEig=owners[0].id;
+      var eigSel='<select class="buha-inp" style="max-width:240px" onchange="wegcAbrSetEig(this.value)">'+owners.map(function(o){return '<option value="'+o.id+'"'+(o.id===_wegcAbrEig?' selected':'')+'>'+escapeHtml(_wegcEigName(o)+' · '+((o.weg_einheiten&&o.weg_einheiten.bezeichnung)||''))+'</option>';}).join('')+'</select>';
+      html+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;overflow:hidden"><div style="padding:.7rem 1rem;border-bottom:1px solid #eef0f4;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem"><span style="font-weight:700;font-size:.9rem;color:#111827">Einzelabrechnung – Vorschau</span>'+eigSel+'</div><div style="overflow-x:auto">'+_wegcAbrEinzelHtml(owners.filter(function(x){return x.id===_wegcAbrEig;})[0])+'</div></div>';
+    }
   } else {
-    html+='<div style="text-align:center;color:var(--muted);font-size:.84rem;padding:1.2rem;background:var(--white);border:1px solid #eef0f4;border-radius:12px">Noch keine Kostenpositionen für '+jahr+'. Füge oben welche hinzu.</div>';
+    // Schritt 4: Abschluss & PDF
+    if(!ready){html+='<div style="text-align:center;color:var(--muted);font-size:.86rem;padding:1.6rem;background:var(--white);border:1px solid #eef0f4;border-radius:12px">'+(!owners.length?'Lege zuerst Eigentümer an.':'Noch keine Kostenpositionen – zurück zu <strong>Schritt 2</strong>.')+'</div>';}
+    else{
+      html+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.8rem;margin-bottom:1.25rem">'
+        +kpi(fmtEuro(sumKosten),'Gesamtkosten')
+        +kpi(fmtEuro(sumVz),'Vorauszahlungen')
+        +kpi(nNach,'Nachzahlungen','#b62923')
+        +kpi(nGut,'Guthaben','#157f3c')
+      +'</div>';
+      if(!_wegcAbrEig||!owners.some(function(o){return o.id===_wegcAbrEig;}))_wegcAbrEig=owners[0].id;
+      var eigSel2='<select class="buha-inp" style="max-width:240px" onchange="wegcAbrSetEig(this.value)">'+owners.map(function(o){return '<option value="'+o.id+'"'+(o.id===_wegcAbrEig?' selected':'')+'>'+escapeHtml(_wegcEigName(o)+' · '+((o.weg_einheiten&&o.weg_einheiten.bezeichnung)||''))+'</option>';}).join('')+'</select>';
+      html+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:1.1rem 1.2rem;box-shadow:0 1px 2px rgba(16,24,40,.05)">'
+        +'<div style="font-size:.95rem;font-weight:800;color:#111827;margin-bottom:.35rem">Abrechnung abschließen</div>'
+        +'<div style="font-size:.82rem;color:#6b7280;margin-bottom:1rem">Erstelle die fertige Hausgeldabrechnung als PDF – als Gesamtpaket (eine Seite je Eigentümer) oder für einen einzelnen Eigentümer.</div>'
+        +'<div style="display:flex;gap:.6rem;align-items:flex-end;flex-wrap:wrap">'
+          +'<button class="btn-primary" style="padding:.6rem 1.2rem" onclick="wegcAbrechnungPdf()"><span class="btn-ic" data-icon="download"></span> PDF – alle Eigentümer</button>'
+          +_wegcFld('Einzel-PDF für',eigSel2)
+          +'<button class="btn-secondary" style="padding:.55rem 1rem" onclick="wegcAbrechnungPdf(_wegcAbrEig)"><span class="btn-ic" data-icon="filetext"></span> Einzel-PDF</button>'
+        +'</div></div>';
+    }
   }
+
+  // ── Navigation ──
+  html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-top:1.5rem;gap:.6rem">'
+    +(step>1?'<button onclick="wegcAbrStep('+(step-1)+')" style="padding:.55rem 1.1rem;border:1px solid var(--border);background:#fff;border-radius:9px;cursor:pointer;font-size:.85rem;font-weight:700;color:#374151;font-family:var(--ff)">← Zurück</button>':'<span></span>')
+    +(step<4?'<button class="btn-primary" style="padding:.55rem 1.3rem" onclick="wegcAbrStep('+(step+1)+')">Weiter →</button>':'<button class="btn-primary" style="padding:.55rem 1.3rem" onclick="wegcAbrechnungPdf()"'+(ready?'':' disabled')+'><span class="btn-ic" data-icon="download"></span> PDF erstellen</button>')
+  +'</div>';
   c.innerHTML=html;
 }
 function _wegcAbrEinzelHtml(o){
@@ -10480,9 +10571,11 @@ async function wegcAbrFestSave(posId,eigId,val){
     wegcRenderAbrechnung();
   }catch(e){showToast('Fehler: '+e.message);}
 }
-function wegcAbrechnungPdf(){
+function wegcAbrechnungPdf(onlyEigId){
   var d=_wegcAbrData;
   if(!d||!d.owners||!d.owners.length){showToast('Bitte zuerst die Hausgeldabrechnung öffnen.');return;}
+  var pdfOwners=onlyEigId?d.owners.filter(function(o){return o.id===onlyEigId;}):d.owners;
+  if(!pdfOwners.length)pdfOwners=d.owners;
   try{
     var jsPDF=window.jspdf.jsPDF;
     var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
@@ -10504,7 +10597,7 @@ function wegcAbrechnungPdf(){
       y+=2; line(L,W-R,y,null,0.4); y+=3.5;
     };
     var blkA=d.P.filter(function(x){return !x.umlf;}), blkB=d.P.filter(function(x){return x.umlf;});
-    d.owners.forEach(function(o,oi){
+    pdfOwners.forEach(function(o,oi){
       if(oi>0)doc.addPage();
       y=18;
       sf(7.5,'normal',135,135,140);doc.text(vName,L,y);doc.text(datStr,W-R,y,{align:'right'});
@@ -10555,7 +10648,8 @@ function wegcAbrechnungPdf(){
     for(var i=1;i<=pages;i++){doc.setPage(i);line(L,W-R,287,[200,200,200],0.3);sf(7,'normal',150,150,150);
       doc.text([vName,adr].filter(Boolean).join('  ·  '),W/2,291,{align:'center',maxWidth:W-L-R});
       doc.text('Seite '+i+' von '+pages,W-R,291,{align:'right'});}
-    showDoc(doc,'Hausgeldabrechnung_'+(weg.name||'WEG').replace(/[^a-zA-Z0-9]+/g,'_')+'_'+d.jahr+'.pdf','vorschau');
+    var fnSuffix=(onlyEigId&&pdfOwners.length===1)?('_'+(_wegcEigName(pdfOwners[0])||'Eigentuemer').replace(/[^a-zA-Z0-9]+/g,'_')):'';
+    showDoc(doc,'Hausgeldabrechnung_'+(weg.name||'WEG').replace(/[^a-zA-Z0-9]+/g,'_')+'_'+d.jahr+fnSuffix+'.pdf','vorschau');
   }catch(e){console.error('Hausgeldabr-PDF:',e);showToast('⚠️ PDF-Fehler: '+(e.message||e));}
 }
 

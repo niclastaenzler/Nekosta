@@ -10071,7 +10071,8 @@ var WEGC_MODS=[
   {id:'eigentuemer',  label:'Eigentümer',    icon:'users'},
   {id:'buchhaltung',  label:'Buchhaltung',   icon:'bookopen'},
   {id:'hausgeld',     label:'Hausgeld',      icon:'euro'},
-  {id:'abrechnung',   label:'Jahresabrechnung', icon:'receipt'},
+  {id:'wirtschaftsplan',label:'Wirtschaftsplan',icon:'barchart'},
+  {id:'abrechnung',   label:'Hausgeldabrechnung', icon:'receipt'},
   {id:'beschluesse',  label:'Beschlüsse',    icon:'clipboard'},
   {id:'ruecklagen',   label:'Rücklagen',     icon:'shield'},
   {id:'schaeden',     label:'Schäden',       icon:'alerttriangle'},
@@ -10113,6 +10114,7 @@ function wegcGo(mod){
   renderWegcNav(mod);
   if(mod==='dashboard'){wegcRenderDashboard(c);return;}
   if(mod==='haeuser'){wegcRenderHaeuser(c);return;}
+  if(mod==='wirtschaftsplan'){wegcRenderWplan(c);return;}
   if(mod==='abrechnung'){wegcRenderAbrechnung(c);return;}
   if(mod==='ruecklagen'){wegcRenderRuecklagen(c);return;}
   if(mod==='beschluesse'){wegcRenderBeschluesse(c);return;}
@@ -10518,6 +10520,138 @@ function wegcAbrechnungPdf(){
       doc.text('Seite '+i+' von '+pages,W-R,291,{align:'right'});}
     showDoc(doc,'Hausgeldabrechnung_'+(weg.name||'WEG').replace(/[^a-zA-Z0-9]+/g,'_')+'_'+d.jahr+'.pdf','vorschau');
   }catch(e){console.error('Hausgeldabr-PDF:',e);showToast('⚠️ PDF-Fehler: '+(e.message||e));}
+}
+
+// ── WEG-Cockpit: WIRTSCHAFTSPLAN (§28 Abs.1) – geplante Kosten -> Einzelwirtschaftspläne -> monatl. Hausgeld ──
+var _wegcWpJahr=null, _wegcWpData=null;
+function wegcWpSetJahr(j){_wegcWpJahr=parseInt(j)||(new Date().getFullYear()+1);wegcRenderWplan();}
+async function wegcRenderWplan(c){
+  renderWegcNav('wirtschaftsplan');
+  if(!c)c=document.getElementById('wegc-content'); if(!c)return;
+  if(!_wegcWpJahr)_wegcWpJahr=new Date().getFullYear()+1;
+  var wegId=_wegcCur.id, jahr=_wegcWpJahr;
+  c.innerHTML='<div style="color:var(--muted);font-size:.85rem">Lädt…</div>';
+  try{
+    var res=await Promise.all([
+      sb.from('weg_wplan_position').select('*').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr).order('sortierung',{ascending:true}).order('created_at',{ascending:true}),
+      sb.from('weg_eigentuemer').select('id,weg_einheit_id,aktiv,kontakte(anrede,vorname,nachname),weg_einheiten(bezeichnung,mea_zaehler,mea_nenner,flaeche,personen,untergemeinschaft_id)').eq('user_id',currentUser.id).eq('objekt_id',wegId),
+      sb.from('weg_einheiten').select('id,bezeichnung,mea_zaehler,mea_nenner,flaeche,personen,untergemeinschaft_id').eq('user_id',currentUser.id).eq('objekt_id',wegId),
+      sb.from('weg_untergemeinschaften').select('id,name').eq('user_id',currentUser.id).eq('objekt_id',wegId)
+    ]);
+    for(var i=0;i<res.length;i++){if(res[i].error)throw res[i].error;}
+  }catch(e){console.warn('wplan load:',e);c.innerHTML='<div style="color:#dc2626;font-size:.85rem">Fehler beim Laden: '+escapeHtml(e.message||'')+'</div>';return;}
+  var positions=res[0].data||[];
+  var owners=(res[1].data||[]).filter(function(o){return o.aktiv!==false;}).sort(function(a,b){return ((a.weg_einheiten&&a.weg_einheiten.bezeichnung)||'').localeCompare((b.weg_einheiten&&b.weg_einheiten.bezeichnung)||'',undefined,{numeric:true});});
+  var units=res[2].data||[];
+  var haeuser=res[3].data||[]; var haeuserById={}; haeuser.forEach(function(h){haeuserById[h.id]=h;});
+  var P=_wegcAbrEnrich(positions,units,{},haeuserById,_wegcTage(jahr));
+  var gesamt=P.reduce(function(s,x){return s+x.gesamtEUR;},0);
+  var totMea=units.reduce(function(s,u){return s+_wegcMeaVal(u);},0);
+  var einzel=owners.map(function(o){
+    var jahrA=P.reduce(function(s,x){return s+_wegcAbrRow(x,o,{}).ownerEUR;},0);
+    var meaP=totMea>0?_wegcMeaVal(o.weg_einheiten)/totMea*100:0;
+    return {o:o,name:_wegcEigName(o),einheit:(o.weg_einheiten&&o.weg_einheiten.bezeichnung)||'–',meaP:meaP,jahr:jahrA,monat:jahrA/12};
+  });
+  _wegcWpData={jahr:jahr,weg:_wegcCur,P:P,gesamt:gesamt,einzel:einzel};
+  var monatGes=einzel.reduce(function(s,e){return s+e.monat;},0);
+
+  var jahre=[];var jy=new Date().getFullYear();for(var z=1;z>=-3;z--)jahre.push(jy+z);
+  var jahrSel='<select class="buha-inp" style="max-width:110px" onchange="wegcWpSetJahr(this.value)">'+jahre.map(function(j){return '<option value="'+j+'"'+(j===jahr?' selected':'')+'>'+j+'</option>';}).join('')+'</select>';
+  var html='<div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:1rem;margin-bottom:1.25rem">'
+    +'<div><h1 style="font-size:1.6rem;font-weight:800;color:#111827">Wirtschaftsplan</h1><div style="font-size:.85rem;color:#6b7280;margin-top:2px">§ 28 Abs. 1 WEG · '+escapeHtml(_wegcCur.name||'WEG')+'</div></div>'
+    +'<div style="display:flex;gap:.6rem;align-items:flex-end">'+_wegcFld('Wirtschaftsjahr',jahrSel)
+      +'<button class="btn-secondary" style="padding:.5rem .9rem;white-space:nowrap" onclick="wegcWplanSoll()"'+((owners.length&&P.length)?'':' disabled')+'><span class="btn-ic" data-icon="euro"></span> Hausgeld buchen</button>'
+      +'<button class="btn-primary" style="padding:.5rem 1rem;white-space:nowrap" onclick="wegcWplanPdf()"'+((owners.length&&P.length)?'':' disabled')+'><span class="btn-ic" data-icon="download"></span> PDF</button></div>'
+  +'</div>';
+  html+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:1rem;margin-bottom:1.5rem">'
+    +_wegcKpi(fmtEuro(gesamt),'Geplante Kosten '+jahr,'barchart','#7b1fa2')
+    +_wegcKpi(fmtEuro(monatGes),'Hausgeld / Monat (gesamt)','euro','#10b981')
+    +_wegcKpi(owners.length+' / '+units.length,'Eigentümer / Einheiten','users','#6b7280')
+  +'</div>';
+  // Editor
+  var hausOpt='<option value="">Gesamte WEG</option>'+haeuser.map(function(h){return '<option value="'+h.id+'">'+escapeHtml(h.name)+'</option>';}).join('');
+  html+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:1rem 1.1rem;margin-bottom:1.25rem;box-shadow:0 1px 2px rgba(16,24,40,.05)">'
+    +'<div style="font-size:.85rem;font-weight:700;margin-bottom:.7rem;color:#111827">Geplante Position hinzufügen</div>'
+    +'<div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:flex-end">'
+      +_wegcFld('Bezeichnung','<input id="wegc-wp-bez" type="text" placeholder="z. B. Hausmeister / Zuführung Rücklage" class="buha-inp" style="min-width:180px">')
+      +_wegcFld('Betrag/Jahr (€)','<input id="wegc-wp-betrag" type="text" inputmode="decimal" placeholder="0,00" class="buha-inp" style="max-width:110px" onkeydown="if(event.key===\'Enter\')wegcWplanPosSave()">')
+      +_wegcFld('Verteiler','<select id="wegc-wp-vt" class="buha-inp"><option value="mea">Eigentumsanteil (MEA)</option><option value="einheiten">Einheiten (gleich)</option><option value="pxt">Personen × Tage</option></select>')
+      +_wegcFld('Nur Haus','<select id="wegc-wp-haus" class="buha-inp">'+hausOpt+'</select>')
+      +'<button class="btn-primary" style="padding:.5rem 1rem;white-space:nowrap" onclick="wegcWplanPosSave()"><span class="btn-ic" data-icon="plus"></span> Hinzufügen</button>'
+    +'</div></div>';
+  if(!owners.length){html+='<div style="text-align:center;color:var(--muted);font-size:.88rem;padding:2rem;background:var(--white);border:1px solid #eef0f4;border-radius:12px">Lege zuerst <strong>Eigentümer</strong> (mit Einheit/MEA) an.</div>';c.innerHTML=html;return;}
+  // Positionsliste
+  html+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;overflow:hidden;margin-bottom:1.5rem"><div style="padding:.6rem 1rem;font-weight:700;font-size:.85rem;color:#111827;border-bottom:1px solid #eef0f4">Gesamt-Wirtschaftsplan '+jahr+'</div><table style="width:100%;border-collapse:collapse;font-size:.84rem"><tbody>';
+  if(!P.length)html+='<tr><td style="padding:.7rem .9rem;color:var(--muted);font-size:.8rem">Noch keine Positionen. Füge oben geplante Kosten hinzu.</td></tr>';
+  P.forEach(function(x){html+='<tr style="border-bottom:1px solid #f3f4f6"><td style="padding:.45rem .9rem;font-weight:600">'+escapeHtml(x.name)+'</td><td style="padding:.45rem .9rem;color:#6b7280;font-size:.76rem">'+escapeHtml(x.vn)+'</td><td style="padding:.45rem .9rem;text-align:right;font-weight:600">'+fmtEuro(x.gesamtEUR)+'</td><td style="padding:.45rem .9rem;text-align:right;width:40px"><button class="oa-btn" title="Löschen" onclick="wegcWplanPosDel(\''+x.id+'\')"><span class="mini-ic" data-icon="trash"></span></button></td></tr>';});
+  html+='<tr style="background:#fafafa;font-weight:800"><td colspan="2" style="padding:.55rem .9rem">Summe geplante Kosten</td><td style="padding:.55rem .9rem;text-align:right;color:#7b1fa2">'+fmtEuro(gesamt)+'</td><td></td></tr></tbody></table></div>';
+  // Einzelwirtschaftspläne
+  var th=function(t,r){return '<th style="padding:.55rem .9rem;text-align:'+(r?'right':'left')+';font-size:.66rem;text-transform:uppercase;color:var(--muted)">'+t+'</th>';};
+  html+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;overflow:hidden"><div style="padding:.7rem 1rem;font-weight:700;font-size:.85rem;color:#111827;border-bottom:1px solid #eef0f4">Einzelwirtschaftspläne · monatliches Hausgeld</div>'
+    +'<table style="width:100%;border-collapse:collapse;font-size:.84rem"><thead><tr style="border-bottom:1px solid var(--border)">'+th('Eigentümer')+th('Einheit')+th('MEA',true)+th('Anteil/Jahr',true)+th('Hausgeld/Monat',true)+'</tr></thead><tbody>';
+  einzel.forEach(function(e){html+='<tr style="border-bottom:1px solid #f3f4f6"><td style="padding:.5rem .9rem;font-weight:600">'+escapeHtml(e.name)+'</td><td style="padding:.5rem .9rem;color:#6b7280">'+escapeHtml(e.einheit)+'</td><td style="padding:.5rem .9rem;text-align:right;color:#6b7280">'+e.meaP.toFixed(1).replace('.',',')+' %</td><td style="padding:.5rem .9rem;text-align:right">'+fmtEuro(e.jahr)+'</td><td style="padding:.5rem .9rem;text-align:right;font-weight:700;color:#7b1fa2">'+fmtEuro(e.monat)+'</td></tr>';});
+  html+='<tr style="background:#fafafa;font-weight:800"><td colspan="3" style="padding:.55rem .9rem">Summe</td><td style="padding:.55rem .9rem;text-align:right">'+fmtEuro(gesamt)+'</td><td style="padding:.55rem .9rem;text-align:right;color:#7b1fa2">'+fmtEuro(monatGes)+'</td></tr></tbody></table></div>';
+  html+='<div style="font-size:.72rem;color:#9ca3af;line-height:1.5;padding:.6rem .2rem 0">„Hausgeld buchen" erzeugt für jeden Eigentümer 12 monatliche Sollstellungen ('+jahr+') aus dem Einzelwirtschaftsplan – diese erscheinen im Hausgeld-Modul und als Vorauszahlungen in der Hausgeldabrechnung.</div>';
+  c.innerHTML=html;
+}
+async function wegcWplanPosSave(){
+  if(!_wegcCur)return;
+  var bezEl=document.getElementById('wegc-wp-bez'); if(!bezEl)return;
+  var bez=(bezEl.value||'').trim(); if(!bez){showToast('Bitte Bezeichnung angeben');bezEl.focus();return;}
+  var row={user_id:currentUser.id,objekt_id:_wegcCur.id,jahr:_wegcWpJahr,bezeichnung:bez,
+    verteiler:document.getElementById('wegc-wp-vt').value,haus_id:document.getElementById('wegc-wp-haus').value||null,
+    betrag:_wegcNum(document.getElementById('wegc-wp-betrag').value),sortierung:(_wegcWpData&&_wegcWpData.P?_wegcWpData.P.length:0)};
+  try{var r=await sb.from('weg_wplan_position').insert(row);if(r.error){showToast('Fehler: '+r.error.message);return;}showToast('Position hinzugefügt');wegcRenderWplan();}catch(e){showToast('Fehler: '+e.message);}
+}
+function wegcWplanPosDel(id){
+  appConfirm({icon:'🗑',title:'Position löschen?',message:'Die geplante Position wird entfernt.',buttons:[
+    {label:'Abbrechen',style:'background:#f3f4f6;color:#374151',onClick:appConfirmClose},
+    {label:'Löschen',style:'background:#dc2626;color:#fff',onClick:async function(){appConfirmClose();try{var r=await sb.from('weg_wplan_position').delete().eq('id',id);if(r.error){showToast('Fehler: '+r.error.message);return;}showToast('Gelöscht');wegcRenderWplan();}catch(e){showToast('Fehler: '+e.message);}}}
+  ]});
+}
+function wegcWplanSoll(){
+  var d=_wegcWpData; if(!d||!d.einzel.length)return;
+  appConfirm({icon:'💶',title:'Hausgeld-Sollstellungen erzeugen?',message:'Für <strong>'+d.einzel.length+' Eigentümer</strong> werden je 12 monatliche Hausgeld-Forderungen für '+d.jahr+' angelegt (aus dem Wirtschaftsplan). Bestehende Sollstellungen '+d.jahr+' werden ersetzt.',buttons:[
+    {label:'Abbrechen',style:'background:#f3f4f6;color:#374151',onClick:appConfirmClose},
+    {label:'Erzeugen',style:'background:var(--p);color:#fff',onClick:async function(){appConfirmClose();
+      try{
+        await sb.from('weg_sollstellung').delete().eq('user_id',currentUser.id).eq('objekt_id',_wegcCur.id).eq('jahr',d.jahr);
+        var rows=[];
+        d.einzel.forEach(function(e){var m=Math.round(e.monat*100)/100;if(m<=0)return;for(var mo=1;mo<=12;mo++)rows.push({user_id:currentUser.id,objekt_id:_wegcCur.id,eigentuemer_id:e.o.id,einheit_id:e.o.weg_einheit_id||null,jahr:d.jahr,monat:mo,betrag:m,status:'offen',faellig_am:d.jahr+'-'+('0'+mo).slice(-2)+'-03'});});
+        if(!rows.length){showToast('Keine Beträge > 0.');return;}
+        var r=await sb.from('weg_sollstellung').insert(rows);
+        if(r.error){showToast('Fehler: '+r.error.message);return;}
+        showToast('✅ '+rows.length+' Hausgeld-Sollstellungen für '+d.jahr+' erzeugt');
+      }catch(e){showToast('Fehler: '+e.message);}
+    }}
+  ]});
+}
+function wegcWplanPdf(){
+  var d=_wegcWpData; if(!d||!d.P.length){showToast('Bitte zuerst Positionen anlegen.');return;}
+  try{
+    var jsPDF=window.jspdf.jsPDF; var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    var W=210,L=18,R=14,AC=[123,31,162];
+    var sm=stammdaten||{}, weg=d.weg||{};
+    var vName=([sm.firma,sm.vname&&sm.nname?sm.vname+' '+sm.nname:'']).filter(Boolean).join(' / ')||'NEKOSTA';
+    var adr=[weg.strasse,weg.plz&&weg.ort?weg.plz+' '+weg.ort:weg.ort].filter(Boolean).join(', ');
+    var fmt=function(v){return (parseFloat(v)||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});};
+    var sf=function(sz,st,r,g,b){doc.setFontSize(sz);doc.setFont('helvetica',st||'normal');doc.setTextColor(r==null?40:r,g==null?40:g,b==null?45:b);};
+    var line=function(x1,x2,yy,col,lw){col=col||[210,210,214];doc.setDrawColor(col[0],col[1],col[2]);doc.setLineWidth(lw||0.3);doc.line(x1,yy,x2,yy);};
+    var y=20; var npi=function(n){if(y+(n||8)>276){doc.addPage();y=20;}};
+    sf(7.5,'normal',135,135,140);doc.text(vName,L,y);doc.text((sm.ort?sm.ort+', ':'')+new Date().toLocaleDateString('de-DE'),W-R,y,{align:'right'});
+    y=32;sf(17,'bold',28,28,34);doc.text('Wirtschaftsplan',L,y);var tw=doc.getTextWidth('Wirtschaftsplan ');sf(17,'bold',AC[0],AC[1],AC[2]);doc.text(String(d.jahr),L+tw,y);
+    y+=7;sf(9.5,'bold',55,55,60);doc.text(weg.name||'WEG',L,y);if(adr){y+=5;sf(8.5,'normal',130,130,135);doc.text(adr,L,y);}y+=10;
+    sf(9.5,'bold',AC[0],AC[1],AC[2]);doc.text('GESAMT-WIRTSCHAFTSPLAN',L,y);line(L,W-R,y+2.5,null,0.4);y+=8;
+    d.P.forEach(function(x){npi(7);sf(8.5,'normal',55,55,60);doc.text(x.name,L+1,y,{maxWidth:110});sf(7.5,'normal',120,120,125);doc.text(x.vn,L+95,y,{maxWidth:45});sf(8.5,'normal',55,55,60);doc.text(fmt(x.gesamtEUR),W-R-1,y,{align:'right'});y+=6;});
+    line(L,W-R,y-1,null,0.4);sf(10,'bold',AC[0],AC[1],AC[2]);doc.text('Summe geplante Kosten',L+1,y+3);doc.text(fmt(d.gesamt)+' EUR',W-R-1,y+3,{align:'right'});y+=12;
+    npi(20);sf(9.5,'bold',AC[0],AC[1],AC[2]);doc.text('EINZELWIRTSCHAFTSPLÄNE · MONATLICHES HAUSGELD',L,y);line(L,W-R,y+2.5,null,0.4);y+=8;
+    sf(6.5,'bold',120,120,125);doc.text('Eigentümer',L+1,y);doc.text('Einheit',L+78,y);doc.text('MEA',L+118,y,{align:'right'});doc.text('Anteil/Jahr',L+150,y,{align:'right'});doc.text('Hausgeld/Monat',W-R-1,y,{align:'right'});y+=2;line(L,W-R,y,null,0.3);y+=4;
+    var mg=0;
+    d.einzel.forEach(function(e){npi(7);sf(8,'normal',55,55,60);doc.text(e.name,L+1,y,{maxWidth:74});sf(8,'normal',110,110,115);doc.text(e.einheit,L+78,y,{maxWidth:38});doc.text(e.meaP.toFixed(1).replace('.',',')+'%',L+118,y,{align:'right'});sf(8,'normal',55,55,60);doc.text(fmt(e.jahr),L+150,y,{align:'right'});sf(8,'bold',40,40,45);doc.text(fmt(e.monat),W-R-1,y,{align:'right'});mg+=e.monat;y+=5.5;});
+    line(L,W-R,y-1,null,0.4);sf(9,'bold',40,40,45);doc.text('Summe',L+1,y+3);doc.text(fmt(d.gesamt),L+150,y+3,{align:'right'});doc.text(fmt(mg),W-R-1,y+3,{align:'right'});
+    var pages=doc.internal.getNumberOfPages();for(var i=1;i<=pages;i++){doc.setPage(i);line(L,W-R,287,[200,200,200],0.3);sf(7,'normal',150,150,150);doc.text([vName,adr].filter(Boolean).join('  ·  '),W/2,291,{align:'center',maxWidth:W-L-R});doc.text('Seite '+i+' von '+pages,W-R,291,{align:'right'});}
+    showDoc(doc,'Wirtschaftsplan_'+(weg.name||'WEG').replace(/[^a-zA-Z0-9]+/g,'_')+'_'+d.jahr+'.pdf','vorschau');
+  }catch(e){console.error('Wplan-PDF:',e);showToast('⚠️ PDF-Fehler: '+(e.message||e));}
 }
 
 // ── WEG-Cockpit: HÄUSER (Untergemeinschaften) – Gebäude aufteilen + Einheiten zuordnen ──

@@ -10138,15 +10138,23 @@ async function wegcRenderDashboard(c){
   renderWegcNav('dashboard');
   c.innerHTML='<div style="color:var(--muted);font-size:.85rem">Lädt…</div>';
   var wegId=_wegcCur.id;
-  var einh=0,eigCnt=0,hg=0;
+  var einh=0,eigCnt=0,hg=0,rlStand=0,schOffen=0,beschlGes=0,dlKosten=0;
   try{
     var res=await Promise.all([
       sb.from('weg_einheiten').select('id',{count:'exact'}).eq('user_id',currentUser.id).eq('objekt_id',wegId),
-      sb.from('weg_eigentuemer').select('hausgeld_soll').eq('user_id',currentUser.id).eq('objekt_id',wegId)
+      sb.from('weg_eigentuemer').select('hausgeld_soll').eq('user_id',currentUser.id).eq('objekt_id',wegId),
+      sb.from('weg_ruecklagen').select('betrag,typ').eq('user_id',currentUser.id).eq('objekt_id',wegId),
+      sb.from('weg_schaeden').select('status').eq('user_id',currentUser.id).eq('objekt_id',wegId),
+      sb.from('weg_beschluesse').select('id',{count:'exact'}).eq('user_id',currentUser.id).eq('objekt_id',wegId),
+      sb.from('weg_dienstleister').select('kosten_jahr').eq('user_id',currentUser.id).eq('objekt_id',wegId)
     ]);
     einh=res[0].count!=null?res[0].count:(res[0].data||[]).length;
     var owners=res[1].data||[]; eigCnt=owners.length;
     hg=owners.reduce(function(s,x){return s+(parseFloat(x.hausgeld_soll)||0);},0);
+    rlStand=(res[2].data||[]).reduce(function(s,r){var b=parseFloat(r.betrag)||0;return s+(r.typ==='entnahme'?-b:b);},0);
+    schOffen=(res[3].data||[]).filter(function(r){return r.status!=='erledigt';}).length;
+    beschlGes=res[4].count!=null?res[4].count:(res[4].data||[]).length;
+    dlKosten=(res[5].data||[]).reduce(function(s,r){return s+(parseFloat(r.kosten_jahr)||0);},0);
   }catch(e){console.warn('wegc dash:',e);}
   var adr=[_wegcCur.strasse,_wegcCur.plz&&_wegcCur.ort?_wegcCur.plz+' '+_wegcCur.ort:_wegcCur.ort].filter(Boolean).join(', ');
   var kpi=function(val,lbl,ic){return '<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:1rem;box-shadow:0 1px 2px rgba(16,24,40,.05)"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.02em;color:#6b7280;margin-bottom:.35rem">'+lbl+'</div><div style="font-size:1.875rem;font-weight:700;color:#111827;line-height:1.2">'+val+'</div></div><div class="dash-kpi-ic" data-icon="'+ic+'" style="background:#f3e5f5;color:#7b1fa2"></div></div></div>';};
@@ -10157,6 +10165,12 @@ async function wegcRenderDashboard(c){
       +kpi(einh,'Einheiten','dooropen')
       +kpi(eigCnt,'Eigentümer','users')
       +kpi(fmtEuro(hg),'Hausgeld / Mon.','euro')
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.75rem">'
+      +_wegcKpi(fmtEuro(rlStand),'Rücklagen-Stand','shield',rlStand<0?'#dc2626':'#7b1fa2')
+      +_wegcKpi(schOffen,'Offene Schäden','alerttriangle',schOffen>0?'#e67e22':'#10b981')
+      +_wegcKpi(beschlGes,'Beschlüsse','clipboard','#2563eb')
+      +_wegcKpi(fmtEuro(dlKosten),'Dienstleister / Jahr','wrench','#0891b2')
     +'</div>'
     +'<div style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#6b7280;margin-bottom:.75rem">Verwaltung</div>'
     +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:.85rem;margin-bottom:1.75rem">'

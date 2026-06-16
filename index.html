@@ -10174,61 +10174,97 @@ async function wegcRenderDashboard(c){
     +'</div>';
 }
 // ── WEG-Cockpit: Rücklagen-Modul (Instandhaltungsrücklage) ──
+var _wegcRlScope='all';
+function wegcRlSetScope(v){_wegcRlScope=v||'all';wegcRenderRuecklagen();}
 async function wegcRenderRuecklagen(c){
   renderWegcNav('ruecklagen');
   if(!c)c=document.getElementById('wegc-content'); if(!c)return;
   c.innerHTML='<div style="color:var(--muted);font-size:.85rem">Lädt…</div>';
-  var wegId=_wegcCur.id, rows=[];
+  var wegId=_wegcCur.id, rows=[], haeuser=[];
   try{
-    var res=await sb.from('weg_ruecklagen').select('*').eq('user_id',currentUser.id).eq('objekt_id',wegId).order('datum',{ascending:true}).order('created_at',{ascending:true});
-    if(res.error)throw res.error;
-    rows=res.data||[];
+    var res=await Promise.all([
+      sb.from('weg_ruecklagen').select('*').eq('user_id',currentUser.id).eq('objekt_id',wegId).order('datum',{ascending:true}).order('created_at',{ascending:true}),
+      sb.from('weg_untergemeinschaften').select('id,name,typ,sortierung').eq('user_id',currentUser.id).eq('objekt_id',wegId).order('sortierung',{ascending:true}).order('created_at',{ascending:true})
+    ]);
+    if(res[0].error)throw res[0].error; if(res[1].error)throw res[1].error;
+    rows=res[0].data||[]; haeuser=res[1].data||[];
   }catch(e){console.warn('ruecklagen load:',e);c.innerHTML='<div style="color:#dc2626;font-size:.85rem">Fehler beim Laden: '+escapeHtml(e.message||'')+'</div>';return;}
+  var hausById={}; haeuser.forEach(function(h){hausById[h.id]=h;});
+  if(_wegcRlScope!=='all'&&_wegcRlScope!=='gemein'&&!hausById[_wegcRlScope])_wegcRlScope='all';
+  var inScope=function(r){if(_wegcRlScope==='all')return true;if(_wegcRlScope==='gemein')return !r.untergemeinschaft_id;return r.untergemeinschaft_id===_wegcRlScope;};
+  // Saldo je Untergemeinschaft (über alle Bewegungen)
+  var ugSaldo={gemein:0}; haeuser.forEach(function(h){ugSaldo[h.id]=0;});
+  rows.forEach(function(r){var b=parseFloat(r.betrag)||0;var d=(r.typ==='entnahme'?-b:b);var k=r.untergemeinschaft_id||'gemein';if(!(k in ugSaldo))ugSaldo[k]=0;ugSaldo[k]+=d;});
+  var totalSaldo=Object.keys(ugSaldo).reduce(function(s,k){return s+ugSaldo[k];},0);
+  // Sichtbare (gefilterte) Bewegungen + laufender Saldo
+  var scoped=rows.filter(inScope);
   var saldo=0;
-  rows.forEach(function(r){var b=parseFloat(r.betrag)||0;r._delta=(r.typ==='entnahme'?-b:b);saldo+=r._delta;r._saldo=saldo;});
+  scoped.forEach(function(r){var b=parseFloat(r.betrag)||0;r._delta=(r.typ==='entnahme'?-b:b);saldo+=r._delta;r._saldo=saldo;});
   var jahr=new Date().getFullYear();
-  var zuf=rows.filter(function(r){return r.typ!=='entnahme'&&(r.jahr|0)===jahr;}).reduce(function(s,r){return s+(parseFloat(r.betrag)||0);},0);
-  var ent=rows.filter(function(r){return r.typ==='entnahme'&&(r.jahr|0)===jahr;}).reduce(function(s,r){return s+(parseFloat(r.betrag)||0);},0);
+  var zuf=scoped.filter(function(r){return r.typ!=='entnahme'&&(r.jahr|0)===jahr;}).reduce(function(s,r){return s+(parseFloat(r.betrag)||0);},0);
+  var ent=scoped.filter(function(r){return r.typ==='entnahme'&&(r.jahr|0)===jahr;}).reduce(function(s,r){return s+(parseFloat(r.betrag)||0);},0);
   var today=new Date().toISOString().slice(0,10);
   var typLabel={anfangsbestand:'Anfangsbestand',zufuehrung:'Zuführung',entnahme:'Entnahme'};
   var dfmt=function(d){if(!d)return'–';var p=(''+d).slice(0,10).split('-');return p.length===3?p[2]+'.'+p[1]+'.'+p[0]:d;};
+  var ugName=function(id){return id?(hausById[id]?hausById[id].name:'– gelöscht –'):'Gemeinschaft';};
+  var scopeName=_wegcRlScope==='all'?'Gesamt':(_wegcRlScope==='gemein'?'Gemeinschaft':ugName(_wegcRlScope));
   var rlKpi=function(v,l,ic,col){return '<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:1rem;box-shadow:0 1px 2px rgba(16,24,40,.05)"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.02em;color:#6b7280;margin-bottom:.35rem">'+l+'</div><div style="font-size:1.6rem;font-weight:700;color:'+col+';line-height:1.2">'+v+'</div></div><span style="width:38px;height:38px;border-radius:10px;background:'+col+'18;color:'+col+';display:flex;align-items:center;justify-content:center;flex-shrink:0"><span class="mini-ic" data-icon="'+ic+'" style="width:18px;height:18px"></span></span></div></div>';};
   var fld=function(lbl,inner){return '<div style="display:flex;flex-direction:column;gap:3px"><label style="font-size:.62rem;font-weight:700;color:var(--muted);text-transform:uppercase">'+lbl+'</label>'+inner+'</div>';};
   var html=''
-    +'<div style="margin-bottom:1.25rem"><h1 style="font-size:1.6rem;font-weight:800;color:#111827">Rücklagen</h1><div style="font-size:.85rem;color:#6b7280;margin-top:2px">Instandhaltungsrücklage · '+escapeHtml(_wegcCur.name||'WEG')+'</div></div>'
+    +'<div style="margin-bottom:1.25rem"><h1 style="font-size:1.6rem;font-weight:800;color:#111827">Rücklagen</h1><div style="font-size:.85rem;color:#6b7280;margin-top:2px">Instandhaltungsrücklage · '+escapeHtml(_wegcCur.name||'WEG')+(haeuser.length?' · Ansicht: <strong>'+escapeHtml(scopeName)+'</strong>':'')+'</div></div>'
     +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem">'
-      +rlKpi(fmtEuro(saldo),'Aktueller Stand','shield','#7b1fa2')
+      +rlKpi(fmtEuro(saldo),'Stand'+(haeuser.length?' · '+scopeName:''),'shield','#7b1fa2')
       +rlKpi(fmtEuro(zuf),'Zuführungen '+jahr,'trendingup','#10b981')
       +rlKpi(fmtEuro(ent),'Entnahmen '+jahr,'download','#e67e22')
-    +'</div>'
-    +'<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:1rem 1.1rem;margin-bottom:1.5rem;box-shadow:0 1px 2px rgba(16,24,40,.05)">'
+    +'</div>';
+  // Rücklagen je Untergemeinschaft – klickbare Filter-Karten
+  if(haeuser.length){
+    var chip=function(key,name,sub,sal){var act=_wegcRlScope===key;
+      return '<button onclick="wegcRlSetScope(\''+key+'\')" style="text-align:left;cursor:pointer;border:1.5px solid '+(act?'#7b1fa2':'#eef0f4')+';background:'+(act?'#7b1fa210':'var(--white)')+';border-radius:11px;padding:.7rem .85rem;box-shadow:0 1px 2px rgba(16,24,40,.05);min-width:0">'
+        +'<div style="font-size:.78rem;font-weight:700;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escapeHtml(name)+'</div>'
+        +(sub?'<div style="font-size:.6rem;text-transform:uppercase;color:var(--muted);margin-top:1px">'+escapeHtml(sub)+'</div>':'')
+        +'<div style="font-size:1.05rem;font-weight:800;color:'+(sal<0?'#dc2626':'#7b1fa2')+';margin-top:.25rem">'+fmtEuro(sal)+'</div></button>';};
+    html+='<div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.02em;color:#6b7280;margin-bottom:.5rem">Rücklagen je Untergemeinschaft</div>'
+      +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.7rem;margin-bottom:1.5rem">'
+      +chip('all','Alle','Gesamtbestand',totalSaldo)
+      +chip('gemein','Gemeinschaft','ohne Zuordnung',ugSaldo.gemein||0)
+      +haeuser.map(function(h){return chip(h.id,h.name,h.typ||'Haus',ugSaldo[h.id]||0);}).join('')
+      +'</div>';
+  }
+  // Neue Bewegung
+  var ugSelOpts='<option value="">Gemeinschaft (gesamt)</option>'+haeuser.map(function(h){return '<option value="'+h.id+'"'+(_wegcRlScope===h.id?' selected':'')+'>'+escapeHtml(h.name)+'</option>';}).join('');
+  html+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:1rem 1.1rem;margin-bottom:1.5rem;box-shadow:0 1px 2px rgba(16,24,40,.05)">'
       +'<div style="font-size:.8rem;font-weight:700;margin-bottom:.7rem;color:#111827">Neue Bewegung</div>'
       +'<div style="display:flex;gap:.6rem;flex-wrap:wrap;align-items:flex-end">'
         +fld('Datum','<input id="wegc-rl-datum" type="date" value="'+today+'" class="buha-inp">')
         +fld('Art','<select id="wegc-rl-typ" class="buha-inp"><option value="zufuehrung">Zuführung</option><option value="entnahme">Entnahme</option><option value="anfangsbestand">Anfangsbestand</option></select>')
+        +(haeuser.length?fld('Untergemeinschaft','<select id="wegc-rl-ug" class="buha-inp" style="min-width:170px">'+ugSelOpts+'</select>'):'')
         +fld('Betrag (€)','<input id="wegc-rl-betrag" type="text" inputmode="decimal" placeholder="0,00" class="buha-inp" style="max-width:120px" onkeydown="if(event.key===\'Enter\')wegcRueckSave()">')
-        +fld('Zweck','<input id="wegc-rl-zweck" type="text" placeholder="z. B. Dachsanierung" class="buha-inp" style="min-width:200px" onkeydown="if(event.key===\'Enter\')wegcRueckSave()">')
+        +fld('Zweck / Verwendung','<input id="wegc-rl-zweck" type="text" placeholder="z. B. Entnahme für Dachsanierung" class="buha-inp" style="min-width:230px" onkeydown="if(event.key===\'Enter\')wegcRueckSave()">')
         +'<button class="btn-primary" style="padding:.5rem 1rem;white-space:nowrap" onclick="wegcRueckSave()"><span class="btn-ic" data-icon="plus"></span> Buchen</button>'
       +'</div>'
+      +'<div style="font-size:.7rem;color:#9ca3af;margin-top:.55rem">Bei <strong>Entnahmen</strong> ist der Verwendungszweck Pflicht (z. B. „Renovierung Treppenhaus") und wird in der Abrechnung ausgewiesen.</div>'
     +'</div>';
-  if(!rows.length){
-    html+='<div style="text-align:center;color:var(--muted);font-size:.85rem;padding:2.5rem;background:var(--white);border:1px solid #eef0f4;border-radius:12px">Noch keine Rücklagen-Bewegungen erfasst. Lege oben den <strong>Anfangsbestand</strong> oder eine Zuführung an.</div>';
+  if(!scoped.length){
+    html+='<div style="text-align:center;color:var(--muted);font-size:.85rem;padding:2.5rem;background:var(--white);border:1px solid #eef0f4;border-radius:12px">'+(rows.length?'Keine Bewegungen für diese Ansicht. Wähle oben eine andere Untergemeinschaft.':'Noch keine Rücklagen-Bewegungen erfasst. Lege oben den <strong>Anfangsbestand</strong> oder eine Zuführung an.')+'</div>';
   }else{
     html+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;overflow:hidden">'
       +'<table style="width:100%;border-collapse:collapse;font-size:.85rem"><thead><tr style="border-bottom:1px solid var(--border)">'
         +'<th style="padding:.6rem .9rem;text-align:left;font-size:.68rem;text-transform:uppercase;color:var(--muted)">Datum</th>'
         +'<th style="padding:.6rem .9rem;text-align:left;font-size:.68rem;text-transform:uppercase;color:var(--muted)">Art</th>'
+        +(haeuser.length?'<th style="padding:.6rem .9rem;text-align:left;font-size:.68rem;text-transform:uppercase;color:var(--muted)">Untergem.</th>':'')
         +'<th style="padding:.6rem .9rem;text-align:left;font-size:.68rem;text-transform:uppercase;color:var(--muted)">Zweck</th>'
         +'<th style="padding:.6rem .9rem;text-align:right;font-size:.68rem;text-transform:uppercase;color:var(--muted)">Betrag</th>'
         +'<th style="padding:.6rem .9rem;text-align:right;font-size:.68rem;text-transform:uppercase;color:var(--muted)">Saldo</th>'
         +'<th style="width:38px"></th></tr></thead><tbody>';
-    rows.slice().reverse().forEach(function(r){
+    scoped.slice().reverse().forEach(function(r){
       var neg=r.typ==='entnahme';
       html+='<tr style="border-bottom:1px solid #f3f4f6">'
         +'<td style="padding:.55rem .9rem;white-space:nowrap">'+dfmt(r.datum)+'</td>'
         +'<td style="padding:.55rem .9rem">'+(typLabel[r.typ]||r.typ)+'</td>'
+        +(haeuser.length?'<td style="padding:.55rem .9rem;color:#4b5563">'+escapeHtml(ugName(r.untergemeinschaft_id))+'</td>':'')
         +'<td style="padding:.55rem .9rem;color:#4b5563">'+escapeHtml(r.zweck||'–')+'</td>'
-        +'<td style="padding:.55rem .9rem;text-align:right;font-weight:600;color:'+(neg?'#dc2626':'#16a34a')+'">'+(neg?'−':'+')+fmtEuro(parseFloat(r.betrag)||0)+'</td>'
+        +'<td style="padding:.55rem .9rem;text-align:right;font-weight:600;color:'+(neg?'#dc2626':'#16a34a')+'">'+(neg?'-':'+')+fmtEuro(parseFloat(r.betrag)||0)+'</td>'
         +'<td style="padding:.55rem .9rem;text-align:right;font-weight:700">'+fmtEuro(r._saldo)+'</td>'
         +'<td style="padding:.55rem .9rem;text-align:right"><button class="oa-btn" title="Löschen" onclick="wegcRueckDel(\''+r.id+'\')"><span class="mini-ic" data-icon="trash"></span></button></td>'
       +'</tr>';
@@ -10239,15 +10275,16 @@ async function wegcRenderRuecklagen(c){
 }
 async function wegcRueckSave(){
   if(!_wegcCur)return;
-  var dEl=document.getElementById('wegc-rl-datum'),tEl=document.getElementById('wegc-rl-typ'),bEl=document.getElementById('wegc-rl-betrag'),zEl=document.getElementById('wegc-rl-zweck');
+  var dEl=document.getElementById('wegc-rl-datum'),tEl=document.getElementById('wegc-rl-typ'),bEl=document.getElementById('wegc-rl-betrag'),zEl=document.getElementById('wegc-rl-zweck'),ugEl=document.getElementById('wegc-rl-ug');
   if(!dEl||!bEl)return;
   var d=dEl.value,typ=tEl.value,zweck=(zEl.value||'').trim();
   var betrag=_wegcNum(bEl.value);
   if(!d){showToast('Bitte Datum angeben');return;}
   if(!betrag||betrag<=0){showToast('Bitte gültigen Betrag angeben');bEl.focus();return;}
+  if(typ==='entnahme'&&!zweck){showToast('Bei einer Entnahme ist der Verwendungszweck Pflicht.');zEl.focus();return;}
   var jahr=parseInt((''+d).slice(0,4))||new Date().getFullYear();
   try{
-    var res=await sb.from('weg_ruecklagen').insert({user_id:currentUser.id,objekt_id:_wegcCur.id,datum:d,typ:typ,betrag:betrag,zweck:zweck||null,jahr:jahr});
+    var res=await sb.from('weg_ruecklagen').insert({user_id:currentUser.id,objekt_id:_wegcCur.id,datum:d,typ:typ,betrag:betrag,zweck:zweck||null,jahr:jahr,untergemeinschaft_id:(ugEl&&ugEl.value)?ugEl.value:null});
     if(res.error){showToast('Fehler: '+res.error.message);return;}
     showToast('Bewegung gespeichert');
     wegcRenderRuecklagen();
@@ -10673,16 +10710,22 @@ async function wegcRenderHaeuser(c){
   var hausOpts=function(sel){return '<option value="">— ohne Zuordnung —</option>'+haeuser.map(function(h){return '<option value="'+h.id+'"'+(sel===h.id?' selected':'')+'>'+escapeHtml(h.name)+'</option>';}).join('');};
   var html=''
     +'<div style="margin-bottom:1.25rem"><h1 style="font-size:1.6rem;font-weight:800;color:#111827">Häuser</h1><div style="font-size:.85rem;color:#6b7280;margin-top:2px">Gebäude / Untergemeinschaften · '+escapeHtml(_wegcCur.name||'WEG')+'</div></div>';
-  // Neues Haus anlegen
+  // Untergemeinschaft anlegen / bearbeiten
   html+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:1rem 1.1rem;margin-bottom:1.5rem;box-shadow:0 1px 2px rgba(16,24,40,.05)">'
-    +'<div style="font-size:.8rem;font-weight:700;margin-bottom:.7rem;color:#111827">Neues Haus anlegen</div>'
+    +'<div id="wegc-haus-formtitle" style="font-size:.8rem;font-weight:700;margin-bottom:.7rem;color:#111827">Neue Untergemeinschaft anlegen</div>'
     +'<div style="display:flex;gap:.6rem;flex-wrap:wrap;align-items:flex-end">'
       +_wegcFld('Name','<input id="wegc-haus-name" type="text" placeholder="z. B. Haus 17" class="buha-inp" style="min-width:140px" onkeydown="if(event.key===\'Enter\')wegcHausSave()">')
-      +_wegcFld('Straße','<input id="wegc-haus-str" type="text" placeholder="Straße + Nr." class="buha-inp" style="min-width:170px">')
+      +_wegcFld('Typ','<select id="wegc-haus-typ" class="buha-inp" style="min-width:150px"><option value="Haus">Haus</option><option value="Tiefgarage">Tiefgarage</option><option value="Stellplatzanlage">Stellplatzanlage</option><option value="Gewerbe">Gewerbeeinheit</option><option value="Sonstiges">Sonstiges</option></select>')
+      +_wegcFld('Straße','<input id="wegc-haus-str" type="text" placeholder="Straße + Nr." class="buha-inp" style="min-width:150px">')
       +_wegcFld('PLZ','<input id="wegc-haus-plz" type="text" placeholder="PLZ" class="buha-inp" style="max-width:80px">')
-      +_wegcFld('Ort','<input id="wegc-haus-ort" type="text" placeholder="Ort" class="buha-inp" style="min-width:130px">')
-      +'<button class="btn-primary" style="padding:.5rem 1rem;white-space:nowrap" onclick="wegcHausSave()"><span class="btn-ic" data-icon="plus"></span> Anlegen</button>'
-    +'</div></div>';
+      +_wegcFld('Ort','<input id="wegc-haus-ort" type="text" placeholder="Ort" class="buha-inp" style="min-width:120px">')
+      +_wegcFld('MEA Zähler','<input id="wegc-haus-meaz" type="text" inputmode="numeric" placeholder="z. B. 480" class="buha-inp" style="max-width:90px" onkeydown="if(event.key===\'Enter\')wegcHausSave()">')
+      +_wegcFld('MEA Nenner','<input id="wegc-haus-mean" type="text" inputmode="numeric" placeholder="z. B. 1000" class="buha-inp" style="max-width:90px" onkeydown="if(event.key===\'Enter\')wegcHausSave()">')
+      +'<button id="wegc-haus-savebtn" class="btn-primary" style="padding:.5rem 1rem;white-space:nowrap" onclick="wegcHausSave()"><span class="btn-ic" data-icon="plus"></span> Anlegen</button>'
+      +'<button id="wegc-haus-cancelbtn" onclick="wegcHausEditCancel()" style="display:none;padding:.5rem .9rem;border:1px solid var(--border);background:#fff;border-radius:9px;cursor:pointer;font-size:.82rem;font-weight:600;color:#6b7280">Abbrechen</button>'
+    +'</div>'
+    +'<div style="font-size:.7rem;color:#9ca3af;margin-top:.55rem">MEA der Untergemeinschaft = Anteil am Gesamtobjekt lt. Teilungserklärung (Zähler/Nenner). Dient der Kostenverteilung <strong>zwischen</strong> den Häusern.</div>'
+  +'</div>';
   // Häuser-Übersicht mit Einheiten + MEA-Summe
   if(haeuser.length){
     html+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem;margin-bottom:1.5rem">';
@@ -10691,12 +10734,20 @@ async function wegcRenderHaeuser(c){
       var mea=hu.reduce(function(s,u){return s+meaPct(u);},0);
       var fl=hu.reduce(function(s,u){return s+(parseFloat(u.flaeche)||0);},0);
       var adr=[h.strasse,h.plz&&h.ort?h.plz+' '+h.ort:h.ort].filter(Boolean).join(', ');
+      var typ=h.typ||'Haus';
+      var typCol={Haus:'#6a2d9f',Tiefgarage:'#0369a1',Stellplatzanlage:'#0369a1',Gewerbe:'#b45309',Sonstiges:'#6b7280'}[typ]||'#6b7280';
+      var ownMea=(h.mea_zaehler&&h.mea_nenner)?(Number(h.mea_zaehler).toLocaleString('de-DE')+' / '+Number(h.mea_nenner).toLocaleString('de-DE')):'–';
       html+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:1rem 1.1rem;box-shadow:0 1px 2px rgba(16,24,40,.05)">'
-        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem"><div><div style="font-weight:800;font-size:1rem;color:#111827">'+escapeHtml(h.name)+'</div>'+(adr?'<div style="font-size:.74rem;color:#6b7280">'+escapeHtml(adr)+'</div>':'')+'</div>'
-          +'<button class="oa-btn" title="Haus löschen" onclick="wegcHausDel(\''+h.id+'\')"><span class="mini-ic" data-icon="trash"></span></button></div>'
-        +'<div style="display:flex;gap:1.2rem;margin-top:.7rem;font-size:.8rem">'
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">'
+          +'<div><div style="display:flex;align-items:center;gap:.45rem;flex-wrap:wrap"><div style="font-weight:800;font-size:1rem;color:#111827">'+escapeHtml(h.name)+'</div>'
+            +'<span style="font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em;padding:.13rem .42rem;border-radius:6px;background:'+typCol+'18;color:'+typCol+'">'+escapeHtml(typ)+'</span></div>'
+            +(adr?'<div style="font-size:.74rem;color:#6b7280;margin-top:2px">'+escapeHtml(adr)+'</div>':'')+'</div>'
+          +'<div style="display:flex;gap:.2rem;flex-shrink:0"><button class="oa-btn" title="Bearbeiten" onclick="wegcHausEdit(\''+h.id+'\')"><span class="mini-ic" data-icon="pencil"></span></button>'
+            +'<button class="oa-btn" title="Untergemeinschaft löschen" onclick="wegcHausDel(\''+h.id+'\')"><span class="mini-ic" data-icon="trash"></span></button></div></div>'
+        +'<div style="display:flex;gap:1rem;margin-top:.7rem;font-size:.8rem;flex-wrap:wrap">'
           +'<div><div style="font-size:.62rem;text-transform:uppercase;color:var(--muted)">Einheiten</div><div style="font-weight:700">'+hu.length+'</div></div>'
-          +'<div><div style="font-size:.62rem;text-transform:uppercase;color:var(--muted)">MEA</div><div style="font-weight:700">'+(mea*1000).toLocaleString('de-DE',{maximumFractionDigits:0})+' / 1000</div></div>'
+          +'<div><div style="font-size:.62rem;text-transform:uppercase;color:var(--muted)">Eigene MEA</div><div style="font-weight:700">'+ownMea+'</div></div>'
+          +'<div><div style="font-size:.62rem;text-transform:uppercase;color:var(--muted)">Einh.-MEA</div><div style="font-weight:700">'+(mea*1000).toLocaleString('de-DE',{maximumFractionDigits:0})+'</div></div>'
           +'<div><div style="font-size:.62rem;text-transform:uppercase;color:var(--muted)">Fläche</div><div style="font-weight:700">'+fl.toLocaleString('de-DE')+' m²</div></div>'
         +'</div></div>';
     });
@@ -10729,22 +10780,47 @@ async function wegcRenderHaeuser(c){
   c.innerHTML=html;
 }
 var _wegcHaeuserCache=[];
+var _wegcHausEditId=null;
+function _wegcHausInt(id){var v=parseInt((document.getElementById(id).value||'').replace(/[^\d]/g,''));return isNaN(v)?null:v;}
 async function wegcHausSave(){
   if(!_wegcCur)return;
   var nEl=document.getElementById('wegc-haus-name'); if(!nEl)return;
   var name=(nEl.value||'').trim();
   if(!name){showToast('Bitte einen Namen angeben');nEl.focus();return;}
-  var row={user_id:currentUser.id,objekt_id:_wegcCur.id,name:name,
+  var typEl=document.getElementById('wegc-haus-typ');
+  var row={name:name,
+    typ:typEl?typEl.value:'Haus',
     strasse:(document.getElementById('wegc-haus-str').value||'').trim()||null,
     plz:(document.getElementById('wegc-haus-plz').value||'').trim()||null,
     ort:(document.getElementById('wegc-haus-ort').value||'').trim()||null,
-    sortierung:(_wegcHaeuserCache||[]).length};
+    mea_zaehler:_wegcHausInt('wegc-haus-meaz'),
+    mea_nenner:_wegcHausInt('wegc-haus-mean')};
   try{
-    var res=await sb.from('weg_untergemeinschaften').insert(row);
+    var res;
+    if(_wegcHausEditId){
+      res=await sb.from('weg_untergemeinschaften').update(row).eq('id',_wegcHausEditId);
+    }else{
+      row.user_id=currentUser.id; row.objekt_id=_wegcCur.id; row.sortierung=(_wegcHaeuserCache||[]).length;
+      res=await sb.from('weg_untergemeinschaften').insert(row);
+    }
     if(res.error){showToast('Fehler: '+res.error.message);return;}
-    showToast('Haus angelegt'); wegcRenderHaeuser();
+    showToast(_wegcHausEditId?'Untergemeinschaft gespeichert':'Untergemeinschaft angelegt');
+    _wegcHausEditId=null; wegcRenderHaeuser();
   }catch(e){showToast('Fehler: '+e.message);}
 }
+function wegcHausEdit(id){
+  var h=(_wegcHaeuserCache||[]).find(function(x){return x.id===id;}); if(!h)return;
+  _wegcHausEditId=id;
+  var set=function(i,v){var el=document.getElementById(i);if(el)el.value=(v==null?'':v);};
+  set('wegc-haus-name',h.name); set('wegc-haus-typ',h.typ||'Haus');
+  set('wegc-haus-str',h.strasse); set('wegc-haus-plz',h.plz); set('wegc-haus-ort',h.ort);
+  set('wegc-haus-meaz',h.mea_zaehler); set('wegc-haus-mean',h.mea_nenner);
+  var t=document.getElementById('wegc-haus-formtitle'); if(t)t.textContent='Untergemeinschaft bearbeiten';
+  var b=document.getElementById('wegc-haus-savebtn'); if(b){b.innerHTML='<span class="btn-ic" data-icon="check"></span> Speichern';if(typeof applyIcons==='function')applyIcons(b);}
+  var cb=document.getElementById('wegc-haus-cancelbtn'); if(cb)cb.style.display='';
+  var nameEl=document.getElementById('wegc-haus-name'); if(nameEl){try{nameEl.scrollIntoView({behavior:'smooth',block:'center'});}catch(e){} nameEl.focus();}
+}
+function wegcHausEditCancel(){_wegcHausEditId=null;wegcRenderHaeuser();}
 function wegcHausDel(id){
   appConfirm({icon:'🗑',title:'Haus löschen?',message:'Das Haus wird entfernt. Zugeordnete Einheiten bleiben erhalten, verlieren aber die Zuordnung.',
     buttons:[

@@ -1761,10 +1761,9 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                 </div>
                 <select id="buha-jahr" onchange="buhaReload()" style="border:1px solid var(--border);border-radius:8px;padding:.45rem .7rem;font-size:.84rem;font-family:var(--ff);background:var(--white);outline:none"></select>
               </div>
-              <!-- Tabs -->
-              <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:1.1rem;flex-wrap:wrap">
+              <!-- Tabs (Hausgeld ist ein eigenes Cockpit-Modul, daher hier KEIN Hausgeld-Tab) -->
+              <div id="buha-tabbar" style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:1.1rem;flex-wrap:wrap">
                 <button type="button" id="buha-tab-buchen" onclick="buhaTab('buchen')" style="background:none;border:none;border-bottom:2px solid var(--p);margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;font-weight:700;color:var(--p);font-family:var(--ff)"><span class="btn-ic" data-icon="pencil"></span> Buchungen</button>
-                <button type="button" id="buha-tab-hausgeld" onclick="buhaTab('hausgeld')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:var(--ff)"><span class="btn-ic" data-icon="euro"></span> Hausgeld</button>
                 <button type="button" id="buha-tab-op" onclick="buhaTab('op')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:var(--ff)"><span class="btn-ic" data-icon="users"></span> Debitoren/Kreditoren</button>
                 <button type="button" id="buha-tab-konten" onclick="buhaTab('konten')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:var(--ff)"><span class="btn-ic" data-icon="bookopen"></span> Kontenrahmen</button>
                 <button type="button" id="buha-tab-ausw" onclick="buhaTab('ausw')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:var(--ff)"><span class="btn-ic" data-icon="barchart"></span> Auswertungen</button>
@@ -11321,6 +11320,8 @@ async function wegcRenderBuchhaltung(c,subtab){
   aktivesObjekt=_wegcCur;
   try{ await ladeBuchhaltung(_wegcCur.id); }catch(e){ console.warn('buha load:',e); }
   try{ buhaTab(subtab==='hausgeld'?'hausgeld':'buchen'); }catch(e){}
+  // Hausgeld als eigenes Cockpit: Buchhaltungs-Tableiste dort ausblenden (#16)
+  var _tb=document.getElementById('buha-tabbar'); if(_tb)_tb.style.display=(subtab==='hausgeld'?'none':'flex');
 }
 async function wegcRenderEinheiten(c){
   if(!_wegcCur)return;

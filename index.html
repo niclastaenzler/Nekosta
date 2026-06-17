@@ -1851,6 +1851,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                   <select id="ausw-typ" onchange="renderAuswertungen()" style="border:1px solid var(--border);border-radius:8px;padding:.45rem .7rem;font-size:.84rem;font-family:var(--ff);background:var(--white);outline:none">
                     <option value="salden">Summen- &amp; Saldenliste</option>
                     <option value="euer">Einnahmen-Ausgaben-Rechnung (EÜR)</option>
+                    <option value="ksug">Kostenstellen je Untergemeinschaft</option>
                     <option value="kontenblatt">Kontenblatt</option>
                   </select>
                   <select id="ausw-konto" onchange="renderAuswertungen()" style="display:none;border:1px solid var(--border);border-radius:8px;padding:.45rem .7rem;font-size:.84rem;font-family:var(--ff);background:var(--white);outline:none"></select>
@@ -9252,7 +9253,49 @@ function renderAuswertungen(){
   var c=document.getElementById('ausw-content'); if(!c)return;
   if(typ==='salden')c.innerHTML=buhaSaldenlisteHtml();
   else if(typ==='euer')c.innerHTML=buhaEurHtml();
+  else if(typ==='ksug'){c.innerHTML='<div style="padding:2rem;text-align:center;color:var(--muted)">Lädt …</div>';buhaKostenstellenRender(c);}
   else c.innerHTML=buhaKontenblattHtml(ks?ks.value:'');
+}
+async function buhaKostenstellenRender(c){
+  try{
+    var br=await sb.from('weg_buchungen').select('betrag,soll_konto,haben_konto,untergemeinschaft_id').eq('user_id',currentUser.id).eq('objekt_id',buha.objektId).eq('wirtschaftsjahr',buha.jahr);
+    if(br.error)throw br.error;
+    var rows=br.data||[];
+    var typ={}; buha.konten.forEach(function(k){typ[k.nummer]=k.typ;});
+    var byUg={};
+    rows.forEach(function(b){
+      var key=b.untergemeinschaft_id||'__gesamt__';
+      var o=byUg[key]=byUg[key]||{aufwand:0,ertrag:0};
+      var bt=parseFloat(b.betrag)||0;
+      if(typ[b.soll_konto]==='aufwand')o.aufwand+=bt;
+      if(typ[b.haben_konto]==='aufwand')o.aufwand-=bt;
+      if(typ[b.haben_konto]==='ertrag')o.ertrag+=bt;
+      if(typ[b.soll_konto]==='ertrag')o.ertrag-=bt;
+    });
+    var nameOf=function(key){if(key==='__gesamt__')return '🏛️ Gesamt-WEG (gemeinschaftlich)';var u=(buha.ugListe||[]).filter(function(x){return x.id===key;})[0];return u?('👥 '+u.name):'(gelöschte Untergemeinschaft)';};
+    var keys=[]; if(byUg['__gesamt__'])keys.push('__gesamt__');
+    (buha.ugListe||[]).forEach(function(u){if(byUg[u.id])keys.push(u.id);});
+    Object.keys(byUg).forEach(function(k){if(keys.indexOf(k)<0)keys.push(k);});
+    if(!keys.length){c.innerHTML=_auswEmpty();return;}
+    var tA=0,tE=0;
+    var body=keys.map(function(k){var o=byUg[k];var saldo=o.ertrag-o.aufwand;tA+=o.aufwand;tE+=o.ertrag;
+      return '<tr style="border-bottom:1px solid var(--border)"><td style="padding:.45rem .7rem;font-weight:600">'+escapeHtml(nameOf(k))+'</td>'
+        +'<td style="padding:.45rem .7rem;text-align:right;font-variant-numeric:tabular-nums">'+buhaEuro(o.aufwand)+'</td>'
+        +'<td style="padding:.45rem .7rem;text-align:right;font-variant-numeric:tabular-nums">'+buhaEuro(o.ertrag)+'</td>'
+        +'<td style="padding:.45rem .7rem;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;color:'+(saldo>=0?'#1a7a4a':'#c0392b')+'">'+buhaEuro(saldo)+'</td></tr>';
+    }).join('');
+    buha._auswTitle='Kostenstellen je Untergemeinschaft '+buha.jahr;
+    buha._auswRows={head:['Untergemeinschaft','Aufwand','Ertrag','Saldo'],rows:keys.map(function(k){var o=byUg[k];return [nameOf(k).replace(/^[^A-Za-z0-9]+\s*/,''),o.aufwand.toFixed(2),o.ertrag.toFixed(2),(o.ertrag-o.aufwand).toFixed(2)];})};
+    c.innerHTML='<div style="padding:.6rem .8rem;font-weight:700;border-bottom:1px solid var(--border)">'+escapeHtml(buha._auswTitle)+'</div>'
+      +'<table style="width:100%;border-collapse:collapse;font-size:.82rem;min-width:520px"><thead><tr style="border-bottom:2px solid var(--border)">'
+      +['Untergemeinschaft','Aufwand','Ertrag','Saldo'].map(function(h,i){return '<th style="text-align:'+(i>=1?'right':'left')+';padding:.5rem .7rem;font-size:.64rem;text-transform:uppercase;color:var(--muted)">'+h+'</th>';}).join('')
+      +'</tr></thead><tbody>'+body+'</tbody>'
+      +'<tfoot><tr style="border-top:2px solid var(--border);font-weight:800"><td style="padding:.5rem .7rem">Gesamt</td>'
+      +'<td style="padding:.5rem .7rem;text-align:right;font-variant-numeric:tabular-nums">'+buhaEuro(tA)+'</td>'
+      +'<td style="padding:.5rem .7rem;text-align:right;font-variant-numeric:tabular-nums">'+buhaEuro(tE)+'</td>'
+      +'<td style="padding:.5rem .7rem;text-align:right;font-variant-numeric:tabular-nums">'+buhaEuro(tE-tA)+'</td></tr></tfoot></table>'
+      +'<div style="font-size:.72rem;color:var(--muted);padding:.6rem .8rem">Aufwand/Ertrag je Buchungskreis (Untergemeinschaft) über alle Buchungen des Wirtschaftsjahres – unabhängig vom oben gewählten Buchungskreis.</div>';
+  }catch(e){c.innerHTML='<div style="padding:1.5rem;color:#c0392b">Fehler: '+escapeHtml(e.message||e)+'</div>';}
 }
 function buhaSaldenlisteHtml(){
   var agg=buhaKontoAgg(); var nmName={}; buha.konten.forEach(function(k){nmName[k.nummer]=k.name;});

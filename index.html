@@ -1765,6 +1765,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
               <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:1.1rem;flex-wrap:wrap">
                 <button type="button" id="buha-tab-buchen" onclick="buhaTab('buchen')" style="background:none;border:none;border-bottom:2px solid var(--p);margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;font-weight:700;color:var(--p);font-family:var(--ff)"><span class="btn-ic" data-icon="pencil"></span> Buchungen</button>
                 <button type="button" id="buha-tab-hausgeld" onclick="buhaTab('hausgeld')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:var(--ff)"><span class="btn-ic" data-icon="euro"></span> Hausgeld</button>
+                <button type="button" id="buha-tab-op" onclick="buhaTab('op')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:var(--ff)"><span class="btn-ic" data-icon="users"></span> Debitoren/Kreditoren</button>
                 <button type="button" id="buha-tab-konten" onclick="buhaTab('konten')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:var(--ff)"><span class="btn-ic" data-icon="bookopen"></span> Kontenrahmen</button>
                 <button type="button" id="buha-tab-ausw" onclick="buhaTab('ausw')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:var(--ff)"><span class="btn-ic" data-icon="barchart"></span> Auswertungen</button>
                 <button type="button" id="buha-tab-import" onclick="buhaTab('import')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:var(--ff)"><span class="btn-ic" data-icon="download"></span> DATEV-Import</button>
@@ -1833,6 +1834,36 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                 </div>
                 <div id="hg-content" style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow-x:auto"></div>
                 <div style="font-size:.72rem;color:var(--muted);margin-top:.6rem">💡 Das monatliche Hausgeld stammt aus dem Feld „Hausgeld" je Eigentümer (Reiter „Eigentümer"). Sollstellungen werden monatlich für das gewählte Wirtschaftsjahr erzeugt; bezahlte Posten kannst du als Zahlungseingang markieren.</div>
+              </div>
+              <!-- TAB: DEBITOREN / KREDITOREN (offene Posten) -->
+              <div id="buha-pane-op" style="display:none">
+                <div id="op-kpis" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.6rem;margin-bottom:1rem"></div>
+                <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:.85rem 1rem;margin-bottom:1rem">
+                  <div style="font-size:.8rem;font-weight:700;margin-bottom:.6rem">Offenen Posten erfassen</div>
+                  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:.5rem;align-items:end">
+                    <div><label>Art</label><select id="op-typ" class="buha-inp"><option value="kreditor">Kreditor (wir zahlen)</option><option value="debitor">Debitor (zahlt an uns)</option></select></div>
+                    <div style="grid-column:span 2"><label>Partner</label><input type="text" id="op-partner" class="buha-inp" placeholder="Name / Firma"></div>
+                    <div><label>Betrag brutto (€)</label><input type="text" inputmode="decimal" id="op-betrag" class="buha-inp" placeholder="0,00"></div>
+                    <div><label>Rechnungsdatum</label><input type="date" id="op-datum" class="buha-inp"></div>
+                    <div><label>Fällig am</label><input type="date" id="op-faellig" class="buha-inp"></div>
+                    <div><label>Beleg-Nr.</label><input type="text" id="op-belegnr" class="buha-inp" placeholder="optional"></div>
+                    <div style="grid-column:span 2"><label>Text</label><input type="text" id="op-text" class="buha-inp" placeholder="z. B. Heizöl-Lieferung"></div>
+                    <div style="display:flex;flex-direction:column;justify-content:flex-end"><button class="btn-primary" style="white-space:nowrap;padding:.45rem .7rem" onclick="opSave()"><span class="btn-ic" data-icon="plus"></span> Erfassen</button></div>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.7rem">
+                  <select id="op-filter" onchange="renderOP()" style="border:1px solid var(--border);border-radius:8px;padding:.45rem .7rem;font-size:.82rem;font-family:var(--ff);background:var(--white);outline:none">
+                    <option value="alle">Alle Posten</option>
+                    <option value="offen">Nur offene</option>
+                    <option value="ueberfaellig">Nur überfällige</option>
+                    <option value="debitor">Nur Debitoren</option>
+                    <option value="kreditor">Nur Kreditoren</option>
+                    <option value="bezahlt">Nur bezahlte</option>
+                  </select>
+                  <span style="margin-left:auto"><button class="btn-small" onclick="opCsv()"><span class="btn-ic" data-icon="download"></span> CSV</button></span>
+                </div>
+                <div id="op-content" style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow-x:auto"></div>
+                <div style="font-size:.72rem;color:var(--muted);margin-top:.6rem">💡 <strong>Debitoren</strong> = Forderungen der WEG (jemand schuldet uns). <strong>Kreditoren</strong> = Verbindlichkeiten (wir schulden, z. B. Dienstleister-Rechnung). „Als bezahlt" schließt den Posten.</div>
               </div>
               <!-- TAB: KONTENRAHMEN -->
               <div id="buha-pane-konten" style="display:none">
@@ -8691,7 +8722,7 @@ async function buhaReload(){
 }
 
 function buhaTab(t){
-  ['buchen','hausgeld','konten','ausw','import','audit'].forEach(function(x){
+  ['buchen','hausgeld','op','konten','ausw','import','audit'].forEach(function(x){
     var pane=document.getElementById('buha-pane-'+x); if(pane)pane.style.display=(x===t?'block':'none');
     var btn=document.getElementById('buha-tab-'+x);
     if(btn){var on=x===t;btn.style.color=on?'var(--p)':'var(--muted)';btn.style.fontWeight=on?'700':'400';btn.style.borderBottomColor=on?'var(--p)':'transparent';}
@@ -8699,6 +8730,7 @@ function buhaTab(t){
   if(t==='audit')renderBuhaAudit();
   if(t==='ausw')renderAuswertungen();
   if(t==='hausgeld')ladeHausgeld();
+  if(t==='op')ladeOP();
   if(t==='import'){var kr=document.getElementById('buha-imp-kreis');if(kr){var ug=(buha.ugListe||[]).filter(function(u){return u.id===buha.ug;})[0];kr.textContent=ug?ug.name:'Gesamt-WEG';}}
 }
 
@@ -9116,6 +9148,84 @@ function buhaExportCsv(){
 }
 async function logAudit(aktion,entity,entityId,detail){
   try{await sb.from('weg_audit').insert({user_id:currentUser.id,objekt_id:buha.objektId,aktion:aktion,entity:entity,entity_id:entityId,detail:detail||{}});}catch(e){}
+}
+
+// ── DEBITOREN / KREDITOREN – offene Posten (#8) ──
+async function ladeOP(){
+  if(!buha.objektId)return;
+  try{
+    var r=await sb.from('weg_op').select('*').eq('user_id',currentUser.id).eq('objekt_id',buha.objektId).order('faellig_am',{ascending:true}).order('created_at',{ascending:false});
+    if(r.error)throw r.error; buha._op=r.data||[];
+  }catch(e){showToast('❌ '+(e.message||e));buha._op=[];}
+  renderOP();
+}
+function renderOP(){
+  var c=document.getElementById('op-content'); if(!c)return;
+  var rows=buha._op||[]; var today=todayStr();
+  var f=(document.getElementById('op-filter')||{value:'alle'}).value;
+  var isOver=function(o){return o.status!=='bezahlt'&&o.faellig_am&&o.faellig_am<today;};
+  var fil=rows.filter(function(o){
+    if(f==='offen')return o.status!=='bezahlt';
+    if(f==='bezahlt')return o.status==='bezahlt';
+    if(f==='ueberfaellig')return isOver(o);
+    if(f==='debitor')return o.typ==='debitor';
+    if(f==='kreditor')return o.typ==='kreditor';
+    return true;
+  });
+  var debOffen=rows.filter(function(o){return o.typ==='debitor'&&o.status!=='bezahlt';}).reduce(function(s,o){return s+(parseFloat(o.betrag)||0);},0);
+  var kredOffen=rows.filter(function(o){return o.typ==='kreditor'&&o.status!=='bezahlt';}).reduce(function(s,o){return s+(parseFloat(o.betrag)||0);},0);
+  var ueber=rows.filter(isOver).reduce(function(s,o){return s+(parseFloat(o.betrag)||0);},0);
+  var kpis=document.getElementById('op-kpis');
+  if(kpis)kpis.innerHTML=[['Forderungen offen (Debitoren)',buhaEuro(debOffen),'#1a7a4a'],['Verbindlichkeiten offen (Kreditoren)',buhaEuro(kredOffen),'#c0392b'],['davon überfällig',buhaEuro(ueber),'#d97706']].map(function(k){return '<div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:.6rem .8rem"><div style="font-size:.62rem;font-weight:700;text-transform:uppercase;color:var(--muted)">'+k[0]+'</div><div style="font-size:1.05rem;font-weight:800;color:'+k[2]+'">'+k[1]+'</div></div>';}).join('');
+  var dfmt=function(d){if(!d)return'–';var p=(''+d).slice(0,10).split('-');return p.length===3?p[2]+'.'+p[1]+'.'+p[0]:d;};
+  if(!fil.length){c.innerHTML='<div style="padding:2rem;text-align:center;color:var(--muted)">Keine Posten für diesen Filter.</div>';return;}
+  c.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:.82rem;min-width:680px"><thead><tr style="border-bottom:2px solid var(--border)">'
+    +['Art','Partner','Text','Fällig','Betrag','Status',''].map(function(h,i){return '<th style="text-align:'+(i===4?'right':'left')+';padding:.5rem .7rem;font-size:.62rem;text-transform:uppercase;color:var(--muted)">'+h+'</th>';}).join('')
+    +'</tr></thead><tbody>'+fil.map(function(o){
+      var over=isOver(o), bez=o.status==='bezahlt';
+      var artBadge=o.typ==='debitor'?'<span style="font-size:.6rem;font-weight:700;padding:1px 6px;border-radius:6px;background:#e9f9f0;color:#1a7a4a">Debitor</span>':'<span style="font-size:.6rem;font-weight:700;padding:1px 6px;border-radius:6px;background:#fff3e0;color:#b45309">Kreditor</span>';
+      var stat=bez?'<span style="font-size:.6rem;font-weight:700;padding:1px 6px;border-radius:6px;background:#eef2ff;color:#1565c0">bezahlt'+(o.bezahlt_am?' '+dfmt(o.bezahlt_am):'')+'</span>':(over?'<span style="font-size:.6rem;font-weight:700;padding:1px 6px;border-radius:6px;background:#fdecea;color:#c0392b">überfällig</span>':'<span style="font-size:.6rem;font-weight:700;padding:1px 6px;border-radius:6px;background:#f3f4f6;color:#555">offen</span>');
+      return '<tr style="border-bottom:1px solid var(--border)">'
+        +'<td style="padding:.4rem .7rem">'+artBadge+'</td>'
+        +'<td style="padding:.4rem .7rem;font-weight:600">'+escapeHtml(o.partner||'–')+'</td>'
+        +'<td style="padding:.4rem .7rem;color:#555">'+escapeHtml(o.text||'')+(o.belegnr?' <span style="color:var(--muted);font-size:.7rem">('+escapeHtml(o.belegnr)+')</span>':'')+'</td>'
+        +'<td style="padding:.4rem .7rem;white-space:nowrap">'+dfmt(o.faellig_am)+'</td>'
+        +'<td style="padding:.4rem .7rem;text-align:right;font-weight:700;font-variant-numeric:tabular-nums">'+buhaEuro(parseFloat(o.betrag)||0)+'</td>'
+        +'<td style="padding:.4rem .7rem">'+stat+'</td>'
+        +'<td style="padding:.4rem .7rem;text-align:right;white-space:nowrap">'+(bez?'<button class="btn-small" style="font-size:.62rem" onclick="opSetStatus(\''+o.id+'\',\'offen\')">↺ offen</button>':'<button class="btn-small gruen" style="font-size:.62rem" onclick="opSetStatus(\''+o.id+'\',\'bezahlt\')">✓ bezahlt</button>')+' <button class="btn-small" style="font-size:.62rem;background:#fbe9e7;color:#c0392b" onclick="opDel(\''+o.id+'\')">🗑</button></td>'
+      +'</tr>';
+    }).join('')+'</tbody></table>';
+}
+async function opSave(){
+  if(!buha.objektId){showToast('Bitte eine WEG öffnen.');return;}
+  var partner=(buhaVal('op-partner')||'').trim(); var betrag=parseNum(buhaVal('op-betrag'));
+  if(!partner){showToast('Bitte Partner angeben.');return;}
+  if(!(betrag>0)){showToast('Bitte Betrag > 0 angeben.');return;}
+  var row={user_id:currentUser.id,objekt_id:buha.objektId,untergemeinschaft_id:buha.ug||null,
+    typ:buhaVal('op-typ')||'kreditor',partner:partner,betrag:betrag,
+    datum:buhaVal('op-datum')||null,faellig_am:buhaVal('op-faellig')||null,
+    belegnr:buhaVal('op-belegnr')||null,text:buhaVal('op-text')||null,status:'offen'};
+  var ins=await sb.from('weg_op').insert(row);
+  if(ins.error){showToast('❌ '+ins.error.message);return;}
+  ['op-partner','op-betrag','op-belegnr','op-text'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  showToast('✅ Posten erfasst'); await ladeOP();
+}
+async function opSetStatus(id,status){
+  var r=await sb.from('weg_op').update({status:status,bezahlt_am:status==='bezahlt'?todayStr():null}).eq('id',id);
+  if(r.error){showToast('❌ '+r.error.message);return;} await ladeOP();
+}
+function opDel(id){
+  appConfirm({icon:'🗑',title:'Posten löschen?',message:'Diesen offenen Posten dauerhaft entfernen?',
+    buttons:[{label:'<span class="btn-ic" data-icon="trash"></span> Löschen',style:'background:#c0392b;color:#fff',onClick:async function(){
+      var r=await sb.from('weg_op').delete().eq('id',id); if(r.error){showToast('❌ '+r.error.message);return;} showToast('🗑 Gelöscht'); await ladeOP();
+    }},{label:'Abbrechen',style:'background:var(--bg);color:var(--muted)',onClick:function(){}}]});
+}
+function opCsv(){
+  var rows=buha._op||[]; if(!rows.length){showToast('Keine Posten.');return;}
+  var head=['Art','Partner','Text','Belegnr','Rechnungsdatum','Faellig','Betrag','Status','Bezahlt am'];
+  var lines=[head.join(';')].concat(rows.map(function(o){return [o.typ,o.partner||'',o.text||'',o.belegnr||'',o.datum||'',o.faellig_am||'',(parseFloat(o.betrag)||0).toFixed(2),o.status,o.bezahlt_am||''].map(function(v){return '"'+(''+v).replace(/"/g,'""')+'"';}).join(';');}));
+  var blob=new Blob(['﻿'+lines.join('\r\n')],{type:'text/csv;charset=utf-8;'});var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');a.href=url;a.download='Offene_Posten_'+(buha.jahr||'')+'.csv';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
 }
 
 // ── UNTERGEMEINSCHAFTEN ──

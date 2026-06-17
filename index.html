@@ -1874,6 +1874,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                 <option value="Wohnung">Wohnung</option>
                 <option value="Gewerbe">Gewerbe</option>
                 <option value="Stellplatz">Stellplatz / Garage</option>
+                <option value="Tiefgarage">Tiefgaragenstellplatz</option>
                 <option value="Keller">Keller / Sonstiges</option>
               </select>
             </div>
@@ -1947,7 +1948,9 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
             <select id="ein-typ" style="border:1px solid var(--border);border-radius:var(--r);padding:.48rem .72rem;font-size:.86rem;font-family:var(--ff);background:var(--bg);outline:none;width:100%">
               <option value="Wohnung">Wohnung</option>
               <option value="Gewerbe">Gewerbe</option>
-              <option value="Garage">Garage/Stellplatz</option>
+              <option value="Stellplatz">Stellplatz</option>
+              <option value="Tiefgarage">Tiefgaragenstellplatz</option>
+              <option value="Garage">Garage</option>
               <option value="Lager">Lager</option>
               <option value="Sonstiges">Sonstiges</option>
             </select>
@@ -3394,12 +3397,16 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
           </div>
 
           <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.65rem">💰 Miete &amp; Vorauszahlungen</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem">
-            <div class="field"><label>Kaltmiete €/Mon.</label><input type="number" id="mv-kaltmiete" placeholder="750,00" step="0.01"></div>
-            <div class="field"><label>BK-Vorauszahlung €/Mon.</label><input type="number" id="mv-bk" placeholder="120,00" step="0.01"></div>
-            <div class="field"><label>HK-Vorauszahlung €/Mon.</label><input type="number" id="mv-hk" placeholder="80,00" step="0.01"></div>
-            <div class="field"><label>MEA <span style="font-size:.7rem;font-weight:400;color:var(--muted)">(z.B. 123/1000)</span></label><input type="text" id="mv-mea" placeholder="123/1000"></div>
+          <div style="display:flex;flex-direction:column;gap:.55rem;margin-bottom:.6rem">
+            <div class="field"><label>Kaltmiete €/Mon.</label><input type="number" id="mv-kaltmiete" placeholder="750,00" step="0.01" oninput="mvRecalcWarm()"></div>
+            <div class="field"><label>+ BK-Vorauszahlung €/Mon.</label><input type="number" id="mv-bk" placeholder="120,00" step="0.01" oninput="mvRecalcWarm()"></div>
+            <div class="field"><label>+ HK-Vorauszahlung €/Mon.</label><input type="number" id="mv-hk" placeholder="80,00" step="0.01" oninput="mvRecalcWarm()"></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:.55rem .8rem;background:var(--bg);border:1px solid var(--border);border-radius:8px">
+              <span style="font-size:.8rem;font-weight:600;color:var(--muted)">= Gesamtmiete (warm) €/Mon.</span>
+              <span id="mv-warm" style="font-size:1rem;font-weight:800;color:var(--text)">0,00 €</span>
+            </div>
           </div>
+          <div class="field" style="margin-bottom:.75rem"><label>MEA <span style="font-size:.7rem;font-weight:400;color:var(--muted)">(z.B. 123/1000)</span></label><input type="text" id="mv-mea" placeholder="123/1000"></div>
 
           <div class="field" style="margin-bottom:1rem"><label>Notiz <span style="font-size:.7rem;font-weight:400;color:var(--muted)">(optional)</span></label>
             <textarea id="mv-notiz" rows="2" style="border:1px solid var(--border);border-radius:8px;padding:.5rem .75rem;font-size:.85rem;font-family:var(--ff);width:100%;resize:vertical;outline:none;background:var(--bg);box-sizing:border-box"></textarea>
@@ -11939,7 +11946,14 @@ async function openMietverhModal(einheitId,objektId,einheitBez,data){
   var selEl=document.getElementById('mv-kontakt-select');
   if(selEl){selEl.onchange=function(){showKontaktInfo(this.value);};}
   var qk=document.getElementById('mv-quick-kontakt');if(qk)qk.style.display='none';
+  mvRecalcWarm();
   document.getElementById('mietverh-modal').style.display='flex';
+}
+function mvRecalcWarm(){
+  var g=function(id){var el=document.getElementById(id);return el?(parseFloat(el.value)||0):0;};
+  var w=g('mv-kaltmiete')+g('mv-bk')+g('mv-hk');
+  var el=document.getElementById('mv-warm');
+  if(el)el.textContent=w.toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
 }
 function closeMietverhModal(){document.getElementById('mietverh-modal').style.display='none';}
 

@@ -12132,6 +12132,100 @@ async function mvEinnahmeDel(id){
   try{ var r=await sb.from('miet_einnahme').delete().eq('id',id); if(r.error){showToast('Fehler: '+r.error.message);return;} mvLoadEinnahmen(document.getElementById('mv-edit-id').value); }catch(e){showToast('Fehler: '+e.message);}
 }
 
+// ── Einheiten-Cockpit (#10): Übersicht je Miet-Einheit ──
+async function openEinheitCockpit(einheitId){
+  if(!einheitId)return;
+  var m=document.getElementById('einheit-cockpit-modal');
+  if(!m){
+    m=document.createElement('div'); m.id='einheit-cockpit-modal';
+    m.style.cssText='position:fixed;inset:0;background:rgba(17,24,39,.55);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:3vh 1rem;overflow:auto';
+    m.onclick=function(ev){if(ev.target===m)closeEinheitCockpit();};
+    m.innerHTML='<div id="einheit-cockpit-box" style="background:var(--white);border-radius:14px;max-width:720px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3)"></div>';
+    document.body.appendChild(m);
+  }
+  var box=document.getElementById('einheit-cockpit-box');
+  box.innerHTML='<div style="padding:2rem;color:var(--muted);font-size:.9rem">Lädt…</div>';
+  m.style.display='flex';
+  try{
+    var eRes=await sb.from('einheiten').select('*').eq('id',einheitId).maybeSingle();
+    if(eRes.error)throw eRes.error;
+    var e=eRes.data; if(!e){box.innerHTML='<div style="padding:2rem">Einheit nicht gefunden.</div>';return;}
+    var mvRes=await sb.from('mietverhaeltnisse').select('*,kontakte(anrede,vorname,nachname)').eq('einheit_id',einheitId).order('einzug',{ascending:false});
+    var mvs=mvRes.data||[];
+    var mvIds=mvs.map(function(x){return x.id;});
+    var staffeln=[], einnahmen=[];
+    if(mvIds.length){ var sR=await sb.from('miet_staffel').select('*').in('mietverhaeltnis_id',mvIds); staffeln=sR.data||[]; }
+    var enR=await sb.from('miet_einnahme').select('*').eq('einheit_id',einheitId); einnahmen=enR.data||[];
+    box.innerHTML=_einheitCockpitHtml(e,mvs,staffeln,einnahmen);
+    if(typeof applyIcons==='function')applyIcons(box);
+  }catch(err){ box.innerHTML='<div style="padding:2rem;color:#dc2626">Fehler: '+escapeHtml(err.message||'')+'</div>'; }
+}
+function closeEinheitCockpit(){var m=document.getElementById('einheit-cockpit-modal');if(m)m.style.display='none';}
+function _einheitCockpitHtml(e,mvs,staffeln,einnahmen){
+  var today=new Date().toISOString().slice(0,10);
+  var fmt=function(v){return (parseFloat(v)||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});};
+  var dfmt=function(d){if(!d)return'–';var p=(''+d).slice(0,10).split('-');return p.length===3?p[2]+'.'+p[1]+'.'+p[0]:d;};
+  var staffByMv={}; (staffeln||[]).forEach(function(s){(staffByMv[s.mietverhaeltnis_id]=staffByMv[s.mietverhaeltnis_id]||[]).push(s);});
+  var name=function(mm){var k=mm&&mm.kontakte;return k?((k.anrede?k.anrede+' ':'')+(k.vorname||'')+' '+(k.nachname||'')).replace(/\s+/g,' ').trim():'Unbekannt';};
+  var aktiv=mvs.filter(function(mm){return mm.aktiv!==false && (!mm.auszug || mm.auszug>=today);});
+  var cur=aktiv[0]||null, isLeer=!cur;
+  var effK=cur?_effKaltmiete(parseFloat(cur.kaltmiete)||0,staffByMv[cur.id],today):0;
+  var bk=cur?(parseFloat(cur.vorausz_bk)||0):0, hk=cur?(parseFloat(cur.vorausz_hk)||0):0, warm=effK+bk+hk;
+  var statusBadge=isLeer?'<span style="background:#fdf0ef;color:#c0392b;font-size:.66rem;font-weight:700;padding:2px 9px;border-radius:8px">LEERSTAND</span>':'<span style="background:#e9f9f0;color:#1a7a4a;font-size:.66rem;font-weight:700;padding:2px 9px;border-radius:8px">VERMIETET</span>';
+  var kpi=function(v,l,col){return '<div style="background:var(--bg);border:1px solid #eef0f4;border-radius:10px;padding:.7rem .8rem"><div style="font-size:.62rem;font-weight:700;text-transform:uppercase;color:#6b7280;margin-bottom:.25rem">'+l+'</div><div style="font-size:1.1rem;font-weight:800;color:'+(col||'#111827')+'">'+v+'</div></div>';};
+  var h='';
+  h+='<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:1.1rem 1.3rem;border-bottom:1px solid #eef0f4">'
+    +'<div><div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap"><div style="font-size:1.25rem;font-weight:800;color:#111827">'+escapeHtml(e.bezeichnung||'Einheit')+'</div>'+statusBadge+'</div>'
+      +'<div style="font-size:.8rem;color:#6b7280;margin-top:2px">'+escapeHtml(e.typ||'')+(e.stockwerk?' · '+escapeHtml(e.stockwerk):'')+(e.flaeche?' · '+e.flaeche+' m²':'')+'</div></div>'
+    +'<button onclick="closeEinheitCockpit()" style="border:none;background:#f3f4f6;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:1rem;color:#6b7280;flex-shrink:0">✕</button></div>';
+  h+='<div style="padding:1.1rem 1.3rem"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:.6rem;margin-bottom:1.1rem">'
+    +kpi(fmt(effK)+' €','Kaltmiete'+(cur&&effK!==(parseFloat(cur.kaltmiete)||0)?' (Staffel)':''),'#6a2d9f')
+    +kpi(fmt(warm)+' €','Warmmiete')
+    +kpi((e.flaeche||'–')+(e.flaeche?' m²':''),'Fläche')
+    +kpi(escapeHtml(e.mea||(cur&&cur.mea)||'–'),'MEA')
+  +'</div>';
+  if(cur){
+    h+='<div style="border:1px solid #eef0f4;border-radius:10px;padding:.9rem 1rem;margin-bottom:1rem">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem"><div style="font-size:.8rem;font-weight:700;color:#111827">Aktuelles Mietverhältnis</div>'
+      +'<button onclick="closeEinheitCockpit();editMietverhaeltnis(\''+cur.id+'\',\''+e.id+'\',\''+e.objekt_id+'\',\'\')" class="btn-small" style="font-size:.7rem;padding:.25rem .6rem">Bearbeiten</button></div>'
+      +'<div style="font-size:.9rem;font-weight:700">'+escapeHtml(name(cur))+'</div>'
+      +'<div style="font-size:.76rem;color:#6b7280;margin-bottom:.5rem">'+dfmt(cur.einzug)+' – '+(cur.auszug?dfmt(cur.auszug):'unbefristet')+'</div>'
+      +'<div style="display:flex;gap:1.3rem;font-size:.8rem;flex-wrap:wrap">'
+        +'<div><span style="color:#6b7280">Kaltmiete</span><br><strong>'+fmt(effK)+' €</strong></div>'
+        +'<div><span style="color:#6b7280">BK-VZ</span><br><strong>'+fmt(bk)+' €</strong></div>'
+        +'<div><span style="color:#6b7280">HK-VZ</span><br><strong>'+fmt(hk)+' €</strong></div>'
+        +'<div><span style="color:#6b7280">Warm</span><br><strong>'+fmt(warm)+' €</strong></div></div>';
+    var st=(staffByMv[cur.id]||[]).slice().sort(function(a,b){return (a.datum||'').localeCompare(b.datum||'');});
+    if(st.length){
+      h+='<div style="margin-top:.6rem;border-top:1px solid #f3f4f6;padding-top:.5rem"><div style="font-size:.66rem;font-weight:700;text-transform:uppercase;color:#6b7280;margin-bottom:.3rem">Staffelmiete</div>';
+      st.forEach(function(s){var fut=(s.datum||'')>today;h+='<div style="font-size:.76rem;display:flex;justify-content:space-between"><span>ab '+dfmt(s.datum)+(fut?' (geplant)':'')+'</span><strong>'+fmt(s.neue_kaltmiete)+' €</strong></div>';});
+      h+='</div>';
+    }
+    h+='</div>';
+  } else {
+    h+='<div style="border:1px dashed #e5b8b3;background:#fdf0ef;border-radius:10px;padding:.9rem 1rem;margin-bottom:1rem;font-size:.82rem;color:#c0392b">📭 Leerstand – kein aktives Mietverhältnis. <button onclick="closeEinheitCockpit();openMietverhModal(\''+e.id+'\',\''+e.objekt_id+'\',\'\',null)" class="btn-small gruen" style="font-size:.7rem;padding:.2rem .6rem;margin-left:.4rem">+ Mietverhältnis</button></div>';
+  }
+  if((einnahmen||[]).length){
+    var nk=einnahmen.filter(function(x){return x.kategorie==='nk_vorauszahlung';});
+    var so=einnahmen.filter(function(x){return x.kategorie!=='nk_vorauszahlung';});
+    var sum=function(arr){return arr.reduce(function(s,x){return s+(parseFloat(x.betrag)||0);},0);};
+    h+='<div style="border:1px solid #eef0f4;border-radius:10px;padding:.9rem 1rem;margin-bottom:1rem"><div style="font-size:.8rem;font-weight:700;color:#111827;margin-bottom:.5rem">Eigene Einnahmen</div>';
+    einnahmen.forEach(function(x){var isNk=x.kategorie==='nk_vorauszahlung';h+='<div style="display:flex;justify-content:space-between;font-size:.78rem;padding:.15rem 0"><span>'+escapeHtml(x.bezeichnung||'(ohne)')+' <span style="font-size:.62rem;font-weight:700;padding:.05rem .3rem;border-radius:5px;background:'+(isNk?'#157f3c':'#6b7280')+'18;color:'+(isNk?'#157f3c':'#6b7280')+'">'+(isNk?'NK-VZ':'Sonstige')+'</span></span><strong>'+fmt(x.betrag)+' €</strong></div>';});
+    h+='<div style="font-size:.72rem;color:#6b7280;margin-top:.4rem">NK-Vorauszahlung: <strong style="color:#157f3c">'+fmt(sum(nk))+' €</strong> · Sonstige: <strong>'+fmt(sum(so))+' €</strong></div></div>';
+  }
+  var beendet=mvs.filter(function(mm){return !(mm.aktiv!==false && (!mm.auszug || mm.auszug>=today));});
+  if(beendet.length){
+    h+='<div style="border:1px solid #eef0f4;border-radius:10px;padding:.9rem 1rem;margin-bottom:1rem"><div style="font-size:.8rem;font-weight:700;color:#111827;margin-bottom:.4rem">Frühere Mietverhältnisse</div>';
+    beendet.forEach(function(mm){h+='<div style="font-size:.76rem;color:#6b7280;display:flex;justify-content:space-between;padding:.1rem 0"><span>'+escapeHtml(name(mm))+'</span><span>'+dfmt(mm.einzug)+' – '+dfmt(mm.auszug)+'</span></div>';});
+    h+='</div>';
+  }
+  h+='<div style="display:flex;gap:.5rem;justify-content:flex-end">'
+    +'<button onclick="closeEinheitCockpit();editEinheit(\''+e.id+'\')" class="btn-small" style="font-size:.76rem;padding:.4rem .8rem">✏️ Einheit bearbeiten</button>'
+    +'<button onclick="closeEinheitCockpit()" class="btn-small" style="font-size:.76rem;padding:.4rem .8rem;background:#f3f4f6;color:#374151">Schließen</button></div>';
+  h+='</div>';
+  return h;
+}
+
 async function saveMietverhaeltnis(){
   var id=document.getElementById('mv-edit-id').value;
   var einheitId=document.getElementById('mv-einheit-id').value||document.getElementById('mv-einheit-select').value;
@@ -13685,6 +13779,7 @@ async function loadObjektEinheiten(objId){
           +(e.kaltmiete||aktivMV.reduce(function(s,m){return s+(m.kaltmiete||0);},0)>0
             ?'<div style="text-align:right"><div style="font-size:1rem;font-weight:700;color:var(--p)">'+(e.kaltmiete||(aktivMV[0]&&aktivMV[0].kaltmiete)||0).toLocaleString('de-DE',{minimumFractionDigits:2})+' €</div><div style="font-size:.68rem;color:var(--muted)">Kaltmiete'+((e.flaeche>0&&(e.kaltmiete||(aktivMV[0]&&aktivMV[0].kaltmiete)))?' · '+((e.kaltmiete||(aktivMV[0]&&aktivMV[0].kaltmiete)||0)/e.flaeche).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €/m²':'')+'</div></div>':''
           )
+          +'<button onclick="event.stopPropagation();openEinheitCockpit(\''+e.id+'\')" class="btn-small" style="font-size:.72rem;padding:.3rem .7rem;white-space:nowrap;background:var(--p);color:#fff">🎯 Cockpit</button>'
           +'<button onclick="event.stopPropagation();openMietverhModal(\''+e.id+'\',\''+aktivesObjekt.id+'\',\''+e.bezeichnung+'\',null)" class="btn-small gruen" style="font-size:.72rem;padding:.3rem .7rem;white-space:nowrap">+ Mietverhältnis</button>'
           +'<button onclick="event.stopPropagation();editEinheit(\''+e.id+'\')" class="btn-small" style="font-size:.72rem;padding:.3rem .6rem">✏️</button>'
           +'<button onclick="event.stopPropagation();deleteEinheit(\''+e.id+'\')" class="btn-small" style="font-size:.72rem;padding:.3rem .6rem;background:#888">🗑</button>'

@@ -10517,7 +10517,7 @@ function _wegcAbrEinzelHtml(o){
     if(!list.length)return '';
     var rows=list.map(function(P){return _wegcAbrRow(P,o,d.festByPos);});
     var sg=rows.reduce(function(s,r){return s+r.gesamtEUR;},0), sa=rows.reduce(function(s,r){return s+r.ownerEUR;},0);
-    var h='<tr style="background:#f3f0f7"><td colspan="7" style="padding:.4rem .55rem;font-size:.64rem;font-weight:700;text-transform:uppercase;color:#5b2a86">'+title+'</td></tr>';
+    var h='<tr style="background:#f3f4f6"><td colspan="7" style="padding:.4rem .55rem;font-size:.64rem;font-weight:700;text-transform:uppercase;color:#374151">'+title+'</td></tr>';
     rows.forEach(function(r){h+='<tr style="border-bottom:1px solid #f5f5f7">'
       +'<td style="padding:.38rem .55rem">'+escapeHtml(r.name)+'</td>'
       +'<td style="padding:.38rem .55rem;color:#6b7280;font-size:.72rem">'+escapeHtml(r.vn)+'</td>'
@@ -10579,7 +10579,7 @@ function wegcAbrechnungPdf(onlyEigId){
   try{
     var jsPDF=window.jspdf.jsPDF;
     var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-    var W=210,L=16,R=12,AC=[123,31,162];
+    var W=210,L=16,R=12,AC=[88,88,92];
     var sm=stammdaten||{}, weg=d.weg||{};
     var vName=([sm.firma,sm.vname&&sm.nname?sm.vname+' '+sm.nname:'']).filter(Boolean).join(' / ')||'NEKOSTA';
     var adr=[weg.strasse,weg.plz&&weg.ort?weg.plz+' '+weg.ort:weg.ort].filter(Boolean).join(', ');
@@ -10600,7 +10600,7 @@ function wegcAbrechnungPdf(onlyEigId){
     pdfOwners.forEach(function(o,oi){
       if(oi>0)doc.addPage();
       y=18;
-      sf(7.5,'normal',135,135,140);doc.text(vName,L,y);doc.text(datStr,W-R,y,{align:'right'});
+      sf(7.5,'normal',135,135,140);doc.text(datStr,W-R,y,{align:'right'});
       y=29; sf(8.5,'bold',45,45,50);doc.text(_wegcEigName(o),L,y); y+=9;
       sf(15,'bold',28,28,34);doc.text('Hausgeldabrechnung',L,y);
       var tw=doc.getTextWidth('Hausgeldabrechnung ');sf(15,'bold',AC[0],AC[1],AC[2]);doc.text(String(d.jahr),L+tw,y); y+=6;
@@ -10612,7 +10612,7 @@ function wegcAbrechnungPdf(onlyEigId){
       var renderBlock=function(list,title){
         if(!list.length)return [0,0];
         if(y>262){doc.addPage();y=20;colHead();}
-        sf(7.5,'bold',91,42,134);doc.text(title,cx.pos,y);y+=5;
+        sf(7.5,'bold',88,88,92);doc.text(title,cx.pos,y);y+=5;
         var sg=0,sa=0;
         list.forEach(function(P){
           var r=_wegcAbrRow(P,o,d.festByPos); sg+=r.gesamtEUR; sa+=r.ownerEUR;
@@ -10641,12 +10641,12 @@ function wegcAbrechnungPdf(onlyEigId){
       sf(9,'bold',40,40,45);doc.text('Summe Kosten (Ihr Anteil) für den Abrechnungszeitraum',cx.pos,y);doc.text(fmt(anteil)+' EUR',cx.aeur,y,{align:'right'});y+=6;
       sf(8.5,'normal',70,70,75);doc.text('Ihre Hausgeldvorauszahlungen im Abrechnungszeitraum',cx.pos,y);doc.text(fmt(soll)+' EUR',cx.aeur,y,{align:'right'});y+=2;
       line(L+100,W-R,y+1,null,0.4);y+=5.5;
-      var rc=diff<0?[182,41,35]:[21,127,60];
+      var rc=[55,55,60];
       sf(11,'bold',rc[0],rc[1],rc[2]);doc.text(diff<0?'Ihre Nachzahlung':'Ihr Guthaben',cx.pos,y);doc.text(fmt(diff)+' EUR',cx.aeur,y,{align:'right'});y+=8;
     });
     var pages=doc.internal.getNumberOfPages();
     for(var i=1;i<=pages;i++){doc.setPage(i);line(L,W-R,287,[200,200,200],0.3);sf(7,'normal',150,150,150);
-      doc.text([vName,adr].filter(Boolean).join('  ·  '),W/2,291,{align:'center',maxWidth:W-L-R});
+      if(adr)doc.text(adr,W/2,291,{align:'center',maxWidth:W-L-R});
       doc.text('Seite '+i+' von '+pages,W-R,291,{align:'right'});}
     var fnSuffix=(onlyEigId&&pdfOwners.length===1)?('_'+(_wegcEigName(pdfOwners[0])||'Eigentuemer').replace(/[^a-zA-Z0-9]+/g,'_')):'';
     showDoc(doc,'Hausgeldabrechnung_'+(weg.name||'WEG').replace(/[^a-zA-Z0-9]+/g,'_')+'_'+d.jahr+fnSuffix+'.pdf','vorschau');

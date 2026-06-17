@@ -1767,6 +1767,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                 <button type="button" id="buha-tab-hausgeld" onclick="buhaTab('hausgeld')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:var(--ff)"><span class="btn-ic" data-icon="euro"></span> Hausgeld</button>
                 <button type="button" id="buha-tab-konten" onclick="buhaTab('konten')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:var(--ff)"><span class="btn-ic" data-icon="bookopen"></span> Kontenrahmen</button>
                 <button type="button" id="buha-tab-ausw" onclick="buhaTab('ausw')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:var(--ff)"><span class="btn-ic" data-icon="barchart"></span> Auswertungen</button>
+                <button type="button" id="buha-tab-import" onclick="buhaTab('import')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:var(--ff)"><span class="btn-ic" data-icon="download"></span> DATEV-Import</button>
                 <button type="button" id="buha-tab-audit" onclick="buhaTab('audit')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:var(--ff)"><span class="btn-ic" data-icon="shield"></span> Audit</button>
               </div>
               <!-- TAB: BUCHEN -->
@@ -1805,6 +1806,20 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                   <div id="bu-steuer-info" style="font-size:.72rem;color:var(--muted);margin-top:.45rem;min-height:1em"></div>
                   <datalist id="buha-konten-dl"></datalist>
                 </div>
+              </div>
+              <!-- TAB: DATEV-IMPORT -->
+              <div id="buha-pane-import" style="display:none">
+                <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:1rem 1.1rem;margin-bottom:1rem">
+                  <div style="font-size:.9rem;font-weight:700;margin-bottom:.5rem"><span class="btn-ic" data-icon="download"></span> DATEV-Buchungsstapel importieren</div>
+                  <div style="font-size:.78rem;color:var(--muted);margin-bottom:.8rem">Lade eine DATEV-Export-Datei (Buchungsstapel als CSV/EXTF) hoch oder füge den Inhalt unten ein. Die Buchungen werden dem aktuellen Buchungskreis (<strong id="buha-imp-kreis">Gesamt-WEG</strong>) und dem gewählten Wirtschaftsjahr zugeordnet. Vor dem Import siehst du eine Vorschau.</div>
+                  <div style="display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;margin-bottom:.7rem">
+                    <input type="file" id="buha-imp-file" accept=".csv,.txt,.extf" onchange="buhaDatevFile(this)" style="font-size:.8rem">
+                    <button class="btn-secondary" onclick="buhaDatevPreview()"><span class="btn-ic" data-icon="search"></span> Vorschau</button>
+                    <button class="btn-primary" id="buha-imp-btn" onclick="buhaDatevImport()" disabled><span class="btn-ic" data-icon="check"></span> Importieren</button>
+                  </div>
+                  <textarea id="buha-imp-text" rows="5" placeholder="…oder DATEV-CSV hier einfügen (Kopfzeile mit: Umsatz; Soll/Haben-Kennzeichen; Konto; Gegenkonto; BU-Schlüssel; Belegdatum; Belegfeld 1; Buchungstext …)" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:.6rem;font-size:.76rem;font-family:monospace;resize:vertical;box-sizing:border-box" oninput="var b=document.getElementById('buha-imp-btn');if(b)b.disabled=true"></textarea>
+                </div>
+                <div id="buha-imp-preview"></div>
               </div>
               <!-- TAB: HAUSGELD & OFFENE POSTEN -->
               <div id="buha-pane-hausgeld" style="display:none">
@@ -8675,7 +8690,7 @@ async function buhaReload(){
 }
 
 function buhaTab(t){
-  ['buchen','hausgeld','konten','ausw','audit'].forEach(function(x){
+  ['buchen','hausgeld','konten','ausw','import','audit'].forEach(function(x){
     var pane=document.getElementById('buha-pane-'+x); if(pane)pane.style.display=(x===t?'block':'none');
     var btn=document.getElementById('buha-tab-'+x);
     if(btn){var on=x===t;btn.style.color=on?'var(--p)':'var(--muted)';btn.style.fontWeight=on?'700':'400';btn.style.borderBottomColor=on?'var(--p)':'transparent';}
@@ -8683,6 +8698,7 @@ function buhaTab(t){
   if(t==='audit')renderBuhaAudit();
   if(t==='ausw')renderAuswertungen();
   if(t==='hausgeld')ladeHausgeld();
+  if(t==='import'){var kr=document.getElementById('buha-imp-kreis');if(kr){var ug=(buha.ugListe||[]).filter(function(u){return u.id===buha.ug;})[0];kr.textContent=ug?ug.name:'Gesamt-WEG';}}
 }
 
 // ── BUCHUNGSSCHLÜSSEL (DATEV-Stil, konfigurierbar via weg_steuerschluessel) ──
@@ -8876,6 +8892,108 @@ async function buhaSaveBuchung(){
   ['bu-soll','bu-haben','bu-betrag','bu-text','bu-kostenstelle','bu-einheit','bu-eigentuemer'].forEach(function(id){var el=document.getElementById(id);if(el){el.value='';el.classList.remove('err');}});
   await buhaReload();
   var f=document.getElementById('bu-soll'); if(f)f.focus();
+}
+// ── DATEV-Import (#9): Buchungsstapel (CSV/EXTF) einspielen ──
+function _splitDatev(line){
+  return line.split(';').map(function(s){s=s.trim();if(s.length>=2&&s.charAt(0)==='"'&&s.charAt(s.length-1)==='"')s=s.slice(1,-1);return s.replace(/""/g,'"');});
+}
+function _datevNum(s){
+  s=(''+(s==null?'':s)).trim(); if(!s)return 0;
+  s=s.replace(/\./g,'').replace(',','.').replace(/[^0-9.\-]/g,'');
+  var n=parseFloat(s); return isNaN(n)?0:Math.abs(n);
+}
+function _datevDate(s,jahr){
+  s=(''+(s||'')).trim(); if(!s)return jahr+'-01-01';
+  if(s.indexOf('.')>=0){var p=s.split('.');if(p.length>=3){var y=p[2].length===2?('20'+p[2]):p[2];return y+'-'+('0'+p[1]).slice(-2)+'-'+('0'+p[0]).slice(-2);}if(p.length===2)return jahr+'-'+('0'+p[1]).slice(-2)+'-'+('0'+p[0]).slice(-2);}
+  var d=s.replace(/[^0-9]/g,'');
+  if(d.length===4)return jahr+'-'+d.slice(2,4)+'-'+d.slice(0,2);
+  if(d.length===8)return d.slice(4,8)+'-'+d.slice(2,4)+'-'+d.slice(0,2);
+  return jahr+'-01-01';
+}
+function _datevParse(text,jahr){
+  var out={rows:[],errors:[]};
+  if(!text)return out;
+  var lines=text.split(/\r\n|\r|\n/).filter(function(l){return l.trim()!=='';});
+  if(!lines.length)return out;
+  var hdrIdx=-1,cols=null;
+  for(var i=0;i<Math.min(lines.length,6);i++){
+    var c=_splitDatev(lines[i]); var joined=c.join('|').toLowerCase();
+    if(joined.indexOf('konto')>=0&&joined.indexOf('gegenkonto')>=0){hdrIdx=i;cols=c;break;}
+  }
+  var idx={};
+  if(hdrIdx>=0){
+    var find=function(pred){for(var k=0;k<cols.length;k++){if(pred((cols[k]||'').toLowerCase().trim()))return k;}return -1;};
+    idx.umsatz=find(function(n){return n.indexOf('umsatz')>=0&&n.indexOf('wkz')<0&&n.indexOf('basis')<0;});
+    idx.sh=find(function(n){return n.indexOf('soll/haben')>=0||n==='s/h'||(n.indexOf('soll')>=0&&n.indexOf('haben')>=0);});
+    idx.konto=find(function(n){return n==='konto';}); if(idx.konto<0)idx.konto=find(function(n){return n.indexOf('konto')>=0&&n.indexOf('gegen')<0&&n.indexOf('steuer')<0&&n.indexOf('bu')<0;});
+    idx.gegen=find(function(n){return n.indexOf('gegenkonto')>=0;});
+    idx.bu=find(function(n){return (n.indexOf('bu-schl')>=0||n.indexOf('buchungsschl')>=0)&&n.indexOf('gegenkonto')<0&&n.indexOf('ohne')<0;});
+    idx.beleg=find(function(n){return n.indexOf('belegdatum')>=0;});
+    idx.belegf1=find(function(n){return n.indexOf('belegfeld 1')>=0||n.indexOf('belegfeld1')>=0;});
+    idx.text=find(function(n){return n.indexOf('buchungstext')>=0||n==='text';});
+  }
+  var get=function(f,key,pos){var k=(hdrIdx>=0&&idx[key]!=null)?idx[key]:-1;if(k>=0&&k<f.length)return f[k];if(hdrIdx<0&&pos!=null&&pos<f.length)return f[pos];return '';};
+  for(var r=(hdrIdx>=0?hdrIdx+1:0);r<lines.length;r++){
+    var f=_splitDatev(lines[r]); if(f.length<3)continue;
+    var betrag=_datevNum(get(f,'umsatz',0));
+    var sh=(get(f,'sh',1)||'S').toUpperCase().charAt(0)||'S';
+    var konto=(get(f,'konto',6)||'').trim(), gegen=(get(f,'gegen',7)||'').trim();
+    if(!konto||!gegen||!(betrag>0)){out.errors.push('Zeile '+(r+1));continue;}
+    out.rows.push({soll:(sh==='H'?gegen:konto),haben:(sh==='H'?konto:gegen),betrag:betrag,bu:(get(f,'bu',8)||'').trim(),datum:_datevDate(get(f,'beleg',9),jahr),belegnr:(get(f,'belegf1',10)||'').trim(),text:(get(f,'text',13)||'').trim()});
+  }
+  return out;
+}
+function buhaDatevFile(input){
+  var f=input.files&&input.files[0]; if(!f)return;
+  var rd=new FileReader();
+  rd.onload=function(){var t=document.getElementById('buha-imp-text');if(t)t.value=rd.result||'';buhaDatevPreview();};
+  try{rd.readAsText(f,'ISO-8859-1');}catch(e){rd.readAsText(f);}
+}
+function buhaDatevPreview(){
+  var ta=document.getElementById('buha-imp-text'); var text=ta?ta.value:'';
+  var btn=document.getElementById('buha-imp-btn'); var box=document.getElementById('buha-imp-preview');
+  if(!text||!text.trim()){showToast('Bitte Datei laden oder Text einfügen.');return;}
+  var res=_datevParse(text,buha.jahr||new Date().getFullYear());
+  buha._impRows=res.rows;
+  if(!res.rows.length){box.innerHTML='<div style="color:#c0392b;font-size:.82rem;padding:.6rem">Keine gültigen Buchungen erkannt. Erwartet werden Spalten wie Umsatz, Soll/Haben-Kennzeichen, Konto, Gegenkonto, Belegdatum, Buchungstext.</div>';if(btn)btn.disabled=true;return;}
+  var known={}; (buha.konten||[]).forEach(function(k){known[(''+k.nummer)]=true;});
+  var unknownCount=res.rows.filter(function(b){return !known[b.soll]||!known[b.haben];}).length;
+  var rowsHtml=res.rows.slice(0,50).map(function(b){var unk=(!known[b.soll]||!known[b.haben]);
+    return '<tr style="border-bottom:1px solid var(--border)'+(unk?';background:#fff7ed':'')+'"><td style="padding:.3rem .5rem">'+escapeHtml(b.datum)+'</td><td style="padding:.3rem .5rem">'+escapeHtml(b.soll)+'</td><td style="padding:.3rem .5rem">'+escapeHtml(b.haben)+'</td><td style="padding:.3rem .5rem;text-align:right">'+b.betrag.toLocaleString('de-DE',{minimumFractionDigits:2})+'</td><td style="padding:.3rem .5rem">'+escapeHtml(b.bu||'0')+'</td><td style="padding:.3rem .5rem">'+escapeHtml(b.text||'')+'</td></tr>';
+  }).join('');
+  box.innerHTML='<div style="font-size:.82rem;margin-bottom:.4rem"><strong>'+res.rows.length+'</strong> Buchungen erkannt'+(res.errors.length?' · <span style="color:#c0392b">'+res.errors.length+' übersprungen</span>':'')+(unknownCount?' · <span style="color:#d97706">'+unknownCount+' mit (noch) unbekanntem Konto – gelb markiert</span>':'')+'</div>'
+    +'<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.76rem"><thead><tr style="border-bottom:2px solid var(--border)"><th style="padding:.4rem .5rem;text-align:left">Datum</th><th style="padding:.4rem .5rem;text-align:left">Soll</th><th style="padding:.4rem .5rem;text-align:left">Haben</th><th style="padding:.4rem .5rem;text-align:right">Betrag</th><th style="padding:.4rem .5rem;text-align:left">BU</th><th style="padding:.4rem .5rem;text-align:left">Text</th></tr></thead><tbody>'+rowsHtml+'</tbody></table></div>'
+    +(res.rows.length>50?'<div style="font-size:.72rem;color:var(--muted);margin-top:.3rem">… nur die ersten 50 angezeigt; importiert werden alle '+res.rows.length+'.</div>':'');
+  if(btn)btn.disabled=false;
+}
+async function buhaDatevImport(){
+  if(!buha.objektId){showToast('Bitte eine WEG öffnen.');return;}
+  var rows=buha._impRows||[]; if(!rows.length){showToast('Bitte zuerst Vorschau erstellen.');return;}
+  var jahr=buha.jahr||new Date().getFullYear();
+  var lst=(typeof buhaSchluesselListe==='function')?buhaSchluesselListe():[];
+  var defOf=function(sk){return lst.filter(function(s){return s.schluessel===sk;})[0];};
+  var batch=rows.map(function(b){
+    var def=defOf(b.bu||'0'); var satz=def?(parseFloat(def.satz)||0):0;
+    var netto=satz>0?b.betrag/(1+satz/100):b.betrag; var steuer=b.betrag-netto;
+    return {user_id:currentUser.id,objekt_id:buha.objektId,wirtschaftsjahr:jahr,untergemeinschaft_id:buha.ug||null,
+      buchungsdatum:b.datum,belegdatum:b.datum,belegnr:b.belegnr||null,text:b.text||null,
+      soll_konto:b.soll,haben_konto:b.haben,betrag:Math.round(b.betrag*100)/100,
+      schluessel:b.bu||'0',ust_satz:satz,steuer_kz:b.bu||'0',netto:Math.round(netto*100)/100,steuer:Math.round(steuer*100)/100};
+  });
+  try{
+    var n=0;
+    for(var i=0;i<batch.length;i+=200){
+      var ins=await sb.from('weg_buchungen').insert(batch.slice(i,i+200));
+      if(ins.error){showToast('❌ '+ins.error.message);return;}
+      n+=Math.min(200,batch.length-i);
+    }
+    try{await logAudit('datev_import','buchung',null,{anzahl:n,jahr:jahr,kreis:buha.ug||'gesamt'});}catch(e){}
+    showToast('✅ '+n+' Buchungen importiert');
+    buha._impRows=[]; var ta=document.getElementById('buha-imp-text');if(ta)ta.value='';
+    var box=document.getElementById('buha-imp-preview');if(box)box.innerHTML='';
+    var btn=document.getElementById('buha-imp-btn');if(btn)btn.disabled=true;
+    buhaTab('buchen'); await buhaReload();
+  }catch(e){showToast('❌ '+(e.message||e));}
 }
 // Buchungsvorlagen
 async function buhaVorlageSpeichern(){

@@ -3406,7 +3406,26 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
               <span id="mv-warm" style="font-size:1rem;font-weight:800;color:var(--text)">0,00 €</span>
             </div>
           </div>
-          <div class="field" style="margin-bottom:.75rem"><label>MEA <span style="font-size:.7rem;font-weight:400;color:var(--muted)">(z.B. 123/1000)</span></label><input type="text" id="mv-mea" placeholder="123/1000"></div>
+          <div class="field" style="margin-bottom:1rem"><label>MEA <span style="font-size:.7rem;font-weight:400;color:var(--muted)">(z.B. 123/1000)</span></label><input type="text" id="mv-mea" placeholder="123/1000"></div>
+
+          <!-- STAFFELMIETE (#12) -->
+          <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.5rem">📈 Staffelmiete <span style="font-weight:400;text-transform:none">(zeitgesteuerte Mieterhöhung)</span></div>
+          <div id="mv-staffel-list" style="margin-bottom:.5rem"></div>
+          <div style="display:flex;gap:.5rem;align-items:flex-end;flex-wrap:wrap;margin-bottom:1rem">
+            <div class="field" style="flex:0 0 auto"><label>Ab Datum</label><input type="date" id="mv-staffel-datum"></div>
+            <div class="field" style="flex:0 0 auto"><label>Neue Kaltmiete €</label><input type="number" id="mv-staffel-betrag" step="0.01" placeholder="765,00" style="max-width:130px"></div>
+            <button type="button" class="btn-small" onclick="mvStaffelAdd()">+ Staffel</button>
+          </div>
+
+          <!-- EIGENE EINNAHMEN (#13) -->
+          <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.5rem">💶 Eigene Einnahmen <span style="font-weight:400;text-transform:none">(z. B. Stellplatz, Waschmaschine)</span></div>
+          <div id="mv-einnahme-list" style="margin-bottom:.5rem"></div>
+          <div style="display:flex;gap:.5rem;align-items:flex-end;flex-wrap:wrap;margin-bottom:1rem">
+            <div class="field" style="flex:1 1 120px"><label>Bezeichnung</label><input type="text" id="mv-einnahme-bez" placeholder="z. B. Stellplatz"></div>
+            <div class="field" style="flex:0 0 auto"><label>€/Mon.</label><input type="number" id="mv-einnahme-betrag" step="0.01" placeholder="25,00" style="max-width:90px"></div>
+            <div class="field" style="flex:0 0 auto"><label>Kategorie</label><select id="mv-einnahme-kat" style="border:1px solid var(--border);border-radius:8px;padding:.45rem .6rem;font-size:.85rem;font-family:var(--ff);background:var(--bg);outline:none"><option value="nk_vorauszahlung">NK-Vorauszahlung</option><option value="sonstige">Sonstige</option></select></div>
+            <button type="button" class="btn-small" onclick="mvEinnahmeAdd()">+ Einnahme</button>
+          </div>
 
           <div class="field" style="margin-bottom:1rem"><label>Notiz <span style="font-size:.7rem;font-weight:400;color:var(--muted)">(optional)</span></label>
             <textarea id="mv-notiz" rows="2" style="border:1px solid var(--border);border-radius:8px;padding:.5rem .75rem;font-size:.85rem;font-family:var(--ff);width:100%;resize:vertical;outline:none;background:var(--bg);box-sizing:border-box"></textarea>
@@ -7252,6 +7271,11 @@ async function ladeObjektInWizard(){
   var {data:einheiten}=await sb.from('einheiten').select('*').eq('user_id',currentUser.id).eq('objekt_id',objId).order('bezeichnung');
   var {data:mvData}=await sb.from('mietverhaeltnisse').select('*,kontakte(anrede,vorname,nachname)').eq('user_id',currentUser.id).eq('objekt_id',objId).eq('aktiv',true);
 
+  // Eigene Einnahmen vom Typ "NK-Vorauszahlung" je Mietverhältnis (#13) → fließen in die BK-Vorauszahlung der Abrechnung
+  var nkVzByMv={};
+  try{ var einnRes=await sb.from('miet_einnahme').select('mietverhaeltnis_id,betrag,kategorie').eq('user_id',currentUser.id).eq('objekt_id',objId).eq('kategorie','nk_vorauszahlung');
+    (einnRes.data||[]).forEach(function(en){nkVzByMv[en.mietverhaeltnis_id]=(nkVzByMv[en.mietverhaeltnis_id]||0)+(parseFloat(en.betrag)||0);}); }catch(e){}
+
   // Group Mietverhältnisse by Einheit
   var mvByEinheit={};
   (mvData||[]).forEach(function(mv){
@@ -7278,7 +7302,7 @@ async function ladeObjektInWizard(){
           wohneinheit:e.bezeichnung, flaeche:e.flaeche||0,
           mea:mv.mea||null,
           anrede:k.anrede||'',vorname:k.vorname||'',nachname:k.nachname||'',
-          vorausz_bk:mv.vorausz_bk||0, vorausz_hk:mv.vorausz_hk||0, kaltmiete:mv.kaltmiete||0,
+          vorausz_bk:(parseFloat(mv.vorausz_bk)||0)+(nkVzByMv[mv.id]||0), vorausz_hk:mv.vorausz_hk||0, kaltmiete:mv.kaltmiete||0,
           aktiv:mv.aktiv, einzug:mv.einzug, auszug:mv.auszug, ustPflichtig:!!e.ust_pflichtig, einheitId:e.id
         });
       });
@@ -9399,14 +9423,19 @@ async function loadDashboardChart(){
   var firstKey=months[0].key+'-01';
   var soll={},ist={};
   // SOLL = Summe der Kaltmieten aller in dem Monat aktiven Mietverhältnisse (unabhängig davon, ob Zahlungen generiert wurden)
-  var mvRes=await sb.from('mietverhaeltnisse').select('kaltmiete,einzug,auszug,aktiv').eq('user_id',currentUser.id);
+  var mvRes=await sb.from('mietverhaeltnisse').select('id,kaltmiete,einzug,auszug,aktiv').eq('user_id',currentUser.id);
   var mvList=mvRes.data||[];
+  // Staffelmieten laden (zeitgesteuerte Mieterhöhungen) → effektive Kaltmiete je Monat
+  var stByMv={};
+  try{ var stRes=await sb.from('miet_staffel').select('mietverhaeltnis_id,datum,neue_kaltmiete').eq('user_id',currentUser.id);
+    (stRes.data||[]).forEach(function(s){(stByMv[s.mietverhaeltnis_id]=stByMv[s.mietverhaeltnis_id]||[]).push(s);}); }catch(e){}
   months.forEach(function(m){
     var monatStart=m.key+'-01';
     var monatEnde=m.key+'-31';
     var sum=0;
     mvList.forEach(function(mv){
-      var km=parseFloat(mv.kaltmiete)||0; if(!km)return;
+      var km=(typeof _effKaltmiete==='function')?_effKaltmiete(parseFloat(mv.kaltmiete)||0,stByMv[mv.id],monatStart):(parseFloat(mv.kaltmiete)||0);
+      if(!km)return;
       var ein=mv.einzug||'1900-01-01';
       var aus=mv.auszug||'2999-12-31';
       // MV zählt, wenn es in diesem Monat (Überschneidung) bestand
@@ -11947,6 +11976,8 @@ async function openMietverhModal(einheitId,objektId,einheitBez,data){
   if(selEl){selEl.onchange=function(){showKontaktInfo(this.value);};}
   var qk=document.getElementById('mv-quick-kontakt');if(qk)qk.style.display='none';
   mvRecalcWarm();
+  mvLoadStaffeln(data?data.id:null);
+  mvLoadEinnahmen(data?data.id:null);
   document.getElementById('mietverh-modal').style.display='flex';
 }
 function mvRecalcWarm(){
@@ -11956,6 +11987,106 @@ function mvRecalcWarm(){
   if(el)el.textContent=w.toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
 }
 function closeMietverhModal(){document.getElementById('mietverh-modal').style.display='none';}
+
+// ── Staffelmiete (#12) ──
+var _mvStaffeln=[];
+function _effKaltmiete(baseKm, staffeln, dateStr){
+  var km=parseFloat(baseKm)||0;
+  (staffeln||[]).slice().sort(function(a,b){return (a.datum||'').localeCompare(b.datum||'');}).forEach(function(s){
+    if((s.datum||'')<=dateStr) km=parseFloat(s.neue_kaltmiete)||km;
+  });
+  return km;
+}
+async function mvLoadStaffeln(mvId){
+  _mvStaffeln=[];
+  if(mvId){ try{ var r=await sb.from('miet_staffel').select('*').eq('mietverhaeltnis_id',mvId).order('datum',{ascending:true}); if(!r.error)_mvStaffeln=r.data||[]; }catch(e){} }
+  mvRenderStaffeln(mvId);
+}
+function mvRenderStaffeln(mvId){
+  var el=document.getElementById('mv-staffel-list'); if(!el)return;
+  if(!mvId){el.innerHTML='<div style="font-size:.78rem;color:var(--muted)">Mietverhältnis zuerst speichern, dann Staffeln hinzufügen.</div>';return;}
+  if(!_mvStaffeln.length){el.innerHTML='<div style="font-size:.78rem;color:var(--muted)">Keine Staffeln – es gilt die Kaltmiete oben.</div>';return;}
+  var baseKm=parseFloat((document.getElementById('mv-kaltmiete')||{}).value)||0;
+  var today=new Date().toISOString().slice(0,10);
+  var eff=_effKaltmiete(baseKm,_mvStaffeln,today);
+  var fmt=function(v){return (parseFloat(v)||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});};
+  var dfmt=function(d){var p=(''+d).slice(0,10).split('-');return p.length===3?p[2]+'.'+p[1]+'.'+p[0]:d;};
+  var h='<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden">';
+  _mvStaffeln.forEach(function(s){
+    var future=(s.datum||'')>today;
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem .6rem;border-bottom:1px solid var(--border);font-size:.82rem">'
+      +'<span>ab <strong>'+dfmt(s.datum)+'</strong>'+(future?' <span style="font-size:.7rem;color:var(--muted)">(geplant)</span>':'')+'</span>'
+      +'<span style="display:flex;align-items:center;gap:.6rem"><strong>'+fmt(s.neue_kaltmiete)+' €</strong>'
+      +'<button type="button" onclick="mvStaffelDel(\''+s.id+'\')" style="border:none;background:none;cursor:pointer;color:#dc2626;font-size:.9rem">✕</button></span></div>';
+  });
+  h+='</div><div style="font-size:.78rem;color:var(--muted);margin-top:.35rem">Aktuell gültige Kaltmiete ('+dfmt(today)+'): <strong style="color:var(--text)">'+fmt(eff)+' €</strong></div>';
+  el.innerHTML=h;
+}
+async function mvStaffelAdd(){
+  var mvId=document.getElementById('mv-edit-id').value;
+  if(!mvId){showToast('Bitte das Mietverhältnis zuerst speichern.');return;}
+  var d=document.getElementById('mv-staffel-datum').value;
+  var b=parseFloat(document.getElementById('mv-staffel-betrag').value);
+  if(!d){showToast('Bitte Datum angeben');return;}
+  if(!b||b<=0){showToast('Bitte gültige neue Kaltmiete angeben');return;}
+  try{
+    var objId=document.getElementById('mv-objekt-id').value||null;
+    var r=await sb.from('miet_staffel').insert({user_id:currentUser.id,mietverhaeltnis_id:mvId,objekt_id:objId,datum:d,neue_kaltmiete:b});
+    if(r.error){showToast('Fehler: '+r.error.message);return;}
+    document.getElementById('mv-staffel-datum').value=''; document.getElementById('mv-staffel-betrag').value='';
+    showToast('Staffel hinzugefügt'); mvLoadStaffeln(mvId);
+  }catch(e){showToast('Fehler: '+e.message);}
+}
+async function mvStaffelDel(id){
+  try{ var r=await sb.from('miet_staffel').delete().eq('id',id); if(r.error){showToast('Fehler: '+r.error.message);return;} mvLoadStaffeln(document.getElementById('mv-edit-id').value); }catch(e){showToast('Fehler: '+e.message);}
+}
+
+// ── Eigene Einnahmen (#13) ──
+var _mvEinnahmen=[];
+async function mvLoadEinnahmen(mvId){
+  _mvEinnahmen=[];
+  if(mvId){ try{ var r=await sb.from('miet_einnahme').select('*').eq('mietverhaeltnis_id',mvId).order('created_at',{ascending:true}); if(!r.error)_mvEinnahmen=r.data||[]; }catch(e){} }
+  mvRenderEinnahmen(mvId);
+}
+function mvRenderEinnahmen(mvId){
+  var el=document.getElementById('mv-einnahme-list'); if(!el)return;
+  if(!mvId){el.innerHTML='<div style="font-size:.78rem;color:var(--muted)">Mietverhältnis zuerst speichern, dann Einnahmen hinzufügen.</div>';return;}
+  if(!_mvEinnahmen.length){el.innerHTML='<div style="font-size:.78rem;color:var(--muted)">Keine eigenen Einnahmen erfasst.</div>';return;}
+  var fmt=function(v){return (parseFloat(v)||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});};
+  var katLbl={nk_vorauszahlung:'NK-VZ',sonstige:'Sonstige'};
+  var katCol={nk_vorauszahlung:'#157f3c',sonstige:'#6b7280'};
+  var h='<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden">';
+  _mvEinnahmen.forEach(function(e){
+    var kc=katCol[e.kategorie]||'#6b7280';
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem .6rem;border-bottom:1px solid var(--border);font-size:.82rem">'
+      +'<span><strong>'+escapeHtml(e.bezeichnung||'(ohne)')+'</strong> <span style="font-size:.66rem;font-weight:700;padding:.08rem .35rem;border-radius:5px;background:'+kc+'18;color:'+kc+'">'+(katLbl[e.kategorie]||e.kategorie)+'</span></span>'
+      +'<span style="display:flex;align-items:center;gap:.6rem"><strong>'+fmt(e.betrag)+' €</strong>'
+      +'<button type="button" onclick="mvEinnahmeDel(\''+e.id+'\')" style="border:none;background:none;cursor:pointer;color:#dc2626;font-size:.9rem">✕</button></span></div>';
+  });
+  var sumNk=_mvEinnahmen.filter(function(e){return e.kategorie==='nk_vorauszahlung';}).reduce(function(s,e){return s+(parseFloat(e.betrag)||0);},0);
+  h+='</div><div style="font-size:.78rem;color:var(--muted);margin-top:.35rem">Davon NK-Vorauszahlung: <strong style="color:#157f3c">'+fmt(sumNk)+' €/Mon.</strong> (fließt in die NK-Abrechnung ein)</div>';
+  el.innerHTML=h;
+}
+async function mvEinnahmeAdd(){
+  var mvId=document.getElementById('mv-edit-id').value;
+  if(!mvId){showToast('Bitte das Mietverhältnis zuerst speichern.');return;}
+  var bez=(document.getElementById('mv-einnahme-bez').value||'').trim();
+  var b=parseFloat(document.getElementById('mv-einnahme-betrag').value);
+  var kat=document.getElementById('mv-einnahme-kat').value;
+  if(!bez){showToast('Bitte Bezeichnung angeben');return;}
+  if(!b||b<=0){showToast('Bitte gültigen Betrag angeben');return;}
+  try{
+    var objId=document.getElementById('mv-objekt-id').value||null;
+    var einId=document.getElementById('mv-einheit-id').value||null;
+    var r=await sb.from('miet_einnahme').insert({user_id:currentUser.id,mietverhaeltnis_id:mvId,einheit_id:einId,objekt_id:objId,bezeichnung:bez,betrag:b,kategorie:kat});
+    if(r.error){showToast('Fehler: '+r.error.message);return;}
+    document.getElementById('mv-einnahme-bez').value=''; document.getElementById('mv-einnahme-betrag').value='';
+    showToast('Einnahme hinzugefügt'); mvLoadEinnahmen(mvId);
+  }catch(e){showToast('Fehler: '+e.message);}
+}
+async function mvEinnahmeDel(id){
+  try{ var r=await sb.from('miet_einnahme').delete().eq('id',id); if(r.error){showToast('Fehler: '+r.error.message);return;} mvLoadEinnahmen(document.getElementById('mv-edit-id').value); }catch(e){showToast('Fehler: '+e.message);}
+}
 
 async function saveMietverhaeltnis(){
   var id=document.getElementById('mv-edit-id').value;

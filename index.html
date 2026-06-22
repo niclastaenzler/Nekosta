@@ -1761,12 +1761,13 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                 </div>
                 <select id="buha-jahr" onchange="buhaReload()" style="border:1px solid var(--border);border-radius:8px;padding:.45rem .7rem;font-size:.84rem;font-family:var(--ff);background:var(--white);outline:none"></select>
               </div>
-              <!-- Tabs -->
-              <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:1.1rem;flex-wrap:wrap">
+              <!-- Tabs (Hausgeld ist ein eigenes Cockpit-Modul, daher hier KEIN Hausgeld-Tab) -->
+              <div id="buha-tabbar" style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:1.1rem;flex-wrap:wrap">
                 <button type="button" id="buha-tab-buchen" onclick="buhaTab('buchen')" style="background:none;border:none;border-bottom:2px solid var(--p);margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;font-weight:700;color:var(--p);font-family:var(--ff)"><span class="btn-ic" data-icon="pencil"></span> Buchungen</button>
-                <button type="button" id="buha-tab-hausgeld" onclick="buhaTab('hausgeld')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:var(--ff)"><span class="btn-ic" data-icon="euro"></span> Hausgeld</button>
+                <button type="button" id="buha-tab-op" onclick="buhaTab('op')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:var(--ff)"><span class="btn-ic" data-icon="users"></span> Debitoren/Kreditoren</button>
                 <button type="button" id="buha-tab-konten" onclick="buhaTab('konten')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:var(--ff)"><span class="btn-ic" data-icon="bookopen"></span> Kontenrahmen</button>
                 <button type="button" id="buha-tab-ausw" onclick="buhaTab('ausw')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:var(--ff)"><span class="btn-ic" data-icon="barchart"></span> Auswertungen</button>
+                <button type="button" id="buha-tab-import" onclick="buhaTab('import')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:var(--ff)"><span class="btn-ic" data-icon="download"></span> DATEV-Import</button>
                 <button type="button" id="buha-tab-audit" onclick="buhaTab('audit')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:var(--ff)"><span class="btn-ic" data-icon="shield"></span> Audit</button>
               </div>
               <!-- TAB: BUCHEN -->
@@ -1806,6 +1807,20 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                   <datalist id="buha-konten-dl"></datalist>
                 </div>
               </div>
+              <!-- TAB: DATEV-IMPORT -->
+              <div id="buha-pane-import" style="display:none">
+                <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:1rem 1.1rem;margin-bottom:1rem">
+                  <div style="font-size:.9rem;font-weight:700;margin-bottom:.5rem"><span class="btn-ic" data-icon="download"></span> DATEV-Buchungsstapel importieren</div>
+                  <div style="font-size:.78rem;color:var(--muted);margin-bottom:.8rem">Lade eine DATEV-Export-Datei (Buchungsstapel als CSV/EXTF) hoch oder füge den Inhalt unten ein. Die Buchungen werden dem aktuellen Buchungskreis (<strong id="buha-imp-kreis">Gesamt-WEG</strong>) und dem gewählten Wirtschaftsjahr zugeordnet. Vor dem Import siehst du eine Vorschau.</div>
+                  <div style="display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;margin-bottom:.7rem">
+                    <input type="file" id="buha-imp-file" accept=".csv,.txt,.extf" onchange="buhaDatevFile(this)" style="font-size:.8rem">
+                    <button class="btn-secondary" onclick="buhaDatevPreview()"><span class="btn-ic" data-icon="search"></span> Vorschau</button>
+                    <button class="btn-primary" id="buha-imp-btn" onclick="buhaDatevImport()" disabled><span class="btn-ic" data-icon="check"></span> Importieren</button>
+                  </div>
+                  <textarea id="buha-imp-text" rows="5" placeholder="…oder DATEV-CSV hier einfügen (Kopfzeile mit: Umsatz; Soll/Haben-Kennzeichen; Konto; Gegenkonto; BU-Schlüssel; Belegdatum; Belegfeld 1; Buchungstext …)" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:.6rem;font-size:.76rem;font-family:monospace;resize:vertical;box-sizing:border-box" oninput="var b=document.getElementById('buha-imp-btn');if(b)b.disabled=true"></textarea>
+                </div>
+                <div id="buha-imp-preview"></div>
+              </div>
               <!-- TAB: HAUSGELD & OFFENE POSTEN -->
               <div id="buha-pane-hausgeld" style="display:none">
                 <div id="hg-kpis" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.6rem;margin-bottom:1rem"></div>
@@ -1818,6 +1833,36 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                 </div>
                 <div id="hg-content" style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow-x:auto"></div>
                 <div style="font-size:.72rem;color:var(--muted);margin-top:.6rem">💡 Das monatliche Hausgeld stammt aus dem Feld „Hausgeld" je Eigentümer (Reiter „Eigentümer"). Sollstellungen werden monatlich für das gewählte Wirtschaftsjahr erzeugt; bezahlte Posten kannst du als Zahlungseingang markieren.</div>
+              </div>
+              <!-- TAB: DEBITOREN / KREDITOREN (offene Posten) -->
+              <div id="buha-pane-op" style="display:none">
+                <div id="op-kpis" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.6rem;margin-bottom:1rem"></div>
+                <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:.85rem 1rem;margin-bottom:1rem">
+                  <div style="font-size:.8rem;font-weight:700;margin-bottom:.6rem">Offenen Posten erfassen</div>
+                  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:.5rem;align-items:end">
+                    <div><label>Art</label><select id="op-typ" class="buha-inp"><option value="kreditor">Kreditor (wir zahlen)</option><option value="debitor">Debitor (zahlt an uns)</option></select></div>
+                    <div style="grid-column:span 2"><label>Partner</label><input type="text" id="op-partner" class="buha-inp" placeholder="Name / Firma"></div>
+                    <div><label>Betrag brutto (€)</label><input type="text" inputmode="decimal" id="op-betrag" class="buha-inp" placeholder="0,00"></div>
+                    <div><label>Rechnungsdatum</label><input type="date" id="op-datum" class="buha-inp"></div>
+                    <div><label>Fällig am</label><input type="date" id="op-faellig" class="buha-inp"></div>
+                    <div><label>Beleg-Nr.</label><input type="text" id="op-belegnr" class="buha-inp" placeholder="optional"></div>
+                    <div style="grid-column:span 2"><label>Text</label><input type="text" id="op-text" class="buha-inp" placeholder="z. B. Heizöl-Lieferung"></div>
+                    <div style="display:flex;flex-direction:column;justify-content:flex-end"><button class="btn-primary" style="white-space:nowrap;padding:.45rem .7rem" onclick="opSave()"><span class="btn-ic" data-icon="plus"></span> Erfassen</button></div>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.7rem">
+                  <select id="op-filter" onchange="renderOP()" style="border:1px solid var(--border);border-radius:8px;padding:.45rem .7rem;font-size:.82rem;font-family:var(--ff);background:var(--white);outline:none">
+                    <option value="alle">Alle Posten</option>
+                    <option value="offen">Nur offene</option>
+                    <option value="ueberfaellig">Nur überfällige</option>
+                    <option value="debitor">Nur Debitoren</option>
+                    <option value="kreditor">Nur Kreditoren</option>
+                    <option value="bezahlt">Nur bezahlte</option>
+                  </select>
+                  <span style="margin-left:auto"><button class="btn-small" onclick="opCsv()"><span class="btn-ic" data-icon="download"></span> CSV</button></span>
+                </div>
+                <div id="op-content" style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow-x:auto"></div>
+                <div style="font-size:.72rem;color:var(--muted);margin-top:.6rem">💡 <strong>Debitoren</strong> = Forderungen der WEG (jemand schuldet uns). <strong>Kreditoren</strong> = Verbindlichkeiten (wir schulden, z. B. Dienstleister-Rechnung). „Als bezahlt" schließt den Posten.</div>
               </div>
               <!-- TAB: KONTENRAHMEN -->
               <div id="buha-pane-konten" style="display:none">
@@ -1836,6 +1881,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                   <select id="ausw-typ" onchange="renderAuswertungen()" style="border:1px solid var(--border);border-radius:8px;padding:.45rem .7rem;font-size:.84rem;font-family:var(--ff);background:var(--white);outline:none">
                     <option value="salden">Summen- &amp; Saldenliste</option>
                     <option value="euer">Einnahmen-Ausgaben-Rechnung (EÜR)</option>
+                    <option value="ksug">Kostenstellen je Untergemeinschaft</option>
                     <option value="kontenblatt">Kontenblatt</option>
                   </select>
                   <select id="ausw-konto" onchange="renderAuswertungen()" style="display:none;border:1px solid var(--border);border-radius:8px;padding:.45rem .7rem;font-size:.84rem;font-family:var(--ff);background:var(--white);outline:none"></select>
@@ -1874,6 +1920,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                 <option value="Wohnung">Wohnung</option>
                 <option value="Gewerbe">Gewerbe</option>
                 <option value="Stellplatz">Stellplatz / Garage</option>
+                <option value="Tiefgarage">Tiefgaragenstellplatz</option>
                 <option value="Keller">Keller / Sonstiges</option>
               </select>
             </div>
@@ -1947,7 +1994,9 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
             <select id="ein-typ" style="border:1px solid var(--border);border-radius:var(--r);padding:.48rem .72rem;font-size:.86rem;font-family:var(--ff);background:var(--bg);outline:none;width:100%">
               <option value="Wohnung">Wohnung</option>
               <option value="Gewerbe">Gewerbe</option>
-              <option value="Garage">Garage/Stellplatz</option>
+              <option value="Stellplatz">Stellplatz</option>
+              <option value="Tiefgarage">Tiefgaragenstellplatz</option>
+              <option value="Garage">Garage</option>
               <option value="Lager">Lager</option>
               <option value="Sonstiges">Sonstiges</option>
             </select>
@@ -3394,11 +3443,34 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
           </div>
 
           <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.65rem">💰 Miete &amp; Vorauszahlungen</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem">
-            <div class="field"><label>Kaltmiete €/Mon.</label><input type="number" id="mv-kaltmiete" placeholder="750,00" step="0.01"></div>
-            <div class="field"><label>BK-Vorauszahlung €/Mon.</label><input type="number" id="mv-bk" placeholder="120,00" step="0.01"></div>
-            <div class="field"><label>HK-Vorauszahlung €/Mon.</label><input type="number" id="mv-hk" placeholder="80,00" step="0.01"></div>
-            <div class="field"><label>MEA <span style="font-size:.7rem;font-weight:400;color:var(--muted)">(z.B. 123/1000)</span></label><input type="text" id="mv-mea" placeholder="123/1000"></div>
+          <div style="display:flex;flex-direction:column;gap:.55rem;margin-bottom:.6rem">
+            <div class="field"><label>Kaltmiete €/Mon.</label><input type="number" id="mv-kaltmiete" placeholder="750,00" step="0.01" oninput="mvRecalcWarm()"></div>
+            <div class="field"><label>+ BK-Vorauszahlung €/Mon.</label><input type="number" id="mv-bk" placeholder="120,00" step="0.01" oninput="mvRecalcWarm()"></div>
+            <div class="field"><label>+ HK-Vorauszahlung €/Mon.</label><input type="number" id="mv-hk" placeholder="80,00" step="0.01" oninput="mvRecalcWarm()"></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:.55rem .8rem;background:var(--bg);border:1px solid var(--border);border-radius:8px">
+              <span style="font-size:.8rem;font-weight:600;color:var(--muted)">= Gesamtmiete (warm) €/Mon.</span>
+              <span id="mv-warm" style="font-size:1rem;font-weight:800;color:var(--text)">0,00 €</span>
+            </div>
+          </div>
+          <div class="field" style="margin-bottom:1rem"><label>MEA <span style="font-size:.7rem;font-weight:400;color:var(--muted)">(z.B. 123/1000)</span></label><input type="text" id="mv-mea" placeholder="123/1000"></div>
+
+          <!-- STAFFELMIETE (#12) -->
+          <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.5rem">📈 Staffelmiete <span style="font-weight:400;text-transform:none">(zeitgesteuerte Mieterhöhung)</span></div>
+          <div id="mv-staffel-list" style="margin-bottom:.5rem"></div>
+          <div style="display:flex;gap:.5rem;align-items:flex-end;flex-wrap:wrap;margin-bottom:1rem">
+            <div class="field" style="flex:0 0 auto"><label>Ab Datum</label><input type="date" id="mv-staffel-datum"></div>
+            <div class="field" style="flex:0 0 auto"><label>Neue Kaltmiete €</label><input type="number" id="mv-staffel-betrag" step="0.01" placeholder="765,00" style="max-width:130px"></div>
+            <button type="button" class="btn-small" onclick="mvStaffelAdd()">+ Staffel</button>
+          </div>
+
+          <!-- EIGENE EINNAHMEN (#13) -->
+          <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.5rem">💶 Eigene Einnahmen <span style="font-weight:400;text-transform:none">(z. B. Stellplatz, Waschmaschine)</span></div>
+          <div id="mv-einnahme-list" style="margin-bottom:.5rem"></div>
+          <div style="display:flex;gap:.5rem;align-items:flex-end;flex-wrap:wrap;margin-bottom:1rem">
+            <div class="field" style="flex:1 1 120px"><label>Bezeichnung</label><input type="text" id="mv-einnahme-bez" placeholder="z. B. Stellplatz"></div>
+            <div class="field" style="flex:0 0 auto"><label>€/Mon.</label><input type="number" id="mv-einnahme-betrag" step="0.01" placeholder="25,00" style="max-width:90px"></div>
+            <div class="field" style="flex:0 0 auto"><label>Kategorie</label><select id="mv-einnahme-kat" style="border:1px solid var(--border);border-radius:8px;padding:.45rem .6rem;font-size:.85rem;font-family:var(--ff);background:var(--bg);outline:none"><option value="nk_vorauszahlung">NK-Vorauszahlung</option><option value="sonstige">Sonstige</option></select></div>
+            <button type="button" class="btn-small" onclick="mvEinnahmeAdd()">+ Einnahme</button>
           </div>
 
           <div class="field" style="margin-bottom:1rem"><label>Notiz <span style="font-size:.7rem;font-weight:400;color:var(--muted)">(optional)</span></label>
@@ -7245,6 +7317,11 @@ async function ladeObjektInWizard(){
   var {data:einheiten}=await sb.from('einheiten').select('*').eq('user_id',currentUser.id).eq('objekt_id',objId).order('bezeichnung');
   var {data:mvData}=await sb.from('mietverhaeltnisse').select('*,kontakte(anrede,vorname,nachname)').eq('user_id',currentUser.id).eq('objekt_id',objId).eq('aktiv',true);
 
+  // Eigene Einnahmen vom Typ "NK-Vorauszahlung" je Mietverhältnis (#13) → fließen in die BK-Vorauszahlung der Abrechnung
+  var nkVzByMv={};
+  try{ var einnRes=await sb.from('miet_einnahme').select('mietverhaeltnis_id,betrag,kategorie').eq('user_id',currentUser.id).eq('objekt_id',objId).eq('kategorie','nk_vorauszahlung');
+    (einnRes.data||[]).forEach(function(en){nkVzByMv[en.mietverhaeltnis_id]=(nkVzByMv[en.mietverhaeltnis_id]||0)+(parseFloat(en.betrag)||0);}); }catch(e){}
+
   // Group Mietverhältnisse by Einheit
   var mvByEinheit={};
   (mvData||[]).forEach(function(mv){
@@ -7271,7 +7348,7 @@ async function ladeObjektInWizard(){
           wohneinheit:e.bezeichnung, flaeche:e.flaeche||0,
           mea:mv.mea||null,
           anrede:k.anrede||'',vorname:k.vorname||'',nachname:k.nachname||'',
-          vorausz_bk:mv.vorausz_bk||0, vorausz_hk:mv.vorausz_hk||0, kaltmiete:mv.kaltmiete||0,
+          vorausz_bk:(parseFloat(mv.vorausz_bk)||0)+(nkVzByMv[mv.id]||0), vorausz_hk:mv.vorausz_hk||0, kaltmiete:mv.kaltmiete||0,
           aktiv:mv.aktiv, einzug:mv.einzug, auszug:mv.auszug, ustPflichtig:!!e.ust_pflichtig, einheitId:e.id
         });
       });
@@ -8644,7 +8721,7 @@ async function buhaReload(){
 }
 
 function buhaTab(t){
-  ['buchen','hausgeld','konten','ausw','audit'].forEach(function(x){
+  ['buchen','hausgeld','op','konten','ausw','import','audit'].forEach(function(x){
     var pane=document.getElementById('buha-pane-'+x); if(pane)pane.style.display=(x===t?'block':'none');
     var btn=document.getElementById('buha-tab-'+x);
     if(btn){var on=x===t;btn.style.color=on?'var(--p)':'var(--muted)';btn.style.fontWeight=on?'700':'400';btn.style.borderBottomColor=on?'var(--p)':'transparent';}
@@ -8652,6 +8729,8 @@ function buhaTab(t){
   if(t==='audit')renderBuhaAudit();
   if(t==='ausw')renderAuswertungen();
   if(t==='hausgeld')ladeHausgeld();
+  if(t==='op')ladeOP();
+  if(t==='import'){var kr=document.getElementById('buha-imp-kreis');if(kr){var ug=(buha.ugListe||[]).filter(function(u){return u.id===buha.ug;})[0];kr.textContent=ug?ug.name:'Gesamt-WEG';}}
 }
 
 // ── BUCHUNGSSCHLÜSSEL (DATEV-Stil, konfigurierbar via weg_steuerschluessel) ──
@@ -8846,6 +8925,108 @@ async function buhaSaveBuchung(){
   await buhaReload();
   var f=document.getElementById('bu-soll'); if(f)f.focus();
 }
+// ── DATEV-Import (#9): Buchungsstapel (CSV/EXTF) einspielen ──
+function _splitDatev(line){
+  return line.split(';').map(function(s){s=s.trim();if(s.length>=2&&s.charAt(0)==='"'&&s.charAt(s.length-1)==='"')s=s.slice(1,-1);return s.replace(/""/g,'"');});
+}
+function _datevNum(s){
+  s=(''+(s==null?'':s)).trim(); if(!s)return 0;
+  s=s.replace(/\./g,'').replace(',','.').replace(/[^0-9.\-]/g,'');
+  var n=parseFloat(s); return isNaN(n)?0:Math.abs(n);
+}
+function _datevDate(s,jahr){
+  s=(''+(s||'')).trim(); if(!s)return jahr+'-01-01';
+  if(s.indexOf('.')>=0){var p=s.split('.');if(p.length>=3){var y=p[2].length===2?('20'+p[2]):p[2];return y+'-'+('0'+p[1]).slice(-2)+'-'+('0'+p[0]).slice(-2);}if(p.length===2)return jahr+'-'+('0'+p[1]).slice(-2)+'-'+('0'+p[0]).slice(-2);}
+  var d=s.replace(/[^0-9]/g,'');
+  if(d.length===4)return jahr+'-'+d.slice(2,4)+'-'+d.slice(0,2);
+  if(d.length===8)return d.slice(4,8)+'-'+d.slice(2,4)+'-'+d.slice(0,2);
+  return jahr+'-01-01';
+}
+function _datevParse(text,jahr){
+  var out={rows:[],errors:[]};
+  if(!text)return out;
+  var lines=text.split(/\r\n|\r|\n/).filter(function(l){return l.trim()!=='';});
+  if(!lines.length)return out;
+  var hdrIdx=-1,cols=null;
+  for(var i=0;i<Math.min(lines.length,6);i++){
+    var c=_splitDatev(lines[i]); var joined=c.join('|').toLowerCase();
+    if(joined.indexOf('konto')>=0&&joined.indexOf('gegenkonto')>=0){hdrIdx=i;cols=c;break;}
+  }
+  var idx={};
+  if(hdrIdx>=0){
+    var find=function(pred){for(var k=0;k<cols.length;k++){if(pred((cols[k]||'').toLowerCase().trim()))return k;}return -1;};
+    idx.umsatz=find(function(n){return n.indexOf('umsatz')>=0&&n.indexOf('wkz')<0&&n.indexOf('basis')<0;});
+    idx.sh=find(function(n){return n.indexOf('soll/haben')>=0||n==='s/h'||(n.indexOf('soll')>=0&&n.indexOf('haben')>=0);});
+    idx.konto=find(function(n){return n==='konto';}); if(idx.konto<0)idx.konto=find(function(n){return n.indexOf('konto')>=0&&n.indexOf('gegen')<0&&n.indexOf('steuer')<0&&n.indexOf('bu')<0;});
+    idx.gegen=find(function(n){return n.indexOf('gegenkonto')>=0;});
+    idx.bu=find(function(n){return (n.indexOf('bu-schl')>=0||n.indexOf('buchungsschl')>=0)&&n.indexOf('gegenkonto')<0&&n.indexOf('ohne')<0;});
+    idx.beleg=find(function(n){return n.indexOf('belegdatum')>=0;});
+    idx.belegf1=find(function(n){return n.indexOf('belegfeld 1')>=0||n.indexOf('belegfeld1')>=0;});
+    idx.text=find(function(n){return n.indexOf('buchungstext')>=0||n==='text';});
+  }
+  var get=function(f,key,pos){var k=(hdrIdx>=0&&idx[key]!=null)?idx[key]:-1;if(k>=0&&k<f.length)return f[k];if(hdrIdx<0&&pos!=null&&pos<f.length)return f[pos];return '';};
+  for(var r=(hdrIdx>=0?hdrIdx+1:0);r<lines.length;r++){
+    var f=_splitDatev(lines[r]); if(f.length<3)continue;
+    var betrag=_datevNum(get(f,'umsatz',0));
+    var sh=(get(f,'sh',1)||'S').toUpperCase().charAt(0)||'S';
+    var konto=(get(f,'konto',6)||'').trim(), gegen=(get(f,'gegen',7)||'').trim();
+    if(!konto||!gegen||!(betrag>0)){out.errors.push('Zeile '+(r+1));continue;}
+    out.rows.push({soll:(sh==='H'?gegen:konto),haben:(sh==='H'?konto:gegen),betrag:betrag,bu:(get(f,'bu',8)||'').trim(),datum:_datevDate(get(f,'beleg',9),jahr),belegnr:(get(f,'belegf1',10)||'').trim(),text:(get(f,'text',13)||'').trim()});
+  }
+  return out;
+}
+function buhaDatevFile(input){
+  var f=input.files&&input.files[0]; if(!f)return;
+  var rd=new FileReader();
+  rd.onload=function(){var t=document.getElementById('buha-imp-text');if(t)t.value=rd.result||'';buhaDatevPreview();};
+  try{rd.readAsText(f,'ISO-8859-1');}catch(e){rd.readAsText(f);}
+}
+function buhaDatevPreview(){
+  var ta=document.getElementById('buha-imp-text'); var text=ta?ta.value:'';
+  var btn=document.getElementById('buha-imp-btn'); var box=document.getElementById('buha-imp-preview');
+  if(!text||!text.trim()){showToast('Bitte Datei laden oder Text einfügen.');return;}
+  var res=_datevParse(text,buha.jahr||new Date().getFullYear());
+  buha._impRows=res.rows;
+  if(!res.rows.length){box.innerHTML='<div style="color:#c0392b;font-size:.82rem;padding:.6rem">Keine gültigen Buchungen erkannt. Erwartet werden Spalten wie Umsatz, Soll/Haben-Kennzeichen, Konto, Gegenkonto, Belegdatum, Buchungstext.</div>';if(btn)btn.disabled=true;return;}
+  var known={}; (buha.konten||[]).forEach(function(k){known[(''+k.nummer)]=true;});
+  var unknownCount=res.rows.filter(function(b){return !known[b.soll]||!known[b.haben];}).length;
+  var rowsHtml=res.rows.slice(0,50).map(function(b){var unk=(!known[b.soll]||!known[b.haben]);
+    return '<tr style="border-bottom:1px solid var(--border)'+(unk?';background:#fff7ed':'')+'"><td style="padding:.3rem .5rem">'+escapeHtml(b.datum)+'</td><td style="padding:.3rem .5rem">'+escapeHtml(b.soll)+'</td><td style="padding:.3rem .5rem">'+escapeHtml(b.haben)+'</td><td style="padding:.3rem .5rem;text-align:right">'+b.betrag.toLocaleString('de-DE',{minimumFractionDigits:2})+'</td><td style="padding:.3rem .5rem">'+escapeHtml(b.bu||'0')+'</td><td style="padding:.3rem .5rem">'+escapeHtml(b.text||'')+'</td></tr>';
+  }).join('');
+  box.innerHTML='<div style="font-size:.82rem;margin-bottom:.4rem"><strong>'+res.rows.length+'</strong> Buchungen erkannt'+(res.errors.length?' · <span style="color:#c0392b">'+res.errors.length+' übersprungen</span>':'')+(unknownCount?' · <span style="color:#d97706">'+unknownCount+' mit (noch) unbekanntem Konto – gelb markiert</span>':'')+'</div>'
+    +'<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.76rem"><thead><tr style="border-bottom:2px solid var(--border)"><th style="padding:.4rem .5rem;text-align:left">Datum</th><th style="padding:.4rem .5rem;text-align:left">Soll</th><th style="padding:.4rem .5rem;text-align:left">Haben</th><th style="padding:.4rem .5rem;text-align:right">Betrag</th><th style="padding:.4rem .5rem;text-align:left">BU</th><th style="padding:.4rem .5rem;text-align:left">Text</th></tr></thead><tbody>'+rowsHtml+'</tbody></table></div>'
+    +(res.rows.length>50?'<div style="font-size:.72rem;color:var(--muted);margin-top:.3rem">… nur die ersten 50 angezeigt; importiert werden alle '+res.rows.length+'.</div>':'');
+  if(btn)btn.disabled=false;
+}
+async function buhaDatevImport(){
+  if(!buha.objektId){showToast('Bitte eine WEG öffnen.');return;}
+  var rows=buha._impRows||[]; if(!rows.length){showToast('Bitte zuerst Vorschau erstellen.');return;}
+  var jahr=buha.jahr||new Date().getFullYear();
+  var lst=(typeof buhaSchluesselListe==='function')?buhaSchluesselListe():[];
+  var defOf=function(sk){return lst.filter(function(s){return s.schluessel===sk;})[0];};
+  var batch=rows.map(function(b){
+    var def=defOf(b.bu||'0'); var satz=def?(parseFloat(def.satz)||0):0;
+    var netto=satz>0?b.betrag/(1+satz/100):b.betrag; var steuer=b.betrag-netto;
+    return {user_id:currentUser.id,objekt_id:buha.objektId,wirtschaftsjahr:jahr,untergemeinschaft_id:buha.ug||null,
+      buchungsdatum:b.datum,belegdatum:b.datum,belegnr:b.belegnr||null,text:b.text||null,
+      soll_konto:b.soll,haben_konto:b.haben,betrag:Math.round(b.betrag*100)/100,
+      schluessel:b.bu||'0',ust_satz:satz,steuer_kz:b.bu||'0',netto:Math.round(netto*100)/100,steuer:Math.round(steuer*100)/100};
+  });
+  try{
+    var n=0;
+    for(var i=0;i<batch.length;i+=200){
+      var ins=await sb.from('weg_buchungen').insert(batch.slice(i,i+200));
+      if(ins.error){showToast('❌ '+ins.error.message);return;}
+      n+=Math.min(200,batch.length-i);
+    }
+    try{await logAudit('datev_import','buchung',null,{anzahl:n,jahr:jahr,kreis:buha.ug||'gesamt'});}catch(e){}
+    showToast('✅ '+n+' Buchungen importiert');
+    buha._impRows=[]; var ta=document.getElementById('buha-imp-text');if(ta)ta.value='';
+    var box=document.getElementById('buha-imp-preview');if(box)box.innerHTML='';
+    var btn=document.getElementById('buha-imp-btn');if(btn)btn.disabled=true;
+    buhaTab('buchen'); await buhaReload();
+  }catch(e){showToast('❌ '+(e.message||e));}
+}
 // Buchungsvorlagen
 async function buhaVorlageSpeichern(){
   var name=prompt('Name der Buchungsvorlage (z. B. „Gebäudeversicherung"):',buhaVal('bu-text')||'');
@@ -8966,6 +9147,84 @@ function buhaExportCsv(){
 }
 async function logAudit(aktion,entity,entityId,detail){
   try{await sb.from('weg_audit').insert({user_id:currentUser.id,objekt_id:buha.objektId,aktion:aktion,entity:entity,entity_id:entityId,detail:detail||{}});}catch(e){}
+}
+
+// ── DEBITOREN / KREDITOREN – offene Posten (#8) ──
+async function ladeOP(){
+  if(!buha.objektId)return;
+  try{
+    var r=await sb.from('weg_op').select('*').eq('user_id',currentUser.id).eq('objekt_id',buha.objektId).order('faellig_am',{ascending:true}).order('created_at',{ascending:false});
+    if(r.error)throw r.error; buha._op=r.data||[];
+  }catch(e){showToast('❌ '+(e.message||e));buha._op=[];}
+  renderOP();
+}
+function renderOP(){
+  var c=document.getElementById('op-content'); if(!c)return;
+  var rows=buha._op||[]; var today=todayStr();
+  var f=(document.getElementById('op-filter')||{value:'alle'}).value;
+  var isOver=function(o){return o.status!=='bezahlt'&&o.faellig_am&&o.faellig_am<today;};
+  var fil=rows.filter(function(o){
+    if(f==='offen')return o.status!=='bezahlt';
+    if(f==='bezahlt')return o.status==='bezahlt';
+    if(f==='ueberfaellig')return isOver(o);
+    if(f==='debitor')return o.typ==='debitor';
+    if(f==='kreditor')return o.typ==='kreditor';
+    return true;
+  });
+  var debOffen=rows.filter(function(o){return o.typ==='debitor'&&o.status!=='bezahlt';}).reduce(function(s,o){return s+(parseFloat(o.betrag)||0);},0);
+  var kredOffen=rows.filter(function(o){return o.typ==='kreditor'&&o.status!=='bezahlt';}).reduce(function(s,o){return s+(parseFloat(o.betrag)||0);},0);
+  var ueber=rows.filter(isOver).reduce(function(s,o){return s+(parseFloat(o.betrag)||0);},0);
+  var kpis=document.getElementById('op-kpis');
+  if(kpis)kpis.innerHTML=[['Forderungen offen (Debitoren)',buhaEuro(debOffen),'#1a7a4a'],['Verbindlichkeiten offen (Kreditoren)',buhaEuro(kredOffen),'#c0392b'],['davon überfällig',buhaEuro(ueber),'#d97706']].map(function(k){return '<div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:.6rem .8rem"><div style="font-size:.62rem;font-weight:700;text-transform:uppercase;color:var(--muted)">'+k[0]+'</div><div style="font-size:1.05rem;font-weight:800;color:'+k[2]+'">'+k[1]+'</div></div>';}).join('');
+  var dfmt=function(d){if(!d)return'–';var p=(''+d).slice(0,10).split('-');return p.length===3?p[2]+'.'+p[1]+'.'+p[0]:d;};
+  if(!fil.length){c.innerHTML='<div style="padding:2rem;text-align:center;color:var(--muted)">Keine Posten für diesen Filter.</div>';return;}
+  c.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:.82rem;min-width:680px"><thead><tr style="border-bottom:2px solid var(--border)">'
+    +['Art','Partner','Text','Fällig','Betrag','Status',''].map(function(h,i){return '<th style="text-align:'+(i===4?'right':'left')+';padding:.5rem .7rem;font-size:.62rem;text-transform:uppercase;color:var(--muted)">'+h+'</th>';}).join('')
+    +'</tr></thead><tbody>'+fil.map(function(o){
+      var over=isOver(o), bez=o.status==='bezahlt';
+      var artBadge=o.typ==='debitor'?'<span style="font-size:.6rem;font-weight:700;padding:1px 6px;border-radius:6px;background:#e9f9f0;color:#1a7a4a">Debitor</span>':'<span style="font-size:.6rem;font-weight:700;padding:1px 6px;border-radius:6px;background:#fff3e0;color:#b45309">Kreditor</span>';
+      var stat=bez?'<span style="font-size:.6rem;font-weight:700;padding:1px 6px;border-radius:6px;background:#eef2ff;color:#1565c0">bezahlt'+(o.bezahlt_am?' '+dfmt(o.bezahlt_am):'')+'</span>':(over?'<span style="font-size:.6rem;font-weight:700;padding:1px 6px;border-radius:6px;background:#fdecea;color:#c0392b">überfällig</span>':'<span style="font-size:.6rem;font-weight:700;padding:1px 6px;border-radius:6px;background:#f3f4f6;color:#555">offen</span>');
+      return '<tr style="border-bottom:1px solid var(--border)">'
+        +'<td style="padding:.4rem .7rem">'+artBadge+'</td>'
+        +'<td style="padding:.4rem .7rem;font-weight:600">'+escapeHtml(o.partner||'–')+'</td>'
+        +'<td style="padding:.4rem .7rem;color:#555">'+escapeHtml(o.text||'')+(o.belegnr?' <span style="color:var(--muted);font-size:.7rem">('+escapeHtml(o.belegnr)+')</span>':'')+'</td>'
+        +'<td style="padding:.4rem .7rem;white-space:nowrap">'+dfmt(o.faellig_am)+'</td>'
+        +'<td style="padding:.4rem .7rem;text-align:right;font-weight:700;font-variant-numeric:tabular-nums">'+buhaEuro(parseFloat(o.betrag)||0)+'</td>'
+        +'<td style="padding:.4rem .7rem">'+stat+'</td>'
+        +'<td style="padding:.4rem .7rem;text-align:right;white-space:nowrap">'+(bez?'<button class="btn-small" style="font-size:.62rem" onclick="opSetStatus(\''+o.id+'\',\'offen\')">↺ offen</button>':'<button class="btn-small gruen" style="font-size:.62rem" onclick="opSetStatus(\''+o.id+'\',\'bezahlt\')">✓ bezahlt</button>')+' <button class="btn-small" style="font-size:.62rem;background:#fbe9e7;color:#c0392b" onclick="opDel(\''+o.id+'\')">🗑</button></td>'
+      +'</tr>';
+    }).join('')+'</tbody></table>';
+}
+async function opSave(){
+  if(!buha.objektId){showToast('Bitte eine WEG öffnen.');return;}
+  var partner=(buhaVal('op-partner')||'').trim(); var betrag=parseNum(buhaVal('op-betrag'));
+  if(!partner){showToast('Bitte Partner angeben.');return;}
+  if(!(betrag>0)){showToast('Bitte Betrag > 0 angeben.');return;}
+  var row={user_id:currentUser.id,objekt_id:buha.objektId,untergemeinschaft_id:buha.ug||null,
+    typ:buhaVal('op-typ')||'kreditor',partner:partner,betrag:betrag,
+    datum:buhaVal('op-datum')||null,faellig_am:buhaVal('op-faellig')||null,
+    belegnr:buhaVal('op-belegnr')||null,text:buhaVal('op-text')||null,status:'offen'};
+  var ins=await sb.from('weg_op').insert(row);
+  if(ins.error){showToast('❌ '+ins.error.message);return;}
+  ['op-partner','op-betrag','op-belegnr','op-text'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  showToast('✅ Posten erfasst'); await ladeOP();
+}
+async function opSetStatus(id,status){
+  var r=await sb.from('weg_op').update({status:status,bezahlt_am:status==='bezahlt'?todayStr():null}).eq('id',id);
+  if(r.error){showToast('❌ '+r.error.message);return;} await ladeOP();
+}
+function opDel(id){
+  appConfirm({icon:'🗑',title:'Posten löschen?',message:'Diesen offenen Posten dauerhaft entfernen?',
+    buttons:[{label:'<span class="btn-ic" data-icon="trash"></span> Löschen',style:'background:#c0392b;color:#fff',onClick:async function(){
+      var r=await sb.from('weg_op').delete().eq('id',id); if(r.error){showToast('❌ '+r.error.message);return;} showToast('🗑 Gelöscht'); await ladeOP();
+    }},{label:'Abbrechen',style:'background:var(--bg);color:var(--muted)',onClick:function(){}}]});
+}
+function opCsv(){
+  var rows=buha._op||[]; if(!rows.length){showToast('Keine Posten.');return;}
+  var head=['Art','Partner','Text','Belegnr','Rechnungsdatum','Faellig','Betrag','Status','Bezahlt am'];
+  var lines=[head.join(';')].concat(rows.map(function(o){return [o.typ,o.partner||'',o.text||'',o.belegnr||'',o.datum||'',o.faellig_am||'',(parseFloat(o.betrag)||0).toFixed(2),o.status,o.bezahlt_am||''].map(function(v){return '"'+(''+v).replace(/"/g,'""')+'"';}).join(';');}));
+  var blob=new Blob(['﻿'+lines.join('\r\n')],{type:'text/csv;charset=utf-8;'});var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');a.href=url;a.download='Offene_Posten_'+(buha.jahr||'')+'.csv';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
 }
 
 // ── UNTERGEMEINSCHAFTEN ──
@@ -9103,7 +9362,49 @@ function renderAuswertungen(){
   var c=document.getElementById('ausw-content'); if(!c)return;
   if(typ==='salden')c.innerHTML=buhaSaldenlisteHtml();
   else if(typ==='euer')c.innerHTML=buhaEurHtml();
+  else if(typ==='ksug'){c.innerHTML='<div style="padding:2rem;text-align:center;color:var(--muted)">Lädt …</div>';buhaKostenstellenRender(c);}
   else c.innerHTML=buhaKontenblattHtml(ks?ks.value:'');
+}
+async function buhaKostenstellenRender(c){
+  try{
+    var br=await sb.from('weg_buchungen').select('betrag,soll_konto,haben_konto,untergemeinschaft_id').eq('user_id',currentUser.id).eq('objekt_id',buha.objektId).eq('wirtschaftsjahr',buha.jahr);
+    if(br.error)throw br.error;
+    var rows=br.data||[];
+    var typ={}; buha.konten.forEach(function(k){typ[k.nummer]=k.typ;});
+    var byUg={};
+    rows.forEach(function(b){
+      var key=b.untergemeinschaft_id||'__gesamt__';
+      var o=byUg[key]=byUg[key]||{aufwand:0,ertrag:0};
+      var bt=parseFloat(b.betrag)||0;
+      if(typ[b.soll_konto]==='aufwand')o.aufwand+=bt;
+      if(typ[b.haben_konto]==='aufwand')o.aufwand-=bt;
+      if(typ[b.haben_konto]==='ertrag')o.ertrag+=bt;
+      if(typ[b.soll_konto]==='ertrag')o.ertrag-=bt;
+    });
+    var nameOf=function(key){if(key==='__gesamt__')return '🏛️ Gesamt-WEG (gemeinschaftlich)';var u=(buha.ugListe||[]).filter(function(x){return x.id===key;})[0];return u?('👥 '+u.name):'(gelöschte Untergemeinschaft)';};
+    var keys=[]; if(byUg['__gesamt__'])keys.push('__gesamt__');
+    (buha.ugListe||[]).forEach(function(u){if(byUg[u.id])keys.push(u.id);});
+    Object.keys(byUg).forEach(function(k){if(keys.indexOf(k)<0)keys.push(k);});
+    if(!keys.length){c.innerHTML=_auswEmpty();return;}
+    var tA=0,tE=0;
+    var body=keys.map(function(k){var o=byUg[k];var saldo=o.ertrag-o.aufwand;tA+=o.aufwand;tE+=o.ertrag;
+      return '<tr style="border-bottom:1px solid var(--border)"><td style="padding:.45rem .7rem;font-weight:600">'+escapeHtml(nameOf(k))+'</td>'
+        +'<td style="padding:.45rem .7rem;text-align:right;font-variant-numeric:tabular-nums">'+buhaEuro(o.aufwand)+'</td>'
+        +'<td style="padding:.45rem .7rem;text-align:right;font-variant-numeric:tabular-nums">'+buhaEuro(o.ertrag)+'</td>'
+        +'<td style="padding:.45rem .7rem;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;color:'+(saldo>=0?'#1a7a4a':'#c0392b')+'">'+buhaEuro(saldo)+'</td></tr>';
+    }).join('');
+    buha._auswTitle='Kostenstellen je Untergemeinschaft '+buha.jahr;
+    buha._auswRows={head:['Untergemeinschaft','Aufwand','Ertrag','Saldo'],rows:keys.map(function(k){var o=byUg[k];return [nameOf(k).replace(/^[^A-Za-z0-9]+\s*/,''),o.aufwand.toFixed(2),o.ertrag.toFixed(2),(o.ertrag-o.aufwand).toFixed(2)];})};
+    c.innerHTML='<div style="padding:.6rem .8rem;font-weight:700;border-bottom:1px solid var(--border)">'+escapeHtml(buha._auswTitle)+'</div>'
+      +'<table style="width:100%;border-collapse:collapse;font-size:.82rem;min-width:520px"><thead><tr style="border-bottom:2px solid var(--border)">'
+      +['Untergemeinschaft','Aufwand','Ertrag','Saldo'].map(function(h,i){return '<th style="text-align:'+(i>=1?'right':'left')+';padding:.5rem .7rem;font-size:.64rem;text-transform:uppercase;color:var(--muted)">'+h+'</th>';}).join('')
+      +'</tr></thead><tbody>'+body+'</tbody>'
+      +'<tfoot><tr style="border-top:2px solid var(--border);font-weight:800"><td style="padding:.5rem .7rem">Gesamt</td>'
+      +'<td style="padding:.5rem .7rem;text-align:right;font-variant-numeric:tabular-nums">'+buhaEuro(tA)+'</td>'
+      +'<td style="padding:.5rem .7rem;text-align:right;font-variant-numeric:tabular-nums">'+buhaEuro(tE)+'</td>'
+      +'<td style="padding:.5rem .7rem;text-align:right;font-variant-numeric:tabular-nums">'+buhaEuro(tE-tA)+'</td></tr></tfoot></table>'
+      +'<div style="font-size:.72rem;color:var(--muted);padding:.6rem .8rem">Aufwand/Ertrag je Buchungskreis (Untergemeinschaft) über alle Buchungen des Wirtschaftsjahres – unabhängig vom oben gewählten Buchungskreis.</div>';
+  }catch(e){c.innerHTML='<div style="padding:1.5rem;color:#c0392b">Fehler: '+escapeHtml(e.message||e)+'</div>';}
 }
 function buhaSaldenlisteHtml(){
   var agg=buhaKontoAgg(); var nmName={}; buha.konten.forEach(function(k){nmName[k.nummer]=k.name;});
@@ -9392,14 +9693,19 @@ async function loadDashboardChart(){
   var firstKey=months[0].key+'-01';
   var soll={},ist={};
   // SOLL = Summe der Kaltmieten aller in dem Monat aktiven Mietverhältnisse (unabhängig davon, ob Zahlungen generiert wurden)
-  var mvRes=await sb.from('mietverhaeltnisse').select('kaltmiete,einzug,auszug,aktiv').eq('user_id',currentUser.id);
+  var mvRes=await sb.from('mietverhaeltnisse').select('id,kaltmiete,einzug,auszug,aktiv').eq('user_id',currentUser.id);
   var mvList=mvRes.data||[];
+  // Staffelmieten laden (zeitgesteuerte Mieterhöhungen) → effektive Kaltmiete je Monat
+  var stByMv={};
+  try{ var stRes=await sb.from('miet_staffel').select('mietverhaeltnis_id,datum,neue_kaltmiete').eq('user_id',currentUser.id);
+    (stRes.data||[]).forEach(function(s){(stByMv[s.mietverhaeltnis_id]=stByMv[s.mietverhaeltnis_id]||[]).push(s);}); }catch(e){}
   months.forEach(function(m){
     var monatStart=m.key+'-01';
     var monatEnde=m.key+'-31';
     var sum=0;
     mvList.forEach(function(mv){
-      var km=parseFloat(mv.kaltmiete)||0; if(!km)return;
+      var km=(typeof _effKaltmiete==='function')?_effKaltmiete(parseFloat(mv.kaltmiete)||0,stByMv[mv.id],monatStart):(parseFloat(mv.kaltmiete)||0);
+      if(!km)return;
       var ein=mv.einzug||'1900-01-01';
       var aus=mv.auszug||'2999-12-31';
       // MV zählt, wenn es in diesem Monat (Überschneidung) bestand
@@ -10313,6 +10619,7 @@ function wegcAbrSetJahr(j){_wegcAbrJahr=parseInt(j)||(new Date().getFullYear()-1
 function wegcAbrSetEig(id){_wegcAbrEig=id||null;wegcRenderAbrechnung();}
 function wegcAbrStep(n){_wegcAbrStep=Math.max(1,Math.min(4,parseInt(n)||1));wegcRenderAbrechnung();}
 function _wegcTage(j){return ((j%4===0&&j%100!==0)||j%400===0)?366:365;}
+function _daysInMonth(j,m){return new Date(j,m,0).getDate();}
 var _wegcVtLabel={mea:'Eigentumsanteil',einheiten:'Einheiten',pxt:'Personen × Tage',festbetrag:'Festbetrag'};
 var _wegcVtEinh={mea:'MEA',einheiten:'Einh.',pxt:'PxT',festbetrag:'EUR'};
 // Positionen anreichern: Haus-Scope, Basis-Summe, Labels
@@ -10326,7 +10633,7 @@ function _wegcAbrEnrich(positions, units, festByPos, haeuserById, tage){
     if(hausName){ if(vt==='mea')vn='Eigent.-Ant. '+hausName; else if(vt==='einheiten')vn='Einheiten '+hausName; else vn=vn+' '+hausName; }
     var baseFn;
     if(vt==='einheiten')baseFn=function(u){return 1;};
-    else if(vt==='pxt')baseFn=function(u){return (parseFloat(u.personen)||0)*tage;};
+    else if(vt==='pxt')baseFn=function(u){return (u._pd!=null)?u._pd:((parseFloat(u.personen)||0)*tage);};
     else baseFn=function(u){return _wegcMeaVal(u);};
     var gesamtEUR=parseFloat(p.betrag)||0, totalBase=0;
     if(isFest){var fb=festByPos[p.id]||{};totalBase=Object.keys(fb).reduce(function(s,k){return s+(parseFloat(fb[k])||0);},0);gesamtEUR=totalBase;}
@@ -10361,7 +10668,8 @@ async function wegcRenderAbrechnung(c){
       sb.from('weg_einheiten').select('id,bezeichnung,mea_zaehler,mea_nenner,flaeche,personen,untergemeinschaft_id').eq('user_id',currentUser.id).eq('objekt_id',wegId),
       sb.from('weg_sollstellung').select('eigentuemer_id,betrag,status').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr),
       sb.from('weg_untergemeinschaften').select('id,name').eq('user_id',currentUser.id).eq('objekt_id',wegId),
-      sb.from('weg_festbetrag').select('position_id,eigentuemer_id,betrag').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr)
+      sb.from('weg_festbetrag').select('position_id,eigentuemer_id,betrag').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr),
+      sb.from('weg_einheit_personen').select('einheit_id,monat,personen').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr)
     ]);
     for(var i=0;i<res.length;i++){if(res[i].error)throw res[i].error;}
   }catch(e){console.warn('hausgeldabr load:',e);c.innerHTML='<div style="color:#dc2626;font-size:.85rem">Fehler beim Laden: '+escapeHtml(e.message||'')+'</div>';return;}
@@ -10374,8 +10682,16 @@ async function wegcRenderAbrechnung(c){
   var festByPos={}; festRows.forEach(function(f){(festByPos[f.position_id]=festByPos[f.position_id]||{})[f.eigentuemer_id]=parseFloat(f.betrag)||0;});
   var sollByEig={}; sollRows.forEach(function(s){sollByEig[s.eigentuemer_id]=(sollByEig[s.eigentuemer_id]||0)+(parseFloat(s.betrag)||0);});
   var tage=_wegcTage(jahr);
+  // Personen je Monat (#15) → taggenaue Personentage; Fallback Jahreswert der Einheit
+  var persRows=res[6].data||[];
+  var persByUnit={}; persRows.forEach(function(r){(persByUnit[r.einheit_id]=persByUnit[r.einheit_id]||{})[r.monat]=r.personen;});
+  units.forEach(function(u){
+    var ov=persByUnit[u.id]; if(!ov)return;
+    var pd=0; for(var mm=1;mm<=12;mm++){var p=(ov[mm]!=null)?ov[mm]:(parseFloat(u.personen)||0);pd+=p*_daysInMonth(jahr,mm);}
+    u._pd=pd;
+  });
   var P=_wegcAbrEnrich(positions,units,festByPos,haeuserById,tage);
-  _wegcAbrData={jahr:jahr,weg:_wegcCur,P:P,owners:owners,festByPos:festByPos,sollByEig:sollByEig,haeuserById:haeuserById,tage:tage};
+  _wegcAbrData={jahr:jahr,weg:_wegcCur,P:P,owners:owners,festByPos:festByPos,sollByEig:sollByEig,haeuserById:haeuserById,tage:tage,units:units,persByUnit:persByUnit};
 
   // ── Ergebnis je Eigentümer (für Übersicht/Zusammenfassung) ──
   var results=owners.map(function(o){
@@ -10467,6 +10783,26 @@ async function wegcRenderAbrechnung(c){
       html+=posBlock(P.filter(function(x){return !x.umlf;}),'Nicht zur Umlage bestimmte Kosten (Eigentümer)','#9a3412');
       html+=posBlock(P.filter(function(x){return x.umlf;}),'Zur Umlage auf Bewohner bestimmte Kosten','#166534');
       if(P.length)html+='<div style="text-align:right;font-size:.9rem;font-weight:800;color:#111827;padding:.2rem .3rem">Gesamtkosten '+jahr+': '+fmtEuro(sumKosten)+'</div>';
+      // Personen je Monat (#15) – nur wenn eine Position nach Personen x Tage verteilt
+      var hasPxt=P.some(function(x){return (x.p&&x.p.verteiler)==='pxt';});
+      if(hasPxt&&units.length){
+        var mNames=['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+        html+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:1rem 1.1rem;margin-top:1rem;box-shadow:0 1px 2px rgba(16,24,40,.05)">'
+          +'<div style="font-size:.85rem;font-weight:700;margin-bottom:.25rem;color:#111827">👥 Personen je Monat ('+jahr+')</div>'
+          +'<div style="font-size:.72rem;color:var(--muted);margin-bottom:.7rem">Für Positionen mit Verteiler „Personen × Tage". Leeres/0-Feld = Jahreswert der Einheit. Es wird taggenau (Personentage) gerechnet.</div>'
+          +'<div style="overflow-x:auto"><table style="border-collapse:collapse;font-size:.74rem"><thead><tr>'
+          +'<th style="text-align:left;padding:.3rem .5rem;position:sticky;left:0;background:var(--white)">Einheit</th>'
+          +mNames.map(function(mn){return '<th style="padding:.3rem .2rem;color:var(--muted);font-weight:600">'+mn+'</th>';}).join('')
+          +'<th></th></tr></thead><tbody>';
+        units.forEach(function(u){
+          var ov=persByUnit[u.id]||{};
+          html+='<tr><td style="padding:.25rem .5rem;font-weight:600;white-space:nowrap;position:sticky;left:0;background:var(--white)">'+escapeHtml(u.bezeichnung||'–')+'</td>';
+          for(var m=1;m<=12;m++){var val=(ov[m]!=null)?ov[m]:(u.personen||'');
+            html+='<td style="padding:1px"><input id="wegc-pers-'+u.id+'-'+m+'" type="number" min="0" step="1" value="'+val+'" style="width:36px;border:1px solid var(--border);border-radius:5px;padding:2px;font-size:.72rem;text-align:center;font-family:var(--ff)"></td>';}
+          html+='<td style="padding:.25rem .4rem"><button class="oa-btn" title="Speichern" onclick="wegcPersonenSave(\''+u.id+'\')"><span class="mini-ic" data-icon="check"></span></button></td></tr>';
+        });
+        html+='</tbody></table></div></div>';
+      }
     }
   } else if(step===3){
     // Schritt 3: Vorschau (Ergebnistabelle aller Eigentümer + Einzelabrechnung)
@@ -10533,7 +10869,7 @@ function _wegcAbrEinzelHtml(o){
     if(!list.length)return '';
     var rows=list.map(function(P){return _wegcAbrRow(P,o,d.festByPos);});
     var sg=rows.reduce(function(s,r){return s+r.gesamtEUR;},0), sa=rows.reduce(function(s,r){return s+r.ownerEUR;},0);
-    var h='<tr style="background:#f3f0f7"><td colspan="7" style="padding:.4rem .55rem;font-size:.64rem;font-weight:700;text-transform:uppercase;color:#5b2a86">'+title+'</td></tr>';
+    var h='<tr style="background:#f3f4f6"><td colspan="7" style="padding:.4rem .55rem;font-size:.64rem;font-weight:700;text-transform:uppercase;color:#374151">'+title+'</td></tr>';
     rows.forEach(function(r){h+='<tr style="border-bottom:1px solid #f5f5f7">'
       +'<td style="padding:.38rem .55rem">'+escapeHtml(r.name)+'</td>'
       +'<td style="padding:.38rem .55rem;color:#6b7280;font-size:.72rem">'+escapeHtml(r.vn)+'</td>'
@@ -10577,6 +10913,20 @@ function wegcAbrPosDel(id){
     {label:'Löschen',style:'background:#dc2626;color:#fff',onClick:async function(){appConfirmClose();try{await sb.from('weg_festbetrag').delete().eq('position_id',id);var r=await sb.from('weg_abr_position').delete().eq('id',id);if(r.error){showToast('Fehler: '+r.error.message);return;}showToast('Gelöscht');wegcRenderAbrechnung();}catch(e){showToast('Fehler: '+e.message);}}}
   ]});
 }
+async function wegcPersonenSave(einheitId){
+  if(!_wegcCur)return;
+  var jahr=_wegcAbrJahr, rows=[];
+  for(var m=1;m<=12;m++){
+    var el=document.getElementById('wegc-pers-'+einheitId+'-'+m);
+    var v=el?parseInt(el.value):NaN;
+    rows.push({user_id:currentUser.id,objekt_id:_wegcCur.id,einheit_id:einheitId,jahr:jahr,monat:m,personen:isNaN(v)?0:v});
+  }
+  try{
+    var r=await sb.from('weg_einheit_personen').upsert(rows,{onConflict:'einheit_id,jahr,monat'});
+    if(r.error){showToast('Fehler: '+r.error.message);return;}
+    showToast('Personen je Monat gespeichert'); wegcRenderAbrechnung();
+  }catch(e){showToast('Fehler: '+e.message);}
+}
 async function wegcAbrFestSave(posId,eigId,val){
   if(!_wegcCur)return;
   var betrag=_wegcNum(val);
@@ -10595,7 +10945,7 @@ function wegcAbrechnungPdf(onlyEigId){
   try{
     var jsPDF=window.jspdf.jsPDF;
     var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-    var W=210,L=16,R=12,AC=[123,31,162];
+    var W=210,L=16,R=12,AC=[88,88,92];
     var sm=stammdaten||{}, weg=d.weg||{};
     var vName=([sm.firma,sm.vname&&sm.nname?sm.vname+' '+sm.nname:'']).filter(Boolean).join(' / ')||'NEKOSTA';
     var adr=[weg.strasse,weg.plz&&weg.ort?weg.plz+' '+weg.ort:weg.ort].filter(Boolean).join(', ');
@@ -10616,7 +10966,7 @@ function wegcAbrechnungPdf(onlyEigId){
     pdfOwners.forEach(function(o,oi){
       if(oi>0)doc.addPage();
       y=18;
-      sf(7.5,'normal',135,135,140);doc.text(vName,L,y);doc.text(datStr,W-R,y,{align:'right'});
+      sf(7.5,'normal',135,135,140);doc.text(datStr,W-R,y,{align:'right'});
       y=29; sf(8.5,'bold',45,45,50);doc.text(_wegcEigName(o),L,y); y+=9;
       sf(15,'bold',28,28,34);doc.text('Hausgeldabrechnung',L,y);
       var tw=doc.getTextWidth('Hausgeldabrechnung ');sf(15,'bold',AC[0],AC[1],AC[2]);doc.text(String(d.jahr),L+tw,y); y+=6;
@@ -10628,7 +10978,7 @@ function wegcAbrechnungPdf(onlyEigId){
       var renderBlock=function(list,title){
         if(!list.length)return [0,0];
         if(y>262){doc.addPage();y=20;colHead();}
-        sf(7.5,'bold',91,42,134);doc.text(title,cx.pos,y);y+=5;
+        sf(7.5,'bold',88,88,92);doc.text(title,cx.pos,y);y+=5;
         var sg=0,sa=0;
         list.forEach(function(P){
           var r=_wegcAbrRow(P,o,d.festByPos); sg+=r.gesamtEUR; sa+=r.ownerEUR;
@@ -10658,12 +11008,12 @@ function wegcAbrechnungPdf(onlyEigId){
       sf(9,'bold',40,40,45);doc.text('Summe Kosten (Ihr Anteil) für den Abrechnungszeitraum',cx.pos,y);doc.text(fmt(anteil)+' EUR',cx.aeur,y,{align:'right'});y+=6;
       sf(8.5,'normal',70,70,75);doc.text('Ihre Hausgeldvorauszahlungen im Abrechnungszeitraum',cx.pos,y);doc.text(fmt(soll)+' EUR',cx.aeur,y,{align:'right'});y+=2;
       line(L+100,W-R,y+1,null,0.4);y+=5.5;
-      var rc=diff<0?[182,41,35]:[21,127,60];
+      var rc=[55,55,60];
       sf(11,'bold',rc[0],rc[1],rc[2]);doc.text(diff<0?'Ihre Nachzahlung':'Ihr Guthaben',cx.pos,y);doc.text(fmt(diff)+' EUR',cx.aeur,y,{align:'right'});y+=8;
     });
     var pages=doc.internal.getNumberOfPages();
     for(var i=1;i<=pages;i++){doc.setPage(i);line(L,W-R,287,[200,200,200],0.3);sf(7,'normal',150,150,150);
-      doc.text([vName,adr].filter(Boolean).join('  ·  '),W/2,291,{align:'center',maxWidth:W-L-R});
+      if(adr)doc.text(adr,W/2,291,{align:'center',maxWidth:W-L-R});
       doc.text('Seite '+i+' von '+pages,W-R,291,{align:'right'});}
     var fnSuffix=(onlyEigId&&pdfOwners.length===1)?('_'+(_wegcEigName(pdfOwners[0])||'Eigentuemer').replace(/[^a-zA-Z0-9]+/g,'_')):'';
     showDoc(doc,'Hausgeldabrechnung_'+(weg.name||'WEG').replace(/[^a-zA-Z0-9]+/g,'_')+'_'+d.jahr+fnSuffix+'.pdf','vorschau');
@@ -10998,6 +11348,8 @@ async function wegcRenderBuchhaltung(c,subtab){
   aktivesObjekt=_wegcCur;
   try{ await ladeBuchhaltung(_wegcCur.id); }catch(e){ console.warn('buha load:',e); }
   try{ buhaTab(subtab==='hausgeld'?'hausgeld':'buchen'); }catch(e){}
+  // Hausgeld als eigenes Cockpit: Buchhaltungs-Tableiste dort ausblenden (#16)
+  var _tb=document.getElementById('buha-tabbar'); if(_tb)_tb.style.display=(subtab==='hausgeld'?'none':'flex');
 }
 async function wegcRenderEinheiten(c){
   if(!_wegcCur)return;
@@ -11967,9 +12319,212 @@ async function openMietverhModal(einheitId,objektId,einheitBez,data){
   var selEl=document.getElementById('mv-kontakt-select');
   if(selEl){selEl.onchange=function(){showKontaktInfo(this.value);};}
   var qk=document.getElementById('mv-quick-kontakt');if(qk)qk.style.display='none';
+  mvRecalcWarm();
+  mvLoadStaffeln(data?data.id:null);
+  mvLoadEinnahmen(data?data.id:null);
   document.getElementById('mietverh-modal').style.display='flex';
 }
+function mvRecalcWarm(){
+  var g=function(id){var el=document.getElementById(id);return el?(parseFloat(el.value)||0):0;};
+  var w=g('mv-kaltmiete')+g('mv-bk')+g('mv-hk');
+  var el=document.getElementById('mv-warm');
+  if(el)el.textContent=w.toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
+}
 function closeMietverhModal(){document.getElementById('mietverh-modal').style.display='none';}
+
+// ── Staffelmiete (#12) ──
+var _mvStaffeln=[];
+function _effKaltmiete(baseKm, staffeln, dateStr){
+  var km=parseFloat(baseKm)||0;
+  (staffeln||[]).slice().sort(function(a,b){return (a.datum||'').localeCompare(b.datum||'');}).forEach(function(s){
+    if((s.datum||'')<=dateStr) km=parseFloat(s.neue_kaltmiete)||km;
+  });
+  return km;
+}
+async function mvLoadStaffeln(mvId){
+  _mvStaffeln=[];
+  if(mvId){ try{ var r=await sb.from('miet_staffel').select('*').eq('mietverhaeltnis_id',mvId).order('datum',{ascending:true}); if(!r.error)_mvStaffeln=r.data||[]; }catch(e){} }
+  mvRenderStaffeln(mvId);
+}
+function mvRenderStaffeln(mvId){
+  var el=document.getElementById('mv-staffel-list'); if(!el)return;
+  if(!mvId){el.innerHTML='<div style="font-size:.78rem;color:var(--muted)">Mietverhältnis zuerst speichern, dann Staffeln hinzufügen.</div>';return;}
+  if(!_mvStaffeln.length){el.innerHTML='<div style="font-size:.78rem;color:var(--muted)">Keine Staffeln – es gilt die Kaltmiete oben.</div>';return;}
+  var baseKm=parseFloat((document.getElementById('mv-kaltmiete')||{}).value)||0;
+  var today=new Date().toISOString().slice(0,10);
+  var eff=_effKaltmiete(baseKm,_mvStaffeln,today);
+  var fmt=function(v){return (parseFloat(v)||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});};
+  var dfmt=function(d){var p=(''+d).slice(0,10).split('-');return p.length===3?p[2]+'.'+p[1]+'.'+p[0]:d;};
+  var h='<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden">';
+  _mvStaffeln.forEach(function(s){
+    var future=(s.datum||'')>today;
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem .6rem;border-bottom:1px solid var(--border);font-size:.82rem">'
+      +'<span>ab <strong>'+dfmt(s.datum)+'</strong>'+(future?' <span style="font-size:.7rem;color:var(--muted)">(geplant)</span>':'')+'</span>'
+      +'<span style="display:flex;align-items:center;gap:.6rem"><strong>'+fmt(s.neue_kaltmiete)+' €</strong>'
+      +'<button type="button" onclick="mvStaffelDel(\''+s.id+'\')" style="border:none;background:none;cursor:pointer;color:#dc2626;font-size:.9rem">✕</button></span></div>';
+  });
+  h+='</div><div style="font-size:.78rem;color:var(--muted);margin-top:.35rem">Aktuell gültige Kaltmiete ('+dfmt(today)+'): <strong style="color:var(--text)">'+fmt(eff)+' €</strong></div>';
+  el.innerHTML=h;
+}
+async function mvStaffelAdd(){
+  var mvId=document.getElementById('mv-edit-id').value;
+  if(!mvId){showToast('Bitte das Mietverhältnis zuerst speichern.');return;}
+  var d=document.getElementById('mv-staffel-datum').value;
+  var b=parseFloat(document.getElementById('mv-staffel-betrag').value);
+  if(!d){showToast('Bitte Datum angeben');return;}
+  if(!b||b<=0){showToast('Bitte gültige neue Kaltmiete angeben');return;}
+  try{
+    var objId=document.getElementById('mv-objekt-id').value||null;
+    var r=await sb.from('miet_staffel').insert({user_id:currentUser.id,mietverhaeltnis_id:mvId,objekt_id:objId,datum:d,neue_kaltmiete:b});
+    if(r.error){showToast('Fehler: '+r.error.message);return;}
+    document.getElementById('mv-staffel-datum').value=''; document.getElementById('mv-staffel-betrag').value='';
+    showToast('Staffel hinzugefügt'); mvLoadStaffeln(mvId);
+  }catch(e){showToast('Fehler: '+e.message);}
+}
+async function mvStaffelDel(id){
+  try{ var r=await sb.from('miet_staffel').delete().eq('id',id); if(r.error){showToast('Fehler: '+r.error.message);return;} mvLoadStaffeln(document.getElementById('mv-edit-id').value); }catch(e){showToast('Fehler: '+e.message);}
+}
+
+// ── Eigene Einnahmen (#13) ──
+var _mvEinnahmen=[];
+async function mvLoadEinnahmen(mvId){
+  _mvEinnahmen=[];
+  if(mvId){ try{ var r=await sb.from('miet_einnahme').select('*').eq('mietverhaeltnis_id',mvId).order('created_at',{ascending:true}); if(!r.error)_mvEinnahmen=r.data||[]; }catch(e){} }
+  mvRenderEinnahmen(mvId);
+}
+function mvRenderEinnahmen(mvId){
+  var el=document.getElementById('mv-einnahme-list'); if(!el)return;
+  if(!mvId){el.innerHTML='<div style="font-size:.78rem;color:var(--muted)">Mietverhältnis zuerst speichern, dann Einnahmen hinzufügen.</div>';return;}
+  if(!_mvEinnahmen.length){el.innerHTML='<div style="font-size:.78rem;color:var(--muted)">Keine eigenen Einnahmen erfasst.</div>';return;}
+  var fmt=function(v){return (parseFloat(v)||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});};
+  var katLbl={nk_vorauszahlung:'NK-VZ',sonstige:'Sonstige'};
+  var katCol={nk_vorauszahlung:'#157f3c',sonstige:'#6b7280'};
+  var h='<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden">';
+  _mvEinnahmen.forEach(function(e){
+    var kc=katCol[e.kategorie]||'#6b7280';
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem .6rem;border-bottom:1px solid var(--border);font-size:.82rem">'
+      +'<span><strong>'+escapeHtml(e.bezeichnung||'(ohne)')+'</strong> <span style="font-size:.66rem;font-weight:700;padding:.08rem .35rem;border-radius:5px;background:'+kc+'18;color:'+kc+'">'+(katLbl[e.kategorie]||e.kategorie)+'</span></span>'
+      +'<span style="display:flex;align-items:center;gap:.6rem"><strong>'+fmt(e.betrag)+' €</strong>'
+      +'<button type="button" onclick="mvEinnahmeDel(\''+e.id+'\')" style="border:none;background:none;cursor:pointer;color:#dc2626;font-size:.9rem">✕</button></span></div>';
+  });
+  var sumNk=_mvEinnahmen.filter(function(e){return e.kategorie==='nk_vorauszahlung';}).reduce(function(s,e){return s+(parseFloat(e.betrag)||0);},0);
+  h+='</div><div style="font-size:.78rem;color:var(--muted);margin-top:.35rem">Davon NK-Vorauszahlung: <strong style="color:#157f3c">'+fmt(sumNk)+' €/Mon.</strong> (fließt in die NK-Abrechnung ein)</div>';
+  el.innerHTML=h;
+}
+async function mvEinnahmeAdd(){
+  var mvId=document.getElementById('mv-edit-id').value;
+  if(!mvId){showToast('Bitte das Mietverhältnis zuerst speichern.');return;}
+  var bez=(document.getElementById('mv-einnahme-bez').value||'').trim();
+  var b=parseFloat(document.getElementById('mv-einnahme-betrag').value);
+  var kat=document.getElementById('mv-einnahme-kat').value;
+  if(!bez){showToast('Bitte Bezeichnung angeben');return;}
+  if(!b||b<=0){showToast('Bitte gültigen Betrag angeben');return;}
+  try{
+    var objId=document.getElementById('mv-objekt-id').value||null;
+    var einId=document.getElementById('mv-einheit-id').value||null;
+    var r=await sb.from('miet_einnahme').insert({user_id:currentUser.id,mietverhaeltnis_id:mvId,einheit_id:einId,objekt_id:objId,bezeichnung:bez,betrag:b,kategorie:kat});
+    if(r.error){showToast('Fehler: '+r.error.message);return;}
+    document.getElementById('mv-einnahme-bez').value=''; document.getElementById('mv-einnahme-betrag').value='';
+    showToast('Einnahme hinzugefügt'); mvLoadEinnahmen(mvId);
+  }catch(e){showToast('Fehler: '+e.message);}
+}
+async function mvEinnahmeDel(id){
+  try{ var r=await sb.from('miet_einnahme').delete().eq('id',id); if(r.error){showToast('Fehler: '+r.error.message);return;} mvLoadEinnahmen(document.getElementById('mv-edit-id').value); }catch(e){showToast('Fehler: '+e.message);}
+}
+
+// ── Einheiten-Cockpit (#10): Übersicht je Miet-Einheit ──
+async function openEinheitCockpit(einheitId){
+  if(!einheitId)return;
+  var m=document.getElementById('einheit-cockpit-modal');
+  if(!m){
+    m=document.createElement('div'); m.id='einheit-cockpit-modal';
+    m.style.cssText='position:fixed;inset:0;background:rgba(17,24,39,.55);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:3vh 1rem;overflow:auto';
+    m.onclick=function(ev){if(ev.target===m)closeEinheitCockpit();};
+    m.innerHTML='<div id="einheit-cockpit-box" style="background:var(--white);border-radius:14px;max-width:720px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3)"></div>';
+    document.body.appendChild(m);
+  }
+  var box=document.getElementById('einheit-cockpit-box');
+  box.innerHTML='<div style="padding:2rem;color:var(--muted);font-size:.9rem">Lädt…</div>';
+  m.style.display='flex';
+  try{
+    var eRes=await sb.from('einheiten').select('*').eq('id',einheitId).maybeSingle();
+    if(eRes.error)throw eRes.error;
+    var e=eRes.data; if(!e){box.innerHTML='<div style="padding:2rem">Einheit nicht gefunden.</div>';return;}
+    var mvRes=await sb.from('mietverhaeltnisse').select('*,kontakte(anrede,vorname,nachname)').eq('einheit_id',einheitId).order('einzug',{ascending:false});
+    var mvs=mvRes.data||[];
+    var mvIds=mvs.map(function(x){return x.id;});
+    var staffeln=[], einnahmen=[];
+    if(mvIds.length){ var sR=await sb.from('miet_staffel').select('*').in('mietverhaeltnis_id',mvIds); staffeln=sR.data||[]; }
+    var enR=await sb.from('miet_einnahme').select('*').eq('einheit_id',einheitId); einnahmen=enR.data||[];
+    box.innerHTML=_einheitCockpitHtml(e,mvs,staffeln,einnahmen);
+    if(typeof applyIcons==='function')applyIcons(box);
+  }catch(err){ box.innerHTML='<div style="padding:2rem;color:#dc2626">Fehler: '+escapeHtml(err.message||'')+'</div>'; }
+}
+function closeEinheitCockpit(){var m=document.getElementById('einheit-cockpit-modal');if(m)m.style.display='none';}
+function _einheitCockpitHtml(e,mvs,staffeln,einnahmen){
+  var today=new Date().toISOString().slice(0,10);
+  var fmt=function(v){return (parseFloat(v)||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});};
+  var dfmt=function(d){if(!d)return'–';var p=(''+d).slice(0,10).split('-');return p.length===3?p[2]+'.'+p[1]+'.'+p[0]:d;};
+  var staffByMv={}; (staffeln||[]).forEach(function(s){(staffByMv[s.mietverhaeltnis_id]=staffByMv[s.mietverhaeltnis_id]||[]).push(s);});
+  var name=function(mm){var k=mm&&mm.kontakte;return k?((k.anrede?k.anrede+' ':'')+(k.vorname||'')+' '+(k.nachname||'')).replace(/\s+/g,' ').trim():'Unbekannt';};
+  var aktiv=mvs.filter(function(mm){return mm.aktiv!==false && (!mm.auszug || mm.auszug>=today);});
+  var cur=aktiv[0]||null, isLeer=!cur;
+  var effK=cur?_effKaltmiete(parseFloat(cur.kaltmiete)||0,staffByMv[cur.id],today):0;
+  var bk=cur?(parseFloat(cur.vorausz_bk)||0):0, hk=cur?(parseFloat(cur.vorausz_hk)||0):0, warm=effK+bk+hk;
+  var statusBadge=isLeer?'<span style="background:#fdf0ef;color:#c0392b;font-size:.66rem;font-weight:700;padding:2px 9px;border-radius:8px">LEERSTAND</span>':'<span style="background:#e9f9f0;color:#1a7a4a;font-size:.66rem;font-weight:700;padding:2px 9px;border-radius:8px">VERMIETET</span>';
+  var kpi=function(v,l,col){return '<div style="background:var(--bg);border:1px solid #eef0f4;border-radius:10px;padding:.7rem .8rem"><div style="font-size:.62rem;font-weight:700;text-transform:uppercase;color:#6b7280;margin-bottom:.25rem">'+l+'</div><div style="font-size:1.1rem;font-weight:800;color:'+(col||'#111827')+'">'+v+'</div></div>';};
+  var h='';
+  h+='<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:1.1rem 1.3rem;border-bottom:1px solid #eef0f4">'
+    +'<div><div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap"><div style="font-size:1.25rem;font-weight:800;color:#111827">'+escapeHtml(e.bezeichnung||'Einheit')+'</div>'+statusBadge+'</div>'
+      +'<div style="font-size:.8rem;color:#6b7280;margin-top:2px">'+escapeHtml(e.typ||'')+(e.stockwerk?' · '+escapeHtml(e.stockwerk):'')+(e.flaeche?' · '+e.flaeche+' m²':'')+'</div></div>'
+    +'<button onclick="closeEinheitCockpit()" style="border:none;background:#f3f4f6;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:1rem;color:#6b7280;flex-shrink:0">✕</button></div>';
+  h+='<div style="padding:1.1rem 1.3rem"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:.6rem;margin-bottom:1.1rem">'
+    +kpi(fmt(effK)+' €','Kaltmiete'+(cur&&effK!==(parseFloat(cur.kaltmiete)||0)?' (Staffel)':''),'#6a2d9f')
+    +kpi(fmt(warm)+' €','Warmmiete')
+    +kpi((e.flaeche||'–')+(e.flaeche?' m²':''),'Fläche')
+    +kpi(escapeHtml(e.mea||(cur&&cur.mea)||'–'),'MEA')
+  +'</div>';
+  if(cur){
+    h+='<div style="border:1px solid #eef0f4;border-radius:10px;padding:.9rem 1rem;margin-bottom:1rem">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem"><div style="font-size:.8rem;font-weight:700;color:#111827">Aktuelles Mietverhältnis</div>'
+      +'<button onclick="closeEinheitCockpit();editMietverhaeltnis(\''+cur.id+'\',\''+e.id+'\',\''+e.objekt_id+'\',\'\')" class="btn-small" style="font-size:.7rem;padding:.25rem .6rem">Bearbeiten</button></div>'
+      +'<div style="font-size:.9rem;font-weight:700">'+escapeHtml(name(cur))+'</div>'
+      +'<div style="font-size:.76rem;color:#6b7280;margin-bottom:.5rem">'+dfmt(cur.einzug)+' – '+(cur.auszug?dfmt(cur.auszug):'unbefristet')+'</div>'
+      +'<div style="display:flex;gap:1.3rem;font-size:.8rem;flex-wrap:wrap">'
+        +'<div><span style="color:#6b7280">Kaltmiete</span><br><strong>'+fmt(effK)+' €</strong></div>'
+        +'<div><span style="color:#6b7280">BK-VZ</span><br><strong>'+fmt(bk)+' €</strong></div>'
+        +'<div><span style="color:#6b7280">HK-VZ</span><br><strong>'+fmt(hk)+' €</strong></div>'
+        +'<div><span style="color:#6b7280">Warm</span><br><strong>'+fmt(warm)+' €</strong></div></div>';
+    var st=(staffByMv[cur.id]||[]).slice().sort(function(a,b){return (a.datum||'').localeCompare(b.datum||'');});
+    if(st.length){
+      h+='<div style="margin-top:.6rem;border-top:1px solid #f3f4f6;padding-top:.5rem"><div style="font-size:.66rem;font-weight:700;text-transform:uppercase;color:#6b7280;margin-bottom:.3rem">Staffelmiete</div>';
+      st.forEach(function(s){var fut=(s.datum||'')>today;h+='<div style="font-size:.76rem;display:flex;justify-content:space-between"><span>ab '+dfmt(s.datum)+(fut?' (geplant)':'')+'</span><strong>'+fmt(s.neue_kaltmiete)+' €</strong></div>';});
+      h+='</div>';
+    }
+    h+='</div>';
+  } else {
+    h+='<div style="border:1px dashed #e5b8b3;background:#fdf0ef;border-radius:10px;padding:.9rem 1rem;margin-bottom:1rem;font-size:.82rem;color:#c0392b">📭 Leerstand – kein aktives Mietverhältnis. <button onclick="closeEinheitCockpit();openMietverhModal(\''+e.id+'\',\''+e.objekt_id+'\',\'\',null)" class="btn-small gruen" style="font-size:.7rem;padding:.2rem .6rem;margin-left:.4rem">+ Mietverhältnis</button></div>';
+  }
+  if((einnahmen||[]).length){
+    var nk=einnahmen.filter(function(x){return x.kategorie==='nk_vorauszahlung';});
+    var so=einnahmen.filter(function(x){return x.kategorie!=='nk_vorauszahlung';});
+    var sum=function(arr){return arr.reduce(function(s,x){return s+(parseFloat(x.betrag)||0);},0);};
+    h+='<div style="border:1px solid #eef0f4;border-radius:10px;padding:.9rem 1rem;margin-bottom:1rem"><div style="font-size:.8rem;font-weight:700;color:#111827;margin-bottom:.5rem">Eigene Einnahmen</div>';
+    einnahmen.forEach(function(x){var isNk=x.kategorie==='nk_vorauszahlung';h+='<div style="display:flex;justify-content:space-between;font-size:.78rem;padding:.15rem 0"><span>'+escapeHtml(x.bezeichnung||'(ohne)')+' <span style="font-size:.62rem;font-weight:700;padding:.05rem .3rem;border-radius:5px;background:'+(isNk?'#157f3c':'#6b7280')+'18;color:'+(isNk?'#157f3c':'#6b7280')+'">'+(isNk?'NK-VZ':'Sonstige')+'</span></span><strong>'+fmt(x.betrag)+' €</strong></div>';});
+    h+='<div style="font-size:.72rem;color:#6b7280;margin-top:.4rem">NK-Vorauszahlung: <strong style="color:#157f3c">'+fmt(sum(nk))+' €</strong> · Sonstige: <strong>'+fmt(sum(so))+' €</strong></div></div>';
+  }
+  var beendet=mvs.filter(function(mm){return !(mm.aktiv!==false && (!mm.auszug || mm.auszug>=today));});
+  if(beendet.length){
+    h+='<div style="border:1px solid #eef0f4;border-radius:10px;padding:.9rem 1rem;margin-bottom:1rem"><div style="font-size:.8rem;font-weight:700;color:#111827;margin-bottom:.4rem">Frühere Mietverhältnisse</div>';
+    beendet.forEach(function(mm){h+='<div style="font-size:.76rem;color:#6b7280;display:flex;justify-content:space-between;padding:.1rem 0"><span>'+escapeHtml(name(mm))+'</span><span>'+dfmt(mm.einzug)+' – '+dfmt(mm.auszug)+'</span></div>';});
+    h+='</div>';
+  }
+  h+='<div style="display:flex;gap:.5rem;justify-content:flex-end">'
+    +'<button onclick="closeEinheitCockpit();editEinheit(\''+e.id+'\')" class="btn-small" style="font-size:.76rem;padding:.4rem .8rem">✏️ Einheit bearbeiten</button>'
+    +'<button onclick="closeEinheitCockpit()" class="btn-small" style="font-size:.76rem;padding:.4rem .8rem;background:#f3f4f6;color:#374151">Schließen</button></div>';
+  h+='</div>';
+  return h;
+}
 
 async function saveMietverhaeltnis(){
   var id=document.getElementById('mv-edit-id').value;
@@ -13524,6 +14079,7 @@ async function loadObjektEinheiten(objId){
           +(e.kaltmiete||aktivMV.reduce(function(s,m){return s+(m.kaltmiete||0);},0)>0
             ?'<div style="text-align:right"><div style="font-size:1rem;font-weight:700;color:var(--p)">'+(e.kaltmiete||(aktivMV[0]&&aktivMV[0].kaltmiete)||0).toLocaleString('de-DE',{minimumFractionDigits:2})+' €</div><div style="font-size:.68rem;color:var(--muted)">Kaltmiete'+((e.flaeche>0&&(e.kaltmiete||(aktivMV[0]&&aktivMV[0].kaltmiete)))?' · '+((e.kaltmiete||(aktivMV[0]&&aktivMV[0].kaltmiete)||0)/e.flaeche).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €/m²':'')+'</div></div>':''
           )
+          +'<button onclick="event.stopPropagation();openEinheitCockpit(\''+e.id+'\')" class="btn-small" style="font-size:.72rem;padding:.3rem .7rem;white-space:nowrap;background:var(--p);color:#fff">🎯 Cockpit</button>'
           +'<button onclick="event.stopPropagation();openMietverhModal(\''+e.id+'\',\''+aktivesObjekt.id+'\',\''+e.bezeichnung+'\',null)" class="btn-small gruen" style="font-size:.72rem;padding:.3rem .7rem;white-space:nowrap">+ Mietverhältnis</button>'
           +'<button onclick="event.stopPropagation();editEinheit(\''+e.id+'\')" class="btn-small" style="font-size:.72rem;padding:.3rem .6rem">✏️</button>'
           +'<button onclick="event.stopPropagation();deleteEinheit(\''+e.id+'\')" class="btn-small" style="font-size:.72rem;padding:.3rem .6rem;background:#888">🗑</button>'

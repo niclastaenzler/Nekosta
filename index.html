@@ -9539,12 +9539,20 @@ function renderHausgeld(){
   if(kc){var card=function(l,v,col){return '<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:.8rem 1rem"><div style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)">'+l+'</div><div style="font-size:1.2rem;font-weight:800;margin-top:.25rem;color:'+col+';font-variant-numeric:tabular-nums">'+v+'</div></div>';};
     kc.innerHTML=card('Soll '+buha.jahr,buhaEuro(sumSoll),'var(--text)')+card('Bezahlt',buhaEuro(sumBez),'#1a7a4a')+card('Offen',buhaEuro(sumOffen),'#9a6700')+card('Überfällig',buhaEuro(sumUeber),'#c0392b');
   }
-  if(!soll.length){c.innerHTML='<div style="padding:2rem;text-align:center;color:var(--muted)">Noch keine Sollstellungen für '+buha.jahr+'. Klicke oben auf „Sollstellungen erzeugen".</div>';return;}
+  // Editor: monatliches Hausgeld je Eigentümer (Quelle für die Sollstellungen)
+  var eigList=(buha._hgEig||[]);
+  var hgEditor='<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:.85rem 1rem;margin-bottom:1rem">'
+    +'<div style="display:flex;align-items:baseline;gap:.5rem;flex-wrap:wrap;margin-bottom:.6rem"><div style="font-size:.82rem;font-weight:700">Monatliches Hausgeld je Eigentümer</div><span style="font-size:.7rem;color:var(--muted)">Betrag ändern → „✓". „Sollstellungen erzeugen" (oben) legt daraus 12 Monatsforderungen an.</span></div>'
+    +(eigList.length?'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:.5rem">'
+      +eigList.map(function(e){return '<div style="display:flex;align-items:center;gap:.4rem;border:1px solid var(--border);border-radius:8px;padding:.3rem .5rem"><span style="flex:1;font-size:.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+escapeHtml(hgEigName(e))+'">'+escapeHtml(hgEigName(e))+(e.weg_einheiten?' · '+escapeHtml(e.weg_einheiten.bezeichnung):'')+'</span><input id="hgsoll-'+e.id+'" type="text" inputmode="decimal" value="'+((parseFloat(e.hausgeld_soll)||0)>0?(parseFloat(e.hausgeld_soll)).toFixed(2).replace('.',','):'')+'" placeholder="0,00" style="width:80px;border:1px solid var(--border);border-radius:5px;padding:2px 5px;font-size:.76rem;text-align:right;font-family:var(--ff)" onkeydown="if(event.key===\'Enter\')setEigHausgeld(\''+e.id+'\')"><span style="font-size:.7rem;color:var(--muted)">€</span><button class="btn-small gruen" style="font-size:.6rem;padding:2px 7px" onclick="setEigHausgeld(\''+e.id+'\')">✓</button></div>';}).join('')
+      +'</div>':'<div style="font-size:.78rem;color:var(--muted)">Keine aktiven Eigentümer (Reiter „Eigentümer").</div>')
+    +'</div>';
+  if(!soll.length){c.innerHTML=hgEditor+'<div style="padding:2rem;text-align:center;color:var(--muted)">Noch keine Sollstellungen für '+buha.jahr+'. Setze oben das Hausgeld je Eigentümer und klicke „Sollstellungen erzeugen".</div>';return;}
   var filt=(document.getElementById('hg-filter')||{value:'alle'}).value;
   var list=soll.filter(function(s){ if(filt==='offen')return s.status!=='bezahlt'; if(filt==='bezahlt')return s.status==='bezahlt'; if(filt==='ueberfaellig')return _hgUeberfaellig(s); return true; });
   list.sort(function(a,b){return (a.faellig_am||'').localeCompare(b.faellig_am||'')|| (hgEigName(eigById[a.eigentuemer_id])).localeCompare(hgEigName(eigById[b.eigentuemer_id]));});
   var mLbl=['','1. Mahnung','2. Mahnung','Inkasso/3.'];
-  c.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:.82rem;min-width:680px"><thead><tr style="border-bottom:2px solid var(--border)">'
+  c.innerHTML=hgEditor+'<table style="width:100%;border-collapse:collapse;font-size:.82rem;min-width:680px"><thead><tr style="border-bottom:2px solid var(--border)">'
     +['Fällig','Monat','Eigentümer','Einheit','Betrag','Status',''].map(function(h,i){return '<th style="text-align:'+(i===4?'right':'left')+';padding:.5rem .7rem;font-size:.62rem;text-transform:uppercase;color:var(--muted)">'+h+'</th>';}).join('')
     +'</tr></thead><tbody>'
     +list.map(function(s){
@@ -9571,6 +9579,15 @@ async function setSollStatus(id,status){
   if(error){showToast('❌ '+error.message);return;}
   showToast(status==='bezahlt'?'✓ Zahlungseingang verbucht':'↺ Auf offen gesetzt');
   await ladeHausgeld();
+}
+// Monatliches Hausgeld eines Eigentümers speichern (Basis für die Sollstellungen)
+async function setEigHausgeld(eigId){
+  var el=document.getElementById('hgsoll-'+eigId); if(!el)return;
+  var val=_wegcNum(el.value);
+  if(val<0){showToast('Betrag darf nicht negativ sein');el.focus();return;}
+  var {error}=await sb.from('weg_eigentuemer').update({hausgeld_soll:val}).eq('id',eigId);
+  if(error){showToast('❌ '+error.message);return;}
+  showToast('✓ Hausgeld gespeichert'); await ladeHausgeld();
 }
 // Einzelne Hausgeld-Sollstellung löschen
 function loescheSollstellung(id){
@@ -11298,6 +11315,7 @@ async function wegcRenderWplan(c){
   var html='<div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:1rem;margin-bottom:1.25rem">'
     +'<div><h1 style="font-size:1.6rem;font-weight:800;color:#111827">Wirtschaftsplan</h1><div style="font-size:.85rem;color:#6b7280;margin-top:2px">§ 28 Abs. 1 WEG · '+escapeHtml(_wegcCur.name||'WEG')+'</div></div>'
     +'<div style="display:flex;gap:.6rem;align-items:flex-end">'+_wegcFld('Wirtschaftsjahr',jahrSel)
+      +'<button class="btn-secondary" style="padding:.5rem .9rem;white-space:nowrap" onclick="wegcWplanFromAbr()" title="Kostenpositionen aus einer Hausgeldabrechnung als Wirtschaftsplan übernehmen (mit prozentualem Aufschlag)">📋 Aus Abrechnung</button>'
       +'<button class="btn-secondary" style="padding:.5rem .9rem;white-space:nowrap" onclick="wegcWplanSoll()"'+((owners.length&&P.length)?'':' disabled')+'><span class="btn-ic" data-icon="euro"></span> Hausgeld buchen</button>'
       +'<button class="btn-primary" style="padding:.5rem 1rem;white-space:nowrap" onclick="wegcWplanPdf()"'+((owners.length&&P.length)?'':' disabled')+'><span class="btn-ic" data-icon="download"></span> PDF</button></div>'
   +'</div>';
@@ -11331,6 +11349,46 @@ async function wegcRenderWplan(c){
   html+='<tr style="background:#fafafa;font-weight:800"><td colspan="3" style="padding:.55rem .9rem">Summe</td><td style="padding:.55rem .9rem;text-align:right">'+fmtEuro(sumJahr)+'</td><td style="padding:.55rem .9rem;text-align:right;color:#7b1fa2">'+fmtEuro(monatGes)+'</td></tr></tbody></table></div>';
   html+='<div style="font-size:.72rem;color:#9ca3af;line-height:1.5;padding:.6rem .2rem 0">„Hausgeld buchen" erzeugt für jeden Eigentümer 12 monatliche Sollstellungen ('+jahr+') aus dem Einzelwirtschaftsplan – diese erscheinen im Hausgeld-Modul und als Vorauszahlungen in der Hausgeldabrechnung.</div>';
   c.innerHTML=html;
+}
+// Wirtschaftsplan aus einer Hausgeldabrechnung uebernehmen, mit prozentualem Aufschlag je Position.
+function wegcWplanFromAbr(){
+  if(!_wegcCur)return;
+  var zielJahr=_wegcWpJahr||(new Date().getFullYear());
+  var quelle=zielJahr-1;
+  var msg='<div style="text-align:left;font-size:.85rem;color:#374151">Übernimmt alle Kostenpositionen einer Hausgeldabrechnung als Wirtschaftsplan <strong>'+zielJahr+'</strong> – mit prozentualem Aufschlag je Position.'
+    +'<div style="display:flex;gap:.8rem;margin-top:.8rem;flex-wrap:wrap">'
+    +'<label style="display:flex;flex-direction:column;gap:3px;font-size:.66rem;font-weight:700;color:#6b7280">ABRECHNUNGSJAHR<input id="wpfa-jahr" type="number" value="'+quelle+'" style="border:1px solid var(--border);border-radius:7px;padding:.4rem;width:120px;font-family:var(--ff)"></label>'
+    +'<label style="display:flex;flex-direction:column;gap:3px;font-size:.66rem;font-weight:700;color:#6b7280">AUFSCHLAG %<input id="wpfa-pct" type="number" step="0.1" value="0" style="border:1px solid var(--border);border-radius:7px;padding:.4rem;width:120px;font-family:var(--ff)"></label>'
+    +'</div>'
+    +'<label style="display:flex;align-items:center;gap:.4rem;margin-top:.7rem;font-size:.78rem"><input id="wpfa-clear" type="checkbox" checked> Bestehende Wirtschaftsplan-Positionen '+zielJahr+' vorher entfernen</label></div>';
+  appConfirm({icon:'📋',title:'Aus Abrechnung übernehmen',message:msg,buttons:[
+    {label:'Abbrechen',style:'background:#f3f4f6;color:#374151',onClick:appConfirmClose},
+    {label:'Übernehmen',style:'background:var(--p);color:#fff',onClick:async function(){
+      var qj=parseInt((document.getElementById('wpfa-jahr')||{}).value)||quelle;
+      var pct=parseFloat((document.getElementById('wpfa-pct')||{}).value)||0;
+      var clear=!!((document.getElementById('wpfa-clear')||{}).checked);
+      appConfirmClose();
+      try{
+        var src=await sb.from('weg_abr_position').select('*').eq('user_id',currentUser.id).eq('objekt_id',_wegcCur.id).eq('jahr',qj).order('sortierung',{ascending:true}).order('created_at',{ascending:true});
+        if(src.error){showToast('Fehler: '+src.error.message);return;}
+        var positions=src.data||[];
+        if(!positions.length){showToast('Keine Abrechnungspositionen für '+qj+' gefunden.');return;}
+        var fb=await sb.from('weg_festbetrag').select('position_id,betrag').eq('user_id',currentUser.id).eq('objekt_id',_wegcCur.id).eq('jahr',qj);
+        var fbSum={}; (fb.data||[]).forEach(function(f){fbSum[f.position_id]=(fbSum[f.position_id]||0)+(parseFloat(f.betrag)||0);});
+        var faktor=1+pct/100;
+        var rows=positions.map(function(p,i){
+          var basis=(p.verteiler==='festbetrag')?(fbSum[p.id]||0):(parseFloat(p.betrag)||0);
+          var vt=(p.verteiler==='mea'||p.verteiler==='einheiten'||p.verteiler==='pxt')?p.verteiler:'mea';
+          return {user_id:currentUser.id,objekt_id:_wegcCur.id,jahr:zielJahr,bezeichnung:p.bezeichnung,verteiler:vt,haus_id:p.haus_id||null,betrag:Math.round(basis*faktor*100)/100,sortierung:i};
+        });
+        if(clear){ var del=await sb.from('weg_wplan_position').delete().eq('user_id',currentUser.id).eq('objekt_id',_wegcCur.id).eq('jahr',zielJahr); if(del.error){showToast('Fehler: '+del.error.message);return;} }
+        var ins=await sb.from('weg_wplan_position').insert(rows);
+        if(ins.error){showToast('Fehler: '+ins.error.message);return;}
+        showToast('✅ '+rows.length+' Positionen aus '+qj+' übernommen (+'+pct+' %)');
+        wegcRenderWplan();
+      }catch(e){showToast('Fehler: '+e.message);}
+    }}
+  ]});
 }
 async function wegcWplanPosSave(){
   if(!_wegcCur)return;

@@ -11516,9 +11516,17 @@ async function wegcHausAssign(einheitId,hausId){
 // ── WEG-Cockpit: bestehende Objekt-Detail-Tabs nativ ins Cockpit einbetten (Buchhaltung/Einheiten/Eigentümer) ──
 var _buhaHomeParent=null;
 var _wegcEmbedHome={}; // nodeId -> ursprünglicher Eltern-Knoten (Objekt-Detail)
+var _wegcEmbedTpl={};  // nodeId -> Klon-Vorlage (Selbstheilung, falls der Knoten je zerstört wird)
 function _wegcEmbed(c,nodeId){
-  var node=document.getElementById(nodeId); if(!node)return null;
-  if(!_wegcEmbedHome[nodeId])_wegcEmbedHome[nodeId]=node.parentNode;
+  var node=document.getElementById(nodeId);
+  if(!node){
+    // Knoten wurde durch irgendein innerHTML zerstört → aus gesicherter Vorlage neu erzeugen
+    if(_wegcEmbedTpl[nodeId])node=_wegcEmbedTpl[nodeId].cloneNode(true);
+    if(!node)return null;
+  }else if(!_wegcEmbedTpl[nodeId]){
+    _wegcEmbedTpl[nodeId]=node.cloneNode(true); // Vorlage einmalig sichern (Inhalt wird ohnehin neu geladen)
+  }
+  if(!_wegcEmbedHome[nodeId]&&node.parentNode)_wegcEmbedHome[nodeId]=node.parentNode;
   c.appendChild(node); node.style.display='block'; return node;
 }
 // Eingebetteten Knoten heimschieben, BEVOR c.innerHTML ihn (als Kind von c) zerstört.
@@ -11546,8 +11554,10 @@ async function wegcRenderBuchhaltung(c,subtab){
   if(!_wegcCur)return;
   if(!c)c=document.getElementById('wegc-content'); if(!c)return;
   var node=document.getElementById('tab-content-buchhaltung');
+  if(!node&&_wegcEmbedTpl['tab-content-buchhaltung'])node=_wegcEmbedTpl['tab-content-buchhaltung'].cloneNode(true); // Selbstheilung
   if(!node){c.innerHTML='<div style="color:#dc2626;font-size:.85rem">Buchhaltungs-Modul nicht gefunden.</div>';return;}
-  if(!_buhaHomeParent)_buhaHomeParent=node.parentNode;
+  if(!_wegcEmbedTpl['tab-content-buchhaltung'])_wegcEmbedTpl['tab-content-buchhaltung']=node.cloneNode(true);
+  if(!_buhaHomeParent&&node.parentNode)_buhaHomeParent=node.parentNode;
   renderWegcNav(subtab==='hausgeld'?'hausgeld':'buchhaltung');
   _wegcParkEmbed(c,'tab-content-buchhaltung');
   c.innerHTML='<div style="margin-bottom:1.1rem"><h1 style="font-size:1.6rem;font-weight:800;color:#111827">'+(subtab==='hausgeld'?'Hausgeld':'Buchhaltung')+'</h1><div style="font-size:.85rem;color:#6b7280;margin-top:2px">'+escapeHtml(_wegcCur.name||'WEG')+'</div></div>';

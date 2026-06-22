@@ -10681,7 +10681,8 @@ async function wegcRenderAbrechnung(c){
       sb.from('weg_sollstellung').select('eigentuemer_id,betrag,status').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr),
       sb.from('weg_untergemeinschaften').select('id,name').eq('user_id',currentUser.id).eq('objekt_id',wegId),
       sb.from('weg_festbetrag').select('position_id,eigentuemer_id,betrag').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr),
-      sb.from('weg_einheit_personen').select('einheit_id,monat,personen').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr)
+      sb.from('weg_einheit_personen').select('einheit_id,monat,personen').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr),
+      sb.from('weg_ruecklagen').select('typ,betrag,zweck,jahr,datum,untergemeinschaft_id').eq('user_id',currentUser.id).eq('objekt_id',wegId)
     ]);
     for(var i=0;i<res.length;i++){if(res[i].error)throw res[i].error;}
   }catch(e){console.warn('hausgeldabr load:',e);c.innerHTML='<div style="color:#dc2626;font-size:.85rem">Fehler beim Laden: '+escapeHtml(e.message||'')+'</div>';return;}
@@ -10704,7 +10705,15 @@ async function wegcRenderAbrechnung(c){
     u._pd=pd;
   });
   var P=_wegcAbrEnrich(positions,units,festByPos,haeuserById,tage);
-  _wegcAbrData={jahr:jahr,weg:_wegcCur,P:P,owners:owners,festByPos:festByPos,sollByEig:sollByEig,istByEig:istByEig,haeuserById:haeuserById,tage:tage,units:units,persByUnit:persByUnit};
+  // Instandhaltungsrücklage – Entwicklung im Wirtschaftsjahr (#20)
+  var rlRows=res[7].data||[];
+  var rlAnfang=0,rlZuf=0,rlEnt=0,rlEntList=[];
+  rlRows.forEach(function(r){var b=parseFloat(r.betrag)||0; var ry=(r.jahr|0)||(r.datum?parseInt((''+r.datum).slice(0,4)):0);
+    if(ry<jahr){rlAnfang+=(r.typ==='entnahme'?-b:b);}
+    else if(ry===jahr){ if(r.typ==='entnahme'){rlEnt+=b;rlEntList.push({betrag:b,zweck:r.zweck||''});} else {rlZuf+=b;} }
+  });
+  var rl={anfang:rlAnfang,zuf:rlZuf,ent:rlEnt,ende:rlAnfang+rlZuf-rlEnt,entList:rlEntList,hasData:rlRows.length>0};
+  _wegcAbrData={jahr:jahr,weg:_wegcCur,P:P,owners:owners,festByPos:festByPos,sollByEig:sollByEig,istByEig:istByEig,haeuserById:haeuserById,tage:tage,units:units,persByUnit:persByUnit,rl:rl};
 
   // ── Ergebnis je Eigentümer (für Übersicht/Zusammenfassung) ──
   // Ergebnis = Kostenanteil − Ist (tatsächlich gezahlt); Soll wird zusätzlich ausgewiesen.
@@ -10762,6 +10771,21 @@ async function wegcRenderAbrechnung(c){
       +'<button onclick="wegcGo(\'hausgeld\')" style="padding:.5rem .9rem;border:1px solid var(--border);background:#fff;border-radius:9px;cursor:pointer;font-size:.8rem;font-weight:600;color:#374151;font-family:var(--ff)"><span class="btn-ic" data-icon="euro"></span> Hausgeld Soll/Ist verwalten</button>'
       +'<button onclick="wegcGo(\'buchhaltung\')" style="padding:.5rem .9rem;border:1px solid var(--border);background:#fff;border-radius:9px;cursor:pointer;font-size:.8rem;font-weight:600;color:#374151;font-family:var(--ff)"><span class="btn-ic" data-icon="bookopen"></span> Buchhaltung / DATEV-Import öffnen</button>'
     +'</div>';
+    // Plausibilitätsprüfung (#21)
+    var checks=[];
+    var ch=function(level,text){checks.push({level:level,text:text});};
+    if(!owners.length)ch('err','Keine Eigentümer angelegt.'); else ch('ok',owners.length+' Eigentümer angelegt.');
+    var totMea=units.reduce(function(s,u){return s+_wegcMeaVal(u);},0);
+    if(totMea<=0)ch('warn','Keine MEA-Werte bei den Einheiten – MEA-Verteilung nicht möglich.'); else ch('ok','MEA-Summe der Einheiten erfasst ('+(totMea*1000).toLocaleString('de-DE',{maximumFractionDigits:0})+' ‰ ≈ '+(totMea).toLocaleString('de-DE',{maximumFractionDigits:4})+').');
+    if(!P.length)ch('warn','Noch keine Kostenpositionen für '+jahr+'.'); else ch('ok',P.length+' Kostenpositionen, Gesamtkosten '+fmtEuro(sumKosten)+'.');
+    if(P.length){ if(Math.abs(sumAnteil-sumKosten)<0.05)ch('ok','Verteilung verlustfrei (Summe Eigentümer-Anteile = Gesamtkosten).'); else ch('warn','Verteilung weicht ab: Σ Anteile '+fmtEuro(sumAnteil)+' ≠ Gesamtkosten '+fmtEuro(sumKosten)+' (Position ohne Verteilbasis?).'); }
+    if(sumVz<=0)ch('info','Noch keine Hausgeld-Vorauszahlungen gebucht (Wirtschaftsplan → „Hausgeld buchen").'); else ch('ok','Hausgeld-Soll '+fmtEuro(sumVz)+' erfasst.');
+    haeuser.forEach(function(h){ if(h.mea_zaehler){ var hs=units.filter(function(u){return u.untergemeinschaft_id===h.id;}).reduce(function(s,u){return s+(parseFloat(u.mea_zaehler)||0);},0); if(Math.abs(hs-h.mea_zaehler)>0.5)ch('warn','MEA „'+escapeHtml(h.name)+'": Einheiten-Summe '+hs+' ≠ Haus-MEA '+h.mea_zaehler+'.'); } });
+    var colOf={ok:['#157f3c','#f0fdf4','✓'],warn:['#b45309','#fffbeb','⚠'],err:['#b62923','#fef2f2','✗'],info:['#1e40af','#eff6ff','ℹ']};
+    html+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:1rem 1.1rem;margin-top:1.1rem;box-shadow:0 1px 2px rgba(16,24,40,.05)">'
+      +'<div style="font-size:.85rem;font-weight:700;margin-bottom:.6rem;color:#111827">🔍 Plausibilitätsprüfung</div>'
+      +checks.map(function(k){var c=colOf[k.level]||colOf.info;return '<div style="display:flex;gap:.5rem;align-items:flex-start;padding:.3rem .5rem;border-radius:7px;background:'+c[1]+';margin-bottom:.3rem;font-size:.8rem;color:'+c[0]+'"><span style="font-weight:800">'+c[2]+'</span><span>'+k.text+'</span></div>';}).join('')
+    +'</div>';
   } else if(step===2){
     // Schritt 2: Kostenpositionen
     if(!owners.length){html+=warnNoOwners;}
@@ -10775,23 +10799,33 @@ async function wegcRenderAbrechnung(c){
           +_wegcFld('Nur Haus','<select id="wegc-pos-haus" class="buha-inp">'+hausOpt+'</select>')
           +_wegcFld('Umlage','<select id="wegc-pos-umlf" class="buha-inp"><option value="1">umlagefähig</option><option value="0">nicht umlagefähig</option></select>')
           +'<button class="btn-primary" style="padding:.5rem 1rem;white-space:nowrap" onclick="wegcAbrPosSave()"><span class="btn-ic" data-icon="plus"></span> Hinzufügen</button>'
-        +'</div><div style="font-size:.7rem;color:var(--muted);margin-top:.5rem">„Festbetrag" = Betrag je Eigentümer direkt eingeben (z. B. externe Heizkostenabrechnung). „Nur Haus" verteilt die Kosten ausschließlich innerhalb dieses Hauses. „umlagefähig/nicht" steuert die beiden Blöcke der Abrechnung.</div></div>';
+          +'<button class="btn-secondary" style="padding:.5rem 1rem;white-space:nowrap" onclick="wegcAbrAusBuchhaltung()" title="Aufwands-Buchungen des Wirtschaftsjahres je Konto als Positionen übernehmen"><span class="btn-ic" data-icon="download"></span> Aus Buchhaltung übernehmen</button>'
+        +'</div><div style="font-size:.7rem;color:var(--muted);margin-top:.5rem">„Festbetrag" = Betrag je Eigentümer direkt eingeben (z. B. externe Heizkostenabrechnung). „Nur Haus" verteilt die Kosten ausschließlich innerhalb dieses Hauses. „umlagefähig/nicht" steuert die beiden Blöcke der Abrechnung. <strong>„Aus Buchhaltung übernehmen"</strong> fasst die Aufwandskonten aus den Buchungen automatisch zu Positionen zusammen.</div></div>';
+      var _vtOpts=function(sel){return [['mea','MEA'],['einheiten','Einheiten'],['pxt','Pers×Tage'],['festbetrag','Festbetrag']].map(function(o){return '<option value="'+o[0]+'"'+((sel||'mea')===o[0]?' selected':'')+'>'+o[1]+'</option>';}).join('');};
+      var _hausOptSel=function(sel){return '<option value="">Gesamt</option>'+haeuser.map(function(h){return '<option value="'+h.id+'"'+(sel===h.id?' selected':'')+'>'+escapeHtml(h.name)+'</option>';}).join('');};
+      var _iSt='border:1px solid var(--border);border-radius:5px;padding:3px 5px;font-size:.76rem;font-family:var(--ff);background:#fff';
+      var _sSt='border:1px solid var(--border);border-radius:5px;padding:3px 4px;font-size:.74rem;font-family:var(--ff);background:#fff';
       var posBlock=function(list,title,col){
         var sub=list.reduce(function(s,x){return s+x.gesamtEUR;},0);
         var h='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;overflow:hidden;margin-bottom:1rem">'
-          +'<div style="padding:.6rem 1rem;font-weight:700;font-size:.82rem;color:'+col+';border-bottom:1px solid #eef0f4">'+title+'</div><table style="width:100%;border-collapse:collapse;font-size:.83rem"><tbody>';
-        if(!list.length)h+='<tr><td style="padding:.7rem .9rem;color:var(--muted);font-size:.8rem">keine Positionen</td></tr>';
+          +'<div style="padding:.6rem 1rem;font-weight:700;font-size:.82rem;color:'+col+';border-bottom:1px solid #eef0f4">'+title+'</div><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.82rem;min-width:620px"><thead><tr style="border-bottom:1px solid #eef0f4">'
+          +['Bezeichnung','Verteiler','Nur Haus','Umlage'].map(function(t){return '<th style="text-align:left;padding:.4rem .6rem;font-size:.58rem;text-transform:uppercase;color:var(--muted)">'+t+'</th>';}).join('')
+          +'<th style="text-align:right;padding:.4rem .6rem;font-size:.58rem;text-transform:uppercase;color:var(--muted)">Betrag €</th><th></th></tr></thead><tbody>';
+        if(!list.length)h+='<tr><td colspan="6" style="padding:.7rem .9rem;color:var(--muted);font-size:.8rem">keine Positionen</td></tr>';
         list.forEach(function(x){
-          h+='<tr style="border-bottom:1px solid #f3f4f6"><td style="padding:.45rem .9rem;font-weight:600">'+escapeHtml(x.name)+'</td>'
-            +'<td style="padding:.45rem .9rem;color:#6b7280;font-size:.76rem">'+escapeHtml(x.vn)+'</td>'
-            +'<td style="padding:.45rem .9rem;text-align:right;font-weight:600">'+fmtEuro(x.gesamtEUR)+'</td>'
-            +'<td style="padding:.45rem .9rem;text-align:right;width:40px"><button class="oa-btn" title="Löschen" onclick="wegcAbrPosDel(\''+x.id+'\')"><span class="mini-ic" data-icon="trash"></span></button></td></tr>';
+          h+='<tr style="border-bottom:1px solid #f3f4f6">'
+            +'<td style="padding:.35rem .6rem"><input value="'+escapeHtml(x.name)+'" onchange="wegcAbrPosUpdate(\''+x.id+'\',\'bezeichnung\',this.value)" style="'+_iSt+';min-width:150px;width:100%"></td>'
+            +'<td style="padding:.35rem .4rem"><select onchange="wegcAbrPosUpdate(\''+x.id+'\',\'verteiler\',this.value)" style="'+_sSt+'">'+_vtOpts(x.p.verteiler)+'</select></td>'
+            +'<td style="padding:.35rem .4rem"><select onchange="wegcAbrPosUpdate(\''+x.id+'\',\'haus_id\',this.value)" style="'+_sSt+'">'+_hausOptSel(x.p.haus_id)+'</select></td>'
+            +'<td style="padding:.35rem .4rem"><select onchange="wegcAbrPosUpdate(\''+x.id+'\',\'umlagefaehig\',this.value)" style="'+_sSt+'"><option value="1"'+(x.umlf?' selected':'')+'>umlagefähig</option><option value="0"'+(!x.umlf?' selected':'')+'>nicht uml.</option></select></td>'
+            +'<td style="padding:.35rem .4rem;text-align:right">'+(x.isFest?'<span style="font-weight:600">'+fmtEuro(x.gesamtEUR)+'</span>':'<input value="'+((x.p.betrag!=null&&x.p.betrag!=='')?(''+x.p.betrag).replace('.',','):'')+'" inputmode="decimal" onchange="wegcAbrPosUpdate(\''+x.id+'\',\'betrag\',this.value)" style="'+_iSt+';width:90px;text-align:right">')+'</td>'
+            +'<td style="padding:.35rem .5rem;text-align:right;width:34px"><button class="oa-btn" title="Löschen" onclick="wegcAbrPosDel(\''+x.id+'\')"><span class="mini-ic" data-icon="trash"></span></button></td></tr>';
           if(x.isFest){
-            h+='<tr style="background:#faf7fe"><td colspan="4" style="padding:.4rem .9rem .6rem"><div style="font-size:.7rem;color:#7b1fa2;font-weight:700;margin-bottom:.35rem">Beträge je Eigentümer eingeben</div><div style="display:flex;flex-wrap:wrap;gap:.4rem">'
+            h+='<tr style="background:#faf7fe"><td colspan="6" style="padding:.4rem .9rem .6rem"><div style="font-size:.7rem;color:#7b1fa2;font-weight:700;margin-bottom:.35rem">Beträge je Eigentümer eingeben</div><div style="display:flex;flex-wrap:wrap;gap:.4rem">'
               +owners.map(function(o){var v=(festByPos[x.id]||{})[o.id];return '<span style="display:inline-flex;align-items:center;gap:.3rem;font-size:.72rem;background:#fff;border:1px solid #e4d3f0;border-radius:7px;padding:.15rem .4rem">'+escapeHtml((o.weg_einheiten&&o.weg_einheiten.bezeichnung)||_wegcEigName(o))+' <input type="text" inputmode="decimal" value="'+(v!=null&&v!==''?(''+v).replace('.',','):'')+'" onchange="wegcAbrFestSave(\''+x.id+'\',\''+o.id+'\',this.value)" style="width:74px;border:1px solid var(--border);border-radius:5px;padding:2px 5px;font-size:.72rem;font-family:var(--ff)"></span>';}).join('')+'</div></td></tr>';
           }
         });
-        h+='<tr style="background:#fafafa;font-weight:700"><td colspan="2" style="padding:.5rem .9rem">Summe</td><td style="padding:.5rem .9rem;text-align:right">'+fmtEuro(sub)+'</td><td></td></tr></tbody></table></div>';
+        h+='<tr style="background:#fafafa;font-weight:700"><td colspan="4" style="padding:.5rem .6rem">Summe</td><td style="padding:.5rem .4rem;text-align:right">'+fmtEuro(sub)+'</td><td></td></tr></tbody></table></div></div>';
         return h;
       };
       html+=posBlock(P.filter(function(x){return !x.umlf;}),'Nicht zur Umlage bestimmte Kosten (Eigentümer)','#9a3412');
@@ -10868,6 +10902,20 @@ async function wegcRenderAbrechnung(c){
           +_wegcFld('Einzel-PDF für',eigSel2)
           +'<button class="btn-secondary" style="padding:.55rem 1rem" onclick="wegcAbrechnungPdf(_wegcAbrEig)"><span class="btn-ic" data-icon="filetext"></span> Einzel-PDF</button>'
         +'</div></div>';
+      // Entwicklung der Instandhaltungsrücklage (#20)
+      if(rl.hasData||rl.anfang||rl.zuf||rl.ent){
+        html+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:1.1rem 1.2rem;margin-top:1rem;box-shadow:0 1px 2px rgba(16,24,40,.05)">'
+          +'<div style="font-size:.9rem;font-weight:800;color:#111827;margin-bottom:.6rem">🏦 Entwicklung der Instandhaltungsrücklage '+jahr+'</div>'
+          +'<table style="border-collapse:collapse;font-size:.85rem;width:100%;max-width:460px">'
+          +'<tr><td style="padding:.3rem 0;color:#374151">Anfangsbestand (01.01.'+jahr+')</td><td style="text-align:right">'+fmtEuro(rl.anfang)+'</td></tr>'
+          +'<tr><td style="padding:.3rem 0;color:#157f3c">+ Zuführungen</td><td style="text-align:right;color:#157f3c">'+fmtEuro(rl.zuf)+'</td></tr>'
+          +'<tr><td style="padding:.3rem 0;color:#b62923">- Entnahmen</td><td style="text-align:right;color:#b62923">'+fmtEuro(rl.ent)+'</td></tr>'
+          +'<tr style="border-top:2px solid var(--border);font-weight:800"><td style="padding:.4rem 0">Endbestand (31.12.'+jahr+')</td><td style="text-align:right">'+fmtEuro(rl.ende)+'</td></tr>'
+          +'</table>'
+          +(rl.entList.length?'<div style="margin-top:.55rem;font-size:.74rem;color:#6b7280">Entnahmen im Jahr: '+rl.entList.map(function(x){return escapeHtml(x.zweck||'(ohne Zweck)')+' '+fmtEuro(x.betrag);}).join(' · ')+'</div>':'')
+          +'<div style="margin-top:.5rem"><button class="btn-secondary" style="padding:.4rem .8rem;font-size:.78rem" onclick="wegcGo(\'ruecklagen\')"><span class="btn-ic" data-icon="shield"></span> Rücklagen verwalten</button></div>'
+        +'</div>';
+      }
     }
   }
 
@@ -10932,6 +10980,46 @@ function wegcAbrPosDel(id){
   appConfirm({icon:'🗑',title:'Position löschen?',message:'Die Kostenposition wird entfernt.',buttons:[
     {label:'Abbrechen',style:'background:#f3f4f6;color:#374151',onClick:appConfirmClose},
     {label:'Löschen',style:'background:#dc2626;color:#fff',onClick:async function(){appConfirmClose();try{await sb.from('weg_festbetrag').delete().eq('position_id',id);var r=await sb.from('weg_abr_position').delete().eq('id',id);if(r.error){showToast('Fehler: '+r.error.message);return;}showToast('Gelöscht');wegcRenderAbrechnung();}catch(e){showToast('Fehler: '+e.message);}}}
+  ]});
+}
+// Position direkt bearbeiten (inline) (#22)
+async function wegcAbrPosUpdate(id,field,value){
+  var upd={};
+  if(field==='betrag')upd.betrag=_wegcNum(value);
+  else if(field==='umlagefaehig')upd.umlagefaehig=(value==='1'||value===true);
+  else if(field==='haus_id')upd.haus_id=value||null;
+  else if(field==='bezeichnung'){var v=(''+value).trim();if(!v){showToast('Bezeichnung darf nicht leer sein');wegcRenderAbrechnung();return;}upd.bezeichnung=v;}
+  else upd[field]=value;
+  try{var r=await sb.from('weg_abr_position').update(upd).eq('id',id);if(r.error){showToast('Fehler: '+r.error.message);return;}wegcRenderAbrechnung();}catch(e){showToast('Fehler: '+e.message);}
+}
+// Kostenpositionen aus der WEG-Buchhaltung übernehmen (#19) – Aufwandskonten je Wirtschaftsjahr
+async function wegcAbrAusBuchhaltung(){
+  if(!_wegcCur)return;
+  var jahr=_wegcAbrJahr;
+  appConfirm({icon:'📥',title:'Aus Buchhaltung übernehmen?',message:'Die <strong>Aufwands-Buchungen aus '+jahr+'</strong> werden je Konto zu Kostenpositionen zusammengefasst und hinzugefügt (Verteiler: Eigentumsanteil/MEA, umlagefähig). Bereits vorhandene Positionen mit gleichem Namen werden übersprungen – du kannst Verteiler/Umlage danach je Position anpassen.',buttons:[
+    {label:'Abbrechen',style:'background:#f3f4f6;color:#374151',onClick:appConfirmClose},
+    {label:'Übernehmen',style:'background:linear-gradient(135deg,#8e44c0,#6a2d9f);color:#fff',onClick:async function(){appConfirmClose();
+      try{
+        var kr=await sb.from('weg_konten').select('nummer,name,typ').eq('user_id',currentUser.id);
+        if(kr.error){showToast('Fehler: '+kr.error.message);return;}
+        var typByNr={},nameByNr={}; (kr.data||[]).forEach(function(k){typByNr[k.nummer]=k.typ;nameByNr[k.nummer]=k.name;});
+        var br=await sb.from('weg_buchungen').select('soll_konto,haben_konto,betrag').eq('user_id',currentUser.id).eq('objekt_id',_wegcCur.id).eq('wirtschaftsjahr',jahr);
+        if(br.error){showToast('Fehler: '+br.error.message);return;}
+        var net={};
+        (br.data||[]).forEach(function(b){var bt=parseFloat(b.betrag)||0;
+          if(typByNr[b.soll_konto]==='aufwand')net[b.soll_konto]=(net[b.soll_konto]||0)+bt;
+          if(typByNr[b.haben_konto]==='aufwand')net[b.haben_konto]=(net[b.haben_konto]||0)-bt;
+        });
+        var existing=await sb.from('weg_abr_position').select('bezeichnung').eq('user_id',currentUser.id).eq('objekt_id',_wegcCur.id).eq('jahr',jahr);
+        var have={}; (existing.data||[]).forEach(function(p){have[(p.bezeichnung||'').toLowerCase()]=1;});
+        var sort=(_wegcAbrData&&_wegcAbrData.P?_wegcAbrData.P.length:0), rows=[];
+        Object.keys(net).forEach(function(nr){var betr=Math.round(net[nr]*100)/100; if(Math.abs(betr)<0.005)return; var name=nameByNr[nr]||('Konto '+nr); if(have[name.toLowerCase()])return; rows.push({user_id:currentUser.id,objekt_id:_wegcCur.id,jahr:jahr,bezeichnung:name,verteiler:'mea',haus_id:null,umlagefaehig:true,betrag:betr,sortierung:sort++});});
+        if(!rows.length){showToast('Keine (neuen) Aufwandskonten mit Buchungen in '+jahr+' gefunden.');return;}
+        var ins=await sb.from('weg_abr_position').insert(rows);
+        if(ins.error){showToast('Fehler: '+ins.error.message);return;}
+        showToast('✅ '+rows.length+' Position(en) aus Buchhaltung übernommen');wegcRenderAbrechnung();
+      }catch(e){showToast('Fehler: '+e.message);}
+    }}
   ]});
 }
 async function wegcPersonenSave(einheitId){
@@ -11033,7 +11121,20 @@ function wegcAbrechnungPdf(onlyEigId){
       sf(7.5,'normal',150,150,155);doc.text('- Zahlungsrueckstand (Soll - Ist)',cx.pos+2,y);doc.text(fmt(rueck)+' EUR',cx.aeur,y,{align:'right'});y+=2.5;
       line(L+95,W-R,y+1,null,0.4);y+=5.5;
       var rc=[55,55,60];
-      sf(11,'bold',rc[0],rc[1],rc[2]);doc.text(diff<0?'Ihre Nachzahlung (Kosten - Ist)':'Ihr Guthaben (Kosten - Ist)',cx.pos,y);doc.text(fmt(diff)+' EUR',cx.aeur,y,{align:'right'});y+=8;
+      sf(11,'bold',rc[0],rc[1],rc[2]);doc.text(diff<0?'Ihre Nachzahlung (Kosten - Ist)':'Ihr Guthaben (Kosten - Ist)',cx.pos,y);doc.text(fmt(diff)+' EUR',cx.aeur,y,{align:'right'});y+=9;
+      // Entwicklung der Instandhaltungsruecklage (Gesamt-WEG) (#20)
+      var rl=d.rl;
+      if(rl&&(rl.hasData||rl.anfang||rl.zuf||rl.ent)){
+        if(y>250){doc.addPage();y=20;}
+        sf(8.5,'bold',45,45,50);doc.text('Entwicklung der Instandhaltungsruecklage '+d.jahr,cx.pos,y);y+=5;
+        sf(8,'normal',70,70,75);
+        doc.text('Anfangsbestand (01.01.'+d.jahr+')',cx.pos+2,y);doc.text(fmt(rl.anfang)+' EUR',cx.aeur,y,{align:'right'});y+=4.5;
+        doc.text('+ Zufuehrungen',cx.pos+2,y);doc.text(fmt(rl.zuf)+' EUR',cx.aeur,y,{align:'right'});y+=4.5;
+        doc.text('- Entnahmen',cx.pos+2,y);doc.text(fmt(rl.ent)+' EUR',cx.aeur,y,{align:'right'});y+=2;
+        line(L+95,W-R,y+1,null,0.3);y+=5;
+        sf(8.5,'bold',45,45,50);doc.text('Endbestand (31.12.'+d.jahr+')',cx.pos+2,y);doc.text(fmt(rl.ende)+' EUR',cx.aeur,y,{align:'right'});y+=5;
+        if(rl.entList&&rl.entList.length){sf(7,'normal',140,140,145);doc.text('Entnahmen: '+rl.entList.map(function(x){return (x.zweck||'(ohne Zweck)')+' '+fmt(x.betrag);}).join('  ·  '),cx.pos+2,y,{maxWidth:W-L-R-4});y+=5;}
+      }
     });
     var pages=doc.internal.getNumberOfPages();
     for(var i=1;i<=pages;i++){doc.setPage(i);line(L,W-R,287,[200,200,200],0.3);sf(7,'normal',150,150,150);

@@ -10735,7 +10735,8 @@ async function wegcRenderAbrechnung(c){
       sb.from('weg_sollstellung').select('eigentuemer_id,betrag,status').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr),
       sb.from('weg_untergemeinschaften').select('id,name').eq('user_id',currentUser.id).eq('objekt_id',wegId),
       sb.from('weg_festbetrag').select('position_id,eigentuemer_id,betrag').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr),
-      sb.from('weg_einheit_personen').select('einheit_id,monat,personen').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr)
+      sb.from('weg_einheit_personen').select('einheit_id,monat,personen').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr),
+      sb.from('weg_abrechnungen').select('id,finalisiert_am').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr).limit(1)
     ]);
     for(var i=0;i<res.length;i++){if(res[i].error)throw res[i].error;}
   }catch(e){console.warn('hausgeldabr load:',e);c.innerHTML='<div style="color:#dc2626;font-size:.85rem">Fehler beim Laden: '+escapeHtml(e.message||'')+'</div>';return;}
@@ -10745,6 +10746,7 @@ async function wegcRenderAbrechnung(c){
   var sollRows=res[3].data||[];
   var haeuser=res[4].data||[]; var haeuserById={}; haeuser.forEach(function(h){haeuserById[h.id]=h;});
   var festRows=res[5].data||[];
+  var finalRow=(res[7]&&res[7].data&&res[7].data[0])||null;
   var festByPos={}; festRows.forEach(function(f){(festByPos[f.position_id]=festByPos[f.position_id]||{})[f.eigentuemer_id]=parseFloat(f.betrag)||0;});
   var sollByEig={}; sollRows.forEach(function(s){sollByEig[s.eigentuemer_id]=(sollByEig[s.eigentuemer_id]||0)+(parseFloat(s.betrag)||0);});
   var tage=_wegcTage(jahr);
@@ -10784,7 +10786,8 @@ async function wegcRenderAbrechnung(c){
   var hausOpt='<option value="">Gesamte WEG</option>'+haeuser.map(function(h){return '<option value="'+h.id+'">'+escapeHtml(h.name)+'</option>';}).join('');
 
   // ── Kopf + Stepper ──
-  var html='<div style="margin-bottom:1rem"><h1 style="font-size:1.5rem;font-weight:800;color:#111827">Hausgeldabrechnung <span style="font-size:.95rem;font-weight:600;color:#9ca3af">· '+jahr+'</span></h1><div style="font-size:.83rem;color:#6b7280;margin-top:2px">§ 28 WEG · '+escapeHtml(_wegcCur.name||'WEG')+'</div></div>';
+  var finalBadge=finalRow?' <span style="font-size:.6rem;font-weight:700;vertical-align:middle;background:#e9f9f0;color:#157f3c;padding:2px 8px;border-radius:7px;cursor:pointer" onclick="wegcGo(\'abr-archiv\')" title="Zur Übersicht der Hausgeldabrechnungen">✓ abgeschlossen</span>':'';
+  var html='<div style="margin-bottom:1rem"><h1 style="font-size:1.5rem;font-weight:800;color:#111827">Hausgeldabrechnung <span style="font-size:.95rem;font-weight:600;color:#9ca3af">· '+jahr+'</span>'+finalBadge+'</h1><div style="font-size:.83rem;color:#6b7280;margin-top:2px">§ 28 WEG · '+escapeHtml(_wegcCur.name||'WEG')+'</div></div>';
   var steps=[['Wirtschaftsjahr'],['Kostenpositionen'],['Vorschau'],['Abschluss & PDF']];
   html+='<div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1.4rem">'+steps.map(function(s,i){var n=i+1;var done=n<step,act=n===step;
     var bg=act?'linear-gradient(135deg,#8e44c0,#6a2d9f)':(done?'#ede4f6':'#f3f4f6');
@@ -10995,6 +10998,7 @@ function _wegcAbrEinzelHtml(o){
   };
   var blkA=d.P.filter(function(x){return !x.umlf;}), blkB=d.P.filter(function(x){return x.umlf;});
   var anteil=d.P.reduce(function(s,P){return s+_wegcAbrRow(P,o,d.festByPos).ownerEUR;},0);
+  var rueck=d.P.reduce(function(s,P){return s+(P.istRueck?_wegcAbrRow(P,o,d.festByPos).ownerEUR:0);},0);
   var soll=d.sollByEig[o.id]||0, diff=soll-anteil;
   var h='<table style="width:100%;border-collapse:collapse;font-size:.8rem;min-width:660px"><thead><tr style="border-bottom:2px solid var(--border)">'
     +th('Abrechnungsposition')+th('Verteilt nach')+th('Gesamt',true)+th('Ihr Anteil',true)+th('Einh.')+th('Gesamt EUR',true)+th('Ihr Anteil EUR',true)+'</tr></thead><tbody>';
@@ -11002,6 +11006,10 @@ function _wegcAbrEinzelHtml(o){
   h+=blockRows(blkB,'Zur Umlage auf Bewohner bestimmte Kosten');
   h+='<tr style="border-top:2px solid var(--border);font-weight:800"><td colspan="6" style="padding:.5rem .55rem">Summe Kosten (Ihr Anteil) für den Abrechnungszeitraum</td><td style="padding:.5rem .55rem;text-align:right">'+n2(anteil)+'</td></tr>';
   h+='<tr><td colspan="6" style="padding:.4rem .55rem;color:#374151">Ihre Hausgeldvorauszahlungen im Abrechnungszeitraum</td><td style="padding:.4rem .55rem;text-align:right">'+n2(soll)+'</td></tr>';
+  if(rueck>0.005){
+    h+='<tr style="background:#faf7ff"><td colspan="6" style="padding:.32rem .55rem .32rem 1.2rem;color:#6d28d9;font-size:.74rem">abzgl. Zuführung Instandhaltungsrücklage</td><td style="padding:.32rem .55rem;text-align:right;color:#6d28d9">'+n2(rueck)+'</td></tr>';
+    h+='<tr style="background:#faf7ff"><td colspan="6" style="padding:.32rem .55rem .32rem 1.2rem;color:#374151;font-size:.74rem;font-weight:700">= Hausgeld gesamt (laufende Bewirtschaftung)</td><td style="padding:.32rem .55rem;text-align:right;font-weight:700">'+n2(soll-rueck)+'</td></tr>';
+  }
   h+='<tr style="font-weight:800;font-size:.9rem"><td colspan="6" style="padding:.55rem;color:'+(diff<0?'#b62923':'#157f3c')+'">'+(diff<0?'Ihre Nachzahlung':'Ihr Guthaben')+'</td><td style="padding:.55rem;text-align:right;color:'+(diff<0?'#b62923':'#157f3c')+'">'+n2(diff)+' €</td></tr>';
   h+='</tbody></table>';
   return h;
@@ -11327,10 +11335,12 @@ function wegcAbrechnungPdf(onlyEigId){
       var rb=renderBlock(blkB,'Zur Umlage auf Bewohner bestimmte Kosten');
       var anteil=ra[1]+rb[1];
       var soll=d.sollByEig[o.id]||0, diff=soll-anteil;
+      var rueck=d.P.reduce(function(s,P){return s+(P.istRueck?_wegcAbrRow(P,o,d.festByPos).ownerEUR:0);},0);
       if(y>250){doc.addPage();y=20;}
       line(L,W-R,y,null,0.5);y+=4;
       sf(9,'bold',40,40,45);doc.text('Summe Kosten (Ihr Anteil) für den Abrechnungszeitraum',cx.pos,y);doc.text(fmt(anteil)+' EUR',cx.aeur,y,{align:'right'});y+=6;
-      sf(8.5,'normal',70,70,75);doc.text('Ihre Hausgeldvorauszahlungen im Abrechnungszeitraum',cx.pos,y);doc.text(fmt(soll)+' EUR',cx.aeur,y,{align:'right'});y+=2;
+      sf(8.5,'normal',70,70,75);doc.text('Ihre Hausgeldvorauszahlungen im Abrechnungszeitraum',cx.pos,y);doc.text(fmt(soll)+' EUR',cx.aeur,y,{align:'right'});y+=(rueck>0.005?5:2);
+      if(rueck>0.005){ sf(8,'normal',124,58,237);doc.text('abzgl. Zuführung Instandhaltungsrücklage',cx.pos,y);doc.text('-'+fmt(rueck)+' EUR',cx.aeur,y,{align:'right'});y+=5; sf(8.5,'bold',40,40,45);doc.text('Hausgeld gesamt (laufende Bewirtschaftung)',cx.pos,y);doc.text(fmt(soll-rueck)+' EUR',cx.aeur,y,{align:'right'});y+=2; }
       line(L+100,W-R,y+1,null,0.4);y+=5.5;
       var rc=[55,55,60];
       sf(11,'bold',rc[0],rc[1],rc[2]);doc.text(diff<0?'Ihre Nachzahlung':'Ihr Guthaben',cx.pos,y);doc.text(fmt(diff)+' EUR',cx.aeur,y,{align:'right'});y+=8;

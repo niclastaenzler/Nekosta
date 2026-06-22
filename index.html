@@ -10427,6 +10427,7 @@ var WEGC_MODS=[
   {id:'hausgeld',     label:'Hausgeld',      icon:'euro'},
   {id:'wirtschaftsplan',label:'Wirtschaftsplan',icon:'barchart'},
   {id:'abrechnung',   label:'Hausgeldabrechnung', icon:'receipt'},
+  {id:'abr-archiv',   label:'Hausgeldabrechnungen', icon:'files'},
   {id:'beschluesse',  label:'Beschlüsse',    icon:'clipboard'},
   {id:'ruecklagen',   label:'Rücklagen',     icon:'shield'},
   {id:'schaeden',     label:'Schäden',       icon:'alerttriangle'},
@@ -10473,6 +10474,7 @@ function wegcGo(mod){
   if(mod==='haeuser'){wegcRenderHaeuser(c);return;}
   if(mod==='wirtschaftsplan'){wegcRenderWplan(c);return;}
   if(mod==='abrechnung'){wegcRenderAbrechnung(c);return;}
+  if(mod==='abr-archiv'){wegcRenderAbrArchiv(c);return;}
   if(mod==='ruecklagen'){wegcRenderRuecklagen(c);return;}
   if(mod==='beschluesse'){wegcRenderBeschluesse(c);return;}
   if(mod==='schaeden'){wegcRenderSchaeden(c);return;}
@@ -10940,7 +10942,9 @@ async function wegcRenderAbrechnung(c){
           +'<button class="btn-primary" style="padding:.6rem 1.2rem" onclick="wegcAbrechnungPdf()"><span class="btn-ic" data-icon="download"></span> PDF – alle Eigentümer</button>'
           +_wegcFld('Einzel-PDF für',eigSel2)
           +'<button class="btn-secondary" style="padding:.55rem 1rem" onclick="wegcAbrechnungPdf(_wegcAbrEig)"><span class="btn-ic" data-icon="filetext"></span> Einzel-PDF</button>'
-        +'</div></div>';
+          +'<span style="flex:1"></span>'
+          +'<button class="btn-secondary" style="padding:.55rem 1.1rem;background:#157f3c;color:#fff;border-color:#157f3c" onclick="wegcAbrFinalize()"><span class="btn-ic" data-icon="check"></span> Abrechnung abschließen</button>'
+        +'</div><div style="font-size:.7rem;color:#9ca3af;margin-top:.55rem">„Abschließen" speichert die fertige Abrechnung unter dem Reiter <strong>Hausgeldabrechnungen</strong>.</div></div>';
       // §35a-Bescheinigung
       html+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:1.1rem 1.2rem;box-shadow:0 1px 2px rgba(16,24,40,.05);margin-top:1rem">'
         +'<div style="font-size:.95rem;font-weight:800;color:#111827;margin-bottom:.35rem">§ 35a EStG – Steuerbescheinigung</div>'
@@ -11097,6 +11101,74 @@ function wegcAbr35aPdf(onlyEigId){
     var fnSuffix=(onlyEigId&&pdfOwners.length===1)?('_'+(_wegcEigName(pdfOwners[0])||'Eigentuemer').replace(/[^a-zA-Z0-9]+/g,'_')):'';
     showDoc(doc,'§35a-Bescheinigung_'+(weg.name||'WEG').replace(/[^a-zA-Z0-9]+/g,'_')+'_'+d.jahr+fnSuffix+'.pdf','vorschau');
   }catch(e){console.error('§35a-PDF:',e);showToast('⚠️ PDF-Fehler: '+(e.message||e));}
+}
+// Hausgeldabrechnung abschliessen: Snapshot der Ergebnisse in weg_abrechnungen speichern.
+function wegcAbrFinalize(){
+  var d=_wegcAbrData; if(!d||!d.owners||!d.owners.length){showToast('Bitte zuerst die Abrechnung öffnen.');return;}
+  appConfirm({icon:'✅',title:'Abrechnung abschließen?',message:'Die Hausgeldabrechnung '+d.jahr+' wird als <strong>abgeschlossen</strong> gespeichert und erscheint unter „Hausgeldabrechnungen". Eine vorhandene Abrechnung für '+d.jahr+' wird ersetzt.',buttons:[
+    {label:'Abbrechen',style:'background:#f3f4f6;color:#374151',onClick:appConfirmClose},
+    {label:'✅ Abschließen',style:'background:#157f3c;color:#fff',onClick:async function(){appConfirmClose();
+      try{
+        var results=d.owners.map(function(o){
+          var anteil=d.P.reduce(function(s,P){return s+_wegcAbrRow(P,o,d.festByPos).ownerEUR;},0);
+          var rueck=d.P.reduce(function(s,P){return s+(P.istRueck?_wegcAbrRow(P,o,d.festByPos).ownerEUR:0);},0);
+          var soll=d.sollByEig[o.id]||0;
+          return {name:_wegcEigName(o),einheit:(o.weg_einheiten&&o.weg_einheiten.bezeichnung)||'',anteil:anteil,rueck:rueck,soll:soll,diff:soll-anteil};
+        });
+        var sumKosten=d.P.reduce(function(s,x){return s+x.gesamtEUR;},0);
+        var sumVz=results.reduce(function(s,r){return s+r.soll;},0);
+        var positions=d.P.map(function(x){return {name:x.name,vn:x.vn,gesamtEUR:x.gesamtEUR,umlf:!!x.umlf,istRueck:!!x.istRueck};});
+        var snap={jahr:d.jahr,weg:(d.weg&&d.weg.name)||'',positions:positions,results:results,sumKosten:sumKosten,sumVz:sumVz};
+        var rec={user_id:currentUser.id,objekt_id:_wegcCur.id,jahr:d.jahr,titel:'Hausgeldabrechnung '+d.jahr,status:'abgeschlossen',summe_kosten:sumKosten,summe_vz:sumVz,anzahl_eig:results.length,snapshot:snap,finalisiert_am:new Date().toISOString()};
+        await sb.from('weg_abrechnungen').delete().eq('user_id',currentUser.id).eq('objekt_id',_wegcCur.id).eq('jahr',d.jahr);
+        var r=await sb.from('weg_abrechnungen').insert(rec);
+        if(r.error){showToast('Fehler: '+r.error.message);return;}
+        showToast('✅ Hausgeldabrechnung '+d.jahr+' abgeschlossen');
+        wegcGo('abr-archiv');
+      }catch(e){showToast('Fehler: '+e.message);}
+    }}
+  ]});
+}
+// Liste der abgeschlossenen Hausgeldabrechnungen
+async function wegcRenderAbrArchiv(c){
+  renderWegcNav('abr-archiv');
+  if(!c)c=document.getElementById('wegc-content'); if(!c)return;
+  if(!_wegcCur)return;
+  c.innerHTML='<div style="color:var(--muted);font-size:.85rem">Lädt…</div>';
+  var rows=[];
+  try{
+    var res=await sb.from('weg_abrechnungen').select('*').eq('user_id',currentUser.id).eq('objekt_id',_wegcCur.id).order('jahr',{ascending:false});
+    if(res.error)throw res.error; rows=res.data||[];
+  }catch(e){c.innerHTML='<div style="color:#dc2626;font-size:.85rem">Fehler beim Laden: '+escapeHtml(e.message||'')+'</div>';return;}
+  var dfmt=function(x){if(!x)return'–';var p=(''+x).slice(0,10).split('-');return p.length===3?p[2]+'.'+p[1]+'.'+p[0]:x;};
+  var html='<div style="margin-bottom:1.25rem"><h1 style="font-size:1.6rem;font-weight:800;color:#111827">Hausgeldabrechnungen</h1><div style="font-size:.85rem;color:#6b7280;margin-top:2px">Abgeschlossene Abrechnungen · '+escapeHtml(_wegcCur.name||'WEG')+'</div></div>';
+  if(!rows.length){
+    html+='<div style="text-align:center;color:var(--muted);font-size:.88rem;padding:2.5rem;background:var(--white);border:1px solid #eef0f4;border-radius:12px">Noch keine abgeschlossene Hausgeldabrechnung. Schließe im Modul „Hausgeldabrechnung" (Schritt 4) eine Abrechnung ab.</div>';
+  } else {
+    html+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;overflow:hidden"><table style="width:100%;border-collapse:collapse;font-size:.85rem"><thead><tr style="border-bottom:1px solid var(--border)">'
+      +['Jahr','Abgeschlossen','Gesamtkosten','Vorauszahlungen','Eigentümer','Status',''].map(function(h,i){return '<th style="padding:.6rem .9rem;text-align:'+((i>=2&&i<=4)?'right':'left')+';font-size:.66rem;text-transform:uppercase;color:var(--muted)">'+h+'</th>';}).join('')
+      +'</tr></thead><tbody>';
+    rows.forEach(function(r){
+      html+='<tr style="border-bottom:1px solid #f3f4f6">'
+        +'<td style="padding:.55rem .9rem;font-weight:700">'+r.jahr+'</td>'
+        +'<td style="padding:.55rem .9rem;color:#4b5563">'+dfmt(r.finalisiert_am||r.created_at)+'</td>'
+        +'<td style="padding:.55rem .9rem;text-align:right">'+fmtEuro(r.summe_kosten)+'</td>'
+        +'<td style="padding:.55rem .9rem;text-align:right;color:#6b7280">'+fmtEuro(r.summe_vz)+'</td>'
+        +'<td style="padding:.55rem .9rem;text-align:right">'+(r.anzahl_eig||0)+'</td>'
+        +'<td style="padding:.55rem .9rem"><span style="font-size:.62rem;font-weight:700;padding:1px 8px;border-radius:7px;background:#e9f9f0;color:#157f3c">abgeschlossen</span></td>'
+        +'<td style="padding:.55rem .9rem;text-align:right;white-space:nowrap"><button class="btn-small" style="font-size:.66rem;padding:3px 9px" onclick="wegcAbrArchivOeffnen('+r.jahr+')">Öffnen</button> <button class="btn-small" style="font-size:.66rem;padding:3px 9px;color:#c0392b" title="Entfernen" onclick="wegcAbrArchivDel(\''+r.id+'\','+r.jahr+')"><span class="mini-ic" data-icon="trash"></span></button></td>'
+      +'</tr>';
+    });
+    html+='</tbody></table></div>';
+  }
+  c.innerHTML=html;
+}
+function wegcAbrArchivOeffnen(jahr){ _wegcAbrJahr=parseInt(jahr)||_wegcAbrJahr; _wegcAbrStep=4; wegcGo('abrechnung'); }
+function wegcAbrArchivDel(id,jahr){
+  appConfirm({icon:'🗑',title:'Abrechnung entfernen?',message:'Die abgeschlossene Hausgeldabrechnung '+jahr+' wird aus der Liste entfernt. Die zugrunde liegenden Daten (Positionen, Eigentümer etc.) bleiben unverändert.',buttons:[
+    {label:'Abbrechen',style:'background:#f3f4f6;color:#374151',onClick:appConfirmClose},
+    {label:'Löschen',style:'background:#dc2626;color:#fff',onClick:async function(){appConfirmClose();try{var r=await sb.from('weg_abrechnungen').delete().eq('id',id);if(r.error){showToast('Fehler: '+r.error.message);return;}showToast('Entfernt');wegcRenderAbrArchiv();}catch(e){showToast('Fehler: '+e.message);}}}
+  ]});
 }
 async function wegcPersonenSave(einheitId){
   if(!_wegcCur)return;

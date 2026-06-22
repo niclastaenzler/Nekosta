@@ -10550,10 +10550,11 @@ async function wegcRenderRuecklagen(c){
   try{
     var res=await Promise.all([
       sb.from('weg_ruecklagen').select('*').eq('user_id',currentUser.id).eq('objekt_id',wegId).order('datum',{ascending:true}).order('created_at',{ascending:true}),
-      sb.from('weg_untergemeinschaften').select('id,name,typ,sortierung').eq('user_id',currentUser.id).eq('objekt_id',wegId).order('sortierung',{ascending:true}).order('created_at',{ascending:true})
+      sb.from('weg_untergemeinschaften').select('id,name,typ,sortierung').eq('user_id',currentUser.id).eq('objekt_id',wegId).order('sortierung',{ascending:true}).order('created_at',{ascending:true}),
+      sb.from('weg_eigentuemer').select('id,aktiv,kontakte(anrede,vorname,nachname),weg_einheiten(bezeichnung,mea_zaehler,mea_nenner,untergemeinschaft_id)').eq('user_id',currentUser.id).eq('objekt_id',wegId)
     ]);
-    if(res[0].error)throw res[0].error; if(res[1].error)throw res[1].error;
-    rows=res[0].data||[]; haeuser=res[1].data||[];
+    if(res[0].error)throw res[0].error; if(res[1].error)throw res[1].error; if(res[2].error)throw res[2].error;
+    rows=res[0].data||[]; haeuser=res[1].data||[]; var rlOwners=res[2].data||[];
   }catch(e){console.warn('ruecklagen load:',e);c.innerHTML='<div style="color:#dc2626;font-size:.85rem">Fehler beim Laden: '+escapeHtml(e.message||'')+'</div>';return;}
   var hausById={}; haeuser.forEach(function(h){hausById[h.id]=h;});
   if(_wegcRlScope!=='all'&&_wegcRlScope!=='gemein'&&!hausById[_wegcRlScope])_wegcRlScope='all';
@@ -10596,6 +10597,29 @@ async function wegcRenderRuecklagen(c){
       +'<span style="color:#e67e22;font-weight:700">− Entnahmen</span><strong style="color:#e67e22">'+fmtEuro(sEntG)+'</strong>'
       +'<span style="color:#9ca3af">=</span><span style="font-weight:800;color:'+(saldo<0?'#dc2626':'#7b1fa2')+';font-size:1.05rem">Endstand '+fmtEuro(saldo)+'</span>'
     +'</div></div>';
+  // Aufteilung der Gesamtrücklage nach MEA je Eigentümer (links Gesamt, rechts Anteil nach MEA)
+  var relOwners=(rlOwners||[]).filter(function(o){return o.aktiv!==false && (_wegcRlScope==='all'||_wegcRlScope==='gemein'||(o.weg_einheiten&&o.weg_einheiten.untergemeinschaft_id===_wegcRlScope));});
+  relOwners.sort(function(a,b){return ((a.weg_einheiten&&a.weg_einheiten.bezeichnung)||'').localeCompare((b.weg_einheiten&&b.weg_einheiten.bezeichnung)||'',undefined,{numeric:true});});
+  var totMeaRl=relOwners.reduce(function(s,o){return s+_wegcMeaVal(o.weg_einheiten);},0);
+  if(relOwners.length&&totMeaRl>0){
+    var rlRows=relOwners.map(function(o){
+      var frac=_wegcMeaVal(o.weg_einheiten)/totMeaRl;
+      var meaAbs=(parseFloat((o.weg_einheiten&&o.weg_einheiten.mea_zaehler)||0)||0)/100;
+      return '<tr style="border-bottom:1px solid #f3f4f6"><td style="padding:.32rem .5rem;font-weight:600">'+escapeHtml(_wegcEigName(o))+'</td>'
+        +'<td style="padding:.32rem .5rem;color:#6b7280">'+escapeHtml((o.weg_einheiten&&o.weg_einheiten.bezeichnung)||'–')+'</td>'
+        +'<td style="padding:.32rem .5rem;text-align:right;color:#6b7280">'+meaAbs.toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+'</td>'
+        +'<td style="padding:.32rem .5rem;text-align:right;font-weight:700">'+fmtEuro(saldo*frac)+'</td></tr>';
+    }).join('');
+    html+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:1rem 1.1rem;margin-bottom:1.5rem;box-shadow:0 1px 2px rgba(16,24,40,.05)">'
+      +'<div style="display:grid;grid-template-columns:minmax(170px,250px) 1fr;gap:1.3rem;align-items:start">'
+      +'<div><div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.02em;color:#6b7280;margin-bottom:.4rem">Instandhaltungsrücklage gesamt'+(haeuser.length?' · '+escapeHtml(scopeName):'')+'</div>'
+        +'<div style="font-size:1.9rem;font-weight:800;color:'+(saldo<0?'#dc2626':'#7b1fa2')+';line-height:1.1">'+fmtEuro(saldo)+'</div>'
+        +'<div style="font-size:.72rem;color:#9ca3af;margin-top:.35rem">Aufteilung nach Miteigentumsanteilen</div></div>'
+      +'<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.8rem"><thead><tr style="color:#9ca3af;font-size:.6rem;text-transform:uppercase"><th style="text-align:left;padding:.3rem .5rem">Eigentümer</th><th style="text-align:left;padding:.3rem .5rem">Einheit</th><th style="text-align:right;padding:.3rem .5rem">MEA</th><th style="text-align:right;padding:.3rem .5rem">Anteil</th></tr></thead><tbody>'
+        +rlRows
+        +'<tr style="background:#fafafa;font-weight:800"><td colspan="3" style="padding:.4rem .5rem">Summe</td><td style="padding:.4rem .5rem;text-align:right">'+fmtEuro(saldo)+'</td></tr>'
+      +'</tbody></table></div></div></div>';
+  }
   // Rücklagen je Untergemeinschaft – klickbare Filter-Karten
   if(haeuser.length){
     var chip=function(key,name,sub,sal){var act=_wegcRlScope===key;

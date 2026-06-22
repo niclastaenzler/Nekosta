@@ -10541,7 +10541,10 @@ async function wegcRenderDashboard(c){
 }
 // ── WEG-Cockpit: Rücklagen-Modul (Instandhaltungsrücklage) ──
 var _wegcRlScope='all';
+var _wegcRlEdit=null;
 function wegcRlSetScope(v){_wegcRlScope=v||'all';wegcRenderRuecklagen();}
+function wegcRueckEdit(id){_wegcRlEdit=id;wegcRenderRuecklagen();var f=document.getElementById('wegc-rl-form');if(f&&f.scrollIntoView)f.scrollIntoView({behavior:'smooth',block:'center'});}
+function wegcRueckEditCancel(){_wegcRlEdit=null;wegcRenderRuecklagen();}
 async function wegcRenderRuecklagen(c){
   renderWegcNav('ruecklagen');
   if(!c)c=document.getElementById('wegc-content'); if(!c)return;
@@ -10557,6 +10560,8 @@ async function wegcRenderRuecklagen(c){
     rows=res[0].data||[]; haeuser=res[1].data||[]; var rlOwners=res[2].data||[];
   }catch(e){console.warn('ruecklagen load:',e);c.innerHTML='<div style="color:#dc2626;font-size:.85rem">Fehler beim Laden: '+escapeHtml(e.message||'')+'</div>';return;}
   var hausById={}; haeuser.forEach(function(h){hausById[h.id]=h;});
+  var editRow=_wegcRlEdit?rows.filter(function(r){return r.id===_wegcRlEdit;})[0]:null;
+  if(_wegcRlEdit&&!editRow)_wegcRlEdit=null;
   if(_wegcRlScope!=='all'&&_wegcRlScope!=='gemein'&&!hausById[_wegcRlScope])_wegcRlScope='all';
   var inScope=function(r){if(_wegcRlScope==='all')return true;if(_wegcRlScope==='gemein')return !r.untergemeinschaft_id;return r.untergemeinschaft_id===_wegcRlScope;};
   // Saldo je Untergemeinschaft (über alle Bewegungen)
@@ -10634,17 +10639,24 @@ async function wegcRenderRuecklagen(c){
       +haeuser.map(function(h){return chip(h.id,h.name,h.typ||'Haus',ugSaldo[h.id]||0);}).join('')
       +'</div>';
   }
-  // Neue Bewegung
-  var ugSelOpts='<option value="">Gemeinschaft (gesamt)</option>'+haeuser.map(function(h){return '<option value="'+h.id+'"'+(_wegcRlScope===h.id?' selected':'')+'>'+escapeHtml(h.name)+'</option>';}).join('');
-  html+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:1rem 1.1rem;margin-bottom:1.5rem;box-shadow:0 1px 2px rgba(16,24,40,.05)">'
-      +'<div style="font-size:.8rem;font-weight:700;margin-bottom:.7rem;color:#111827">Neue Bewegung</div>'
+  // Neue / zu bearbeitende Bewegung
+  var eUg=editRow?(editRow.untergemeinschaft_id||''):_wegcRlScope;
+  var ugSelOpts='<option value="">Gemeinschaft (gesamt)</option>'+haeuser.map(function(h){return '<option value="'+h.id+'"'+(eUg===h.id?' selected':'')+'>'+escapeHtml(h.name)+'</option>';}).join('');
+  var eTyp=editRow?editRow.typ:'zufuehrung';
+  var typOpt=[['zufuehrung','Zuführung'],['entnahme','Entnahme'],['anfangsbestand','Anfangsbestand']].map(function(t){return '<option value="'+t[0]+'"'+(eTyp===t[0]?' selected':'')+'>'+t[1]+'</option>';}).join('');
+  var eDat=editRow?(''+editRow.datum).slice(0,10):today;
+  var eBet=editRow?(''+(parseFloat(editRow.betrag)||0)).replace('.',','):'';
+  var eZweck=editRow?(editRow.zweck||''):'';
+  html+='<div id="wegc-rl-form" style="background:var(--white);border:1px solid '+(editRow?'#c4b5fd':'#eef0f4')+';border-radius:12px;padding:1rem 1.1rem;margin-bottom:1.5rem;box-shadow:0 1px 2px rgba(16,24,40,.05)">'
+      +'<div style="font-size:.8rem;font-weight:700;margin-bottom:.7rem;color:'+(editRow?'#6d28d9':'#111827')+'">'+(editRow?'Bewegung bearbeiten':'Neue Bewegung')+'</div>'
       +'<div style="display:flex;gap:.6rem;flex-wrap:wrap;align-items:flex-end">'
-        +fld('Datum','<input id="wegc-rl-datum" type="date" value="'+today+'" class="buha-inp">')
-        +fld('Art','<select id="wegc-rl-typ" class="buha-inp"><option value="zufuehrung">Zuführung</option><option value="entnahme">Entnahme</option><option value="anfangsbestand">Anfangsbestand</option></select>')
+        +fld('Datum','<input id="wegc-rl-datum" type="date" value="'+eDat+'" class="buha-inp">')
+        +fld('Art','<select id="wegc-rl-typ" class="buha-inp">'+typOpt+'</select>')
         +(haeuser.length?fld('Untergemeinschaft','<select id="wegc-rl-ug" class="buha-inp" style="min-width:170px">'+ugSelOpts+'</select>'):'')
-        +fld('Betrag (€)','<input id="wegc-rl-betrag" type="text" inputmode="decimal" placeholder="0,00" class="buha-inp" style="max-width:120px" onkeydown="if(event.key===\'Enter\')wegcRueckSave()">')
-        +fld('Zweck / Verwendung','<input id="wegc-rl-zweck" type="text" placeholder="z. B. Entnahme für Dachsanierung" class="buha-inp" style="min-width:230px" onkeydown="if(event.key===\'Enter\')wegcRueckSave()">')
-        +'<button class="btn-primary" style="padding:.5rem 1rem;white-space:nowrap" onclick="wegcRueckSave()"><span class="btn-ic" data-icon="plus"></span> Buchen</button>'
+        +fld('Betrag (€)','<input id="wegc-rl-betrag" type="text" inputmode="decimal" value="'+escapeHtml(eBet)+'" placeholder="0,00" class="buha-inp" style="max-width:120px" onkeydown="if(event.key===\'Enter\')wegcRueckSave()">')
+        +fld('Zweck / Verwendung','<input id="wegc-rl-zweck" type="text" value="'+escapeHtml(eZweck)+'" placeholder="z. B. Entnahme für Dachsanierung" class="buha-inp" style="min-width:230px" onkeydown="if(event.key===\'Enter\')wegcRueckSave()">')
+        +'<button class="btn-primary" style="padding:.5rem 1rem;white-space:nowrap" onclick="wegcRueckSave()"><span class="btn-ic" data-icon="'+(editRow?'check':'plus')+'"></span> '+(editRow?'Aktualisieren':'Buchen')+'</button>'
+        +(editRow?'<button class="btn-secondary" style="padding:.5rem .9rem;white-space:nowrap" onclick="wegcRueckEditCancel()">Abbrechen</button>':'')
       +'</div>'
       +'<div style="font-size:.7rem;color:#9ca3af;margin-top:.55rem">Bei <strong>Entnahmen</strong> ist der Verwendungszweck Pflicht (z. B. „Renovierung Treppenhaus") und wird in der Abrechnung ausgewiesen.</div>'
     +'</div>';
@@ -10659,7 +10671,7 @@ async function wegcRenderRuecklagen(c){
         +'<th style="padding:.6rem .9rem;text-align:left;font-size:.68rem;text-transform:uppercase;color:var(--muted)">Zweck</th>'
         +'<th style="padding:.6rem .9rem;text-align:right;font-size:.68rem;text-transform:uppercase;color:var(--muted)">Betrag</th>'
         +'<th style="padding:.6rem .9rem;text-align:right;font-size:.68rem;text-transform:uppercase;color:var(--muted)">Saldo</th>'
-        +'<th style="width:38px"></th></tr></thead><tbody>';
+        +'<th style="width:78px"></th></tr></thead><tbody>';
     scoped.slice().reverse().forEach(function(r){
       var neg=r.typ==='entnahme';
       html+='<tr style="border-bottom:1px solid #f3f4f6">'
@@ -10669,7 +10681,7 @@ async function wegcRenderRuecklagen(c){
         +'<td style="padding:.55rem .9rem;color:#4b5563">'+escapeHtml(r.zweck||'–')+'</td>'
         +'<td style="padding:.55rem .9rem;text-align:right;font-weight:600;color:'+(neg?'#dc2626':'#16a34a')+'">'+(neg?'-':'+')+fmtEuro(parseFloat(r.betrag)||0)+'</td>'
         +'<td style="padding:.55rem .9rem;text-align:right;font-weight:700">'+fmtEuro(r._saldo)+'</td>'
-        +'<td style="padding:.55rem .9rem;text-align:right"><button class="oa-btn" title="Löschen" onclick="wegcRueckDel(\''+r.id+'\')"><span class="mini-ic" data-icon="trash"></span></button></td>'
+        +'<td style="padding:.55rem .9rem;text-align:right;white-space:nowrap"><button class="oa-btn" title="Bearbeiten" onclick="wegcRueckEdit(\''+r.id+'\')"><span class="mini-ic" data-icon="pencil"></span></button> <button class="oa-btn" title="Löschen" onclick="wegcRueckDel(\''+r.id+'\')"><span class="mini-ic" data-icon="trash"></span></button></td>'
       +'</tr>';
     });
     html+='</tbody></table></div>';
@@ -10688,10 +10700,14 @@ async function wegcRueckSave(){
   if(!betrag||betrag<=0){showToast('Bitte gültigen Betrag angeben');bEl.focus();return;}
   if(typ==='entnahme'&&!zweck){showToast('Bei einer Entnahme ist der Verwendungszweck Pflicht.');zEl.focus();return;}
   var jahr=parseInt((''+d).slice(0,4))||new Date().getFullYear();
+  var rec={datum:d,typ:typ,betrag:betrag,zweck:zweck||null,jahr:jahr,untergemeinschaft_id:(ugEl&&ugEl.value)?ugEl.value:null};
   try{
-    var res=await sb.from('weg_ruecklagen').insert({user_id:currentUser.id,objekt_id:_wegcCur.id,datum:d,typ:typ,betrag:betrag,zweck:zweck||null,jahr:jahr,untergemeinschaft_id:(ugEl&&ugEl.value)?ugEl.value:null});
+    var res;
+    if(_wegcRlEdit){ res=await sb.from('weg_ruecklagen').update(rec).eq('id',_wegcRlEdit); }
+    else { rec.user_id=currentUser.id; rec.objekt_id=_wegcCur.id; res=await sb.from('weg_ruecklagen').insert(rec); }
     if(res.error){showToast('Fehler: '+res.error.message);return;}
-    showToast('Bewegung gespeichert');
+    showToast(_wegcRlEdit?'Bewegung aktualisiert':'Bewegung gespeichert');
+    _wegcRlEdit=null;
     wegcRenderRuecklagen();
   }catch(e){showToast('Fehler: '+e.message);}
 }

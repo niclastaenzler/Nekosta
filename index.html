@@ -10777,7 +10777,8 @@ async function wegcRenderAbrechnung(c){
       sb.from('weg_untergemeinschaften').select('id,name').eq('user_id',currentUser.id).eq('objekt_id',wegId),
       sb.from('weg_festbetrag').select('position_id,eigentuemer_id,betrag').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr),
       sb.from('weg_einheit_personen').select('einheit_id,monat,personen').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr),
-      sb.from('weg_abrechnungen').select('id,finalisiert_am').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr).limit(1)
+      sb.from('weg_abrechnungen').select('id,finalisiert_am').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr).limit(1),
+      sb.from('weg_abr_override').select('eigentuemer_id,soll,ist').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr)
     ]);
     for(var i=0;i<res.length;i++){if(res[i].error)throw res[i].error;}
   }catch(e){console.warn('hausgeldabr load:',e);c.innerHTML='<div style="color:#dc2626;font-size:.85rem">Fehler beim Laden: '+escapeHtml(e.message||'')+'</div>';return;}
@@ -10789,7 +10790,18 @@ async function wegcRenderAbrechnung(c){
   var festRows=res[5].data||[];
   var finalRow=(res[7]&&res[7].data&&res[7].data[0])||null;
   var festByPos={}; festRows.forEach(function(f){(festByPos[f.position_id]=festByPos[f.position_id]||{})[f.eigentuemer_id]=parseFloat(f.betrag)||0;});
-  var sollByEig={}; sollRows.forEach(function(s){sollByEig[s.eigentuemer_id]=(sollByEig[s.eigentuemer_id]||0)+(parseFloat(s.betrag)||0);});
+  // Automatik: Soll = Summe aller Sollstellungen; Ist = Summe der als 'bezahlt' markierten Sollstellungen
+  var sollAuto={}, istAuto={};
+  sollRows.forEach(function(s){var b=parseFloat(s.betrag)||0;sollAuto[s.eigentuemer_id]=(sollAuto[s.eigentuemer_id]||0)+b;if(s.status==='bezahlt')istAuto[s.eigentuemer_id]=(istAuto[s.eigentuemer_id]||0)+b;});
+  // Manuelle Anpassungen (Override) je Eigentümer – schlagen die Automatik (leeres Feld = Automatik)
+  var ovRows=(res[8]&&res[8].data)||[];
+  var ovById={}; ovRows.forEach(function(r){ if(r.eigentuemer_id)ovById[r.eigentuemer_id]={soll:r.soll,ist:r.ist}; });
+  var sollByEig={}, istByEig={};
+  owners.forEach(function(o){
+    var ov=ovById[o.id]||{};
+    sollByEig[o.id]=(ov.soll!=null)?(parseFloat(ov.soll)||0):(sollAuto[o.id]||0);
+    istByEig[o.id]=(ov.ist!=null)?(parseFloat(ov.ist)||0):(istAuto[o.id]||0);
+  });
   var tage=_wegcTage(jahr);
   // Personen je Monat (#15) → taggenaue Personentage; Fallback Jahreswert der Einheit
   var persRows=res[6].data||[];
@@ -10800,17 +10812,19 @@ async function wegcRenderAbrechnung(c){
     u._pd=pd;
   });
   var P=_wegcAbrEnrich(positions,units,festByPos,haeuserById,tage);
-  _wegcAbrData={jahr:jahr,weg:_wegcCur,P:P,owners:owners,festByPos:festByPos,sollByEig:sollByEig,haeuserById:haeuserById,tage:tage,units:units,persByUnit:persByUnit};
+  _wegcAbrData={jahr:jahr,weg:_wegcCur,P:P,owners:owners,festByPos:festByPos,sollByEig:sollByEig,istByEig:istByEig,sollAuto:sollAuto,istAuto:istAuto,ovById:ovById,haeuserById:haeuserById,tage:tage,units:units,persByUnit:persByUnit};
 
   // ── Ergebnis je Eigentümer (für Übersicht/Zusammenfassung) ──
+  // Nachzahlung/Guthaben = tatsächlich gezahlt (Ist) − Kostenanteil; Soll wird zusätzlich ausgewiesen.
   var results=owners.map(function(o){
     var anteil=P.reduce(function(s,Pp){return s+_wegcAbrRow(Pp,o,festByPos).ownerEUR;},0);
     var rueck=P.reduce(function(s,Pp){return s+(Pp.istRueck?_wegcAbrRow(Pp,o,festByPos).ownerEUR:0);},0);
-    var soll=sollByEig[o.id]||0;
-    return {o:o,name:_wegcEigName(o),einheit:(o.weg_einheiten&&o.weg_einheiten.bezeichnung)||'–',anteil:anteil,rueck:rueck,soll:soll,diff:soll-anteil};
+    var soll=sollByEig[o.id]||0, ist=istByEig[o.id]||0;
+    return {o:o,name:_wegcEigName(o),einheit:(o.weg_einheiten&&o.weg_einheiten.bezeichnung)||'–',anteil:anteil,rueck:rueck,soll:soll,ist:ist,diff:ist-anteil};
   });
   var sumKosten=P.reduce(function(s,x){return s+x.gesamtEUR;},0);
   var sumVz=results.reduce(function(s,r){return s+r.soll;},0);
+  var sumIst=results.reduce(function(s,r){return s+r.ist;},0);
   var sumAnteil=results.reduce(function(s,r){return s+r.anteil;},0);
   // Abgleich: Summe der Einzelanteile muss den Gesamtkosten entsprechen. Eine Differenz
   // bedeutet, dass Kosten keinem Eigentuemer zugeordnet werden konnten (Position ohne gueltigen
@@ -10951,27 +10965,37 @@ async function wegcRenderAbrechnung(c){
         +'<th style="padding:.5rem .9rem;text-align:left;font-size:.64rem;text-transform:uppercase;color:var(--muted)">Eigentümer</th>'
         +'<th style="padding:.5rem .9rem;text-align:left;font-size:.64rem;text-transform:uppercase;color:var(--muted)">Einheit</th>'
         +'<th style="padding:.5rem .9rem;text-align:right;font-size:.64rem;text-transform:uppercase;color:var(--muted)">Kostenanteil</th>'
-        +'<th style="padding:.5rem .9rem;text-align:right;font-size:.64rem;text-transform:uppercase;color:var(--muted)">Vorauszahlung</th>'
+        +'<th style="padding:.5rem .9rem;text-align:right;font-size:.64rem;text-transform:uppercase;color:var(--muted)">Hausgeld-Soll</th>'
+        +'<th style="padding:.5rem .9rem;text-align:right;font-size:.64rem;text-transform:uppercase;color:var(--muted)">Gezahlt (Ist)</th>'
         +'<th style="padding:.5rem .9rem;text-align:right;font-size:.64rem;text-transform:uppercase;color:var(--muted)">Nachz./Guthaben</th></tr></thead><tbody>';
-      results.forEach(function(r){var neg=r.diff<-0.005;
+      var _moneyInp=function(eigId,field,val,overridden){
+        return '<input value="'+(parseFloat(val)||0).toFixed(2).replace('.',',')+'" inputmode="decimal"'
+          +' onchange="wegcAbrSetVz(\''+eigId+'\',\''+field+'\',this.value)"'
+          +' title="'+(overridden?'Manuell angepasst – Feld leeren für automatischen Wert':'Wert anpassen (überschreibt die Automatik)')+'"'
+          +' style="width:92px;text-align:right;border:1px solid '+(overridden?'#8e44c0':'var(--border)')+';border-radius:6px;padding:3px 6px;font-size:.8rem;font-family:var(--ff);'+(overridden?'background:#faf5ff;color:#6a2d9f;font-weight:600':'background:#fff')+'">';
+      };
+      results.forEach(function(r){var neg=r.diff<-0.005; var ov=ovById[r.o.id]||{};
         html+='<tr style="border-bottom:1px solid #f3f4f6"><td style="padding:.45rem .9rem;font-weight:600">'+escapeHtml(r.name)+'</td>'
           +'<td style="padding:.45rem .9rem;color:#6b7280">'+escapeHtml(r.einheit)+'</td>'
           +'<td style="padding:.45rem .9rem;text-align:right">'+fmtEuro(r.anteil)+'</td>'
-          +'<td style="padding:.45rem .9rem;text-align:right;color:#6b7280">'+fmtEuro(r.soll)+'</td>'
+          +'<td style="padding:.35rem .9rem;text-align:right">'+_moneyInp(r.o.id,'soll',r.soll,ov.soll!=null)+'</td>'
+          +'<td style="padding:.35rem .9rem;text-align:right">'+_moneyInp(r.o.id,'ist',r.ist,ov.ist!=null)+'</td>'
           +'<td style="padding:.45rem .9rem;text-align:right;font-weight:700;color:'+(neg?'#b62923':'#157f3c')+'">'+(neg?'Nachz. ':'Guth. ')+fmtEuro(Math.abs(r.diff))+'</td></tr>';
       });
       html+='<tr style="background:#fafafa;font-weight:800"><td colspan="2" style="padding:.5rem .9rem">Summe</td>'
         +'<td style="padding:.5rem .9rem;text-align:right">'+fmtEuro(sumAnteil)+'</td>'
         +'<td style="padding:.5rem .9rem;text-align:right">'+fmtEuro(sumVz)+'</td>'
-        +'<td style="padding:.5rem .9rem;text-align:right">'+fmtEuro(sumVz-sumAnteil)+'</td></tr></tbody></table></div>';
+        +'<td style="padding:.5rem .9rem;text-align:right">'+fmtEuro(sumIst)+'</td>'
+        +'<td style="padding:.5rem .9rem;text-align:right">'+fmtEuro(sumIst-sumAnteil)+'</td></tr></tbody></table>'
+        +'<div style="padding:.5rem .9rem;font-size:.72rem;color:#9ca3af;border-top:1px solid #f3f4f6">💡 <strong>Hausgeld-Soll</strong> und <strong>Gezahlt (Ist)</strong> sind direkt editierbar und überschreiben den automatischen Wert aus den Sollstellungen (Soll = alle Sollstellungen, Ist = als „bezahlt" markierte). <span style="color:#8e44c0">Lila</span> = manuell angepasst; Feld leeren stellt den automatischen Wert wieder her.</div></div>';
       var sumRueck=results.reduce(function(s,r){return s+r.rueck;},0);
       if(sumRueck>0.005){
         html+='<div style="background:#faf7ff;border:1px solid #e9d8fd;border-radius:12px;padding:.9rem 1.1rem;margin-bottom:1.25rem">'
           +'<div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.02em;color:#6d28d9;margin-bottom:.5rem">Hausgeld &amp; Instandhaltungsrücklage (gesamt)</div>'
           +'<div style="display:flex;flex-wrap:wrap;align-items:baseline;gap:.4rem .9rem;font-size:.92rem">'
-            +'<span style="color:#6b7280">Hausgeld gezahlt</span><strong>'+fmtEuro(sumVz)+'</strong>'
+            +'<span style="color:#6b7280">Hausgeld gezahlt (Ist)</span><strong>'+fmtEuro(sumIst)+'</strong>'
             +'<span style="color:#7c3aed;font-weight:700">− Instandhaltungsrücklage</span><strong style="color:#7c3aed">'+fmtEuro(sumRueck)+'</strong>'
-            +'<span style="color:#9ca3af">=</span><span style="font-weight:800;color:#111827;font-size:1.05rem">Hausgeld gesamt '+fmtEuro(sumVz-sumRueck)+'</span>'
+            +'<span style="color:#9ca3af">=</span><span style="font-weight:800;color:#111827;font-size:1.05rem">Hausgeld gesamt '+fmtEuro(sumIst-sumRueck)+'</span>'
           +'</div></div>';
       }
       if(!_wegcAbrEig||!owners.some(function(o){return o.id===_wegcAbrEig;}))_wegcAbrEig=owners[0].id;
@@ -11051,16 +11075,17 @@ function _wegcAbrEinzelHtml(o){
   var blkA=d.P.filter(function(x){return !x.umlf;}), blkB=d.P.filter(function(x){return x.umlf;});
   var anteil=d.P.reduce(function(s,P){return s+_wegcAbrRow(P,o,d.festByPos).ownerEUR;},0);
   var rueck=d.P.reduce(function(s,P){return s+(P.istRueck?_wegcAbrRow(P,o,d.festByPos).ownerEUR:0);},0);
-  var soll=d.sollByEig[o.id]||0, diff=soll-anteil;
+  var soll=d.sollByEig[o.id]||0, ist=(d.istByEig&&d.istByEig[o.id])||0, diff=ist-anteil;
   var h='<table style="width:100%;border-collapse:collapse;font-size:.8rem;min-width:660px"><thead><tr style="border-bottom:2px solid var(--border)">'
     +th('Abrechnungsposition')+th('Verteilt nach')+th('Gesamt',true)+th('Ihr Anteil',true)+th('Einh.')+th('Gesamt EUR',true)+th('Ihr Anteil EUR',true)+'</tr></thead><tbody>';
   h+=blockRows(blkA,'Nicht zur Umlage auf evtl. Mieter bestimmte Kosten');
   h+=blockRows(blkB,'Zur Umlage auf Bewohner bestimmte Kosten');
   h+='<tr style="border-top:2px solid var(--border);font-weight:800"><td colspan="6" style="padding:.5rem .55rem">Summe Kosten (Ihr Anteil) für den Abrechnungszeitraum</td><td style="padding:.5rem .55rem;text-align:right">'+n2(anteil)+'</td></tr>';
-  h+='<tr><td colspan="6" style="padding:.4rem .55rem;color:#374151">Ihre Hausgeldvorauszahlungen im Abrechnungszeitraum</td><td style="padding:.4rem .55rem;text-align:right">'+n2(soll)+'</td></tr>';
+  h+='<tr><td colspan="6" style="padding:.4rem .55rem;color:#374151">Ihre Hausgeldvorauszahlungen (Soll) im Abrechnungszeitraum</td><td style="padding:.4rem .55rem;text-align:right">'+n2(soll)+'</td></tr>';
+  if(Math.abs(ist-soll)>0.005)h+='<tr><td colspan="6" style="padding:.4rem .55rem .4rem 1.2rem;color:#6b7280;font-size:.76rem">davon tatsächlich gezahlt (Ist)</td><td style="padding:.4rem .55rem;text-align:right;color:#6b7280">'+n2(ist)+'</td></tr>';
   if(rueck>0.005){
     h+='<tr style="background:#faf7ff"><td colspan="6" style="padding:.32rem .55rem .32rem 1.2rem;color:#6d28d9;font-size:.74rem">abzgl. Zuführung Instandhaltungsrücklage</td><td style="padding:.32rem .55rem;text-align:right;color:#6d28d9">'+n2(rueck)+'</td></tr>';
-    h+='<tr style="background:#faf7ff"><td colspan="6" style="padding:.32rem .55rem .32rem 1.2rem;color:#374151;font-size:.74rem;font-weight:700">= Hausgeld gesamt (laufende Bewirtschaftung)</td><td style="padding:.32rem .55rem;text-align:right;font-weight:700">'+n2(soll-rueck)+'</td></tr>';
+    h+='<tr style="background:#faf7ff"><td colspan="6" style="padding:.32rem .55rem .32rem 1.2rem;color:#374151;font-size:.74rem;font-weight:700">= Hausgeld gesamt (laufende Bewirtschaftung)</td><td style="padding:.32rem .55rem;text-align:right;font-weight:700">'+n2(ist-rueck)+'</td></tr>';
   }
   h+='<tr style="font-weight:800;font-size:.9rem"><td colspan="6" style="padding:.55rem;color:'+(diff<0?'#b62923':'#157f3c')+'">'+(diff<0?'Ihre Nachzahlung':'Ihr Guthaben')+'</td><td style="padding:.55rem;text-align:right;color:'+(diff<0?'#b62923':'#157f3c')+'">'+n2(diff)+' €</td></tr>';
   h+='</tbody></table>';
@@ -11112,6 +11137,24 @@ async function wegcAbr35aSave(posId,field,val){
   try{ var r=await sb.from('weg_abr_position').update(upd).eq('id',posId);
     if(r.error){showToast('Fehler: '+r.error.message);return;}
     var d=_wegcAbrData; if(d){var P=null;d.P.forEach(function(x){if(x.id===posId)P=x;}); if(P){ if(field==='lohn')P.lohn=upd.lohnanteil; else P.lohnKat=upd.lohn_kategorie; }}
+  }catch(e){showToast('Fehler: '+e.message);}
+}
+// Hausgeld-Soll / Gezahlt (Ist) je Eigentümer manuell anpassen (Override). Leeres Feld = zurück zur Automatik.
+async function wegcAbrSetVz(eigId,field,val){
+  if(!_wegcCur||(field!=='soll'&&field!=='ist'))return;
+  var v=(''+(val==null?'':val)).trim()===''?null:_wegcNum(val);
+  try{
+    var ex=await sb.from('weg_abr_override').select('id,soll,ist').eq('objekt_id',_wegcCur.id).eq('jahr',_wegcAbrJahr).eq('eigentuemer_id',eigId).maybeSingle();
+    var upd={}; upd[field]=v;
+    if(ex.data&&ex.data.id){
+      // Wenn beide Werte leer → Override-Zeile löschen (komplett zurück zur Automatik)
+      var other=field==='soll'?ex.data.ist:ex.data.soll;
+      if(v===null&&other==null){ await sb.from('weg_abr_override').delete().eq('id',ex.data.id); }
+      else { await sb.from('weg_abr_override').update(upd).eq('id',ex.data.id); }
+    } else if(v!==null){
+      await sb.from('weg_abr_override').insert({user_id:currentUser.id,objekt_id:_wegcCur.id,jahr:_wegcAbrJahr,eigentuemer_id:eigId,soll:field==='soll'?v:null,ist:field==='ist'?v:null});
+    }
+    wegcRenderAbrechnung();
   }catch(e){showToast('Fehler: '+e.message);}
 }
 // §35a-Bescheinigung als PDF (je Eigentümer eine Seite). Anteil je Eigentümer = Lohnanteil × (sein Kostenanteil / Gesamtbetrag der Position).
@@ -11178,13 +11221,14 @@ function wegcAbrFinalize(){
         var results=d.owners.map(function(o){
           var anteil=d.P.reduce(function(s,P){return s+_wegcAbrRow(P,o,d.festByPos).ownerEUR;},0);
           var rueck=d.P.reduce(function(s,P){return s+(P.istRueck?_wegcAbrRow(P,o,d.festByPos).ownerEUR:0);},0);
-          var soll=d.sollByEig[o.id]||0;
-          return {name:_wegcEigName(o),einheit:(o.weg_einheiten&&o.weg_einheiten.bezeichnung)||'',anteil:anteil,rueck:rueck,soll:soll,diff:soll-anteil};
+          var soll=d.sollByEig[o.id]||0, ist=(d.istByEig&&d.istByEig[o.id])||0;
+          return {name:_wegcEigName(o),einheit:(o.weg_einheiten&&o.weg_einheiten.bezeichnung)||'',anteil:anteil,rueck:rueck,soll:soll,ist:ist,diff:ist-anteil};
         });
         var sumKosten=d.P.reduce(function(s,x){return s+x.gesamtEUR;},0);
         var sumVz=results.reduce(function(s,r){return s+r.soll;},0);
+        var sumIst=results.reduce(function(s,r){return s+r.ist;},0);
         var positions=d.P.map(function(x){return {name:x.name,vn:x.vn,gesamtEUR:x.gesamtEUR,umlf:!!x.umlf,istRueck:!!x.istRueck};});
-        var snap={jahr:d.jahr,weg:(d.weg&&d.weg.name)||'',positions:positions,results:results,sumKosten:sumKosten,sumVz:sumVz};
+        var snap={jahr:d.jahr,weg:(d.weg&&d.weg.name)||'',positions:positions,results:results,sumKosten:sumKosten,sumVz:sumVz,sumIst:sumIst};
         var rec={user_id:currentUser.id,objekt_id:_wegcCur.id,jahr:d.jahr,titel:'Hausgeldabrechnung '+d.jahr,status:'abgeschlossen',summe_kosten:sumKosten,summe_vz:sumVz,anzahl_eig:results.length,snapshot:snap,finalisiert_am:new Date().toISOString()};
         await sb.from('weg_abrechnungen').delete().eq('user_id',currentUser.id).eq('objekt_id',_wegcCur.id).eq('jahr',d.jahr);
         var r=await sb.from('weg_abrechnungen').insert(rec);
@@ -11208,7 +11252,8 @@ async function _wegcAbrLoadData(jahr){
     sb.from('weg_sollstellung').select('eigentuemer_id,betrag,status').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr),
     sb.from('weg_untergemeinschaften').select('id,name').eq('user_id',currentUser.id).eq('objekt_id',wegId),
     sb.from('weg_festbetrag').select('position_id,eigentuemer_id,betrag').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr),
-    sb.from('weg_einheit_personen').select('einheit_id,monat,personen').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr)
+    sb.from('weg_einheit_personen').select('einheit_id,monat,personen').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr),
+    sb.from('weg_abr_override').select('eigentuemer_id,soll,ist').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr)
   ]);
   for(var i=0;i<res.length;i++){if(res[i].error)throw res[i].error;}
   var positions=res[0].data||[];
@@ -11218,12 +11263,21 @@ async function _wegcAbrLoadData(jahr){
   var haeuser=res[4].data||[]; var haeuserById={}; haeuser.forEach(function(h){haeuserById[h.id]=h;});
   var festRows=res[5].data||[];
   var festByPos={}; festRows.forEach(function(f){(festByPos[f.position_id]=festByPos[f.position_id]||{})[f.eigentuemer_id]=parseFloat(f.betrag)||0;});
-  var sollByEig={}; sollRows.forEach(function(s){sollByEig[s.eigentuemer_id]=(sollByEig[s.eigentuemer_id]||0)+(parseFloat(s.betrag)||0);});
+  var sollAuto={}, istAuto={};
+  sollRows.forEach(function(s){var b=parseFloat(s.betrag)||0;sollAuto[s.eigentuemer_id]=(sollAuto[s.eigentuemer_id]||0)+b;if(s.status==='bezahlt')istAuto[s.eigentuemer_id]=(istAuto[s.eigentuemer_id]||0)+b;});
+  var ovRows=(res[7]&&res[7].data)||[];
+  var ovById={}; ovRows.forEach(function(r){ if(r.eigentuemer_id)ovById[r.eigentuemer_id]={soll:r.soll,ist:r.ist}; });
+  var sollByEig={}, istByEig={};
+  owners.forEach(function(o){
+    var ov=ovById[o.id]||{};
+    sollByEig[o.id]=(ov.soll!=null)?(parseFloat(ov.soll)||0):(sollAuto[o.id]||0);
+    istByEig[o.id]=(ov.ist!=null)?(parseFloat(ov.ist)||0):(istAuto[o.id]||0);
+  });
   var tage=_wegcTage(jahr);
   var persRows=res[6].data||[]; var persByUnit={}; persRows.forEach(function(r){(persByUnit[r.einheit_id]=persByUnit[r.einheit_id]||{})[r.monat]=r.personen;});
   units.forEach(function(u){var ov=persByUnit[u.id]; if(!ov)return; var pd=0; for(var mm=1;mm<=12;mm++){var p=(ov[mm]!=null)?ov[mm]:(parseFloat(u.personen)||0);pd+=p*_daysInMonth(jahr,mm);} u._pd=pd;});
   var P=_wegcAbrEnrich(positions,units,festByPos,haeuserById,tage);
-  _wegcAbrData={jahr:jahr,weg:_wegcCur,P:P,owners:owners,festByPos:festByPos,sollByEig:sollByEig,haeuserById:haeuserById,tage:tage,units:units,persByUnit:persByUnit};
+  _wegcAbrData={jahr:jahr,weg:_wegcCur,P:P,owners:owners,festByPos:festByPos,sollByEig:sollByEig,istByEig:istByEig,sollAuto:sollAuto,istAuto:istAuto,ovById:ovById,haeuserById:haeuserById,tage:tage,units:units,persByUnit:persByUnit};
   return _wegcAbrData;
 }
 async function wegcRenderAbrArchiv(c){
@@ -11451,13 +11505,14 @@ function wegcAbrechnungPdf(onlyEigId){
       var ra=renderBlock(blkA,'Nicht zur Umlage auf evtl. Mieter bestimmte Kosten');
       var rb=renderBlock(blkB,'Zur Umlage auf Bewohner bestimmte Kosten');
       var anteil=ra[1]+rb[1];
-      var soll=d.sollByEig[o.id]||0, diff=soll-anteil;
+      var soll=d.sollByEig[o.id]||0, ist=(d.istByEig&&d.istByEig[o.id])||0, diff=ist-anteil;
       var rueck=d.P.reduce(function(s,P){return s+(P.istRueck?_wegcAbrRow(P,o,d.festByPos).ownerEUR:0);},0);
       if(y>250){doc.addPage();y=20;}
       line(L,W-R,y,null,0.5);y+=4;
       sf(9,'bold',40,40,45);doc.text('Summe Kosten (Ihr Anteil) für den Abrechnungszeitraum',cx.pos,y);doc.text(fmt(anteil)+' EUR',cx.aeur,y,{align:'right'});y+=6;
-      sf(8.5,'normal',70,70,75);doc.text('Ihre Hausgeldvorauszahlungen im Abrechnungszeitraum',cx.pos,y);doc.text(fmt(soll)+' EUR',cx.aeur,y,{align:'right'});y+=(rueck>0.005?5:2);
-      if(rueck>0.005){ sf(8,'normal',124,58,237);doc.text('abzgl. Zuführung Instandhaltungsrücklage',cx.pos,y);doc.text('-'+fmt(rueck)+' EUR',cx.aeur,y,{align:'right'});y+=5; sf(8.5,'bold',40,40,45);doc.text('Hausgeld gesamt (laufende Bewirtschaftung)',cx.pos,y);doc.text(fmt(soll-rueck)+' EUR',cx.aeur,y,{align:'right'});y+=2; }
+      sf(8.5,'normal',70,70,75);doc.text('Ihre Hausgeldvorauszahlungen (Soll) im Abrechnungszeitraum',cx.pos,y);doc.text(fmt(soll)+' EUR',cx.aeur,y,{align:'right'});y+=5;
+      if(Math.abs(ist-soll)>0.005){ sf(8.5,'normal',70,70,75);doc.text('davon tatsächlich gezahlt (Ist)',cx.pos,y);doc.text(fmt(ist)+' EUR',cx.aeur,y,{align:'right'});y+=5; } else { y-=(rueck>0.005?0:3); }
+      if(rueck>0.005){ sf(8,'normal',124,58,237);doc.text('abzgl. Zuführung Instandhaltungsrücklage',cx.pos,y);doc.text('-'+fmt(rueck)+' EUR',cx.aeur,y,{align:'right'});y+=5; sf(8.5,'bold',40,40,45);doc.text('Hausgeld gesamt (laufende Bewirtschaftung)',cx.pos,y);doc.text(fmt(ist-rueck)+' EUR',cx.aeur,y,{align:'right'});y+=2; }
       line(L+100,W-R,y+1,null,0.4);y+=5.5;
       var rc=[55,55,60];
       sf(11,'bold',rc[0],rc[1],rc[2]);doc.text(diff<0?'Ihre Nachzahlung':'Ihr Guthaben',cx.pos,y);doc.text(fmt(diff)+' EUR',cx.aeur,y,{align:'right'});y+=8;

@@ -10720,6 +10720,7 @@ function wegcRueckDel(id){
 }
 // ── WEG-Cockpit: JAHRESABRECHNUNG (§ 28 WEG) – Gesamt + Einzel je Eigentümer (MEA-Verteilung) ──
 var _wegcAbrJahr=null, _wegcAbrData=null, _wegcAbrEig=null, _wegcAbrStep=1;
+var _wegcPersColl=false, _wegcEinzelColl=false;
 function wegcAbrSetJahr(j){_wegcAbrJahr=parseInt(j)||(new Date().getFullYear()-1);_wegcAbrEig=null;wegcRenderAbrechnung();}
 function wegcAbrSetEig(id){_wegcAbrEig=id||null;wegcRenderAbrechnung();}
 function wegcAbrStep(n){_wegcAbrStep=Math.max(1,Math.min(4,parseInt(n)||1));wegcRenderAbrechnung();}
@@ -10891,14 +10892,15 @@ async function wegcRenderAbrechnung(c){
           +'<div style="padding:.6rem 1rem;font-weight:700;font-size:.82rem;color:'+col+';border-bottom:1px solid #eef0f4">'+title+'</div><table style="width:100%;border-collapse:collapse;font-size:.83rem"><tbody>';
         if(!list.length)h+='<tr><td style="padding:.7rem .9rem;color:var(--muted);font-size:.8rem">keine Positionen</td></tr>';
         list.forEach(function(x,xi){
-          var up=(xi>0)?'<button class="oa-btn" title="nach oben" onclick="wegcAbrPosMove(\''+x.id+'\',-1)">▲</button>':'<span style="display:inline-block;width:22px"></span>';
-          var dn=(xi<list.length-1)?'<button class="oa-btn" title="nach unten" onclick="wegcAbrPosMove(\''+x.id+'\',1)">▼</button>':'<span style="display:inline-block;width:22px"></span>';
-          h+='<tr style="border-bottom:1px solid #f3f4f6"><td style="padding:.45rem .9rem;font-weight:600">'+escapeHtml(x.name)
+          var mvUp=(xi>0)?'<button class="oa-btn" title="nach oben" onclick="wegcAbrPosMove(\''+x.id+'\',-1)" style="padding:0;width:15px;height:12px;line-height:1;font-size:.56rem">▲</button>':'<span style="display:inline-block;width:15px;height:12px"></span>';
+          var mvDn=(xi<list.length-1)?'<button class="oa-btn" title="nach unten" onclick="wegcAbrPosMove(\''+x.id+'\',1)" style="padding:0;width:15px;height:12px;line-height:1;font-size:.56rem">▼</button>':'<span style="display:inline-block;width:15px;height:12px"></span>';
+          var mv='<span style="display:inline-flex;flex-direction:column;gap:1px;vertical-align:middle;margin-right:.45rem">'+mvUp+mvDn+'</span>';
+          h+='<tr style="border-bottom:1px solid #f3f4f6"><td style="padding:.45rem .9rem;font-weight:600">'+mv+escapeHtml(x.name)
             +(x.istRueck?' <span style="font-size:.6rem;font-weight:700;background:#ede9fe;color:#6d28d9;padding:1px 6px;border-radius:6px;vertical-align:middle">🛡 Rücklage</span>':'')
             +(x.lohn>0?' <span style="font-size:.6rem;font-weight:700;background:#ecfeff;color:#0e7490;padding:1px 6px;border-radius:6px;vertical-align:middle">§35a '+fmtEuro(x.lohn)+'</span>':'')+'</td>'
             +'<td style="padding:.45rem .9rem;color:#6b7280;font-size:.76rem">'+escapeHtml(x.vn)+'</td>'
             +'<td style="padding:.45rem .9rem;text-align:right;font-weight:600" id="abrpos-ges-'+x.id+'">'+fmtEuro(x.gesamtEUR)+'</td>'
-            +'<td style="padding:.45rem .5rem;text-align:right;white-space:nowrap;width:138px">'+up+dn
+            +'<td style="padding:.45rem .5rem;text-align:right;white-space:nowrap;width:70px">'
             +'<button class="oa-btn" title="Zuführung Rücklage an/aus" onclick="wegcAbrPosToggleRueck(\''+x.id+'\')" style="'+(x.istRueck?'color:#6d28d9':'')+'">🛡</button>'
             +'<button class="oa-btn" title="Löschen" onclick="wegcAbrPosDel(\''+x.id+'\')"><span class="mini-ic" data-icon="trash"></span></button></td></tr>';
           if(x.isFest){
@@ -10923,8 +10925,8 @@ async function wegcRenderAbrechnung(c){
       if(hasPxt&&units.length){
         var mNames=['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
         html+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:1rem 1.1rem;margin-top:1rem;box-shadow:0 1px 2px rgba(16,24,40,.05)">'
-          +'<div style="font-size:.85rem;font-weight:700;margin-bottom:.25rem;color:#111827">👥 Personen je Monat ('+jahr+')</div>'
-          +'<div style="font-size:.72rem;color:var(--muted);margin-bottom:.7rem">Für Positionen mit Verteiler „Personen × Tage". Leeres/0-Feld = Jahreswert der Einheit. Es wird taggenau (Personentage) gerechnet.</div>'
+          +'<div onclick="_wegcPersColl=!_wegcPersColl;var b=this.nextElementSibling;b.style.display=_wegcPersColl?\'none\':\'\';this.querySelector(\'.collarr\').textContent=_wegcPersColl?\'▸\':\'▾\';" style="font-size:.85rem;font-weight:700;color:#111827;cursor:pointer;display:flex;align-items:center;gap:.4rem"><span class="collarr">'+(_wegcPersColl?'▸':'▾')+'</span> 👥 Personen je Monat ('+jahr+')</div>'
+          +'<div style="'+(_wegcPersColl?'display:none':'')+'"><div style="font-size:.72rem;color:var(--muted);margin:.5rem 0 .7rem">Für Positionen mit Verteiler „Personen × Tage". Leeres/0-Feld = Jahreswert der Einheit. Es wird taggenau (Personentage) gerechnet.</div>'
           +'<div style="overflow-x:auto"><table style="border-collapse:collapse;font-size:.74rem"><thead><tr>'
           +'<th style="text-align:left;padding:.3rem .5rem;position:sticky;left:0;background:var(--white)">Einheit</th>'
           +mNames.map(function(mn){return '<th style="padding:.3rem .2rem;color:var(--muted);font-weight:600">'+mn+'</th>';}).join('')
@@ -10936,7 +10938,7 @@ async function wegcRenderAbrechnung(c){
             html+='<td style="padding:1px"><input id="wegc-pers-'+u.id+'-'+m+'" type="number" min="0" step="1" value="'+val+'" style="width:36px;border:1px solid var(--border);border-radius:5px;padding:2px;font-size:.72rem;text-align:center;font-family:var(--ff)"></td>';}
           html+='<td style="padding:.25rem .4rem"><button class="oa-btn" title="Speichern" onclick="wegcPersonenSave(\''+u.id+'\')"><span class="mini-ic" data-icon="check"></span></button></td></tr>';
         });
-        html+='</tbody></table></div></div>';
+        html+='</tbody></table></div></div></div>';
       }
     }
   } else if(step===3){
@@ -10974,7 +10976,7 @@ async function wegcRenderAbrechnung(c){
       }
       if(!_wegcAbrEig||!owners.some(function(o){return o.id===_wegcAbrEig;}))_wegcAbrEig=owners[0].id;
       var eigSel='<select class="buha-inp" style="max-width:240px" onchange="wegcAbrSetEig(this.value)">'+owners.map(function(o){return '<option value="'+o.id+'"'+(o.id===_wegcAbrEig?' selected':'')+'>'+escapeHtml(_wegcEigName(o)+' · '+((o.weg_einheiten&&o.weg_einheiten.bezeichnung)||''))+'</option>';}).join('')+'</select>';
-      html+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;overflow:hidden"><div style="padding:.7rem 1rem;border-bottom:1px solid #eef0f4;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem"><span style="font-weight:700;font-size:.9rem;color:#111827">Einzelabrechnung – Vorschau</span>'+eigSel+'</div><div style="overflow-x:auto">'+_wegcAbrEinzelHtml(owners.filter(function(x){return x.id===_wegcAbrEig;})[0])+'</div></div>';
+      html+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;overflow:hidden"><div style="padding:.7rem 1rem;border-bottom:1px solid #eef0f4;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem"><span onclick="_wegcEinzelColl=!_wegcEinzelColl;var b=document.getElementById(\'wegc-einzel-body\');if(b)b.style.display=_wegcEinzelColl?\'none\':\'\';this.querySelector(\'.collarr\').textContent=_wegcEinzelColl?\'▸\':\'▾\';" style="font-weight:700;font-size:.9rem;color:#111827;cursor:pointer;display:flex;align-items:center;gap:.4rem"><span class="collarr">'+(_wegcEinzelColl?'▸':'▾')+'</span> Einzelabrechnung – Vorschau</span>'+eigSel+'</div><div id="wegc-einzel-body" style="overflow-x:auto;'+(_wegcEinzelColl?'display:none':'')+'">'+_wegcAbrEinzelHtml(owners.filter(function(x){return x.id===_wegcAbrEig;})[0])+'</div></div>';
     }
   } else {
     // Schritt 4: Abschluss & PDF

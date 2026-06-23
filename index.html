@@ -1930,6 +1930,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
             <div class="field"><label>von (Nenner)</label><input type="number" id="weg-ein-mea-n" value="1000"></div>
             <div class="field"><label>Personen</label><input type="number" id="weg-ein-personen" placeholder="0" min="0" step="1"></div>
             <div class="field"><label>Haus</label><select id="weg-ein-haus" style="border:1px solid var(--border);border-radius:7px;padding:.45rem .65rem;font-size:.85rem;font-family:var(--ff);width:100%;background:var(--bg);outline:none"><option value="">— ohne —</option></select></div>
+            <div class="field" style="grid-column:1/-1"><label>Zugeordnete Wohnung <span style="font-weight:400;color:var(--muted)">(für Garage / Stellplatz / Keller)</span></label><select id="weg-ein-wohnung" style="border:1px solid var(--border);border-radius:7px;padding:.45rem .65rem;font-size:.85rem;font-family:var(--ff);width:100%;background:var(--bg);outline:none"><option value="">— keine —</option></select></div>
           </div>
           <div style="font-size:.72rem;color:var(--muted);margin-bottom:.85rem">💡 Der Miteigentumsanteil (MEA) gibt den Anteil am Gemeinschaftseigentum an, z. B. 250/1000 = 25%.</div>
           <div style="display:flex;gap:.75rem">
@@ -10771,8 +10772,8 @@ async function wegcRenderAbrechnung(c){
   try{
     var res=await Promise.all([
       sb.from('weg_abr_position').select('*').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr).order('sortierung',{ascending:true}).order('created_at',{ascending:true}),
-      sb.from('weg_eigentuemer').select('id,weg_einheit_id,aktiv,kontakte(anrede,vorname,nachname),weg_einheiten(bezeichnung,mea_zaehler,mea_nenner,flaeche,personen,untergemeinschaft_id)').eq('user_id',currentUser.id).eq('objekt_id',wegId),
-      sb.from('weg_einheiten').select('id,bezeichnung,mea_zaehler,mea_nenner,flaeche,personen,untergemeinschaft_id').eq('user_id',currentUser.id).eq('objekt_id',wegId),
+      sb.from('weg_eigentuemer').select('id,weg_einheit_id,aktiv,kontakte(anrede,vorname,nachname),weg_einheiten(bezeichnung,mea_zaehler,mea_nenner,flaeche,personen,untergemeinschaft_id,wohnung_einheit_id)').eq('user_id',currentUser.id).eq('objekt_id',wegId),
+      sb.from('weg_einheiten').select('id,bezeichnung,mea_zaehler,mea_nenner,flaeche,personen,untergemeinschaft_id,wohnung_einheit_id').eq('user_id',currentUser.id).eq('objekt_id',wegId),
       sb.from('weg_sollstellung').select('eigentuemer_id,betrag,status').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr),
       sb.from('weg_untergemeinschaften').select('id,name').eq('user_id',currentUser.id).eq('objekt_id',wegId),
       sb.from('weg_festbetrag').select('position_id,eigentuemer_id,betrag').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr),
@@ -10786,6 +10787,7 @@ async function wegcRenderAbrechnung(c){
   var positions=res[0].data||[];
   var owners=(res[1].data||[]).filter(function(o){return o.aktiv!==false;}).sort(function(a,b){return ((a.weg_einheiten&&a.weg_einheiten.bezeichnung)||'').localeCompare((b.weg_einheiten&&b.weg_einheiten.bezeichnung)||'',undefined,{numeric:true});});
   var units=res[2].data||[];
+  var unitsBez={}; units.forEach(function(u){unitsBez[u.id]=u.bezeichnung;});
   var sollRows=res[3].data||[];
   var haeuser=res[4].data||[]; var haeuserById={}; haeuser.forEach(function(h){haeuserById[h.id]=h;});
   var festRows=res[5].data||[];
@@ -10833,7 +10835,9 @@ async function wegcRenderAbrechnung(c){
     var anteil=P.reduce(function(s,Pp){return s+_wegcAbrRow(Pp,o,festByPos).ownerEUR;},0);
     var rueck=P.reduce(function(s,Pp){return s+(Pp.istRueck?_wegcAbrRow(Pp,o,festByPos).ownerEUR:0);},0);
     var soll=sollByEig[o.id]||0, ist=istByEig[o.id]||0;
-    return {o:o,name:_wegcEigName(o),einheit:(o.weg_einheiten&&o.weg_einheiten.bezeichnung)||'–',anteil:anteil,rueck:rueck,soll:soll,ist:ist,diff:ist-anteil};
+    var eo=o.weg_einheiten, einheit=(eo&&eo.bezeichnung)||'–';
+    if(eo&&eo.wohnung_einheit_id&&unitsBez[eo.wohnung_einheit_id])einheit+=' · zu '+unitsBez[eo.wohnung_einheit_id];
+    return {o:o,name:_wegcEigName(o),einheit:einheit,anteil:anteil,rueck:rueck,soll:soll,ist:ist,diff:ist-anteil};
   });
   var sumKosten=P.reduce(function(s,x){return s+x.gesamtEUR;},0);
   var sumVz=results.reduce(function(s,r){return s+r.soll;},0);
@@ -11358,6 +11362,7 @@ async function _wegcAbrLoadData(jahr){
   var positions=res[0].data||[];
   var owners=(res[1].data||[]).filter(function(o){return o.aktiv!==false;}).sort(function(a,b){return ((a.weg_einheiten&&a.weg_einheiten.bezeichnung)||'').localeCompare((b.weg_einheiten&&b.weg_einheiten.bezeichnung)||'',undefined,{numeric:true});});
   var units=res[2].data||[];
+  var unitsBez={}; units.forEach(function(u){unitsBez[u.id]=u.bezeichnung;});
   var sollRows=res[3].data||[];
   var haeuser=res[4].data||[]; var haeuserById={}; haeuser.forEach(function(h){haeuserById[h.id]=h;});
   var festRows=res[5].data||[];
@@ -13739,6 +13744,7 @@ async function loadWegEinheiten(objId){
     return;
   }
   var totalMEA=einh.reduce(function(s,e){return s+((e.mea_zaehler||0)/(e.mea_nenner||1000));},0);
+  var einhById={}; einh.forEach(function(x){einhById[x.id]=x;});
   container.innerHTML='<div style="background:var(--white);border:1px solid var(--border);border-radius:10px;overflow:hidden">'
     +'<table style="width:100%;border-collapse:collapse">'
     +'<thead><tr style="background:var(--bg)">'
@@ -13750,7 +13756,7 @@ async function loadWegEinheiten(objId){
     +einh.map(function(e){
       var meaProzent=((e.mea_zaehler||0)/(e.mea_nenner||1000)*100).toFixed(2);
       return '<tr style="border-bottom:1px solid var(--border)">'
-        +'<td style="padding:.6rem .85rem;font-size:.85rem"><strong>'+e.bezeichnung+'</strong>'+(e.stockwerk?'<div style="font-size:.7rem;color:var(--muted)">'+e.stockwerk+'</div>':'')+'</td>'
+        +'<td style="padding:.6rem .85rem;font-size:.85rem"><strong>'+e.bezeichnung+'</strong>'+(e.stockwerk?'<div style="font-size:.7rem;color:var(--muted)">'+e.stockwerk+'</div>':'')+(e.wohnung_einheit_id&&einhById[e.wohnung_einheit_id]?'<div style="font-size:.7rem;color:#7b1fa2">→ '+escapeHtml(einhById[e.wohnung_einheit_id].bezeichnung||'')+'</div>':'')+'</td>'
         +'<td style="padding:.6rem .85rem;font-size:.82rem">'+(e.typ||'Wohnung')+'</td>'
         +'<td style="padding:.6rem .85rem;text-align:right;font-size:.82rem">'+(e.flaeche?e.flaeche+' m²':'–')+'</td>'
         +'<td style="padding:.6rem .85rem;text-align:right;font-size:.82rem"><strong>'+(e.mea_zaehler||0)+'/'+(e.mea_nenner||1000)+'</strong><div style="font-size:.7rem;color:var(--muted)">'+meaProzent+'%</div></td>'
@@ -13771,6 +13777,15 @@ async function _fillWegEinheitHaus(sel){
   }catch(e){}
   el.value=sel||'';
 }
+// Wohnungen (typ Wohnung/Gewerbe) zur Zuordnung von Garagen/Stellplätzen; eigene Einheit ausgeschlossen.
+async function _fillWegEinheitWohnung(sel,selfId){
+  var el=document.getElementById('weg-ein-wohnung'); if(!el||!aktivesObjekt)return;
+  try{var r=await sb.from('weg_einheiten').select('id,bezeichnung,typ').eq('user_id',currentUser.id).eq('objekt_id',aktivesObjekt.id).order('bezeichnung');
+    var list=(r.data||[]).filter(function(u){return u.id!==selfId && (!u.typ||u.typ==='Wohnung'||u.typ==='Gewerbe');});
+    el.innerHTML='<option value="">— keine —</option>'+list.map(function(u){return '<option value="'+u.id+'">'+escapeHtml(u.bezeichnung||'')+'</option>';}).join('');
+  }catch(e){}
+  el.value=sel||'';
+}
 async function openWegEinheitModal(){
   document.getElementById('weg-einheit-edit-id').value='';
   ['weg-ein-bez','weg-ein-flaeche','weg-ein-stockwerk','weg-ein-mea-z','weg-ein-mea-n','weg-ein-personen'].forEach(function(id){
@@ -13778,6 +13793,7 @@ async function openWegEinheitModal(){
   });
   document.getElementById('weg-ein-typ').value='Wohnung';
   await _fillWegEinheitHaus('');
+  await _fillWegEinheitWohnung('','');
   document.getElementById('weg-einheit-modal').style.display='flex';
 }
 function closeWegEinheitModal(){document.getElementById('weg-einheit-modal').style.display='none';}
@@ -13793,6 +13809,7 @@ async function editWegEinheit(id){
   document.getElementById('weg-ein-mea-n').value=data.mea_nenner||'1000';
   var pEl=document.getElementById('weg-ein-personen');if(pEl)pEl.value=data.personen||'';
   await _fillWegEinheitHaus(data.untergemeinschaft_id||'');
+  await _fillWegEinheitWohnung(data.wohnung_einheit_id||'',data.id);
   document.getElementById('weg-einheit-modal').style.display='flex';
 }
 async function saveWegEinheit(){
@@ -13806,7 +13823,8 @@ async function saveWegEinheit(){
     mea_zaehler:parseInt(document.getElementById('weg-ein-mea-z').value)||0,
     mea_nenner:parseInt(document.getElementById('weg-ein-mea-n').value)||1000,
     personen:parseInt(document.getElementById('weg-ein-personen').value)||0,
-    untergemeinschaft_id:document.getElementById('weg-ein-haus').value||null};
+    untergemeinschaft_id:document.getElementById('weg-ein-haus').value||null,
+    wohnung_einheit_id:document.getElementById('weg-ein-wohnung').value||null};
   var r=id?await sb.from('weg_einheiten').update(d).eq('id',id):await sb.from('weg_einheiten').insert(d);
   if(r.error){showToast('Fehler: '+r.error.message);return;}
   closeWegEinheitModal();showToast('✅ WEG-Einheit gespeichert!');

@@ -10441,7 +10441,7 @@ async function openWegCockpit(wegId){
     _wegcCur=data;
     // Assistenten-/Modul-Status zuruecksetzen, damit eine frisch geoeffnete WEG nicht
     // auf einem alten Wizard-Schritt oder einem fremden Eigentuemer landet.
-    _wegcAbrStep=1; _wegcAbrEig=null; _wegcAbrData=null; _wegcWpData=null;
+    _wegcAbrStep=1; _wegcAbrEig=null; _wegcAbrData=null; _wegcWpData=null; _wegcAbrEditPos=null;
     var adr=[data.strasse,data.plz&&data.ort?data.plz+' '+data.ort:data.ort].filter(Boolean).join(', ');
     var nEl=document.getElementById('wegc-name'); if(nEl)nEl.textContent=data.name||'WEG';
     var aEl=document.getElementById('wegc-adr');  if(aEl)aEl.textContent=adr||'—';
@@ -10720,11 +10720,11 @@ function wegcRueckDel(id){
     ]});
 }
 // ── WEG-Cockpit: JAHRESABRECHNUNG (§ 28 WEG) – Gesamt + Einzel je Eigentümer (MEA-Verteilung) ──
-var _wegcAbrJahr=null, _wegcAbrData=null, _wegcAbrEig=null, _wegcAbrStep=1;
+var _wegcAbrJahr=null, _wegcAbrData=null, _wegcAbrEig=null, _wegcAbrStep=1, _wegcAbrEditPos=null;
 var _wegcPersColl=false, _wegcEinzelColl=false;
 function wegcAbrSetJahr(j){_wegcAbrJahr=parseInt(j)||(new Date().getFullYear()-1);_wegcAbrEig=null;wegcRenderAbrechnung();}
 function wegcAbrSetEig(id){_wegcAbrEig=id||null;wegcRenderAbrechnung();}
-function wegcAbrStep(n){_wegcAbrStep=Math.max(1,Math.min(6,parseInt(n)||1));wegcRenderAbrechnung();}
+function wegcAbrStep(n){_wegcAbrStep=Math.max(1,Math.min(6,parseInt(n)||1));_wegcAbrEditPos=null;wegcRenderAbrechnung();}
 function _wegcTage(j){return ((j%4===0&&j%100!==0)||j%400===0)?366:365;}
 function _daysInMonth(j,m){return new Date(j,m,0).getDate();}
 var _wegcVtLabel={mea:'Eigentumsanteil',einheiten:'Einheiten',pxt:'Personen × Tage',festbetrag:'Festbetrag'};
@@ -10957,12 +10957,31 @@ async function wegcRenderAbrechnung(c){
           var mvUp=(xi>0)?'<button class="oa-btn" title="nach oben" onclick="wegcAbrPosMove(\''+x.id+'\',-1)" style="padding:0;width:15px;height:12px;line-height:1;font-size:.56rem">▲</button>':'<span style="display:inline-block;width:15px;height:12px"></span>';
           var mvDn=(xi<list.length-1)?'<button class="oa-btn" title="nach unten" onclick="wegcAbrPosMove(\''+x.id+'\',1)" style="padding:0;width:15px;height:12px;line-height:1;font-size:.56rem">▼</button>':'<span style="display:inline-block;width:15px;height:12px"></span>';
           var mv='<span style="display:inline-flex;flex-direction:column;gap:1px;vertical-align:middle;margin-right:.45rem">'+mvUp+mvDn+'</span>';
+          if(x.id===_wegcAbrEditPos){
+            var p=x.p||{};
+            var vtSel=[['mea','Eigentumsanteil (MEA)'],['einheiten','Einheiten (gleich)'],['pxt','Personen × Tage'],['festbetrag','Festbetrag je Eigentümer']].map(function(o){return '<option value="'+o[0]+'"'+((p.verteiler||'mea')===o[0]?' selected':'')+'>'+o[1]+'</option>';}).join('');
+            var hausSel='<option value="">Gesamte WEG</option>'+haeuser.map(function(hh){return '<option value="'+hh.id+'"'+(p.haus_id===hh.id?' selected':'')+'>'+escapeHtml(hh.name)+'</option>';}).join('');
+            var umlSel='<option value="1"'+(x.umlf?' selected':'')+'>umlagefähig</option><option value="0"'+(!x.umlf?' selected':'')+'>nicht umlagefähig</option>';
+            var betragVal=(p.betrag!=null&&p.betrag!=='')?(''+p.betrag).replace('.',','):'';
+            h+='<tr style="background:#f5f3ff;border-bottom:1px solid #f3f4f6"><td colspan="4" style="padding:.6rem .9rem">'
+              +'<div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:flex-end">'
+              +_wegcFld('Bezeichnung','<input id="wegc-pe-bez-'+x.id+'" type="text" class="buha-inp" style="min-width:150px" value="'+escapeHtml(x.name)+'">')
+              +_wegcFld('Betrag (€)','<input id="wegc-pe-betrag-'+x.id+'" type="text" inputmode="decimal" class="buha-inp" style="max-width:100px" value="'+betragVal+'"'+(x.isFest?' title="Bei Festbetrag über die Beträge je Eigentümer"':'')+'>')
+              +_wegcFld('Verteiler','<select id="wegc-pe-vt-'+x.id+'" class="buha-inp">'+vtSel+'</select>')
+              +_wegcFld('Nur Haus','<select id="wegc-pe-haus-'+x.id+'" class="buha-inp">'+hausSel+'</select>')
+              +_wegcFld('Umlage','<select id="wegc-pe-umlf-'+x.id+'" class="buha-inp">'+umlSel+'</select>')
+              +'<button class="btn-primary" style="padding:.45rem .9rem;white-space:nowrap" onclick="wegcAbrPosEditSave(\''+x.id+'\')"><span class="btn-ic" data-icon="check"></span> Speichern</button>'
+              +'<button class="btn-secondary" style="padding:.45rem .9rem" onclick="wegcAbrPosEditCancel()">Abbrechen</button>'
+              +'</div></td></tr>';
+            return;
+          }
           h+='<tr style="border-bottom:1px solid #f3f4f6"><td style="padding:.45rem .9rem;font-weight:600">'+mv+escapeHtml(x.name)
             +(x.istRueck?' <span style="font-size:.6rem;font-weight:700;background:#ede9fe;color:#6d28d9;padding:1px 6px;border-radius:6px;vertical-align:middle">🛡 Rücklage</span>':'')
             +(x.lohn>0?' <span style="font-size:.6rem;font-weight:700;background:#ecfeff;color:#0e7490;padding:1px 6px;border-radius:6px;vertical-align:middle">§35a '+fmtEuro(x.lohn)+'</span>':'')+'</td>'
             +'<td style="padding:.45rem .9rem;color:#6b7280;font-size:.76rem">'+escapeHtml(x.vn)+'</td>'
             +'<td style="padding:.45rem .9rem;text-align:right;font-weight:600" id="abrpos-ges-'+x.id+'">'+fmtEuro(x.gesamtEUR)+'</td>'
-            +'<td style="padding:.45rem .5rem;text-align:right;white-space:nowrap;width:70px">'
+            +'<td style="padding:.45rem .5rem;text-align:right;white-space:nowrap;width:96px">'
+            +'<button class="oa-btn" title="Bearbeiten" onclick="wegcAbrPosEdit(\''+x.id+'\')">✎</button>'
             +'<button class="oa-btn" title="Zuführung Rücklage an/aus" onclick="wegcAbrPosToggleRueck(\''+x.id+'\')" style="'+(x.istRueck?'color:#6d28d9':'')+'">🛡</button>'
             +'<button class="oa-btn" title="Löschen" onclick="wegcAbrPosDel(\''+x.id+'\')"><span class="mini-ic" data-icon="trash"></span></button></td></tr>';
           if(x.isFest){
@@ -11238,6 +11257,24 @@ async function wegcAbrPosSave(){
     lohn_kategorie:(katEl&&katEl.value)?katEl.value:null,
     sortierung:(_wegcAbrData&&_wegcAbrData.P?_wegcAbrData.P.length:0)};
   try{var r=await sb.from('weg_abr_position').insert(row);if(r.error){showToast('Fehler: '+r.error.message);return;}showToast('Position hinzugefügt');wegcRenderAbrechnung();}catch(e){showToast('Fehler: '+e.message);}
+}
+// Bestehende Kostenposition inline bearbeiten (Bezeichnung/Betrag/Verteiler/Nur Haus/Umlage)
+function wegcAbrPosEdit(id){_wegcAbrEditPos=(_wegcAbrEditPos===id?null:id);wegcRenderAbrechnung();}
+function wegcAbrPosEditCancel(){_wegcAbrEditPos=null;wegcRenderAbrechnung();}
+async function wegcAbrPosEditSave(id){
+  if(!_wegcCur)return;
+  var g=function(pre){var el=document.getElementById(pre+id);return el?el.value:'';};
+  var bez=(g('wegc-pe-bez-')||'').trim();
+  if(!bez){showToast('Bitte Bezeichnung angeben');return;}
+  var upd={bezeichnung:bez,
+    verteiler:g('wegc-pe-vt-')||'mea',
+    haus_id:g('wegc-pe-haus-')||null,
+    umlagefaehig:g('wegc-pe-umlf-')==='1',
+    betrag:_wegcNum(g('wegc-pe-betrag-'))};
+  try{var r=await sb.from('weg_abr_position').update(upd).eq('id',id);
+    if(r.error){showToast('Fehler: '+r.error.message);return;}
+    _wegcAbrEditPos=null; showToast('Position aktualisiert'); wegcRenderAbrechnung();
+  }catch(e){showToast('Fehler: '+e.message);}
 }
 function wegcAbrPosDel(id){
   appConfirm({icon:'🗑',title:'Position löschen?',message:'Die Kostenposition wird entfernt.',buttons:[

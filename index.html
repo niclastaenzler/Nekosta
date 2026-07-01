@@ -10763,6 +10763,35 @@ function _wegcAbrRow(P, o, festByPos){
 }
 function _wegcEigName(o){var k=o&&o.kontakte;return k?((k.anrede?k.anrede+' ':'')+(k.vorname||'')+' '+(k.nachname||'')).replace(/\s+/g,' ').trim():'Eigentümer';}
 function _wegcMeaVal(u){if(!u)return 0;var z=parseFloat(u.mea_zaehler||0),n=parseFloat(u.mea_nenner||0);if(z>0&&n>0)return z/n;if(z>0)return z/1000;return 0;}
+// Abrechnungs-Eigentümer zusammenfassen: eine Garage/ein Stellplatz mit 'wohnung_einheit_id'
+// und gleichem Eigentümer (kontakt_id) wie die zugeordnete Wohnung wird in deren Abrechnung gefaltet.
+// Garagen mit fremdem Eigentümer oder ohne Zuordnung bleiben eigenständig.
+function _wegcBillingOwners(owners){
+  var byEinheit={}; owners.forEach(function(o){ if(o.weg_einheit_id)byEinheit[o.weg_einheit_id]=o; });
+  var parentOf={};
+  owners.forEach(function(o){ var e=o.weg_einheiten;
+    if(e&&e.wohnung_einheit_id){ var p=byEinheit[e.wohnung_einheit_id];
+      if(p&&p.id!==o.id&&p.kontakt_id&&o.kontakt_id&&p.kontakt_id===o.kontakt_id)parentOf[o.id]=p.id; } });
+  var bos=[], boById={};
+  owners.forEach(function(o){ if(parentOf[o.id])return;
+    var bo={primary:o,id:o.id,eigs:[o],name:_wegcEigName(o)}; bos.push(bo); boById[o.id]=bo; });
+  owners.forEach(function(o){ var pid=parentOf[o.id]; if(pid&&boById[pid])boById[pid].eigs.push(o); });
+  bos.forEach(function(bo){
+    var prim=(bo.primary.weg_einheiten&&bo.primary.weg_einheiten.bezeichnung)||'–';
+    var extra=bo.eigs.filter(function(e){return e.id!==bo.primary.id;}).map(function(e){return (e.weg_einheiten&&e.weg_einheiten.bezeichnung)||'';}).filter(Boolean);
+    bo.einheit=prim+(extra.length?' (+ '+extra.join(', ')+')':'');
+    bo.mea=bo.eigs.reduce(function(s,e){return s+_wegcMeaVal(e.weg_einheiten);},0);
+  });
+  return bos;
+}
+// Summe einer angereicherten Position über alle Einheiten eines Abrechnungs-Eigentümers
+function _wegcAbrRowBo(P,bo,festByPos){
+  var ownerBase=0, ownerEUR=0;
+  bo.eigs.forEach(function(e){ var r=_wegcAbrRow(P,e,festByPos); ownerBase+=r.ownerBase; ownerEUR+=r.ownerEUR; });
+  return {name:P.name,vn:P.vn,einh:P.einh,berechnung:P.berechnung,umlf:P.umlf,gesamtBase:P.totalBase,ownerBase:ownerBase,gesamtEUR:P.gesamtEUR,ownerEUR:ownerEUR};
+}
+// Summe eines je-Eigentümer-Werts (Soll/Ist/Rücklage) über alle Einheiten eines Abrechnungs-Eigentümers
+function _wegcBoSum(map,bo){return bo.eigs.reduce(function(s,e){return s+((map&&map[e.id])||0);},0);}
 async function wegcRenderAbrechnung(c){
   renderWegcNav('abrechnung');
   if(!c)c=document.getElementById('wegc-content'); if(!c)return;
@@ -10772,14 +10801,14 @@ async function wegcRenderAbrechnung(c){
   try{
     var res=await Promise.all([
       sb.from('weg_abr_position').select('*').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr).order('sortierung',{ascending:true}).order('created_at',{ascending:true}),
-      sb.from('weg_eigentuemer').select('id,weg_einheit_id,aktiv,kontakte(anrede,vorname,nachname),weg_einheiten(bezeichnung,mea_zaehler,mea_nenner,flaeche,personen,untergemeinschaft_id,wohnung_einheit_id)').eq('user_id',currentUser.id).eq('objekt_id',wegId),
+      sb.from('weg_eigentuemer').select('id,weg_einheit_id,kontakt_id,aktiv,kontakte(anrede,vorname,nachname),weg_einheiten(bezeichnung,mea_zaehler,mea_nenner,flaeche,personen,untergemeinschaft_id,wohnung_einheit_id)').eq('user_id',currentUser.id).eq('objekt_id',wegId),
       sb.from('weg_einheiten').select('id,bezeichnung,mea_zaehler,mea_nenner,flaeche,personen,untergemeinschaft_id,wohnung_einheit_id').eq('user_id',currentUser.id).eq('objekt_id',wegId),
       sb.from('weg_sollstellung').select('eigentuemer_id,betrag,status').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr),
       sb.from('weg_untergemeinschaften').select('id,name').eq('user_id',currentUser.id).eq('objekt_id',wegId),
       sb.from('weg_festbetrag').select('position_id,eigentuemer_id,betrag').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr),
       sb.from('weg_einheit_personen').select('einheit_id,monat,personen').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr),
       sb.from('weg_abrechnungen').select('id,finalisiert_am').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr).limit(1),
-      sb.from('weg_abr_override').select('eigentuemer_id,soll,ist,rl_anfang,rl_zuf,rl_ent').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr),
+      sb.from('weg_abr_override').select('eigentuemer_id,soll,ist,ruecklage,rl_anfang,rl_zuf,rl_ent').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr),
       sb.from('weg_ruecklagen').select('typ,betrag,zweck,jahr,datum').eq('user_id',currentUser.id).eq('objekt_id',wegId)
     ]);
     for(var i=0;i<res.length;i++){if(res[i].error)throw res[i].error;}
@@ -10798,12 +10827,13 @@ async function wegcRenderAbrechnung(c){
   sollRows.forEach(function(s){var b=parseFloat(s.betrag)||0;sollAuto[s.eigentuemer_id]=(sollAuto[s.eigentuemer_id]||0)+b;if(s.status==='bezahlt')istAuto[s.eigentuemer_id]=(istAuto[s.eigentuemer_id]||0)+b;});
   // Manuelle Anpassungen (Override) je Eigentümer – schlagen die Automatik (leeres Feld = Automatik)
   var ovRows=(res[8]&&res[8].data)||[];
-  var ovById={}, ovWeg={}; ovRows.forEach(function(r){ if(r.eigentuemer_id)ovById[r.eigentuemer_id]={soll:r.soll,ist:r.ist}; else ovWeg={rl_anfang:r.rl_anfang,rl_zuf:r.rl_zuf,rl_ent:r.rl_ent}; });
-  var sollByEig={}, istByEig={};
+  var ovById={}, ovWeg={}; ovRows.forEach(function(r){ if(r.eigentuemer_id)ovById[r.eigentuemer_id]={soll:r.soll,ist:r.ist,ruecklage:r.ruecklage}; else ovWeg={rl_anfang:r.rl_anfang,rl_zuf:r.rl_zuf,rl_ent:r.rl_ent}; });
+  var sollByEig={}, istByEig={}, rlByEig={};
   owners.forEach(function(o){
     var ov=ovById[o.id]||{};
     sollByEig[o.id]=(ov.soll!=null)?(parseFloat(ov.soll)||0):(sollAuto[o.id]||0);
     istByEig[o.id]=(ov.ist!=null)?(parseFloat(ov.ist)||0):(istAuto[o.id]||0);
+    rlByEig[o.id]=(ov.ruecklage!=null)?(parseFloat(ov.ruecklage)||0):0; // Instandhaltungsrücklage je Eigentümer (manuell, Schritt 3)
   });
   var tage=_wegcTage(jahr);
   // Personen je Monat (#15) → taggenaue Personentage; Fallback Jahreswert der Einheit
@@ -10823,25 +10853,26 @@ async function wegcRenderAbrechnung(c){
     else if(ry===jahr){ if(r.typ==='entnahme'){rlEnt+=b;rlEntList.push({betrag:b,zweck:r.zweck||''});} else {rlZuf+=b;} }
   });
   var rlAnfangEff=(ovWeg.rl_anfang!=null)?(parseFloat(ovWeg.rl_anfang)||0):rlAnfang;
-  var rlZufEff=(ovWeg.rl_zuf!=null)?(parseFloat(ovWeg.rl_zuf)||0):rlZuf;
   var rlEntEff=(ovWeg.rl_ent!=null)?(parseFloat(ovWeg.rl_ent)||0):rlEnt;
-  var rl={anfang:rlAnfangEff,zuf:rlZufEff,ent:rlEntEff,ende:rlAnfangEff+rlZufEff-rlEntEff,entList:rlEntList,hasData:rlRows.length>0,autoAnfang:rlAnfang,autoZuf:rlZuf,autoEnt:rlEnt,ov:ovWeg};
+  // Zuführung = Summe der je Eigentümer (Schritt 3) erfassten Rücklagen
+  var rlZufSum=owners.reduce(function(s,o){return s+(rlByEig[o.id]||0);},0);
+  var rl={anfang:rlAnfangEff,zuf:rlZufSum,ent:rlEntEff,ende:rlAnfangEff+rlZufSum-rlEntEff,entList:rlEntList,hasData:(rlRows.length>0||rlZufSum>0||rlAnfangEff||rlEntEff),autoAnfang:rlAnfang,autoEnt:rlEnt,ov:ovWeg};
   var totalMea=units.reduce(function(s,u){return s+_wegcMeaVal(u);},0);
-  _wegcAbrData={jahr:jahr,weg:_wegcCur,P:P,owners:owners,festByPos:festByPos,sollByEig:sollByEig,istByEig:istByEig,sollAuto:sollAuto,istAuto:istAuto,ovById:ovById,haeuserById:haeuserById,tage:tage,units:units,persByUnit:persByUnit,rl:rl,totalMea:totalMea};
+  var billingOwners=_wegcBillingOwners(owners);
+  _wegcAbrData={jahr:jahr,weg:_wegcCur,P:P,owners:owners,billingOwners:billingOwners,festByPos:festByPos,sollByEig:sollByEig,istByEig:istByEig,rlByEig:rlByEig,sollAuto:sollAuto,istAuto:istAuto,ovById:ovById,haeuserById:haeuserById,tage:tage,units:units,persByUnit:persByUnit,rl:rl,totalMea:totalMea};
 
-  // ── Ergebnis je Eigentümer (für Übersicht/Zusammenfassung) ──
+  // ── Ergebnis je Abrechnungs-Eigentümer (Garagen sind in die Wohnung gefaltet) ──
   // Nachzahlung/Guthaben = tatsächlich gezahlt (Ist) − Kostenanteil; Soll wird zusätzlich ausgewiesen.
-  var results=owners.map(function(o){
-    var anteil=P.reduce(function(s,Pp){return s+_wegcAbrRow(Pp,o,festByPos).ownerEUR;},0);
-    var rueck=P.reduce(function(s,Pp){return s+(Pp.istRueck?_wegcAbrRow(Pp,o,festByPos).ownerEUR:0);},0);
-    var soll=sollByEig[o.id]||0, ist=istByEig[o.id]||0;
-    var eo=o.weg_einheiten, einheit=(eo&&eo.bezeichnung)||'–';
-    if(eo&&eo.wohnung_einheit_id&&unitsBez[eo.wohnung_einheit_id])einheit+=' · zu '+unitsBez[eo.wohnung_einheit_id];
-    return {o:o,name:_wegcEigName(o),einheit:einheit,anteil:anteil,rueck:rueck,soll:soll,ist:ist,diff:ist-anteil};
+  var results=billingOwners.map(function(bo){
+    var anteil=P.reduce(function(s,Pp){return s+_wegcAbrRowBo(Pp,bo,festByPos).ownerEUR;},0);
+    var rueck=P.reduce(function(s,Pp){return s+(Pp.istRueck?_wegcAbrRowBo(Pp,bo,festByPos).ownerEUR:0);},0);
+    var soll=_wegcBoSum(sollByEig,bo), ist=_wegcBoSum(istByEig,bo), ruecklage=_wegcBoSum(rlByEig,bo);
+    return {o:bo.primary,bo:bo,name:bo.name,einheit:bo.einheit,anteil:anteil,rueck:rueck,soll:soll,ist:ist,ruecklage:ruecklage,diff:ist-anteil};
   });
   var sumKosten=P.reduce(function(s,x){return s+x.gesamtEUR;},0);
   var sumVz=results.reduce(function(s,r){return s+r.soll;},0);
   var sumIst=results.reduce(function(s,r){return s+r.ist;},0);
+  var sumRl=results.reduce(function(s,r){return s+r.ruecklage;},0);
   var sumAnteil=results.reduce(function(s,r){return s+r.anteil;},0);
   // Abgleich: Summe der Einzelanteile muss den Gesamtkosten entsprechen. Eine Differenz
   // bedeutet, dass Kosten keinem Eigentuemer zugeordnet werden konnten (Position ohne gueltigen
@@ -10984,6 +11015,7 @@ async function wegcRenderAbrechnung(c){
         +'<th style="padding:.5rem .9rem;text-align:right;font-size:.64rem;text-transform:uppercase;color:var(--muted)">Kostenanteil</th>'
         +'<th style="padding:.5rem .9rem;text-align:right;font-size:.64rem;text-transform:uppercase;color:var(--muted)">Hausgeld-Soll</th>'
         +'<th style="padding:.5rem .9rem;text-align:right;font-size:.64rem;text-transform:uppercase;color:var(--muted)">Gezahlt (Ist)</th>'
+        +'<th style="padding:.5rem .9rem;text-align:right;font-size:.64rem;text-transform:uppercase;color:#6d28d9">Instandh.-Rücklage</th>'
         +'<th style="padding:.5rem .9rem;text-align:right;font-size:.64rem;text-transform:uppercase;color:var(--muted)">Nachz./Guthaben</th></tr></thead><tbody>';
       var _moneyInp=function(eigId,field,val,overridden){
         return '<input value="'+(parseFloat(val)||0).toFixed(2).replace('.',',')+'" inputmode="decimal"'
@@ -10997,14 +11029,16 @@ async function wegcRenderAbrechnung(c){
           +'<td style="padding:.45rem .9rem;text-align:right">'+fmtEuro(r.anteil)+'</td>'
           +'<td style="padding:.35rem .9rem;text-align:right">'+_moneyInp(r.o.id,'soll',r.soll,ov.soll!=null)+'</td>'
           +'<td style="padding:.35rem .9rem;text-align:right">'+_moneyInp(r.o.id,'ist',r.ist,ov.ist!=null)+'</td>'
+          +'<td style="padding:.35rem .9rem;text-align:right">'+_moneyInp(r.o.id,'ruecklage',r.ruecklage,ov.ruecklage!=null)+'</td>'
           +'<td style="padding:.45rem .9rem;text-align:right;font-weight:700;color:'+(neg?'#b62923':'#157f3c')+'">'+(neg?'Nachz. ':'Guth. ')+fmtEuro(Math.abs(r.diff))+'</td></tr>';
       });
       html+='<tr style="background:#fafafa;font-weight:800"><td colspan="2" style="padding:.5rem .9rem">Summe</td>'
         +'<td style="padding:.5rem .9rem;text-align:right">'+fmtEuro(sumAnteil)+'</td>'
         +'<td style="padding:.5rem .9rem;text-align:right">'+fmtEuro(sumVz)+'</td>'
         +'<td style="padding:.5rem .9rem;text-align:right">'+fmtEuro(sumIst)+'</td>'
+        +'<td style="padding:.5rem .9rem;text-align:right;color:#6d28d9">'+fmtEuro(sumRl)+'</td>'
         +'<td style="padding:.5rem .9rem;text-align:right">'+fmtEuro(sumIst-sumAnteil)+'</td></tr></tbody></table>'
-        +'<div style="padding:.5rem .9rem;font-size:.72rem;color:#9ca3af;border-top:1px solid #f3f4f6">💡 <strong>Hausgeld-Soll</strong> und <strong>Gezahlt (Ist)</strong> sind direkt editierbar und überschreiben den automatischen Wert aus den Sollstellungen (Soll = alle Sollstellungen, Ist = als „bezahlt" markierte). <span style="color:#8e44c0">Lila</span> = manuell angepasst; Feld leeren stellt den automatischen Wert wieder her.</div></div>';
+        +'<div style="padding:.5rem .9rem;font-size:.72rem;color:#9ca3af;border-top:1px solid #f3f4f6">💡 <strong>Hausgeld-Soll</strong>, <strong>Gezahlt (Ist)</strong> und <strong>Instandhaltungsrücklage</strong> sind je Eigentümer direkt editierbar. Soll/Ist überschreiben die Automatik aus den Sollstellungen; die <span style="color:#6d28d9">Rücklage</span> trägst du je Eigentümer ein (jeder zahlt eine andere) – ihre Summe ergibt die Gesamt-Zuführung in <strong>Schritt 4</strong> und fließt in die Einzelabrechnung. <span style="color:#8e44c0">Lila</span> = manuell angepasst; Feld leeren = automatischer Wert.</div></div>';
     }
   } else if(step===4){
     // Schritt 4: Instandhaltungsrücklage (editierbar)
@@ -11018,16 +11052,17 @@ async function wegcRenderAbrechnung(c){
       };
       html+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:1.1rem 1.2rem;margin-bottom:1.25rem;box-shadow:0 1px 2px rgba(16,24,40,.05)">'
         +'<div style="font-size:.9rem;font-weight:800;color:#111827;margin-bottom:.2rem">🏦 Entwicklung der Instandhaltungsrücklage '+jahr+'</div>'
-        +'<div style="font-size:.72rem;color:#9ca3af;margin-bottom:.7rem">Automatisch aus dem Rücklagen-Modul; Werte sind hier editierbar (überschreiben die Automatik). <span style="color:#8e44c0">Lila</span> = manuell angepasst; Feld leeren stellt den automatischen Wert wieder her.</div>'
-        +'<table style="border-collapse:collapse;font-size:.85rem;width:100%;max-width:480px">'
+        +'<div style="font-size:.72rem;color:#9ca3af;margin-bottom:.7rem">Anfangsbestand und Entnahme sind editierbar (<span style="color:#8e44c0">lila</span> = manuell, Feld leeren = automatischer Wert aus dem Rücklagen-Modul). Die <strong>Zuführung</strong> ergibt sich aus der Summe der je Eigentümer in <strong>Schritt 3</strong> erfassten Rücklagen.</div>'
+        +'<table style="border-collapse:collapse;font-size:.85rem;width:100%;max-width:520px">'
         +'<tr><td style="padding:.32rem 0;color:#374151">Anfangsbestand (01.01.'+jahr+')</td><td style="text-align:right">'+_rlInp('rl_anfang',rl.anfang,rl.ov&&rl.ov.rl_anfang!=null)+'</td></tr>'
-        +'<tr><td style="padding:.32rem 0;color:#157f3c">+ Zuführung</td><td style="text-align:right">'+_rlInp('rl_zuf',rl.zuf,rl.ov&&rl.ov.rl_zuf!=null,'#157f3c')+'</td></tr>'
+        +'<tr><td style="padding:.32rem 0;color:#157f3c">+ Zuführung <span style="color:#9ca3af;font-weight:400">(Summe je Eigentümer, Schritt 3)</span></td><td style="text-align:right;padding-right:7px;color:#157f3c;font-weight:700">'+fmtEuro(rl.zuf)+'</td></tr>'
         +'<tr><td style="padding:.32rem 0;color:#b62923">- Entnahme</td><td style="text-align:right">'+_rlInp('rl_ent',rl.ent,rl.ov&&rl.ov.rl_ent!=null,'#b62923')+'</td></tr>'
         +'<tr style="border-top:2px solid var(--border);font-weight:800"><td style="padding:.45rem 0">= Endbestand (31.12.'+jahr+')</td><td style="text-align:right;padding-right:7px">'+fmtEuro(rl.ende)+'</td></tr>'
         +'</table>'
         +(rl.entList.length?'<div style="margin-top:.55rem;font-size:.74rem;color:#6b7280">Entnahmen lt. Rücklagen-Modul: '+rl.entList.map(function(x){return escapeHtml(x.zweck||'(ohne Zweck)')+' '+fmtEuro(x.betrag);}).join(' · ')+'</div>':'')
-        +'<div style="margin-top:.6rem;font-size:.72rem;color:#6b7280">In der Einzelabrechnung (Schritt 6) wird je Eigentümer der <strong>MEA-Anteil an Zuführung und Entnahme</strong> ausgewiesen.</div>'
-        +'<div style="margin-top:.5rem"><button class="btn-secondary" style="padding:.4rem .8rem;font-size:.78rem" onclick="wegcGo(\'ruecklagen\')"><span class="btn-ic" data-icon="shield"></span> Rücklagen-Modul öffnen</button></div>'
+        +'<div style="margin-top:.7rem;font-size:.74rem;color:#6b7280;font-weight:700">Rücklagen-Beiträge je Eigentümer (aus Schritt 3)</div>'
+        +'<div style="margin-top:.3rem;display:flex;flex-wrap:wrap;gap:.35rem">'+results.map(function(r){return '<span style="font-size:.72rem;background:#faf7ff;border:1px solid #e9d8fd;border-radius:7px;padding:.15rem .45rem;color:#374151">'+escapeHtml(r.einheit)+': <strong style="color:#6d28d9">'+fmtEuro(r.ruecklage)+'</strong></span>';}).join('')+'</div>'
+        +'<div style="margin-top:.7rem"><button class="btn-secondary" style="padding:.4rem .8rem;font-size:.78rem" onclick="wegcGo(\'ruecklagen\')"><span class="btn-ic" data-icon="shield"></span> Rücklagen-Modul öffnen</button></div>'
       +'</div>';
     }
   } else if(step===5){
@@ -11071,6 +11106,7 @@ async function wegcRenderAbrechnung(c){
         +'<th style="padding:.5rem .9rem;text-align:right;font-size:.64rem;text-transform:uppercase;color:var(--muted)">Kostenanteil</th>'
         +'<th style="padding:.5rem .9rem;text-align:right;font-size:.64rem;text-transform:uppercase;color:var(--muted)">Hausgeld-Soll</th>'
         +'<th style="padding:.5rem .9rem;text-align:right;font-size:.64rem;text-transform:uppercase;color:var(--muted)">Gezahlt (Ist)</th>'
+        +'<th style="padding:.5rem .9rem;text-align:right;font-size:.64rem;text-transform:uppercase;color:#6d28d9">Rücklage</th>'
         +'<th style="padding:.5rem .9rem;text-align:right;font-size:.64rem;text-transform:uppercase;color:var(--muted)">Nachz./Guthaben</th></tr></thead><tbody>';
       results.forEach(function(r){var neg=r.diff<-0.005;
         html+='<tr style="border-bottom:1px solid #f3f4f6"><td style="padding:.45rem .9rem;font-weight:600">'+escapeHtml(r.name)+'</td>'
@@ -11078,12 +11114,14 @@ async function wegcRenderAbrechnung(c){
           +'<td style="padding:.45rem .9rem;text-align:right">'+fmtEuro(r.anteil)+'</td>'
           +'<td style="padding:.45rem .9rem;text-align:right;color:#6b7280">'+fmtEuro(r.soll)+'</td>'
           +'<td style="padding:.45rem .9rem;text-align:right;color:#6b7280">'+fmtEuro(r.ist)+'</td>'
+          +'<td style="padding:.45rem .9rem;text-align:right;color:#6d28d9">'+fmtEuro(r.ruecklage)+'</td>'
           +'<td style="padding:.45rem .9rem;text-align:right;font-weight:700;color:'+(neg?'#b62923':'#157f3c')+'">'+(neg?'Nachz. ':'Guth. ')+fmtEuro(Math.abs(r.diff))+'</td></tr>';
       });
       html+='<tr style="background:#fafafa;font-weight:800"><td colspan="2" style="padding:.5rem .9rem">Summe</td>'
         +'<td style="padding:.5rem .9rem;text-align:right">'+fmtEuro(sumAnteil)+'</td>'
         +'<td style="padding:.5rem .9rem;text-align:right">'+fmtEuro(sumVz)+'</td>'
         +'<td style="padding:.5rem .9rem;text-align:right">'+fmtEuro(sumIst)+'</td>'
+        +'<td style="padding:.5rem .9rem;text-align:right;color:#6d28d9">'+fmtEuro(sumRl)+'</td>'
         +'<td style="padding:.5rem .9rem;text-align:right">'+fmtEuro(sumIst-sumAnteil)+'</td></tr></tbody></table></div>';
       var sumRueck=results.reduce(function(s,r){return s+r.rueck;},0);
       if(sumRueck>0.005){
@@ -11095,10 +11133,11 @@ async function wegcRenderAbrechnung(c){
             +'<span style="color:#9ca3af">=</span><span style="font-weight:800;color:#111827;font-size:1.05rem">Hausgeld gesamt '+fmtEuro(sumIst-sumRueck)+'</span>'
           +'</div></div>';
       }
-      if(!_wegcAbrEig||!owners.some(function(o){return o.id===_wegcAbrEig;}))_wegcAbrEig=owners[0].id;
-      var eigSel='<select class="buha-inp" style="max-width:240px" onchange="wegcAbrSetEig(this.value)">'+owners.map(function(o){return '<option value="'+o.id+'"'+(o.id===_wegcAbrEig?' selected':'')+'>'+escapeHtml(_wegcEigName(o)+' · '+((o.weg_einheiten&&o.weg_einheiten.bezeichnung)||''))+'</option>';}).join('')+'</select>';
-      html+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;overflow:hidden;margin-bottom:1.25rem"><div style="padding:.7rem 1rem;border-bottom:1px solid #eef0f4;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem"><span onclick="_wegcEinzelColl=!_wegcEinzelColl;var b=document.getElementById(\'wegc-einzel-body\');if(b)b.style.display=_wegcEinzelColl?\'none\':\'\';this.querySelector(\'.collarr\').textContent=_wegcEinzelColl?\'▸\':\'▾\';" style="font-weight:700;font-size:.9rem;color:#111827;cursor:pointer;display:flex;align-items:center;gap:.4rem"><span class="collarr">'+(_wegcEinzelColl?'▸':'▾')+'</span> Einzelabrechnung – Vorschau</span>'+eigSel+'</div><div id="wegc-einzel-body" style="overflow-x:auto;'+(_wegcEinzelColl?'display:none':'')+'">'+_wegcAbrEinzelHtml(owners.filter(function(x){return x.id===_wegcAbrEig;})[0])+'</div></div>';
-      var eigSel2='<select class="buha-inp" style="max-width:240px" onchange="wegcAbrSetEig(this.value)">'+owners.map(function(o){return '<option value="'+o.id+'"'+(o.id===_wegcAbrEig?' selected':'')+'>'+escapeHtml(_wegcEigName(o)+' · '+((o.weg_einheiten&&o.weg_einheiten.bezeichnung)||''))+'</option>';}).join('')+'</select>';
+      if(!_wegcAbrEig||!billingOwners.some(function(o){return o.id===_wegcAbrEig;}))_wegcAbrEig=billingOwners[0].id;
+      var _eigOpts=billingOwners.map(function(bo){return '<option value="'+bo.id+'"'+(bo.id===_wegcAbrEig?' selected':'')+'>'+escapeHtml(bo.name+' · '+bo.einheit)+'</option>';}).join('');
+      var eigSel='<select class="buha-inp" style="max-width:260px" onchange="wegcAbrSetEig(this.value)">'+_eigOpts+'</select>';
+      html+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;overflow:hidden;margin-bottom:1.25rem"><div style="padding:.7rem 1rem;border-bottom:1px solid #eef0f4;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem"><span onclick="_wegcEinzelColl=!_wegcEinzelColl;var b=document.getElementById(\'wegc-einzel-body\');if(b)b.style.display=_wegcEinzelColl?\'none\':\'\';this.querySelector(\'.collarr\').textContent=_wegcEinzelColl?\'▸\':\'▾\';" style="font-weight:700;font-size:.9rem;color:#111827;cursor:pointer;display:flex;align-items:center;gap:.4rem"><span class="collarr">'+(_wegcEinzelColl?'▸':'▾')+'</span> Einzelabrechnung – Vorschau</span>'+eigSel+'</div><div id="wegc-einzel-body" style="overflow-x:auto;'+(_wegcEinzelColl?'display:none':'')+'">'+_wegcAbrEinzelHtml(billingOwners.filter(function(x){return x.id===_wegcAbrEig;})[0])+'</div></div>';
+      var eigSel2='<select class="buha-inp" style="max-width:260px" onchange="wegcAbrSetEig(this.value)">'+_eigOpts+'</select>';
       html+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:1.1rem 1.2rem;box-shadow:0 1px 2px rgba(16,24,40,.05)">'
         +'<div style="font-size:.95rem;font-weight:800;color:#111827;margin-bottom:.35rem">Abrechnung abschließen</div>'
         +'<div style="font-size:.82rem;color:#6b7280;margin-bottom:1rem">Erstelle die fertige Hausgeldabrechnung als PDF – als Gesamtpaket (eine Seite je Eigentümer) oder für einen einzelnen Eigentümer.</div>'
@@ -11119,13 +11158,15 @@ async function wegcRenderAbrechnung(c){
   +'</div>';
   c.innerHTML=html;
 }
-function _wegcAbrEinzelHtml(o){
-  var d=_wegcAbrData; if(!d||!o)return '';
+function _wegcAbrEinzelHtml(bo){
+  var d=_wegcAbrData; if(!d||!bo)return '';
+  // bo = Abrechnungs-Eigentümer (mit .eigs, inkl. gefalteter Garagen); Fallback: einzelner Eigentümer
+  if(!bo.eigs)bo={primary:bo,id:bo.id,eigs:[bo],name:_wegcEigName(bo),einheit:(bo.weg_einheiten&&bo.weg_einheiten.bezeichnung)||'',mea:_wegcMeaVal(bo.weg_einheiten)};
   var n2=function(v){return (parseFloat(v)||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});};
   var th=function(t,r){return '<th style="padding:.4rem .55rem;text-align:'+(r?'right':'left')+';font-size:.58rem;text-transform:uppercase;color:var(--muted);white-space:nowrap">'+t+'</th>';};
   var blockRows=function(list,title){
     if(!list.length)return '';
-    var rows=list.map(function(P){return _wegcAbrRow(P,o,d.festByPos);});
+    var rows=list.map(function(P){return _wegcAbrRowBo(P,bo,d.festByPos);});
     var sg=rows.reduce(function(s,r){return s+r.gesamtEUR;},0), sa=rows.reduce(function(s,r){return s+r.ownerEUR;},0);
     var h='<tr style="background:#f3f4f6"><td colspan="7" style="padding:.4rem .55rem;font-size:.64rem;font-weight:700;text-transform:uppercase;color:#374151">'+title+'</td></tr>';
     rows.forEach(function(r){h+='<tr style="border-bottom:1px solid #f5f5f7">'
@@ -11140,9 +11181,9 @@ function _wegcAbrEinzelHtml(o){
     return h;
   };
   var blkA=d.P.filter(function(x){return !x.umlf;}), blkB=d.P.filter(function(x){return x.umlf;});
-  var anteil=d.P.reduce(function(s,P){return s+_wegcAbrRow(P,o,d.festByPos).ownerEUR;},0);
-  var rueck=d.P.reduce(function(s,P){return s+(P.istRueck?_wegcAbrRow(P,o,d.festByPos).ownerEUR:0);},0);
-  var soll=d.sollByEig[o.id]||0, ist=(d.istByEig&&d.istByEig[o.id])||0, diff=ist-anteil;
+  var anteil=d.P.reduce(function(s,P){return s+_wegcAbrRowBo(P,bo,d.festByPos).ownerEUR;},0);
+  var rueck=d.P.reduce(function(s,P){return s+(P.istRueck?_wegcAbrRowBo(P,bo,d.festByPos).ownerEUR:0);},0);
+  var soll=_wegcBoSum(d.sollByEig,bo), ist=_wegcBoSum(d.istByEig,bo), rlEig=_wegcBoSum(d.rlByEig,bo), diff=ist-anteil;
   var h='<table style="width:100%;border-collapse:collapse;font-size:.8rem;min-width:660px"><thead><tr style="border-bottom:2px solid var(--border)">'
     +th('Abrechnungsposition')+th('Verteilt nach')+th('Gesamt',true)+th('Ihr Anteil',true)+th('Einh.')+th('Gesamt EUR',true)+th('Ihr Anteil EUR',true)+'</tr></thead><tbody>';
   h+=blockRows(blkA,'Nicht zur Umlage auf evtl. Mieter bestimmte Kosten');
@@ -11158,24 +11199,25 @@ function _wegcAbrEinzelHtml(o){
   h+='</tbody></table>';
   // §35a-Hinweiszeile: in den Kosten enthaltene beguenstigte Lohnanteile dieses Eigentuemers
   var l35={haushaltsnah:0,handwerker:0};
-  d.P.forEach(function(P){ var lo=parseFloat(P.lohn)||0; if(lo>0&&P.lohnKat){ var rr=_wegcAbrRow(P,o,d.festByPos); var frac=P.gesamtEUR>0?rr.ownerEUR/P.gesamtEUR:0; l35[P.lohnKat]+=lo*frac; } });
+  d.P.forEach(function(P){ var lo=parseFloat(P.lohn)||0; if(lo>0&&P.lohnKat){ var rr=_wegcAbrRowBo(P,bo,d.festByPos); var frac=P.gesamtEUR>0?rr.ownerEUR/P.gesamtEUR:0; l35[P.lohnKat]+=lo*frac; } });
   if(l35.handwerker>0.005||l35.haushaltsnah>0.005){
     h+='<div style="margin-top:.6rem;font-size:.74rem;color:#0e7490;background:#ecfeff;border:1px solid #cffafe;border-radius:8px;padding:.5rem .7rem;line-height:1.45"><strong>§ 35a EStG</strong> – in Ihren Kosten enthaltene begünstigte Lohnanteile: Handwerkerleistungen (Abs. 3) <strong>'+n2(l35.handwerker)+' €</strong>, haushaltsnahe Dienstleistungen (Abs. 2) <strong>'+n2(l35.haushaltsnah)+' €</strong>. Eine gesonderte Bescheinigung kann separat erstellt werden.</div>';
   }
-  // Entwicklung der Instandhaltungsrücklage + Ihr MEA-Anteil
+  // Entwicklung der Instandhaltungsrücklage – Zuführung = Ihr Beitrag (Schritt 3), Anfang/Entnahme nach MEA
   var rl=d.rl;
-  if(rl&&(rl.hasData||rl.anfang||rl.zuf||rl.ent)){
-    var meaFr=(d.totalMea>0)?(_wegcMeaVal(o.weg_einheiten)/d.totalMea):0;
+  if(rl&&(rl.hasData||rl.anfang||rl.zuf||rl.ent||rlEig)){
+    var meaFr=(d.totalMea>0)?((bo.mea!=null?bo.mea:_wegcMeaVal(bo.primary&&bo.primary.weg_einheiten))/d.totalMea):0;
+    var ihrAnfang=rl.anfang*meaFr, ihrEnt=rl.ent*meaFr, ihrEnde=ihrAnfang+rlEig-ihrEnt;
     h+='<div style="margin-top:1rem;border-top:1px dashed var(--border);padding-top:.7rem">'
       +'<div style="font-size:.82rem;font-weight:800;color:#111827;margin-bottom:.45rem">Entwicklung der Instandhaltungsrücklage '+d.jahr+'</div>'
       +'<table style="width:100%;border-collapse:collapse;font-size:.78rem"><thead><tr style="border-bottom:1px solid var(--border)">'
         +'<th style="padding:.3rem .55rem;text-align:left;font-size:.58rem;text-transform:uppercase;color:var(--muted)">Position</th>'
         +'<th style="padding:.3rem .55rem;text-align:right;font-size:.58rem;text-transform:uppercase;color:var(--muted)">Gesamt</th>'
-        +'<th style="padding:.3rem .55rem;text-align:right;font-size:.58rem;text-transform:uppercase;color:var(--muted)">Ihr Anteil ('+(meaFr*100).toLocaleString('de-DE',{maximumFractionDigits:2})+'%)</th></tr></thead><tbody>'
-      +'<tr><td style="padding:.3rem .55rem">Anfangsbestand (01.01.'+d.jahr+')</td><td style="padding:.3rem .55rem;text-align:right">'+n2(rl.anfang)+'</td><td style="padding:.3rem .55rem;text-align:right;color:#9ca3af">–</td></tr>'
-      +'<tr><td style="padding:.3rem .55rem;color:#157f3c">+ Zuführung</td><td style="padding:.3rem .55rem;text-align:right;color:#157f3c">'+n2(rl.zuf)+'</td><td style="padding:.3rem .55rem;text-align:right;color:#157f3c;font-weight:700">'+n2(rl.zuf*meaFr)+'</td></tr>'
-      +'<tr><td style="padding:.3rem .55rem;color:#b62923">- Entnahme</td><td style="padding:.3rem .55rem;text-align:right;color:#b62923">'+n2(rl.ent)+'</td><td style="padding:.3rem .55rem;text-align:right;color:#b62923;font-weight:700">'+n2(rl.ent*meaFr)+'</td></tr>'
-      +'<tr style="border-top:2px solid var(--border);font-weight:800"><td style="padding:.35rem .55rem">Endbestand (31.12.'+d.jahr+')</td><td style="padding:.35rem .55rem;text-align:right">'+n2(rl.ende)+'</td><td style="padding:.35rem .55rem;text-align:right">'+n2(rl.ende*meaFr)+'</td></tr>'
+        +'<th style="padding:.3rem .55rem;text-align:right;font-size:.58rem;text-transform:uppercase;color:var(--muted)">Ihr Anteil</th></tr></thead><tbody>'
+      +'<tr><td style="padding:.3rem .55rem">Anfangsbestand (01.01.'+d.jahr+')</td><td style="padding:.3rem .55rem;text-align:right">'+n2(rl.anfang)+'</td><td style="padding:.3rem .55rem;text-align:right;color:#6b7280">'+n2(ihrAnfang)+'</td></tr>'
+      +'<tr><td style="padding:.3rem .55rem;color:#157f3c">+ Zuführung <span style="color:#9ca3af">(Ihr Beitrag)</span></td><td style="padding:.3rem .55rem;text-align:right;color:#157f3c">'+n2(rl.zuf)+'</td><td style="padding:.3rem .55rem;text-align:right;color:#157f3c;font-weight:700">'+n2(rlEig)+'</td></tr>'
+      +'<tr><td style="padding:.3rem .55rem;color:#b62923">- Entnahme</td><td style="padding:.3rem .55rem;text-align:right;color:#b62923">'+n2(rl.ent)+'</td><td style="padding:.3rem .55rem;text-align:right;color:#b62923;font-weight:700">'+n2(ihrEnt)+'</td></tr>'
+      +'<tr style="border-top:2px solid var(--border);font-weight:800"><td style="padding:.35rem .55rem">Endbestand (31.12.'+d.jahr+')</td><td style="padding:.35rem .55rem;text-align:right">'+n2(rl.ende)+'</td><td style="padding:.35rem .55rem;text-align:right">'+n2(ihrEnde)+'</td></tr>'
       +'</tbody></table></div>';
   }
   return h;
@@ -11224,18 +11266,20 @@ async function wegcAbr35aSave(posId,field,val){
 }
 // Hausgeld-Soll / Gezahlt (Ist) je Eigentümer manuell anpassen (Override). Leeres Feld = zurück zur Automatik.
 async function wegcAbrSetVz(eigId,field,val){
-  if(!_wegcCur||(field!=='soll'&&field!=='ist'))return;
+  if(!_wegcCur||['soll','ist','ruecklage'].indexOf(field)<0)return;
   var v=(''+(val==null?'':val)).trim()===''?null:_wegcNum(val);
   try{
-    var ex=await sb.from('weg_abr_override').select('id,soll,ist').eq('objekt_id',_wegcCur.id).eq('jahr',_wegcAbrJahr).eq('eigentuemer_id',eigId).maybeSingle();
+    var ex=await sb.from('weg_abr_override').select('id,soll,ist,ruecklage').eq('objekt_id',_wegcCur.id).eq('jahr',_wegcAbrJahr).eq('eigentuemer_id',eigId).maybeSingle();
     var upd={}; upd[field]=v;
     if(ex.data&&ex.data.id){
-      // Wenn beide Werte leer → Override-Zeile löschen (komplett zurück zur Automatik)
-      var other=field==='soll'?ex.data.ist:ex.data.soll;
-      if(v===null&&other==null){ await sb.from('weg_abr_override').delete().eq('id',ex.data.id); }
+      // Wenn alle Werte leer → Override-Zeile löschen (komplett zurück zur Automatik)
+      var rest=['soll','ist','ruecklage'].filter(function(k){return k!==field;});
+      var allNull=v===null&&rest.every(function(k){return ex.data[k]==null;});
+      if(allNull){ await sb.from('weg_abr_override').delete().eq('id',ex.data.id); }
       else { await sb.from('weg_abr_override').update(upd).eq('id',ex.data.id); }
     } else if(v!==null){
-      await sb.from('weg_abr_override').insert({user_id:currentUser.id,objekt_id:_wegcCur.id,jahr:_wegcAbrJahr,eigentuemer_id:eigId,soll:field==='soll'?v:null,ist:field==='ist'?v:null});
+      var row={user_id:currentUser.id,objekt_id:_wegcCur.id,jahr:_wegcAbrJahr,eigentuemer_id:eigId}; row[field]=v;
+      await sb.from('weg_abr_override').insert(row);
     }
     wegcRenderAbrechnung();
   }catch(e){showToast('Fehler: '+e.message);}
@@ -11265,8 +11309,9 @@ function wegcAbr35aPdf(onlyEigId){
   if(!d||!d.owners||!d.owners.length){showToast('Bitte zuerst die Hausgeldabrechnung öffnen.');return;}
   var posLohn=d.P.filter(function(x){return (parseFloat(x.lohn)||0)>0 && x.lohnKat;});
   if(!posLohn.length){showToast('Keine Positionen mit §35a-Lohnanteil/Art hinterlegt.');return;}
-  var pdfOwners=onlyEigId?d.owners.filter(function(o){return o.id===onlyEigId;}):d.owners;
-  if(!pdfOwners.length)pdfOwners=d.owners;
+  var _bos=d.billingOwners||_wegcBillingOwners(d.owners);
+  var pdfOwners=onlyEigId?_bos.filter(function(o){return o.id===onlyEigId;}):_bos;
+  if(!pdfOwners.length)pdfOwners=_bos;
   try{
     var jsPDF=window.jspdf.jsPDF; var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
     var W=210,L=18,R=16,AC=[88,88,92];
@@ -11282,8 +11327,8 @@ function wegcAbr35aPdf(onlyEigId){
       sf(7.5,'normal',135,135,140);doc.text(vName,L,y);doc.text((sm.ort?sm.ort+', ':'')+new Date().toLocaleDateString('de-DE'),W-R,y,{align:'right'});
       y=30; sf(15,'bold',28,28,34);doc.text('Bescheinigung nach § 35a EStG',L,y);
       y+=7; sf(9.5,'bold',55,55,60);doc.text(weg.name||'WEG',L,y); if(adr){y+=5;sf(8.5,'normal',130,130,135);doc.text(adr,L,y);}
-      y+=8; sf(9,'normal',60,60,65);doc.text('Eigentümer/in: ',L,y); var lw=doc.getTextWidth('Eigentümer/in: '); sf(9,'bold',40,40,45);doc.text(_wegcEigName(o),L+lw,y);
-      y+=5; sf(8.5,'normal',90,90,95);doc.text('Wohnung: '+((o.weg_einheiten&&o.weg_einheiten.bezeichnung)||'–')+'   ·   Wirtschaftsjahr '+d.jahr,L,y);
+      y+=8; sf(9,'normal',60,60,65);doc.text('Eigentümer/in: ',L,y); var lw=doc.getTextWidth('Eigentümer/in: '); sf(9,'bold',40,40,45);doc.text(o.name||_wegcEigName(o),L+lw,y);
+      y+=5; sf(8.5,'normal',90,90,95);doc.text('Einheit: '+(o.einheit||(o.weg_einheiten&&o.weg_einheiten.bezeichnung)||'–')+'   ·   Wirtschaftsjahr '+d.jahr,L,y);
       y+=9;
       var sum={haushaltsnah:0,handwerker:0};
       var rowsFor=function(kat,titel){
@@ -11293,7 +11338,7 @@ function wegcAbr35aPdf(onlyEigId){
         sf(6.5,'bold',120,120,125);doc.text('Leistung / Position',L+1,y);doc.text('Ihr Kostenanteil',L+108,y,{align:'right'});doc.text('davon Lohnanteil',W-R-1,y,{align:'right'});y+=2;line(L,W-R,y,null,0.3);y+=4;
         list.forEach(function(x){
           if(y>270){doc.addPage();y=20;}
-          var ownerEUR=_wegcAbrRow(x,o,d.festByPos).ownerEUR;
+          var ownerEUR=_wegcAbrRowBo(x,o,d.festByPos).ownerEUR;
           var frac=x.gesamtEUR>0?ownerEUR/x.gesamtEUR:0;
           var ownerLohn=(parseFloat(x.lohn)||0)*frac;
           sum[kat]+=ownerLohn;
@@ -11309,7 +11354,7 @@ function wegcAbr35aPdf(onlyEigId){
       var lines=doc.splitTextToSize(hinweis,W-L-R); doc.text(lines,L,y); y+=lines.length*4+4;
       sf(7,'normal',150,150,150);doc.text([vName,adr].filter(Boolean).join('  ·  '),W/2,290,{align:'center',maxWidth:W-L-R});
     });
-    var fnSuffix=(onlyEigId&&pdfOwners.length===1)?('_'+(_wegcEigName(pdfOwners[0])||'Eigentuemer').replace(/[^a-zA-Z0-9]+/g,'_')):'';
+    var fnSuffix=(onlyEigId&&pdfOwners.length===1)?('_'+((pdfOwners[0].name||_wegcEigName(pdfOwners[0]))||'Eigentuemer').replace(/[^a-zA-Z0-9]+/g,'_')):'';
     showDoc(doc,'§35a-Bescheinigung_'+(weg.name||'WEG').replace(/[^a-zA-Z0-9]+/g,'_')+'_'+d.jahr+fnSuffix+'.pdf','vorschau');
   }catch(e){console.error('§35a-PDF:',e);showToast('⚠️ PDF-Fehler: '+(e.message||e));}
 }
@@ -11320,17 +11365,19 @@ function wegcAbrFinalize(){
     {label:'Abbrechen',style:'background:#f3f4f6;color:#374151',onClick:appConfirmClose},
     {label:'✅ Abschließen',style:'background:#157f3c;color:#fff',onClick:async function(){appConfirmClose();
       try{
-        var results=d.owners.map(function(o){
-          var anteil=d.P.reduce(function(s,P){return s+_wegcAbrRow(P,o,d.festByPos).ownerEUR;},0);
-          var rueck=d.P.reduce(function(s,P){return s+(P.istRueck?_wegcAbrRow(P,o,d.festByPos).ownerEUR:0);},0);
-          var soll=d.sollByEig[o.id]||0, ist=(d.istByEig&&d.istByEig[o.id])||0;
-          return {name:_wegcEigName(o),einheit:(o.weg_einheiten&&o.weg_einheiten.bezeichnung)||'',anteil:anteil,rueck:rueck,soll:soll,ist:ist,diff:ist-anteil};
+        var _bos=d.billingOwners||_wegcBillingOwners(d.owners);
+        var results=_bos.map(function(bo){
+          var anteil=d.P.reduce(function(s,P){return s+_wegcAbrRowBo(P,bo,d.festByPos).ownerEUR;},0);
+          var rueck=d.P.reduce(function(s,P){return s+(P.istRueck?_wegcAbrRowBo(P,bo,d.festByPos).ownerEUR:0);},0);
+          var soll=_wegcBoSum(d.sollByEig,bo), ist=_wegcBoSum(d.istByEig,bo), ruecklage=_wegcBoSum(d.rlByEig,bo);
+          return {name:bo.name,einheit:bo.einheit,anteil:anteil,rueck:rueck,soll:soll,ist:ist,ruecklage:ruecklage,diff:ist-anteil};
         });
         var sumKosten=d.P.reduce(function(s,x){return s+x.gesamtEUR;},0);
         var sumVz=results.reduce(function(s,r){return s+r.soll;},0);
         var sumIst=results.reduce(function(s,r){return s+r.ist;},0);
+        var sumRl=results.reduce(function(s,r){return s+r.ruecklage;},0);
         var positions=d.P.map(function(x){return {name:x.name,vn:x.vn,gesamtEUR:x.gesamtEUR,umlf:!!x.umlf,istRueck:!!x.istRueck};});
-        var snap={jahr:d.jahr,weg:(d.weg&&d.weg.name)||'',positions:positions,results:results,sumKosten:sumKosten,sumVz:sumVz,sumIst:sumIst};
+        var snap={jahr:d.jahr,weg:(d.weg&&d.weg.name)||'',positions:positions,results:results,sumKosten:sumKosten,sumVz:sumVz,sumIst:sumIst,sumRl:sumRl,rl:d.rl};
         var rec={user_id:currentUser.id,objekt_id:_wegcCur.id,jahr:d.jahr,titel:'Hausgeldabrechnung '+d.jahr,status:'abgeschlossen',summe_kosten:sumKosten,summe_vz:sumVz,anzahl_eig:results.length,snapshot:snap,finalisiert_am:new Date().toISOString()};
         await sb.from('weg_abrechnungen').delete().eq('user_id',currentUser.id).eq('objekt_id',_wegcCur.id).eq('jahr',d.jahr);
         var r=await sb.from('weg_abrechnungen').insert(rec);
@@ -11349,13 +11396,13 @@ async function _wegcAbrLoadData(jahr){
   var wegId=_wegcCur.id;
   var res=await Promise.all([
     sb.from('weg_abr_position').select('*').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr).order('sortierung',{ascending:true}).order('created_at',{ascending:true}),
-    sb.from('weg_eigentuemer').select('id,weg_einheit_id,aktiv,kontakte(anrede,vorname,nachname),weg_einheiten(bezeichnung,mea_zaehler,mea_nenner,flaeche,personen,untergemeinschaft_id)').eq('user_id',currentUser.id).eq('objekt_id',wegId),
-    sb.from('weg_einheiten').select('id,bezeichnung,mea_zaehler,mea_nenner,flaeche,personen,untergemeinschaft_id').eq('user_id',currentUser.id).eq('objekt_id',wegId),
+    sb.from('weg_eigentuemer').select('id,weg_einheit_id,kontakt_id,aktiv,kontakte(anrede,vorname,nachname),weg_einheiten(bezeichnung,mea_zaehler,mea_nenner,flaeche,personen,untergemeinschaft_id,wohnung_einheit_id)').eq('user_id',currentUser.id).eq('objekt_id',wegId),
+    sb.from('weg_einheiten').select('id,bezeichnung,mea_zaehler,mea_nenner,flaeche,personen,untergemeinschaft_id,wohnung_einheit_id').eq('user_id',currentUser.id).eq('objekt_id',wegId),
     sb.from('weg_sollstellung').select('eigentuemer_id,betrag,status').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr),
     sb.from('weg_untergemeinschaften').select('id,name').eq('user_id',currentUser.id).eq('objekt_id',wegId),
     sb.from('weg_festbetrag').select('position_id,eigentuemer_id,betrag').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr),
     sb.from('weg_einheit_personen').select('einheit_id,monat,personen').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr),
-    sb.from('weg_abr_override').select('eigentuemer_id,soll,ist,rl_anfang,rl_zuf,rl_ent').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr),
+    sb.from('weg_abr_override').select('eigentuemer_id,soll,ist,ruecklage,rl_anfang,rl_zuf,rl_ent').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr),
     sb.from('weg_ruecklagen').select('typ,betrag,zweck,jahr,datum').eq('user_id',currentUser.id).eq('objekt_id',wegId)
   ]);
   for(var i=0;i<res.length;i++){if(res[i].error)throw res[i].error;}
@@ -11370,12 +11417,13 @@ async function _wegcAbrLoadData(jahr){
   var sollAuto={}, istAuto={};
   sollRows.forEach(function(s){var b=parseFloat(s.betrag)||0;sollAuto[s.eigentuemer_id]=(sollAuto[s.eigentuemer_id]||0)+b;if(s.status==='bezahlt')istAuto[s.eigentuemer_id]=(istAuto[s.eigentuemer_id]||0)+b;});
   var ovRows=(res[7]&&res[7].data)||[];
-  var ovById={}, ovWeg={}; ovRows.forEach(function(r){ if(r.eigentuemer_id)ovById[r.eigentuemer_id]={soll:r.soll,ist:r.ist}; else ovWeg={rl_anfang:r.rl_anfang,rl_zuf:r.rl_zuf,rl_ent:r.rl_ent}; });
-  var sollByEig={}, istByEig={};
+  var ovById={}, ovWeg={}; ovRows.forEach(function(r){ if(r.eigentuemer_id)ovById[r.eigentuemer_id]={soll:r.soll,ist:r.ist,ruecklage:r.ruecklage}; else ovWeg={rl_anfang:r.rl_anfang,rl_zuf:r.rl_zuf,rl_ent:r.rl_ent}; });
+  var sollByEig={}, istByEig={}, rlByEig={};
   owners.forEach(function(o){
     var ov=ovById[o.id]||{};
     sollByEig[o.id]=(ov.soll!=null)?(parseFloat(ov.soll)||0):(sollAuto[o.id]||0);
     istByEig[o.id]=(ov.ist!=null)?(parseFloat(ov.ist)||0):(istAuto[o.id]||0);
+    rlByEig[o.id]=(ov.ruecklage!=null)?(parseFloat(ov.ruecklage)||0):0;
   });
   var tage=_wegcTage(jahr);
   var persRows=res[6].data||[]; var persByUnit={}; persRows.forEach(function(r){(persByUnit[r.einheit_id]=persByUnit[r.einheit_id]||{})[r.monat]=r.personen;});
@@ -11388,11 +11436,12 @@ async function _wegcAbrLoadData(jahr){
     else if(ry===jahr){ if(r.typ==='entnahme'){rlEnt+=b;rlEntList.push({betrag:b,zweck:r.zweck||''});} else {rlZuf+=b;} }
   });
   var rlAnfangEff=(ovWeg.rl_anfang!=null)?(parseFloat(ovWeg.rl_anfang)||0):rlAnfang;
-  var rlZufEff=(ovWeg.rl_zuf!=null)?(parseFloat(ovWeg.rl_zuf)||0):rlZuf;
   var rlEntEff=(ovWeg.rl_ent!=null)?(parseFloat(ovWeg.rl_ent)||0):rlEnt;
-  var rl={anfang:rlAnfangEff,zuf:rlZufEff,ent:rlEntEff,ende:rlAnfangEff+rlZufEff-rlEntEff,entList:rlEntList,hasData:rlRows.length>0,autoAnfang:rlAnfang,autoZuf:rlZuf,autoEnt:rlEnt,ov:ovWeg};
+  var rlZufSum=owners.reduce(function(s,o){return s+(rlByEig[o.id]||0);},0);
+  var rl={anfang:rlAnfangEff,zuf:rlZufSum,ent:rlEntEff,ende:rlAnfangEff+rlZufSum-rlEntEff,entList:rlEntList,hasData:(rlRows.length>0||rlZufSum>0||rlAnfangEff||rlEntEff),autoAnfang:rlAnfang,autoEnt:rlEnt,ov:ovWeg};
   var totalMea=units.reduce(function(s,u){return s+_wegcMeaVal(u);},0);
-  _wegcAbrData={jahr:jahr,weg:_wegcCur,P:P,owners:owners,festByPos:festByPos,sollByEig:sollByEig,istByEig:istByEig,sollAuto:sollAuto,istAuto:istAuto,ovById:ovById,haeuserById:haeuserById,tage:tage,units:units,persByUnit:persByUnit,rl:rl,totalMea:totalMea};
+  var billingOwners=_wegcBillingOwners(owners);
+  _wegcAbrData={jahr:jahr,weg:_wegcCur,P:P,owners:owners,billingOwners:billingOwners,festByPos:festByPos,sollByEig:sollByEig,istByEig:istByEig,rlByEig:rlByEig,sollAuto:sollAuto,istAuto:istAuto,ovById:ovById,haeuserById:haeuserById,tage:tage,units:units,persByUnit:persByUnit,rl:rl,totalMea:totalMea};
   return _wegcAbrData;
 }
 async function wegcRenderAbrArchiv(c){
@@ -11558,8 +11607,9 @@ async function wegcAbrFestSplit(posId,mode){
 function wegcAbrechnungPdf(onlyEigId){
   var d=_wegcAbrData;
   if(!d||!d.owners||!d.owners.length){showToast('Bitte zuerst die Hausgeldabrechnung öffnen.');return;}
-  var pdfOwners=onlyEigId?d.owners.filter(function(o){return o.id===onlyEigId;}):d.owners;
-  if(!pdfOwners.length)pdfOwners=d.owners;
+  var _bos=d.billingOwners||_wegcBillingOwners(d.owners);
+  var pdfOwners=onlyEigId?_bos.filter(function(o){return o.id===onlyEigId;}):_bos;
+  if(!pdfOwners.length)pdfOwners=_bos;
   try{
     var jsPDF=window.jspdf.jsPDF;
     var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
@@ -11585,11 +11635,11 @@ function wegcAbrechnungPdf(onlyEigId){
       if(oi>0)doc.addPage();
       y=18;
       sf(7.5,'normal',135,135,140);doc.text(datStr,W-R,y,{align:'right'});
-      y=29; sf(8.5,'bold',45,45,50);doc.text(_wegcEigName(o),L,y); y+=9;
+      y=29; sf(8.5,'bold',45,45,50);doc.text(o.name||_wegcEigName(o),L,y); y+=9;
       sf(15,'bold',28,28,34);doc.text('Hausgeldabrechnung',L,y);
       var tw=doc.getTextWidth('Hausgeldabrechnung ');sf(15,'bold',AC[0],AC[1],AC[2]);doc.text(String(d.jahr),L+tw,y); y+=6;
       sf(9,'bold',55,55,60);doc.text(weg.name||'WEG',L,y);
-      var nw=doc.getTextWidth(weg.name||'WEG');sf(9,'normal',120,120,125);doc.text('   ·   Wohnung: '+((o.weg_einheiten&&o.weg_einheiten.bezeichnung)||'–'),L+nw,y); y+=5;
+      var nw=doc.getTextWidth(weg.name||'WEG');sf(9,'normal',120,120,125);doc.text('   ·   Einheit: '+(o.einheit||(o.weg_einheiten&&o.weg_einheiten.bezeichnung)||'–'),L+nw,y); y+=5;
       if(adr){sf(8,'normal',130,130,135);doc.text(adr,L,y);y+=5;}
       sf(8,'normal',90,90,95);doc.text('Abrechnungszeitraum: 01.01.'+d.jahr+' – 31.12.'+d.jahr+' ('+d.tage+' Tage)',L,y); y+=8;
       colHead();
@@ -11599,7 +11649,7 @@ function wegcAbrechnungPdf(onlyEigId){
         sf(7.5,'bold',88,88,92);doc.text(title,cx.pos,y);y+=5;
         var sg=0,sa=0;
         list.forEach(function(P){
-          var r=_wegcAbrRow(P,o,d.festByPos); sg+=r.gesamtEUR; sa+=r.ownerEUR;
+          var r=_wegcAbrRowBo(P,o,d.festByPos); sg+=r.gesamtEUR; sa+=r.ownerEUR;
           if(y>272){doc.addPage();y=20;colHead();}
           sf(7.5,'normal',55,55,60);doc.text(r.name,cx.pos,y,{maxWidth:42});
           sf(7,'normal',120,120,125);doc.text(r.vn,cx.vn,y,{maxWidth:56});
@@ -11620,8 +11670,8 @@ function wegcAbrechnungPdf(onlyEigId){
       var ra=renderBlock(blkA,'Nicht zur Umlage auf evtl. Mieter bestimmte Kosten');
       var rb=renderBlock(blkB,'Zur Umlage auf Bewohner bestimmte Kosten');
       var anteil=ra[1]+rb[1];
-      var soll=d.sollByEig[o.id]||0, ist=(d.istByEig&&d.istByEig[o.id])||0, diff=ist-anteil;
-      var rueck=d.P.reduce(function(s,P){return s+(P.istRueck?_wegcAbrRow(P,o,d.festByPos).ownerEUR:0);},0);
+      var soll=_wegcBoSum(d.sollByEig,o), ist=_wegcBoSum(d.istByEig,o), rlEig=_wegcBoSum(d.rlByEig,o), diff=ist-anteil;
+      var rueck=d.P.reduce(function(s,P){return s+(P.istRueck?_wegcAbrRowBo(P,o,d.festByPos).ownerEUR:0);},0);
       if(y>250){doc.addPage();y=20;}
       line(L,W-R,y,null,0.5);y+=4;
       sf(9,'bold',40,40,45);doc.text('Summe Kosten (Ihr Anteil) für den Abrechnungszeitraum',cx.pos,y);doc.text(fmt(anteil)+' EUR',cx.aeur,y,{align:'right'});y+=6;
@@ -11632,21 +11682,22 @@ function wegcAbrechnungPdf(onlyEigId){
       var rc=[55,55,60];
       sf(11,'bold',rc[0],rc[1],rc[2]);doc.text(diff<0?'Ihre Nachzahlung':'Ihr Guthaben',cx.pos,y);doc.text(fmt(diff)+' EUR',cx.aeur,y,{align:'right'});y+=8;
       var l35={haushaltsnah:0,handwerker:0};
-      d.P.forEach(function(P){var lo=parseFloat(P.lohn)||0;if(lo>0&&P.lohnKat){var rr=_wegcAbrRow(P,o,d.festByPos);var frac=P.gesamtEUR>0?rr.ownerEUR/P.gesamtEUR:0;l35[P.lohnKat]+=lo*frac;}});
+      d.P.forEach(function(P){var lo=parseFloat(P.lohn)||0;if(lo>0&&P.lohnKat){var rr=_wegcAbrRowBo(P,o,d.festByPos);var frac=P.gesamtEUR>0?rr.ownerEUR/P.gesamtEUR:0;l35[P.lohnKat]+=lo*frac;}});
       if(l35.handwerker>0.005||l35.haushaltsnah>0.005){ if(y>262){doc.addPage();y=20;} sf(7.5,'normal',90,90,95); var t35=doc.splitTextToSize('§ 35a EStG – in den Kosten enthaltene begünstigte Lohnanteile: Handwerkerleistungen (Abs. 3) '+fmt(l35.handwerker)+' EUR, haushaltsnahe Dienstleistungen (Abs. 2) '+fmt(l35.haushaltsnah)+' EUR. Eine gesonderte Bescheinigung kann separat erstellt werden.',W-L-R); doc.text(t35,cx.pos,y); y+=t35.length*3.6+2; }
-      // Entwicklung der Instandhaltungsrücklage + MEA-Anteil des Eigentümers
+      // Entwicklung der Instandhaltungsrücklage – Zuführung = Beitrag des Eigentümers (Schritt 3)
       var rl=d.rl;
-      if(rl&&(rl.hasData||rl.anfang||rl.zuf||rl.ent)){
+      if(rl&&(rl.hasData||rl.anfang||rl.zuf||rl.ent||rlEig)){
         if(y>250){doc.addPage();y=20;}
-        var meaFr=(d.totalMea>0)?(_wegcMeaVal(o.weg_einheiten)/d.totalMea):0;
+        var meaFr=(d.totalMea>0)?((o.mea!=null?o.mea:_wegcMeaVal(o.primary&&o.primary.weg_einheiten))/d.totalMea):0;
+        var ihrAnfang=rl.anfang*meaFr, ihrEnt=rl.ent*meaFr, ihrEnde=ihrAnfang+rlEig-ihrEnt;
         y+=2; sf(8.5,'bold',45,45,50);doc.text('Entwicklung der Instandhaltungsrücklage '+d.jahr,cx.pos,y);
-        sf(6.5,'normal',120,120,125);doc.text('Gesamt',cx.geur,y,{align:'right'});doc.text('Ihr Anteil ('+(meaFr*100).toLocaleString('de-DE',{maximumFractionDigits:2})+'%)',cx.aeur,y,{align:'right'});y+=2;line(cx.pos,W-R,y,null,0.3);y+=4;
+        sf(6.5,'normal',120,120,125);doc.text('Gesamt',cx.geur,y,{align:'right'});doc.text('Ihr Anteil',cx.aeur,y,{align:'right'});y+=2;line(cx.pos,W-R,y,null,0.3);y+=4;
         sf(8,'normal',70,70,75);
-        doc.text('Anfangsbestand (01.01.'+d.jahr+')',cx.pos+2,y);doc.text(fmt(rl.anfang),cx.geur,y,{align:'right'});sf(8,'normal',180,180,185);doc.text('-',cx.aeur,y,{align:'right'});sf(8,'normal',70,70,75);y+=4.5;
-        doc.text('+ Zufuehrung',cx.pos+2,y);doc.text(fmt(rl.zuf),cx.geur,y,{align:'right'});sf(8,'bold',40,40,45);doc.text(fmt(rl.zuf*meaFr),cx.aeur,y,{align:'right'});sf(8,'normal',70,70,75);y+=4.5;
-        doc.text('- Entnahme',cx.pos+2,y);doc.text(fmt(rl.ent),cx.geur,y,{align:'right'});sf(8,'bold',40,40,45);doc.text(fmt(rl.ent*meaFr),cx.aeur,y,{align:'right'});sf(8,'normal',70,70,75);y+=2;
+        doc.text('Anfangsbestand (01.01.'+d.jahr+')',cx.pos+2,y);doc.text(fmt(rl.anfang),cx.geur,y,{align:'right'});sf(8,'normal',110,110,115);doc.text(fmt(ihrAnfang),cx.aeur,y,{align:'right'});sf(8,'normal',70,70,75);y+=4.5;
+        doc.text('+ Zufuehrung (Ihr Beitrag)',cx.pos+2,y);doc.text(fmt(rl.zuf),cx.geur,y,{align:'right'});sf(8,'bold',40,40,45);doc.text(fmt(rlEig),cx.aeur,y,{align:'right'});sf(8,'normal',70,70,75);y+=4.5;
+        doc.text('- Entnahme',cx.pos+2,y);doc.text(fmt(rl.ent),cx.geur,y,{align:'right'});sf(8,'bold',40,40,45);doc.text(fmt(ihrEnt),cx.aeur,y,{align:'right'});sf(8,'normal',70,70,75);y+=2;
         line(cx.pos,W-R,y,null,0.3);y+=4;
-        sf(8.5,'bold',45,45,50);doc.text('Endbestand (31.12.'+d.jahr+')',cx.pos+2,y);doc.text(fmt(rl.ende),cx.geur,y,{align:'right'});doc.text(fmt(rl.ende*meaFr),cx.aeur,y,{align:'right'});y+=5;
+        sf(8.5,'bold',45,45,50);doc.text('Endbestand (31.12.'+d.jahr+')',cx.pos+2,y);doc.text(fmt(rl.ende),cx.geur,y,{align:'right'});doc.text(fmt(ihrEnde),cx.aeur,y,{align:'right'});y+=5;
         if(rl.entList&&rl.entList.length){sf(7,'normal',140,140,145);doc.text('Entnahmen: '+rl.entList.map(function(x){return (x.zweck||'(ohne Zweck)')+' '+fmt(x.betrag);}).join('  ·  '),cx.pos+2,y,{maxWidth:W-L-R-4});y+=5;}
       }
     });
@@ -11654,7 +11705,7 @@ function wegcAbrechnungPdf(onlyEigId){
     for(var i=1;i<=pages;i++){doc.setPage(i);line(L,W-R,287,[200,200,200],0.3);sf(7,'normal',150,150,150);
       if(adr)doc.text(adr,W/2,291,{align:'center',maxWidth:W-L-R});
       doc.text('Seite '+i+' von '+pages,W-R,291,{align:'right'});}
-    var fnSuffix=(onlyEigId&&pdfOwners.length===1)?('_'+(_wegcEigName(pdfOwners[0])||'Eigentuemer').replace(/[^a-zA-Z0-9]+/g,'_')):'';
+    var fnSuffix=(onlyEigId&&pdfOwners.length===1)?('_'+((pdfOwners[0].name||_wegcEigName(pdfOwners[0]))||'Eigentuemer').replace(/[^a-zA-Z0-9]+/g,'_')):'';
     showDoc(doc,'Hausgeldabrechnung_'+(weg.name||'WEG').replace(/[^a-zA-Z0-9]+/g,'_')+'_'+d.jahr+fnSuffix+'.pdf','vorschau');
   }catch(e){console.error('Hausgeldabr-PDF:',e);showToast('⚠️ PDF-Fehler: '+(e.message||e));}
 }

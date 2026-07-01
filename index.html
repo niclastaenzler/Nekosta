@@ -10864,9 +10864,10 @@ async function wegcRenderAbrechnung(c){
   });
   var rlAnfangEff=(ovWeg.rl_anfang!=null)?(parseFloat(ovWeg.rl_anfang)||0):rlAnfang;
   var rlEntEff=(ovWeg.rl_ent!=null)?(parseFloat(ovWeg.rl_ent)||0):rlEnt;
-  // Zuführung = Summe der je Eigentümer (Schritt 3) erfassten Rücklagen
+  // Zuführung: Standard = Summe der je Eigentümer (Schritt 3) erfassten Rücklagen; WEG-weit überschreibbar
   var rlZufSum=owners.reduce(function(s,o){return s+(rlByEig[o.id]||0);},0);
-  var rl={anfang:rlAnfangEff,zuf:rlZufSum,ent:rlEntEff,ende:rlAnfangEff+rlZufSum-rlEntEff,entList:rlEntList,hasData:(rlRows.length>0||rlZufSum>0||rlAnfangEff||rlEntEff),autoAnfang:rlAnfang,autoEnt:rlEnt,ov:ovWeg};
+  var rlZufEff=(ovWeg.rl_zuf!=null)?(parseFloat(ovWeg.rl_zuf)||0):rlZufSum;
+  var rl={anfang:rlAnfangEff,zuf:rlZufEff,zufAuto:rlZufSum,ent:rlEntEff,ende:rlAnfangEff+rlZufEff-rlEntEff,entList:rlEntList,hasData:(rlRows.length>0||rlZufEff>0||rlAnfangEff||rlEntEff),autoAnfang:rlAnfang,autoEnt:rlEnt,ov:ovWeg};
   var totalMea=units.reduce(function(s,u){return s+_wegcMeaVal(u);},0);
   var billingOwners=_wegcBillingOwners(owners);
   var lohnByPos={}; ((res[10]&&res[10].data)||[]).forEach(function(r){(lohnByPos[r.position_id]=lohnByPos[r.position_id]||{})[r.eigentuemer_id]=parseFloat(r.betrag)||0;});
@@ -11082,10 +11083,10 @@ async function wegcRenderAbrechnung(c){
       };
       html+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:1.1rem 1.2rem;margin-bottom:1.25rem;box-shadow:0 1px 2px rgba(16,24,40,.05)">'
         +'<div style="font-size:.9rem;font-weight:800;color:#111827;margin-bottom:.2rem">🏦 Entwicklung der Instandhaltungsrücklage '+jahr+'</div>'
-        +'<div style="font-size:.72rem;color:#9ca3af;margin-bottom:.7rem">Anfangsbestand und Entnahme sind editierbar (<span style="color:#8e44c0">lila</span> = manuell, Feld leeren = automatischer Wert aus dem Rücklagen-Modul). Die <strong>Zuführung</strong> ergibt sich aus der Summe der je Eigentümer in <strong>Schritt 3</strong> erfassten Rücklagen.</div>'
+        +'<div style="font-size:.72rem;color:#9ca3af;margin-bottom:.7rem">Alle Werte sind editierbar (<span style="color:#8e44c0">lila</span> = manuell, Feld leeren = Standardwert). Standard-<strong>Zuführung</strong> = Summe der je Eigentümer in <strong>Schritt 3</strong> erfassten Rücklagen ('+fmtEuro(rl.zufAuto)+'); hier WEG-weit überschreibbar.</div>'
         +'<table style="border-collapse:collapse;font-size:.85rem;width:100%;max-width:520px">'
         +'<tr><td style="padding:.32rem 0;color:#374151">Anfangsbestand (01.01.'+jahr+')</td><td style="text-align:right">'+_rlInp('rl_anfang',rl.anfang,rl.ov&&rl.ov.rl_anfang!=null)+'</td></tr>'
-        +'<tr><td style="padding:.32rem 0;color:#157f3c">+ Zuführung <span style="color:#9ca3af;font-weight:400">(Summe je Eigentümer, Schritt 3)</span></td><td style="text-align:right;padding-right:7px;color:#157f3c;font-weight:700">'+fmtEuro(rl.zuf)+'</td></tr>'
+        +'<tr><td style="padding:.32rem 0;color:#157f3c">+ Zuführung <span style="color:#9ca3af;font-weight:400">(Standard: Summe Schritt 3)</span></td><td style="text-align:right">'+_rlInp('rl_zuf',rl.zuf,rl.ov&&rl.ov.rl_zuf!=null,'#157f3c')+'</td></tr>'
         +'<tr><td style="padding:.32rem 0;color:#b62923">- Entnahme</td><td style="text-align:right">'+_rlInp('rl_ent',rl.ent,rl.ov&&rl.ov.rl_ent!=null,'#b62923')+'</td></tr>'
         +'<tr style="border-top:2px solid var(--border);font-weight:800"><td style="padding:.45rem 0">= Endbestand (31.12.'+jahr+')</td><td style="text-align:right;padding-right:7px">'+fmtEuro(rl.ende)+'</td></tr>'
         +'</table>'
@@ -11554,7 +11555,8 @@ async function _wegcAbrLoadData(jahr){
   var rlAnfangEff=(ovWeg.rl_anfang!=null)?(parseFloat(ovWeg.rl_anfang)||0):rlAnfang;
   var rlEntEff=(ovWeg.rl_ent!=null)?(parseFloat(ovWeg.rl_ent)||0):rlEnt;
   var rlZufSum=owners.reduce(function(s,o){return s+(rlByEig[o.id]||0);},0);
-  var rl={anfang:rlAnfangEff,zuf:rlZufSum,ent:rlEntEff,ende:rlAnfangEff+rlZufSum-rlEntEff,entList:rlEntList,hasData:(rlRows.length>0||rlZufSum>0||rlAnfangEff||rlEntEff),autoAnfang:rlAnfang,autoEnt:rlEnt,ov:ovWeg};
+  var rlZufEff=(ovWeg.rl_zuf!=null)?(parseFloat(ovWeg.rl_zuf)||0):rlZufSum;
+  var rl={anfang:rlAnfangEff,zuf:rlZufEff,zufAuto:rlZufSum,ent:rlEntEff,ende:rlAnfangEff+rlZufEff-rlEntEff,entList:rlEntList,hasData:(rlRows.length>0||rlZufEff>0||rlAnfangEff||rlEntEff),autoAnfang:rlAnfang,autoEnt:rlEnt,ov:ovWeg};
   var totalMea=units.reduce(function(s,u){return s+_wegcMeaVal(u);},0);
   var billingOwners=_wegcBillingOwners(owners);
   var lohnByPos={}; ((res[9]&&res[9].data)||[]).forEach(function(r){(lohnByPos[r.position_id]=lohnByPos[r.position_id]||{})[r.eigentuemer_id]=parseFloat(r.betrag)||0;});

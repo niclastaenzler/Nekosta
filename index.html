@@ -10792,6 +10792,15 @@ function _wegcAbrRowBo(P,bo,festByPos){
 }
 // Summe eines je-Eigentümer-Werts (Soll/Ist/Rücklage) über alle Einheiten eines Abrechnungs-Eigentümers
 function _wegcBoSum(map,bo){return bo.eigs.reduce(function(s,e){return s+((map&&map[e.id])||0);},0);}
+// §35a-Lohnanteil eines Abrechnungs-Eigentümers für eine Position: manuelle Aufteilung (weg_abr_lohn_split)
+// schlägt die Automatik (Lohnanteil × Kostenanteil/Positionssumme).
+function _wegc35aOwner(P,bo,d){
+  var split=d.lohnByPos&&d.lohnByPos[P.id];
+  if(split&&Object.keys(split).length){ return _wegcBoSum(split,bo); }
+  var lo=parseFloat(P.lohn)||0; if(!(lo>0))return 0;
+  var rr=_wegcAbrRowBo(P,bo,d.festByPos); var frac=P.gesamtEUR>0?rr.ownerEUR/P.gesamtEUR:0;
+  return lo*frac;
+}
 async function wegcRenderAbrechnung(c){
   renderWegcNav('abrechnung');
   if(!c)c=document.getElementById('wegc-content'); if(!c)return;
@@ -10809,7 +10818,8 @@ async function wegcRenderAbrechnung(c){
       sb.from('weg_einheit_personen').select('einheit_id,monat,personen').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr),
       sb.from('weg_abrechnungen').select('id,finalisiert_am').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr).limit(1),
       sb.from('weg_abr_override').select('eigentuemer_id,soll,ist,ruecklage,rl_anfang,rl_zuf,rl_ent').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr),
-      sb.from('weg_ruecklagen').select('typ,betrag,zweck,jahr,datum').eq('user_id',currentUser.id).eq('objekt_id',wegId)
+      sb.from('weg_ruecklagen').select('typ,betrag,zweck,jahr,datum').eq('user_id',currentUser.id).eq('objekt_id',wegId),
+      sb.from('weg_abr_lohn_split').select('position_id,eigentuemer_id,betrag').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr)
     ]);
     for(var i=0;i<res.length;i++){if(res[i].error)throw res[i].error;}
   }catch(e){console.warn('hausgeldabr load:',e);c.innerHTML='<div style="color:#dc2626;font-size:.85rem">Fehler beim Laden: '+escapeHtml(e.message||'')+'</div>';return;}
@@ -10859,7 +10869,8 @@ async function wegcRenderAbrechnung(c){
   var rl={anfang:rlAnfangEff,zuf:rlZufSum,ent:rlEntEff,ende:rlAnfangEff+rlZufSum-rlEntEff,entList:rlEntList,hasData:(rlRows.length>0||rlZufSum>0||rlAnfangEff||rlEntEff),autoAnfang:rlAnfang,autoEnt:rlEnt,ov:ovWeg};
   var totalMea=units.reduce(function(s,u){return s+_wegcMeaVal(u);},0);
   var billingOwners=_wegcBillingOwners(owners);
-  _wegcAbrData={jahr:jahr,weg:_wegcCur,P:P,owners:owners,billingOwners:billingOwners,festByPos:festByPos,sollByEig:sollByEig,istByEig:istByEig,rlByEig:rlByEig,sollAuto:sollAuto,istAuto:istAuto,ovById:ovById,haeuserById:haeuserById,tage:tage,units:units,persByUnit:persByUnit,rl:rl,totalMea:totalMea};
+  var lohnByPos={}; ((res[10]&&res[10].data)||[]).forEach(function(r){(lohnByPos[r.position_id]=lohnByPos[r.position_id]||{})[r.eigentuemer_id]=parseFloat(r.betrag)||0;});
+  _wegcAbrData={jahr:jahr,weg:_wegcCur,P:P,owners:owners,billingOwners:billingOwners,festByPos:festByPos,lohnByPos:lohnByPos,sollByEig:sollByEig,istByEig:istByEig,rlByEig:rlByEig,sollAuto:sollAuto,istAuto:istAuto,ovById:ovById,haeuserById:haeuserById,tage:tage,units:units,persByUnit:persByUnit,rl:rl,totalMea:totalMea};
 
   // ── Ergebnis je Abrechnungs-Eigentümer (Garagen sind in die Wohnung gefaltet) ──
   // Nachzahlung/Guthaben = tatsächlich gezahlt (Ist) − Kostenanteil; Soll wird zusätzlich ausgewiesen.
@@ -11096,10 +11107,30 @@ async function wegcRenderAbrechnung(c){
         +'<th style="text-align:right;padding:.4rem .6rem;font-size:.62rem;text-transform:uppercase;color:var(--muted)">Betrag</th>'
         +'<th style="text-align:right;padding:.4rem .6rem;font-size:.62rem;text-transform:uppercase;color:var(--muted)">davon Lohn (€)</th>'
         +'<th style="text-align:left;padding:.4rem .6rem;font-size:.62rem;text-transform:uppercase;color:var(--muted)">Art</th></tr></thead><tbody>'
-        +P.map(function(x){return '<tr style="border-bottom:1px solid #f3f4f6"><td style="padding:.35rem .6rem">'+escapeHtml(x.name)+'</td>'
+        +P.map(function(x){
+            var row='<tr style="border-bottom:1px solid #f3f4f6"><td style="padding:.35rem .6rem">'+escapeHtml(x.name)+'</td>'
             +'<td style="padding:.35rem .6rem;text-align:right;color:#6b7280">'+fmtEuro(x.gesamtEUR)+'</td>'
             +'<td style="padding:.35rem .6rem;text-align:right"><input type="text" inputmode="decimal" value="'+(x.lohn>0?(''+x.lohn).replace('.',','):'')+'" onchange="wegcAbr35aSave(\''+x.id+'\',\'lohn\',this.value)" style="width:84px;border:1px solid var(--border);border-radius:5px;padding:2px 5px;font-size:.76rem;text-align:right;font-family:var(--ff)"></td>'
-            +'<td style="padding:.35rem .6rem"><select onchange="wegcAbr35aSave(\''+x.id+'\',\'kat\',this.value)" class="buha-inp" style="font-size:.76rem;padding:2px 5px"><option value=""'+(!x.lohnKat?' selected':'')+'>– keine –</option><option value="handwerker"'+(x.lohnKat==='handwerker'?' selected':'')+'>Handwerker (Abs.3)</option><option value="haushaltsnah"'+(x.lohnKat==='haushaltsnah'?' selected':'')+'>Haushaltsnah (Abs.2)</option></select></td></tr>';}).join('')
+            +'<td style="padding:.35rem .6rem"><select onchange="wegcAbr35aSave(\''+x.id+'\',\'kat\',this.value)" class="buha-inp" style="font-size:.76rem;padding:2px 5px"><option value=""'+(!x.lohnKat?' selected':'')+'>– keine –</option><option value="handwerker"'+(x.lohnKat==='handwerker'?' selected':'')+'>Handwerker (Abs.3)</option><option value="haushaltsnah"'+(x.lohnKat==='haushaltsnah'?' selected':'')+'>Haushaltsnah (Abs.2)</option></select></td></tr>';
+            if((parseFloat(x.lohn)||0)>0&&x.lohnKat){
+              var split=lohnByPos[x.id]||{}; var hasSplit=Object.keys(split).length>0;
+              row+='<tr style="background:#f0fbfd"><td colspan="4" style="padding:.4rem .6rem .6rem">'
+                +'<div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;margin-bottom:.45rem">'
+                +'<span style="font-size:.7rem;color:#0e7490;font-weight:700">§35a-Aufteilung je Eigentümer</span>'
+                +(hasSplit?'<span style="font-size:.62rem;font-weight:700;background:#cffafe;color:#0e7490;padding:1px 6px;border-radius:6px">manuell</span>':'<span style="font-size:.62rem;color:#9ca3af">automatisch nach Kostenanteil – oder unten manuell verteilen</span>')
+                +'<span style="flex:1"></span>'
+                +'<span style="font-size:.66rem;color:#6b7280">Gesamt aufteilen:</span>'
+                +'<input id="lohnsplit-'+x.id+'" type="text" inputmode="decimal" value="'+(x.lohn>0?(''+x.lohn).replace('.',','):'')+'" style="width:84px;border:1px solid #bfe9f0;border-radius:5px;padding:2px 5px;font-size:.72rem;font-family:var(--ff)">'
+                +'<button class="btn-small" style="font-size:.66rem;padding:3px 8px" onclick="wegcAbr35aSplitAuto(\''+x.id+'\',\'equal\')">gleich</button>'
+                +'<button class="btn-small" style="font-size:.66rem;padding:3px 8px" onclick="wegcAbr35aSplitAuto(\''+x.id+'\',\'mea\')">nach MEA</button>'
+                +(hasSplit?'<button class="btn-small" style="font-size:.66rem;padding:3px 8px" onclick="wegcAbr35aSplitClear(\''+x.id+'\')">zurück zu automatisch</button>':'')
+                +'</div>'
+                +'<div style="display:flex;flex-wrap:wrap;gap:.4rem">'
+                +billingOwners.map(function(bo){var v=_wegcBoSum(split,bo);return '<span style="display:inline-flex;align-items:center;gap:.3rem;font-size:.72rem;background:#fff;border:1px solid #bfe9f0;border-radius:7px;padding:.15rem .4rem">'+escapeHtml(bo.einheit)+' <input type="text" inputmode="decimal" value="'+(hasSplit?(v.toFixed(2)).replace('.',','):'')+'" placeholder="auto" onchange="wegcAbr35aSplitSave(\''+x.id+'\',\''+bo.id+'\',this.value)" style="width:72px;border:1px solid var(--border);border-radius:5px;padding:2px 5px;font-size:.72rem;font-family:var(--ff)"></span>';}).join('')
+                +'</div></td></tr>';
+            }
+            return row;
+        }).join('')
         +'</tbody></table></div>'
         +'<div style="display:flex;gap:.6rem;align-items:flex-end;flex-wrap:wrap;margin-top:.9rem">'
           +'<button class="btn-primary" style="padding:.55rem 1.1rem" onclick="wegcAbr35aPdf()"><span class="btn-ic" data-icon="download"></span> §35a-Bescheinigung – alle</button>'
@@ -11218,7 +11249,7 @@ function _wegcAbrEinzelHtml(bo){
   h+='</tbody></table>';
   // §35a-Hinweiszeile: in den Kosten enthaltene beguenstigte Lohnanteile dieses Eigentuemers
   var l35={haushaltsnah:0,handwerker:0};
-  d.P.forEach(function(P){ var lo=parseFloat(P.lohn)||0; if(lo>0&&P.lohnKat){ var rr=_wegcAbrRowBo(P,bo,d.festByPos); var frac=P.gesamtEUR>0?rr.ownerEUR/P.gesamtEUR:0; l35[P.lohnKat]+=lo*frac; } });
+  d.P.forEach(function(P){ if((parseFloat(P.lohn)||0)>0&&P.lohnKat){ l35[P.lohnKat]+=_wegc35aOwner(P,bo,d); } });
   if(l35.handwerker>0.005||l35.haushaltsnah>0.005){
     h+='<div style="margin-top:.6rem;font-size:.74rem;color:#0e7490;background:#ecfeff;border:1px solid #cffafe;border-radius:8px;padding:.5rem .7rem;line-height:1.45"><strong>§ 35a EStG</strong> – in Ihren Kosten enthaltene begünstigte Lohnanteile: Handwerkerleistungen (Abs. 3) <strong>'+n2(l35.handwerker)+' €</strong>, haushaltsnahe Dienstleistungen (Abs. 2) <strong>'+n2(l35.haushaltsnah)+' €</strong>. Eine gesonderte Bescheinigung kann separat erstellt werden.</div>';
   }
@@ -11299,6 +11330,54 @@ async function wegcAbr35aSave(posId,field,val){
   try{ var r=await sb.from('weg_abr_position').update(upd).eq('id',posId);
     if(r.error){showToast('Fehler: '+r.error.message);return;}
     var d=_wegcAbrData; if(d){var P=null;d.P.forEach(function(x){if(x.id===posId)P=x;}); if(P){ if(field==='lohn')P.lohn=upd.lohnanteil; else P.lohnKat=upd.lohn_kategorie; }}
+    wegcRenderAbrechnung(); // Aufteilungs-Block je nach Lohn/Art ein-/ausblenden
+  }catch(e){showToast('Fehler: '+e.message);}
+}
+// §35a-Lohnanteil je Eigentümer manuell aufteilen (Aufteilungsbetrag). Leeres/0-Feld = diesen Eigentümer entfernen.
+async function wegcAbr35aSplitSave(posId,eigId,val){
+  if(!_wegcCur)return;
+  var empty=(''+(val==null?'':val)).trim()==='';
+  var betrag=empty?0:_wegcNum(val);
+  try{
+    var ex=await sb.from('weg_abr_lohn_split').select('id').eq('position_id',posId).eq('eigentuemer_id',eigId).eq('jahr',_wegcAbrJahr).maybeSingle();
+    var d=_wegcAbrData;
+    if(empty||betrag===0){
+      if(ex.data&&ex.data.id)await sb.from('weg_abr_lohn_split').delete().eq('id',ex.data.id);
+      if(d&&d.lohnByPos&&d.lohnByPos[posId])delete d.lohnByPos[posId][eigId];
+    } else if(ex.data&&ex.data.id){
+      await sb.from('weg_abr_lohn_split').update({betrag:betrag}).eq('id',ex.data.id);
+      if(d){(d.lohnByPos[posId]=d.lohnByPos[posId]||{})[eigId]=betrag;}
+    } else {
+      await sb.from('weg_abr_lohn_split').insert({user_id:currentUser.id,objekt_id:_wegcCur.id,jahr:_wegcAbrJahr,position_id:posId,eigentuemer_id:eigId,betrag:betrag});
+      if(d){(d.lohnByPos[posId]=d.lohnByPos[posId]||{})[eigId]=betrag;}
+    }
+  }catch(e){showToast('Fehler: '+e.message);}
+}
+// §35a-Lohnanteil einer Position automatisch auf die Abrechnungs-Eigentümer verteilen (gleich / nach MEA), centgenau.
+async function wegcAbr35aSplitAuto(posId,mode){
+  if(!_wegcCur)return; var d=_wegcAbrData; if(!d)return;
+  var el=document.getElementById('lohnsplit-'+posId); var total=el?_wegcNum(el.value):0;
+  if(!(total>0)){showToast('Bitte einen Gesamtbetrag > 0 eingeben');if(el)el.focus();return;}
+  var bos=d.billingOwners||_wegcBillingOwners(d.owners);
+  var weights=bos.map(function(bo){return mode==='mea'?(bo.mea||0):1;});
+  var wsum=weights.reduce(function(s,w){return s+w;},0);
+  if(!(wsum>0)){showToast(mode==='mea'?'Keine MEA hinterlegt – Aufteilung nach MEA nicht möglich':'Keine Eigentümer');return;}
+  var lastPos=-1; weights.forEach(function(w,i){if(w>0)lastPos=i;});
+  var cents=Math.round(total*100),acc=0,amounts=[];
+  for(var i=0;i<bos.length;i++){var c; if(weights[i]<=0){c=0;} else if(i===lastPos){c=cents-acc;} else {c=Math.round(cents*weights[i]/wsum);acc+=c;} amounts.push(c/100);}
+  try{
+    await sb.from('weg_abr_lohn_split').delete().eq('position_id',posId).eq('jahr',_wegcAbrJahr);
+    var rows=[]; bos.forEach(function(bo,i){ if(amounts[i]>0)rows.push({user_id:currentUser.id,objekt_id:_wegcCur.id,jahr:_wegcAbrJahr,position_id:posId,eigentuemer_id:bo.primary.id,betrag:amounts[i]}); });
+    if(rows.length){var r=await sb.from('weg_abr_lohn_split').insert(rows); if(r.error){showToast('Fehler: '+r.error.message);return;}}
+    showToast(mode==='mea'?'§35a nach MEA aufgeteilt':'§35a gleichmäßig aufgeteilt');
+    wegcRenderAbrechnung();
+  }catch(e){showToast('Fehler: '+e.message);}
+}
+// §35a-Aufteilung einer Position komplett entfernen → zurück zur automatischen Verteilung nach Kostenanteil.
+async function wegcAbr35aSplitClear(posId){
+  if(!_wegcCur)return;
+  try{ await sb.from('weg_abr_lohn_split').delete().eq('position_id',posId).eq('jahr',_wegcAbrJahr);
+    showToast('Zurück zur automatischen Verteilung'); wegcRenderAbrechnung();
   }catch(e){showToast('Fehler: '+e.message);}
 }
 // Hausgeld-Soll / Gezahlt (Ist) je Eigentümer manuell anpassen (Override). Leeres Feld = zurück zur Automatik.
@@ -11376,8 +11455,7 @@ function wegcAbr35aPdf(onlyEigId){
         list.forEach(function(x){
           if(y>270){doc.addPage();y=20;}
           var ownerEUR=_wegcAbrRowBo(x,o,d.festByPos).ownerEUR;
-          var frac=x.gesamtEUR>0?ownerEUR/x.gesamtEUR:0;
-          var ownerLohn=(parseFloat(x.lohn)||0)*frac;
+          var ownerLohn=_wegc35aOwner(x,o,d);
           sum[kat]+=ownerLohn;
           sf(8,'normal',55,55,60);doc.text(x.name,L+1,y,{maxWidth:86});doc.text(fmt(ownerEUR),L+108,y,{align:'right'});sf(8,'bold',40,40,45);doc.text(fmt(ownerLohn),W-R-1,y,{align:'right'});y+=5.5;
         });
@@ -11440,7 +11518,8 @@ async function _wegcAbrLoadData(jahr){
     sb.from('weg_festbetrag').select('position_id,eigentuemer_id,betrag').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr),
     sb.from('weg_einheit_personen').select('einheit_id,monat,personen').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr),
     sb.from('weg_abr_override').select('eigentuemer_id,soll,ist,ruecklage,rl_anfang,rl_zuf,rl_ent').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr),
-    sb.from('weg_ruecklagen').select('typ,betrag,zweck,jahr,datum').eq('user_id',currentUser.id).eq('objekt_id',wegId)
+    sb.from('weg_ruecklagen').select('typ,betrag,zweck,jahr,datum').eq('user_id',currentUser.id).eq('objekt_id',wegId),
+    sb.from('weg_abr_lohn_split').select('position_id,eigentuemer_id,betrag').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr)
   ]);
   for(var i=0;i<res.length;i++){if(res[i].error)throw res[i].error;}
   var positions=res[0].data||[];
@@ -11478,7 +11557,8 @@ async function _wegcAbrLoadData(jahr){
   var rl={anfang:rlAnfangEff,zuf:rlZufSum,ent:rlEntEff,ende:rlAnfangEff+rlZufSum-rlEntEff,entList:rlEntList,hasData:(rlRows.length>0||rlZufSum>0||rlAnfangEff||rlEntEff),autoAnfang:rlAnfang,autoEnt:rlEnt,ov:ovWeg};
   var totalMea=units.reduce(function(s,u){return s+_wegcMeaVal(u);},0);
   var billingOwners=_wegcBillingOwners(owners);
-  _wegcAbrData={jahr:jahr,weg:_wegcCur,P:P,owners:owners,billingOwners:billingOwners,festByPos:festByPos,sollByEig:sollByEig,istByEig:istByEig,rlByEig:rlByEig,sollAuto:sollAuto,istAuto:istAuto,ovById:ovById,haeuserById:haeuserById,tage:tage,units:units,persByUnit:persByUnit,rl:rl,totalMea:totalMea};
+  var lohnByPos={}; ((res[9]&&res[9].data)||[]).forEach(function(r){(lohnByPos[r.position_id]=lohnByPos[r.position_id]||{})[r.eigentuemer_id]=parseFloat(r.betrag)||0;});
+  _wegcAbrData={jahr:jahr,weg:_wegcCur,P:P,owners:owners,billingOwners:billingOwners,festByPos:festByPos,lohnByPos:lohnByPos,sollByEig:sollByEig,istByEig:istByEig,rlByEig:rlByEig,sollAuto:sollAuto,istAuto:istAuto,ovById:ovById,haeuserById:haeuserById,tage:tage,units:units,persByUnit:persByUnit,rl:rl,totalMea:totalMea};
   return _wegcAbrData;
 }
 async function wegcRenderAbrArchiv(c){

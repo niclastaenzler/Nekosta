@@ -11139,8 +11139,11 @@ async function wegcRenderAbrechnung(c){
                 +'<span style="flex:1"></span>'
                 +'<span style="font-size:.66rem;color:#6b7280">Gesamt aufteilen:</span>'
                 +'<input id="lohnsplit-'+x.id+'" type="text" inputmode="decimal" value="'+(x.lohn>0?(''+x.lohn).replace('.',','):'')+'" style="width:84px;border:1px solid #bfe9f0;border-radius:5px;padding:2px 5px;font-size:.72rem;font-family:var(--ff)">'
-                +'<button class="btn-small" style="font-size:.66rem;padding:3px 8px" onclick="wegcAbr35aSplitAuto(\''+x.id+'\',\'equal\')">gleich</button>'
-                +'<button class="btn-small" style="font-size:.66rem;padding:3px 8px" onclick="wegcAbr35aSplitAuto(\''+x.id+'\',\'mea\')">nach MEA</button>'
+                +'<span style="font-size:.66rem;color:#6b7280">nach:</span>'
+                +'<button class="btn-small" style="font-size:.66rem;padding:3px 8px" title="Verteilt den Lohnanteil genau wie die Kosten dieser Position (Verteiler der Position: MEA, Einheiten, Personen×Tage, Festbetrag, Haus)" onclick="wegcAbr35aSplitAuto(\''+x.id+'\',\'kostenanteil\')">wie Position</button>'
+                +'<button class="btn-small" style="font-size:.66rem;padding:3px 8px" onclick="wegcAbr35aSplitAuto(\''+x.id+'\',\'mea\')">MEA</button>'
+                +'<button class="btn-small" style="font-size:.66rem;padding:3px 8px" onclick="wegcAbr35aSplitAuto(\''+x.id+'\',\'einheiten\')">Einheiten (gleich)</button>'
+                +'<button class="btn-small" style="font-size:.66rem;padding:3px 8px" onclick="wegcAbr35aSplitAuto(\''+x.id+'\',\'pxt\')">Personen × Tage</button>'
                 +(hasSplit?'<button class="btn-small" style="font-size:.66rem;padding:3px 8px" onclick="wegcAbr35aSplitClear(\''+x.id+'\')">zurück zu automatisch</button>':'')
                 +'</div>'
                 +'<div style="display:flex;flex-wrap:wrap;gap:.4rem">'
@@ -11378,14 +11381,27 @@ async function wegcAbr35aSplitSave(posId,eigId,val){
   }catch(e){showToast('Fehler: '+e.message);}
 }
 // §35a-Lohnanteil einer Position automatisch auf die Abrechnungs-Eigentümer verteilen (gleich / nach MEA), centgenau.
+// §35a-Lohnanteil einer Position auf die Eigentümer verteilen – nach wählbarem Schlüssel.
+//   kostenanteil = wie die Kosten dieser Position verteilt sind (respektiert Verteiler + Haus-Scope + Festbetrag)
+//   mea = Eigentumsanteil · einheiten/equal = gleichmäßig · pxt = Personen × Tage (taggenau)
 async function wegcAbr35aSplitAuto(posId,mode){
   if(!_wegcCur)return; var d=_wegcAbrData; if(!d)return;
   var el=document.getElementById('lohnsplit-'+posId); var total=el?_wegcNum(el.value):0;
   if(!(total>0)){showToast('Bitte einen Gesamtbetrag > 0 eingeben');if(el)el.focus();return;}
   var bos=d.billingOwners||_wegcBillingOwners(d.owners);
-  var weights=bos.map(function(bo){return mode==='mea'?(bo.mea||0):1;});
+  var P=(d.P||[]).filter(function(x){return x.id===posId;})[0];
+  var weightOf=function(bo){
+    if(mode==='mea')return bo.mea||0;
+    if(mode==='kostenanteil')return P?_wegcAbrRowBo(P,bo,d.festByPos).ownerEUR:0;
+    if(mode==='pxt')return bo.eigs.reduce(function(s,e){var u=e.weg_einheiten||{};var pd=(u._pd!=null)?u._pd:((parseFloat(u.personen)||0)*(d.tage||365));return s+pd;},0);
+    return 1; // einheiten / equal
+  };
+  var weights=bos.map(weightOf);
   var wsum=weights.reduce(function(s,w){return s+w;},0);
-  if(!(wsum>0)){showToast(mode==='mea'?'Keine MEA hinterlegt – Aufteilung nach MEA nicht möglich':'Keine Eigentümer');return;}
+  if(!(wsum>0)){
+    var noMsg={mea:'Keine MEA hinterlegt – Aufteilung nach MEA nicht möglich',pxt:'Keine Personen hinterlegt – Aufteilung nach Personen × Tage nicht möglich',kostenanteil:'Diese Position hat für keinen Eigentümer einen Kostenanteil – Aufteilung „wie Position" nicht möglich'};
+    showToast(noMsg[mode]||'Keine Eigentümer');return;
+  }
   var lastPos=-1; weights.forEach(function(w,i){if(w>0)lastPos=i;});
   var cents=Math.round(total*100),acc=0,amounts=[];
   for(var i=0;i<bos.length;i++){var c; if(weights[i]<=0){c=0;} else if(i===lastPos){c=cents-acc;} else {c=Math.round(cents*weights[i]/wsum);acc+=c;} amounts.push(c/100);}
@@ -11393,7 +11409,8 @@ async function wegcAbr35aSplitAuto(posId,mode){
     await sb.from('weg_abr_lohn_split').delete().eq('position_id',posId).eq('jahr',_wegcAbrJahr);
     var rows=[]; bos.forEach(function(bo,i){ if(amounts[i]>0)rows.push({user_id:currentUser.id,objekt_id:_wegcCur.id,jahr:_wegcAbrJahr,position_id:posId,eigentuemer_id:bo.primary.id,betrag:amounts[i]}); });
     if(rows.length){var r=await sb.from('weg_abr_lohn_split').insert(rows); if(r.error){showToast('Fehler: '+r.error.message);return;}}
-    showToast(mode==='mea'?'§35a nach MEA aufgeteilt':'§35a gleichmäßig aufgeteilt');
+    var lbl={mea:'nach MEA',kostenanteil:'wie die Kosten der Position',pxt:'nach Personen × Tage',einheiten:'gleichmäßig',equal:'gleichmäßig'};
+    showToast('§35a '+(lbl[mode]||'gleichmäßig')+' aufgeteilt');
     wegcRenderAbrechnung();
   }catch(e){showToast('Fehler: '+e.message);}
 }

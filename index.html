@@ -10733,7 +10733,9 @@ var _wegcVtEinh={mea:'MEA',einheiten:'Einh.',pxt:'PxT',festbetrag:'EUR'};
 function _wegcAbrEnrich(positions, units, festByPos, haeuserById, tage){
   return positions.map(function(p){
     var hausName=p.haus_id&&haeuserById[p.haus_id]?haeuserById[p.haus_id].name:'';
-    var scope=p.haus_id?units.filter(function(u){return u.untergemeinschaft_id===p.haus_id;}):units;
+    // „Gesamte WEG": Garagen/Stellplätze ausschließen (ihre Kosten gehören zur jeweiligen Wohnung bzw.
+    // werden separat über die Untergemeinschaft „Garagen" abgerechnet). Haus-scoped: alle Einheiten des Hauses.
+    var scope=p.haus_id?units.filter(function(u){return u.untergemeinschaft_id===p.haus_id;}):units.filter(function(u){return !_wegcIsGarageUnit(u);});
     var scopeIds={}; scope.forEach(function(u){scopeIds[u.id]=1;});
     var vt=p.verteiler||'mea', isFest=vt==='festbetrag';
     var vn=_wegcVtLabel[vt]||'Eigentumsanteil';
@@ -10763,6 +10765,9 @@ function _wegcAbrRow(P, o, festByPos){
 }
 function _wegcEigName(o){var k=o&&o.kontakte;return k?((k.anrede?k.anrede+' ':'')+(k.vorname||'')+' '+(k.nachname||'')).replace(/\s+/g,' ').trim():'Eigentümer';}
 function _wegcMeaVal(u){if(!u)return 0;var z=parseFloat(u.mea_zaehler||0),n=parseFloat(u.mea_nenner||0);if(z>0&&n>0)return z/n;if(z>0)return z/1000;return 0;}
+// Garage/Stellplatz erkennen: entweder einer Wohnung zugeordnet (Zubehör) oder vom Typ Garage/Stellplatz.
+// Solche Einheiten werden bei „Gesamte WEG"-Positionen NICHT mitgezählt (nur Haus-scoped erfasst sie).
+function _wegcIsGarageUnit(u){if(!u)return false; if(u.wohnung_einheit_id)return true; var t=(''+(u.typ||'')).toLowerCase(); return t.indexOf('garage')>=0||t.indexOf('stellplatz')>=0;}
 // Abrechnungs-Eigentümer zusammenfassen: eine Garage/ein Stellplatz mit 'wohnung_einheit_id'
 // und gleichem Eigentümer (kontakt_id) wie die zugeordnete Wohnung wird in deren Abrechnung gefaltet.
 // Garagen mit fremdem Eigentümer oder ohne Zuordnung bleiben eigenständig.
@@ -10810,8 +10815,8 @@ async function wegcRenderAbrechnung(c){
   try{
     var res=await Promise.all([
       sb.from('weg_abr_position').select('*').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr).order('sortierung',{ascending:true}).order('created_at',{ascending:true}),
-      sb.from('weg_eigentuemer').select('id,weg_einheit_id,kontakt_id,aktiv,kontakte(anrede,vorname,nachname),weg_einheiten(bezeichnung,mea_zaehler,mea_nenner,flaeche,personen,untergemeinschaft_id,wohnung_einheit_id)').eq('user_id',currentUser.id).eq('objekt_id',wegId),
-      sb.from('weg_einheiten').select('id,bezeichnung,mea_zaehler,mea_nenner,flaeche,personen,untergemeinschaft_id,wohnung_einheit_id').eq('user_id',currentUser.id).eq('objekt_id',wegId),
+      sb.from('weg_eigentuemer').select('id,weg_einheit_id,kontakt_id,aktiv,kontakte(anrede,vorname,nachname),weg_einheiten(bezeichnung,typ,mea_zaehler,mea_nenner,flaeche,personen,untergemeinschaft_id,wohnung_einheit_id)').eq('user_id',currentUser.id).eq('objekt_id',wegId),
+      sb.from('weg_einheiten').select('id,bezeichnung,typ,mea_zaehler,mea_nenner,flaeche,personen,untergemeinschaft_id,wohnung_einheit_id').eq('user_id',currentUser.id).eq('objekt_id',wegId),
       sb.from('weg_sollstellung').select('eigentuemer_id,betrag,status').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr),
       sb.from('weg_untergemeinschaften').select('id,name').eq('user_id',currentUser.id).eq('objekt_id',wegId),
       sb.from('weg_festbetrag').select('position_id,eigentuemer_id,betrag').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr),
@@ -11517,8 +11522,8 @@ async function _wegcAbrLoadData(jahr){
   var wegId=_wegcCur.id;
   var res=await Promise.all([
     sb.from('weg_abr_position').select('*').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr).order('sortierung',{ascending:true}).order('created_at',{ascending:true}),
-    sb.from('weg_eigentuemer').select('id,weg_einheit_id,kontakt_id,aktiv,kontakte(anrede,vorname,nachname),weg_einheiten(bezeichnung,mea_zaehler,mea_nenner,flaeche,personen,untergemeinschaft_id,wohnung_einheit_id)').eq('user_id',currentUser.id).eq('objekt_id',wegId),
-    sb.from('weg_einheiten').select('id,bezeichnung,mea_zaehler,mea_nenner,flaeche,personen,untergemeinschaft_id,wohnung_einheit_id').eq('user_id',currentUser.id).eq('objekt_id',wegId),
+    sb.from('weg_eigentuemer').select('id,weg_einheit_id,kontakt_id,aktiv,kontakte(anrede,vorname,nachname),weg_einheiten(bezeichnung,typ,mea_zaehler,mea_nenner,flaeche,personen,untergemeinschaft_id,wohnung_einheit_id)').eq('user_id',currentUser.id).eq('objekt_id',wegId),
+    sb.from('weg_einheiten').select('id,bezeichnung,typ,mea_zaehler,mea_nenner,flaeche,personen,untergemeinschaft_id,wohnung_einheit_id').eq('user_id',currentUser.id).eq('objekt_id',wegId),
     sb.from('weg_sollstellung').select('eigentuemer_id,betrag,status').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr),
     sb.from('weg_untergemeinschaften').select('id,name').eq('user_id',currentUser.id).eq('objekt_id',wegId),
     sb.from('weg_festbetrag').select('position_id,eigentuemer_id,betrag').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr),

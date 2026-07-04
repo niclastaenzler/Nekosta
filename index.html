@@ -10724,7 +10724,7 @@ var _wegcAbrJahr=null, _wegcAbrData=null, _wegcAbrEig=null, _wegcAbrStep=1, _weg
 var _wegcPersColl=false, _wegcEinzelColl=false;
 function wegcAbrSetJahr(j){_wegcAbrJahr=parseInt(j)||(new Date().getFullYear()-1);_wegcAbrEig=null;wegcRenderAbrechnung();}
 function wegcAbrSetEig(id){_wegcAbrEig=id||null;wegcRenderAbrechnung();}
-function wegcAbrStep(n){_wegcAbrStep=Math.max(1,Math.min(6,parseInt(n)||1));_wegcAbrEditPos=null;wegcRenderAbrechnung();}
+function wegcAbrStep(n){_wegcAbrStep=Math.max(1,Math.min(7,parseInt(n)||1));_wegcAbrEditPos=null;wegcRenderAbrechnung();} // 7 = Individualisierung
 function _wegcTage(j){return ((j%4===0&&j%100!==0)||j%400===0)?366:365;}
 function _daysInMonth(j,m){return new Date(j,m,0).getDate();}
 var _wegcVtLabel={mea:'Eigentumsanteil',einheiten:'Einheiten',pxt:'Personen × Tage',festbetrag:'Festbetrag'};
@@ -10824,7 +10824,8 @@ async function wegcRenderAbrechnung(c){
       sb.from('weg_abrechnungen').select('id,finalisiert_am').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr).limit(1),
       sb.from('weg_abr_override').select('eigentuemer_id,soll,ist,ruecklage,rl_anfang,rl_zuf,rl_ent').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr),
       sb.from('weg_ruecklagen').select('typ,betrag,zweck,jahr,datum').eq('user_id',currentUser.id).eq('objekt_id',wegId),
-      sb.from('weg_abr_lohn_split').select('position_id,eigentuemer_id,betrag').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr)
+      sb.from('weg_abr_lohn_split').select('position_id,eigentuemer_id,betrag').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr),
+      sb.from('weg_abr_settings').select('*').eq('user_id',currentUser.id).eq('objekt_id',wegId).maybeSingle()
     ]);
     for(var i=0;i<res.length;i++){if(res[i].error)throw res[i].error;}
   }catch(e){console.warn('hausgeldabr load:',e);c.innerHTML='<div style="color:#dc2626;font-size:.85rem">Fehler beim Laden: '+escapeHtml(e.message||'')+'</div>';return;}
@@ -10880,7 +10881,7 @@ async function wegcRenderAbrechnung(c){
   var totalMea=units.reduce(function(s,u){return s+_wegcMeaVal(u);},0);
   var billingOwners=_wegcBillingOwners(owners);
   var lohnByPos={}; ((res[10]&&res[10].data)||[]).forEach(function(r){(lohnByPos[r.position_id]=lohnByPos[r.position_id]||{})[r.eigentuemer_id]=parseFloat(r.betrag)||0;});
-  _wegcAbrData={jahr:jahr,weg:_wegcCur,P:P,owners:owners,billingOwners:billingOwners,festByPos:festByPos,lohnByPos:lohnByPos,sollByEig:sollByEig,istByEig:istByEig,rlByEig:rlByEig,sollAuto:sollAuto,istAuto:istAuto,ovById:ovById,haeuserById:haeuserById,tage:tage,units:units,persByUnit:persByUnit,rl:rl,totalMea:totalMea};
+  _wegcAbrData={jahr:jahr,weg:_wegcCur,P:P,owners:owners,billingOwners:billingOwners,festByPos:festByPos,lohnByPos:lohnByPos,sollByEig:sollByEig,istByEig:istByEig,rlByEig:rlByEig,sollAuto:sollAuto,istAuto:istAuto,ovById:ovById,haeuserById:haeuserById,tage:tage,units:units,persByUnit:persByUnit,rl:rl,totalMea:totalMea,cfg:((res[11]||res[10]||{}).data)||{}};
 
   // ── Ergebnis je Abrechnungs-Eigentümer (Garagen sind in die Wohnung gefaltet) ──
   // Nachzahlung/Guthaben = tatsächlich gezahlt (Ist) − Kostenanteil; Soll wird zusätzlich ausgewiesen.
@@ -10928,7 +10929,9 @@ async function wegcRenderAbrechnung(c){
     return '<button onclick="wegcAbrStep('+n+')" style="flex:1;min-width:128px;display:flex;align-items:center;gap:.5rem;border:none;cursor:pointer;border-radius:10px;padding:.55rem .7rem;background:'+bg+';color:'+fg+';font-family:var(--ff);text-align:left">'
       +'<span style="width:23px;height:23px;border-radius:50%;background:'+(act?'rgba(255,255,255,.25)':'#fff')+';display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.76rem;flex-shrink:0">'+(done?'✓':n)+'</span>'
       +'<span style="font-size:.77rem;font-weight:700;line-height:1.1">'+s[0]+'</span></button>';
-  }).join('')+'</div>';
+  }).join('')
+  +'<button onclick="wegcAbrStep(7)" title="Individualisierung: PDF-Kopf & Fußzeile" style="flex:0 0 auto;display:flex;align-items:center;gap:.4rem;border:1.5px solid '+(step===7?'#6a2d9f':'var(--border)')+';cursor:pointer;border-radius:10px;padding:.55rem .8rem;background:'+(step===7?'#ede4f6':'#fff')+';color:'+(step===7?'#6a2d9f':'#6b7280')+';font-family:var(--ff)"><span class="btn-ic" data-icon="gear"></span><span style="font-size:.77rem;font-weight:700">Individualisierung</span></button>'
+  +'</div>';
   html+=warnMea;
   html+=warnUnv;
 
@@ -11147,6 +11150,26 @@ async function wegcRenderAbrechnung(c){
           +'<button class="btn-secondary" style="padding:.5rem 1rem" onclick="wegcAbr35aPdf(_wegcAbrEig)"><span class="btn-ic" data-icon="filetext"></span> Einzel (gewählter Eigentümer)</button>'
         +'</div></div>';
     }
+  } else if(step===7){
+    // Individualisierung (PDF-Kopf & Fußzeile) – gespeichert je WEG in weg_abr_settings
+    var cfgS=_wegcAbrData.cfg||{};
+    var _vNameS=([ (stammdaten||{}).firma,(stammdaten||{}).vname&&(stammdaten||{}).nname?((stammdaten||{}).vname+' '+(stammdaten||{}).nname):''].filter(Boolean).join(' / '))||'NEKOSTA';
+    var _ck=function(id,checked,lbl,sub){return '<label style="display:flex;gap:.6rem;align-items:flex-start;cursor:pointer;padding:.55rem .7rem;border:1px solid var(--border);border-radius:10px;background:#fff"><input type="checkbox" id="'+id+'"'+(checked?' checked':'')+' style="margin-top:2px"><span><span style="font-size:.84rem;font-weight:700;color:#111827">'+lbl+'</span><br><span style="font-size:.72rem;color:#6b7280">'+sub+'</span></span></label>';};
+    html+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:1.1rem 1.2rem;box-shadow:0 1px 2px rgba(16,24,40,.05)">'
+      +'<div style="font-size:.95rem;font-weight:800;color:#111827;margin-bottom:.25rem">⚙ Individualisierung</div>'
+      +'<div style="font-size:.78rem;color:#6b7280;margin-bottom:1rem">Kopf- und Fußzeile der PDFs (Hausgeldabrechnung + §35a-Bescheinigung) – gilt für diese WEG. Standard: neutral, ohne Verwaltername und ohne Ort/Datum.</div>'
+      +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:.7rem;margin-bottom:.9rem">'
+        +_ck('wegc-cfg-verw',!!cfgS.zeige_verwalter,'Verwaltername in der Kopfzeile','Zeigt „'+escapeHtml(_vNameS)+'" oben links.')
+        +_ck('wegc-cfg-ortdat',!!cfgS.zeige_ortdatum,'Ort & Datum in der Kopfzeile','Zeigt „Ort, den TT.MM.JJJJ" oben rechts.')
+      +'</div>'
+      +'<div style="display:flex;gap:.7rem;flex-wrap:wrap;align-items:flex-end;margin-bottom:1rem">'
+        +_wegcFld('Ort für die Datumszeile','<input id="wegc-cfg-ort" type="text" value="'+escapeHtml(cfgS.ort_text||'')+'" placeholder="leer = Ort aus Stammdaten" class="buha-inp" style="min-width:220px">')
+        +_wegcFld('Fußzeilentext','<input id="wegc-cfg-fuss" type="text" value="'+escapeHtml(cfgS.fuss_text||'')+'" placeholder="leer = Adresse der WEG" class="buha-inp" style="min-width:280px">')
+      +'</div>'
+      +'<div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap">'
+        +'<button class="btn-primary" style="padding:.55rem 1.1rem" onclick="wegcAbrCfgSave()"><span class="btn-ic" data-icon="check"></span> Speichern</button>'
+        +'<button class="btn-secondary" style="padding:.5rem 1rem" onclick="wegcAbrechnungPdf(_wegcAbrEig)"'+(ready?'':' disabled')+'><span class="btn-ic" data-icon="filetext"></span> Vorschau (Einzel-PDF)</button>'
+      +'</div></div>';
   } else {
     // Schritt 6: Abschluss & Vorschau
     if(!ready){html+='<div style="text-align:center;color:var(--muted);font-size:.86rem;padding:1.6rem;background:var(--white);border:1px solid #eef0f4;border-radius:12px">'+(!owners.length?'Lege zuerst Eigentümer an.':'Noch keine Kostenpositionen – zurück zu <strong>Schritt 2</strong>.')+'</div>';}
@@ -11213,10 +11236,14 @@ async function wegcRenderAbrechnung(c){
   }
 
   // ── Navigation ──
-  html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-top:1.5rem;gap:.6rem">'
-    +(step>1?'<button onclick="wegcAbrStep('+(step-1)+')" style="padding:.55rem 1.1rem;border:1px solid var(--border);background:#fff;border-radius:9px;cursor:pointer;font-size:.85rem;font-weight:700;color:#374151;font-family:var(--ff)">← Zurück</button>':'<span></span>')
-    +(step<6?'<button class="btn-primary" style="padding:.55rem 1.3rem" onclick="wegcAbrStep('+(step+1)+')">Weiter →</button>':'<button class="btn-primary" style="padding:.55rem 1.3rem" onclick="wegcAbrechnungPdf()"'+(ready?'':' disabled')+'><span class="btn-ic" data-icon="download"></span> PDF erstellen</button>')
-  +'</div>';
+  if(step===7){
+    html+='<div style="display:flex;justify-content:flex-start;margin-top:1.5rem"><button onclick="wegcAbrStep(6)" style="padding:.55rem 1.1rem;border:1px solid var(--border);background:#fff;border-radius:9px;cursor:pointer;font-size:.85rem;font-weight:700;color:#374151;font-family:var(--ff)">← Zurück zur Abrechnung</button></div>';
+  } else {
+    html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-top:1.5rem;gap:.6rem">'
+      +(step>1?'<button onclick="wegcAbrStep('+(step-1)+')" style="padding:.55rem 1.1rem;border:1px solid var(--border);background:#fff;border-radius:9px;cursor:pointer;font-size:.85rem;font-weight:700;color:#374151;font-family:var(--ff)">← Zurück</button>':'<span></span>')
+      +(step<6?'<button class="btn-primary" style="padding:.55rem 1.3rem" onclick="wegcAbrStep('+(step+1)+')">Weiter →</button>':'<button class="btn-primary" style="padding:.55rem 1.3rem" onclick="wegcAbrechnungPdf()"'+(ready?'':' disabled')+'><span class="btn-ic" data-icon="download"></span> PDF erstellen</button>')
+    +'</div>';
+  }
   c.innerHTML=html;
 }
 function _wegcAbrEinzelHtml(bo){
@@ -11435,6 +11462,22 @@ async function wegcAbrSetRl(field,val){
   }catch(e){showToast('Fehler: '+e.message);}
 }
 // §35a-Bescheinigung als PDF (je Eigentümer eine Seite). Anteil je Eigentümer = Lohnanteil × (sein Kostenanteil / Gesamtbetrag der Position).
+// Individualisierung: PDF-Kopf/Fußzeile je WEG speichern (weg_abr_settings, Schritt 7)
+async function wegcAbrCfgSave(){
+  if(!_wegcCur)return;
+  var g=function(id){return document.getElementById(id);};
+  var row={user_id:currentUser.id,objekt_id:_wegcCur.id,
+    zeige_verwalter:!!(g('wegc-cfg-verw')&&g('wegc-cfg-verw').checked),
+    zeige_ortdatum:!!(g('wegc-cfg-ortdat')&&g('wegc-cfg-ortdat').checked),
+    ort_text:(g('wegc-cfg-ort')&&g('wegc-cfg-ort').value.trim())||null,
+    fuss_text:(g('wegc-cfg-fuss')&&g('wegc-cfg-fuss').value.trim())||null};
+  try{
+    var r=await sb.from('weg_abr_settings').upsert(row,{onConflict:'objekt_id'});
+    if(r.error){showToast('Fehler: '+r.error.message);return;}
+    showToast('✅ Individualisierung gespeichert');
+    wegcRenderAbrechnung();
+  }catch(e){showToast('Fehler: '+e.message);}
+}
 function wegcAbr35aPdf(onlyEigId){
   var d=_wegcAbrData;
   if(!d||!d.owners||!d.owners.length){showToast('Bitte zuerst die Hausgeldabrechnung öffnen.');return;}
@@ -11452,10 +11495,13 @@ function wegcAbr35aPdf(onlyEigId){
     var fmt=function(v){return (parseFloat(v)||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});};
     var sf=function(sz,st,r,g,b){doc.setFontSize(sz);doc.setFont('helvetica',st||'normal');doc.setTextColor(r==null?40:r,g==null?40:g,b==null?45:b);};
     var line=function(x1,x2,yy,col,lw){col=col||[210,210,214];doc.setDrawColor(col[0],col[1],col[2]);doc.setLineWidth(lw||0.3);doc.line(x1,yy,x2,yy);};
+    var cfg=d.cfg||{};
     pdfOwners.forEach(function(o,oi){
       if(oi>0)doc.addPage();
       var y=18;
-      sf(7.5,'normal',135,135,140);doc.text(vName,L,y);doc.text((sm.ort?sm.ort+', ':'')+new Date().toLocaleDateString('de-DE'),W-R,y,{align:'right'});
+      sf(7.5,'normal',135,135,140);
+      if(cfg.zeige_verwalter)doc.text(vName,L,y);
+      if(cfg.zeige_ortdatum)doc.text(((cfg.ort_text||sm.ort)?((cfg.ort_text||sm.ort)+', den '):'')+new Date().toLocaleDateString('de-DE'),W-R,y,{align:'right'});
       y=30; sf(15,'bold',28,28,34);doc.text('Bescheinigung nach § 35a EStG',L,y);
       y+=7; sf(9.5,'bold',55,55,60);doc.text(weg.name||'WEG',L,y); if(adr){y+=5;sf(8.5,'normal',130,130,135);doc.text(adr,L,y);}
       y+=8; sf(9,'normal',60,60,65);doc.text('Eigentümer/in: ',L,y); var lw=doc.getTextWidth('Eigentümer/in: '); sf(9,'bold',40,40,45);doc.text(o.name||_wegcEigName(o),L+lw,y);
@@ -11466,13 +11512,13 @@ function wegcAbr35aPdf(onlyEigId){
         var list=posLohn.filter(function(x){return x.lohnKat===kat;});
         if(!list.length)return;
         sf(9.5,'bold',AC[0],AC[1],AC[2]);doc.text(titel,L,y);line(L,W-R,y+2.5,null,0.4);y+=8;
-        sf(6.5,'bold',120,120,125);doc.text('Leistung / Position',L+1,y);doc.text('Ihr Kostenanteil',L+108,y,{align:'right'});doc.text('davon Lohnanteil',W-R-1,y,{align:'right'});y+=2;line(L,W-R,y,null,0.3);y+=4;
+        sf(6.5,'bold',120,120,125);doc.text('Leistung / Position',L+1,y);doc.text('Verteilt nach',L+62,y);doc.text('Ihr Kostenanteil',L+128,y,{align:'right'});doc.text('davon Lohnanteil',W-R-1,y,{align:'right'});y+=2;line(L,W-R,y,null,0.3);y+=4;
         list.forEach(function(x){
           if(y>270){doc.addPage();y=20;}
           var ownerEUR=_wegcAbrRowBo(x,o,d.festByPos).ownerEUR;
           var ownerLohn=_wegc35aOwner(x,o,d);
           sum[kat]+=ownerLohn;
-          sf(8,'normal',55,55,60);doc.text(x.name,L+1,y,{maxWidth:86});doc.text(fmt(ownerEUR),L+108,y,{align:'right'});sf(8,'bold',40,40,45);doc.text(fmt(ownerLohn),W-R-1,y,{align:'right'});y+=5.5;
+          sf(8,'normal',55,55,60);doc.text(x.name,L+1,y,{maxWidth:58});sf(7,'normal',120,120,125);doc.text(x.vn||'',L+62,y,{maxWidth:44});sf(8,'normal',55,55,60);doc.text(fmt(ownerEUR),L+128,y,{align:'right'});sf(8,'bold',40,40,45);doc.text(fmt(ownerLohn),W-R-1,y,{align:'right'});y+=5.5;
         });
         line(L,W-R,y-1,null,0.4);sf(8.5,'bold',40,40,45);doc.text('Summe '+titel,L+1,y+3);doc.text(fmt(sum[kat])+' EUR',W-R-1,y+3,{align:'right'});y+=11;
       };
@@ -11482,7 +11528,8 @@ function wegcAbr35aPdf(onlyEigId){
       sf(8,'normal',90,90,95);
       var hinweis='Die vorstehenden Beträge stellen Ihren Anteil an den im Wirtschaftsjahr angefallenen, in der Hausgeldabrechnung enthaltenen Arbeits-/Lohnkosten dar. Es handelt sich um die nach § 35a EStG steuerlich begünstigten Anteile (20 % der Aufwendungen, Handwerkerleistungen bis 1.200 EUR, haushaltsnahe Dienstleistungen bis 4.000 EUR jährlich, jeweils haushaltsbezogene Höchstbeträge). Materialkosten sind nicht begünstigt und nicht enthalten.';
       var lines=doc.splitTextToSize(hinweis,W-L-R); doc.text(lines,L,y); y+=lines.length*4+4;
-      sf(7,'normal',150,150,150);doc.text([vName,adr].filter(Boolean).join('  ·  '),W/2,290,{align:'center',maxWidth:W-L-R});
+      var fussTxt=(cfg.fuss_text!=null&&(''+cfg.fuss_text).trim()!=='')?(''+cfg.fuss_text).trim():adr;
+      sf(7,'normal',150,150,150);if(fussTxt)doc.text(fussTxt,W/2,290,{align:'center',maxWidth:W-L-R});
     });
     var fnSuffix=(onlyEigId&&pdfOwners.length===1)?('_'+((pdfOwners[0].name||_wegcEigName(pdfOwners[0]))||'Eigentuemer').replace(/[^a-zA-Z0-9]+/g,'_')):'';
     showDoc(doc,'§35a-Bescheinigung_'+(weg.name||'WEG').replace(/[^a-zA-Z0-9]+/g,'_')+'_'+d.jahr+fnSuffix+'.pdf','vorschau');
@@ -11534,7 +11581,8 @@ async function _wegcAbrLoadData(jahr){
     sb.from('weg_einheit_personen').select('einheit_id,monat,personen').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr),
     sb.from('weg_abr_override').select('eigentuemer_id,soll,ist,ruecklage,rl_anfang,rl_zuf,rl_ent').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr),
     sb.from('weg_ruecklagen').select('typ,betrag,zweck,jahr,datum').eq('user_id',currentUser.id).eq('objekt_id',wegId),
-    sb.from('weg_abr_lohn_split').select('position_id,eigentuemer_id,betrag').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr)
+    sb.from('weg_abr_lohn_split').select('position_id,eigentuemer_id,betrag').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr),
+    sb.from('weg_abr_settings').select('*').eq('user_id',currentUser.id).eq('objekt_id',wegId).maybeSingle()
   ]);
   for(var i=0;i<res.length;i++){if(res[i].error)throw res[i].error;}
   var positions=res[0].data||[];
@@ -11577,7 +11625,7 @@ async function _wegcAbrLoadData(jahr){
   var totalMea=units.reduce(function(s,u){return s+_wegcMeaVal(u);},0);
   var billingOwners=_wegcBillingOwners(owners);
   var lohnByPos={}; ((res[9]&&res[9].data)||[]).forEach(function(r){(lohnByPos[r.position_id]=lohnByPos[r.position_id]||{})[r.eigentuemer_id]=parseFloat(r.betrag)||0;});
-  _wegcAbrData={jahr:jahr,weg:_wegcCur,P:P,owners:owners,billingOwners:billingOwners,festByPos:festByPos,lohnByPos:lohnByPos,sollByEig:sollByEig,istByEig:istByEig,rlByEig:rlByEig,sollAuto:sollAuto,istAuto:istAuto,ovById:ovById,haeuserById:haeuserById,tage:tage,units:units,persByUnit:persByUnit,rl:rl,totalMea:totalMea};
+  _wegcAbrData={jahr:jahr,weg:_wegcCur,P:P,owners:owners,billingOwners:billingOwners,festByPos:festByPos,lohnByPos:lohnByPos,sollByEig:sollByEig,istByEig:istByEig,rlByEig:rlByEig,sollAuto:sollAuto,istAuto:istAuto,ovById:ovById,haeuserById:haeuserById,tage:tage,units:units,persByUnit:persByUnit,rl:rl,totalMea:totalMea,cfg:((res[11]||res[10]||{}).data)||{}};
   return _wegcAbrData;
 }
 async function wegcRenderAbrArchiv(c){
@@ -11746,7 +11794,9 @@ function _wegcAbrPdfCtx(doc,d){
   var sm=stammdaten||{}, weg=d.weg||{};
   var vName=([sm.firma,sm.vname&&sm.nname?sm.vname+' '+sm.nname:'']).filter(Boolean).join(' / ')||'NEKOSTA';
   var adr=[weg.strasse,weg.plz&&weg.ort?weg.plz+' '+weg.ort:weg.ort].filter(Boolean).join(', ');
-  var datStr=(sm.ort?sm.ort+', ':'')+new Date().toLocaleDateString('de-DE');
+  var cfg=d.cfg||{}; // Individualisierung (weg_abr_settings): Kopf-/Fusszeile, Standard = neutral
+  var datStr=((cfg.ort_text||sm.ort)?((cfg.ort_text||sm.ort)+', den '):'')+new Date().toLocaleDateString('de-DE');
+  var fussTxt=(cfg.fuss_text!=null&&(''+cfg.fuss_text).trim()!=='')?(''+cfg.fuss_text).trim():adr;
   var fmt=function(v){return (parseFloat(v)||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});};
   var _meaNen=0; (d.units||[]).forEach(function(u){var n=parseFloat(u.mea_nenner)||0; if(n>_meaNen)_meaNen=n;});
   var meaNum=function(base){ if(!(_meaNen>0))return fmt(base); var v=base*_meaNen; if(_meaNen%1000===0&&_meaNen>1000)v=v/1000; return (Math.round(v*1000)/1000).toLocaleString('de-DE',{maximumFractionDigits:3}); };
@@ -11755,7 +11805,7 @@ function _wegcAbrPdfCtx(doc,d){
   var line=function(x1,x2,yy,col,lw){col=col||[210,210,214];doc.setDrawColor(col[0],col[1],col[2]);doc.setLineWidth(lw||0.3);doc.line(x1,yy,x2,yy);};
   var cx={pos:L, vn:60, gb:120, ab:140, einh:142, geur:172, aeur:W-R};
   var blkA=d.P.filter(function(x){return !x.umlf;}), blkB=d.P.filter(function(x){return x.umlf;});
-  return {W:W,L:L,R:R,AC:AC,weg:weg,vName:vName,adr:adr,datStr:datStr,fmt:fmt,meaNum:meaNum,baseDisp:baseDisp,sf:sf,line:line,cx:cx,blkA:blkA,blkB:blkB};
+  return {W:W,L:L,R:R,AC:AC,weg:weg,vName:vName,adr:adr,datStr:datStr,cfg:cfg,fussTxt:fussTxt,fmt:fmt,meaNum:meaNum,baseDisp:baseDisp,sf:sf,line:line,cx:cx,blkA:blkA,blkB:blkB};
 }
 // Rendert die Einzelabrechnung eines Abrechnungs-Eigentuemers auf die aktuelle Seite von doc (Start bei y=18)
 function _wegcAbrRenderOwner(doc,o,d,ctx){
@@ -11771,7 +11821,9 @@ function _wegcAbrRenderOwner(doc,o,d,ctx){
     };
     {
       y=18;
-      sf(7.5,'normal',135,135,140);doc.text(datStr,W-R,y,{align:'right'});
+      sf(7.5,'normal',135,135,140);
+      if(ctx.cfg&&ctx.cfg.zeige_verwalter)doc.text(ctx.vName,L,y);
+      if(ctx.cfg&&ctx.cfg.zeige_ortdatum)doc.text(datStr,W-R,y,{align:'right'});
       y=29; sf(8.5,'bold',45,45,50);doc.text(o.name||_wegcEigName(o),L,y); y+=9;
       sf(15,'bold',28,28,34);doc.text('Hausgeldabrechnung',L,y);
       var tw=doc.getTextWidth('Hausgeldabrechnung ');sf(15,'bold',AC[0],AC[1],AC[2]);doc.text(String(d.jahr),L+tw,y); y+=6;
@@ -11850,8 +11902,11 @@ function _wegcAbrHas35a(o,d){
 function _wegcAbrRender35aPage(doc,o,d,ctx){
   var W=ctx.W,L=ctx.L,R=ctx.R,AC=ctx.AC,weg=ctx.weg,adr=ctx.adr,vName=ctx.vName,datStr=ctx.datStr,fmt=ctx.fmt,sf=ctx.sf,line=ctx.line;
   var posLohn=d.P.filter(function(x){return (parseFloat(x.lohn)||0)>0&&x.lohnKat;});
+  var cfg=d.cfg||{};
   var y=18;
-  sf(7.5,'normal',135,135,140);doc.text(vName,L,y);doc.text(datStr,W-R,y,{align:'right'});
+  sf(7.5,'normal',135,135,140);
+  if(cfg.zeige_verwalter)doc.text(vName,L,y);
+  if(cfg.zeige_ortdatum)doc.text(datStr,W-R,y,{align:'right'});
   y=30; sf(15,'bold',28,28,34);doc.text('Bescheinigung nach § 35a EStG',L,y);
   y+=7; sf(9.5,'bold',55,55,60);doc.text(weg.name||'WEG',L,y); if(adr){y+=5;sf(8.5,'normal',130,130,135);doc.text(adr,L,y);}
   y+=8; sf(9,'normal',60,60,65);doc.text('Eigentümer/in: ',L,y); var lw=doc.getTextWidth('Eigentümer/in: '); sf(9,'bold',40,40,45);doc.text(o.name||_wegcEigName(o),L+lw,y);
@@ -11862,13 +11917,13 @@ function _wegcAbrRender35aPage(doc,o,d,ctx){
     var list=posLohn.filter(function(x){return x.lohnKat===kat;});
     if(!list.length)return;
     sf(9.5,'bold',AC[0],AC[1],AC[2]);doc.text(titel,L,y);line(L,W-R,y+2.5,null,0.4);y+=8;
-    sf(6.5,'bold',120,120,125);doc.text('Leistung / Position',L+1,y);doc.text('Ihr Kostenanteil',L+108,y,{align:'right'});doc.text('davon Lohnanteil',W-R-1,y,{align:'right'});y+=2;line(L,W-R,y,null,0.3);y+=4;
+    sf(6.5,'bold',120,120,125);doc.text('Leistung / Position',L+1,y);doc.text('Verteilt nach',L+62,y);doc.text('Ihr Kostenanteil',L+128,y,{align:'right'});doc.text('davon Lohnanteil',W-R-1,y,{align:'right'});y+=2;line(L,W-R,y,null,0.3);y+=4;
     list.forEach(function(x){
       if(y>270){doc.addPage();y=20;}
       var ownerEUR=_wegcAbrRowBo(x,o,d.festByPos).ownerEUR;
       var ownerLohn=_wegc35aOwner(x,o,d);
       sum[kat]+=ownerLohn;
-      sf(8,'normal',55,55,60);doc.text(x.name,L+1,y,{maxWidth:86});doc.text(fmt(ownerEUR),L+108,y,{align:'right'});sf(8,'bold',40,40,45);doc.text(fmt(ownerLohn),W-R-1,y,{align:'right'});y+=5.5;
+      sf(8,'normal',55,55,60);doc.text(x.name,L+1,y,{maxWidth:58});sf(7,'normal',120,120,125);doc.text(x.vn||'',L+62,y,{maxWidth:44});sf(8,'normal',55,55,60);doc.text(fmt(ownerEUR),L+128,y,{align:'right'});sf(8,'bold',40,40,45);doc.text(fmt(ownerLohn),W-R-1,y,{align:'right'});y+=5.5;
     });
     line(L,W-R,y-1,null,0.4);sf(8.5,'bold',40,40,45);doc.text('Summe '+titel,L+1,y+3);doc.text(fmt(sum[kat])+' EUR',W-R-1,y+3,{align:'right'});y+=11;
   };
@@ -11882,8 +11937,9 @@ function _wegcAbrRender35aPage(doc,o,d,ctx){
 // Fusszeile (Objekt-Adresse + Seitenzahl) auf allen Seiten von doc ergaenzen
 function _wegcAbrPdfFooter(doc,ctx){
   var pages=doc.internal.getNumberOfPages();
+  var ft=(ctx.fussTxt!=null)?ctx.fussTxt:ctx.adr;
   for(var i=1;i<=pages;i++){doc.setPage(i);ctx.line(ctx.L,ctx.W-ctx.R,287,[200,200,200],0.3);ctx.sf(7,'normal',150,150,150);
-    if(ctx.adr)doc.text(ctx.adr,ctx.W/2,291,{align:'center',maxWidth:ctx.W-ctx.L-ctx.R});
+    if(ft)doc.text(ft,ctx.W/2,291,{align:'center',maxWidth:ctx.W-ctx.L-ctx.R});
     doc.text('Seite '+i+' von '+pages,ctx.W-ctx.R,291,{align:'right'});}
 }
 function wegcAbrechnungPdf(onlyEigId){
@@ -12126,7 +12182,7 @@ function wegcWplanPdf(){
     var sf=function(sz,st,r,g,b){doc.setFontSize(sz);doc.setFont('helvetica',st||'normal');doc.setTextColor(r==null?40:r,g==null?40:g,b==null?45:b);};
     var line=function(x1,x2,yy,col,lw){col=col||[210,210,214];doc.setDrawColor(col[0],col[1],col[2]);doc.setLineWidth(lw||0.3);doc.line(x1,yy,x2,yy);};
     var y=20; var npi=function(n){if(y+(n||8)>276){doc.addPage();y=20;}};
-    sf(7.5,'normal',135,135,140);doc.text(vName,L,y);doc.text((sm.ort?sm.ort+', ':'')+new Date().toLocaleDateString('de-DE'),W-R,y,{align:'right'});
+    sf(7.5,'normal',135,135,140);doc.text((sm.ort?sm.ort+', ':'')+new Date().toLocaleDateString('de-DE'),W-R,y,{align:'right'});
     y=32;sf(17,'bold',28,28,34);doc.text('Wirtschaftsplan',L,y);var tw=doc.getTextWidth('Wirtschaftsplan ');sf(17,'bold',AC[0],AC[1],AC[2]);doc.text(String(d.jahr),L+tw,y);
     y+=7;sf(9.5,'bold',55,55,60);doc.text(weg.name||'WEG',L,y);if(adr){y+=5;sf(8.5,'normal',130,130,135);doc.text(adr,L,y);}y+=10;
     sf(9.5,'bold',AC[0],AC[1],AC[2]);doc.text('GESAMT-WIRTSCHAFTSPLAN',L,y);line(L,W-R,y+2.5,null,0.4);y+=8;
@@ -12138,7 +12194,7 @@ function wegcWplanPdf(){
     var mg=0,mj=0;
     d.einzel.forEach(function(e){if(y+7>276){doc.addPage();y=20;einzelHead();}sf(8,'normal',55,55,60);doc.text(e.name,L+1,y,{maxWidth:74});sf(8,'normal',110,110,115);doc.text(e.einheit,L+78,y,{maxWidth:38});doc.text(fmt(e.meaAbs),L+118,y,{align:'right'});sf(8,'normal',55,55,60);doc.text(fmt(e.jahr),L+150,y,{align:'right'});sf(8,'bold',40,40,45);doc.text(fmt(e.monat),W-R-1,y,{align:'right'});mg+=e.monat;mj+=e.jahr;y+=5.5;});
     line(L,W-R,y-1,null,0.4);sf(9,'bold',40,40,45);doc.text('Summe',L+1,y+3);doc.text(fmt(mj),L+150,y+3,{align:'right'});doc.text(fmt(mg),W-R-1,y+3,{align:'right'});
-    var pages=doc.internal.getNumberOfPages();for(var i=1;i<=pages;i++){doc.setPage(i);line(L,W-R,287,[200,200,200],0.3);sf(7,'normal',150,150,150);doc.text([vName,adr].filter(Boolean).join('  ·  '),W/2,291,{align:'center',maxWidth:W-L-R});doc.text('Seite '+i+' von '+pages,W-R,291,{align:'right'});}
+    var pages=doc.internal.getNumberOfPages();for(var i=1;i<=pages;i++){doc.setPage(i);line(L,W-R,287,[200,200,200],0.3);sf(7,'normal',150,150,150);if(adr)doc.text(adr,W/2,291,{align:'center',maxWidth:W-L-R});doc.text('Seite '+i+' von '+pages,W-R,291,{align:'right'});}
     showDoc(doc,'Wirtschaftsplan_'+(weg.name||'WEG').replace(/[^a-zA-Z0-9]+/g,'_')+'_'+d.jahr+'.pdf','vorschau');
   }catch(e){console.error('Wplan-PDF:',e);showToast('⚠️ PDF-Fehler: '+(e.message||e));}
 }

@@ -11225,6 +11225,10 @@ function _wegcAbrEinzelHtml(bo){
   if(!bo.eigs)bo={primary:bo,id:bo.id,eigs:[bo],name:_wegcEigName(bo),einheit:(bo.weg_einheiten&&bo.weg_einheiten.bezeichnung)||'',mea:_wegcMeaVal(bo.weg_einheiten)};
   var n2=function(v){return (parseFloat(v)||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});};
   var th=function(t,r){return '<th style="padding:.4rem .55rem;text-align:'+(r?'right':'left')+';font-size:.58rem;text-transform:uppercase;color:var(--muted);white-space:nowrap">'+t+'</th>';};
+  // MEA als Zähler/Nenner statt Prozent: Basis (Bruchteil) × Nenner, bei Nenner-Vielfachen von 1000 auf /81 kürzen.
+  var meaNen=0; (d.units||[]).forEach(function(u){var n=parseFloat(u.mea_nenner)||0; if(n>meaNen)meaNen=n;});
+  var meaNum=function(base){ if(!(meaNen>0))return n2(base); var v=base*meaNen; if(meaNen%1000===0&&meaNen>1000)v=v/1000; return (Math.round(v*1000)/1000).toLocaleString('de-DE',{maximumFractionDigits:3}); };
+  var baseDisp=function(r,base){ return (r.einh==='MEA')?meaNum(base):n2(base); };
   var blockRows=function(list,title){
     if(!list.length)return '';
     var rows=list.map(function(P){return _wegcAbrRowBo(P,bo,d.festByPos);});
@@ -11233,8 +11237,8 @@ function _wegcAbrEinzelHtml(bo){
     rows.forEach(function(r){h+='<tr style="border-bottom:1px solid #f5f5f7">'
       +'<td style="padding:.38rem .55rem">'+escapeHtml(r.name)+'</td>'
       +'<td style="padding:.38rem .55rem;color:#6b7280;font-size:.72rem">'+escapeHtml(r.vn)+'</td>'
-      +'<td style="padding:.38rem .55rem;text-align:right;color:#6b7280">'+n2(r.gesamtBase)+'</td>'
-      +'<td style="padding:.38rem .55rem;text-align:right;color:#6b7280">'+n2(r.ownerBase)+'</td>'
+      +'<td style="padding:.38rem .55rem;text-align:right;color:#6b7280">'+baseDisp(r,r.gesamtBase)+'</td>'
+      +'<td style="padding:.38rem .55rem;text-align:right;color:#6b7280">'+baseDisp(r,r.ownerBase)+'</td>'
       +'<td style="padding:.38rem .55rem;color:#9ca3af;font-size:.7rem">'+r.einh+'</td>'
       +'<td style="padding:.38rem .55rem;text-align:right">'+n2(r.gesamtEUR)+'</td>'
       +'<td style="padding:.38rem .55rem;text-align:right;font-weight:700">'+n2(r.ownerEUR)+'</td></tr>';});
@@ -11744,16 +11748,19 @@ function _wegcAbrPdfCtx(doc,d){
   var adr=[weg.strasse,weg.plz&&weg.ort?weg.plz+' '+weg.ort:weg.ort].filter(Boolean).join(', ');
   var datStr=(sm.ort?sm.ort+', ':'')+new Date().toLocaleDateString('de-DE');
   var fmt=function(v){return (parseFloat(v)||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});};
+  var _meaNen=0; (d.units||[]).forEach(function(u){var n=parseFloat(u.mea_nenner)||0; if(n>_meaNen)_meaNen=n;});
+  var meaNum=function(base){ if(!(_meaNen>0))return fmt(base); var v=base*_meaNen; if(_meaNen%1000===0&&_meaNen>1000)v=v/1000; return (Math.round(v*1000)/1000).toLocaleString('de-DE',{maximumFractionDigits:3}); };
+  var baseDisp=function(r,base){ return (r.einh==='MEA')?meaNum(base):fmt(base); };
   var sf=function(sz,st,r,g,b){doc.setFontSize(sz);doc.setFont('helvetica',st||'normal');doc.setTextColor(r==null?40:r,g==null?40:g,b==null?45:b);};
   var line=function(x1,x2,yy,col,lw){col=col||[210,210,214];doc.setDrawColor(col[0],col[1],col[2]);doc.setLineWidth(lw||0.3);doc.line(x1,yy,x2,yy);};
   var cx={pos:L, vn:60, gb:120, ab:140, einh:142, geur:172, aeur:W-R};
   var blkA=d.P.filter(function(x){return !x.umlf;}), blkB=d.P.filter(function(x){return x.umlf;});
-  return {W:W,L:L,R:R,AC:AC,weg:weg,vName:vName,adr:adr,datStr:datStr,fmt:fmt,sf:sf,line:line,cx:cx,blkA:blkA,blkB:blkB};
+  return {W:W,L:L,R:R,AC:AC,weg:weg,vName:vName,adr:adr,datStr:datStr,fmt:fmt,meaNum:meaNum,baseDisp:baseDisp,sf:sf,line:line,cx:cx,blkA:blkA,blkB:blkB};
 }
 // Rendert die Einzelabrechnung eines Abrechnungs-Eigentuemers auf die aktuelle Seite von doc (Start bei y=18)
 function _wegcAbrRenderOwner(doc,o,d,ctx){
     var W=ctx.W,L=ctx.L,R=ctx.R,AC=ctx.AC,weg=ctx.weg,adr=ctx.adr,datStr=ctx.datStr;
-    var fmt=ctx.fmt,sf=ctx.sf,line=ctx.line,cx=ctx.cx,blkA=ctx.blkA,blkB=ctx.blkB;
+    var fmt=ctx.fmt,sf=ctx.sf,line=ctx.line,cx=ctx.cx,blkA=ctx.blkA,blkB=ctx.blkB,baseDisp=ctx.baseDisp;
     var y=20;
     var colHead=function(){
       sf(6,'bold',120,120,125);
@@ -11784,7 +11791,7 @@ function _wegcAbrRenderOwner(doc,o,d,ctx){
           sf(7.5,'normal',55,55,60);doc.text(r.name,cx.pos,y,{maxWidth:42});
           sf(7,'normal',120,120,125);doc.text(r.vn,cx.vn,y,{maxWidth:56});
           sf(7.5,'normal',95,95,100);
-          doc.text(fmt(r.gesamtBase),cx.gb,y,{align:'right'}); doc.text(fmt(r.ownerBase),cx.ab,y,{align:'right'});
+          doc.text(baseDisp(r,r.gesamtBase),cx.gb,y,{align:'right'}); doc.text(baseDisp(r,r.ownerBase),cx.ab,y,{align:'right'});
           sf(6.5,'normal',150,150,155);doc.text(r.einh,cx.einh,y);
           sf(7.5,'normal',70,70,75);doc.text(fmt(r.gesamtEUR),cx.geur,y,{align:'right'});
           sf(7.5,'bold',40,40,45);doc.text(fmt(r.ownerEUR),cx.aeur,y,{align:'right'});
@@ -11832,6 +11839,46 @@ function _wegcAbrRenderOwner(doc,o,d,ctx){
       }
     }
 }
+// Hat der Eigentuemer einen beguenstigten §35a-Anteil?
+function _wegcAbrHas35a(o,d){
+  var pos=d.P.filter(function(x){return (parseFloat(x.lohn)||0)>0&&x.lohnKat;});
+  if(!pos.length)return false;
+  var sum=0; pos.forEach(function(x){sum+=_wegc35aOwner(x,o,d);});
+  return sum>0.005;
+}
+// §35a-Bescheinigung eines Eigentuemers auf die aktuelle Seite von doc rendern (eigene Seite im Haupt-PDF)
+function _wegcAbrRender35aPage(doc,o,d,ctx){
+  var W=ctx.W,L=ctx.L,R=ctx.R,AC=ctx.AC,weg=ctx.weg,adr=ctx.adr,vName=ctx.vName,datStr=ctx.datStr,fmt=ctx.fmt,sf=ctx.sf,line=ctx.line;
+  var posLohn=d.P.filter(function(x){return (parseFloat(x.lohn)||0)>0&&x.lohnKat;});
+  var y=18;
+  sf(7.5,'normal',135,135,140);doc.text(vName,L,y);doc.text(datStr,W-R,y,{align:'right'});
+  y=30; sf(15,'bold',28,28,34);doc.text('Bescheinigung nach § 35a EStG',L,y);
+  y+=7; sf(9.5,'bold',55,55,60);doc.text(weg.name||'WEG',L,y); if(adr){y+=5;sf(8.5,'normal',130,130,135);doc.text(adr,L,y);}
+  y+=8; sf(9,'normal',60,60,65);doc.text('Eigentümer/in: ',L,y); var lw=doc.getTextWidth('Eigentümer/in: '); sf(9,'bold',40,40,45);doc.text(o.name||_wegcEigName(o),L+lw,y);
+  y+=5; sf(8.5,'normal',90,90,95);doc.text('Einheit: '+(o.einheit||(o.weg_einheiten&&o.weg_einheiten.bezeichnung)||'–')+'   ·   Wirtschaftsjahr '+d.jahr,L,y);
+  y+=9;
+  var sum={haushaltsnah:0,handwerker:0};
+  var rowsFor=function(kat,titel){
+    var list=posLohn.filter(function(x){return x.lohnKat===kat;});
+    if(!list.length)return;
+    sf(9.5,'bold',AC[0],AC[1],AC[2]);doc.text(titel,L,y);line(L,W-R,y+2.5,null,0.4);y+=8;
+    sf(6.5,'bold',120,120,125);doc.text('Leistung / Position',L+1,y);doc.text('Ihr Kostenanteil',L+108,y,{align:'right'});doc.text('davon Lohnanteil',W-R-1,y,{align:'right'});y+=2;line(L,W-R,y,null,0.3);y+=4;
+    list.forEach(function(x){
+      if(y>270){doc.addPage();y=20;}
+      var ownerEUR=_wegcAbrRowBo(x,o,d.festByPos).ownerEUR;
+      var ownerLohn=_wegc35aOwner(x,o,d);
+      sum[kat]+=ownerLohn;
+      sf(8,'normal',55,55,60);doc.text(x.name,L+1,y,{maxWidth:86});doc.text(fmt(ownerEUR),L+108,y,{align:'right'});sf(8,'bold',40,40,45);doc.text(fmt(ownerLohn),W-R-1,y,{align:'right'});y+=5.5;
+    });
+    line(L,W-R,y-1,null,0.4);sf(8.5,'bold',40,40,45);doc.text('Summe '+titel,L+1,y+3);doc.text(fmt(sum[kat])+' EUR',W-R-1,y+3,{align:'right'});y+=11;
+  };
+  rowsFor('handwerker','Handwerkerleistungen (§ 35a Abs. 3 EStG)');
+  rowsFor('haushaltsnah','Haushaltsnahe Dienstleistungen (§ 35a Abs. 2 EStG)');
+  if(y>250){doc.addPage();y=20;}
+  sf(8,'normal',90,90,95);
+  var hinweis='Die vorstehenden Beträge stellen Ihren Anteil an den im Wirtschaftsjahr angefallenen, in der Hausgeldabrechnung enthaltenen Arbeits-/Lohnkosten dar. Es handelt sich um die nach § 35a EStG steuerlich begünstigten Anteile (20 % der Aufwendungen, Handwerkerleistungen bis 1.200 EUR, haushaltsnahe Dienstleistungen bis 4.000 EUR jährlich, jeweils haushaltsbezogene Höchstbeträge). Materialkosten sind nicht begünstigt und nicht enthalten.';
+  var lines=doc.splitTextToSize(hinweis,W-L-R); doc.text(lines,L,y); y+=lines.length*4+4;
+}
 // Fusszeile (Objekt-Adresse + Seitenzahl) auf allen Seiten von doc ergaenzen
 function _wegcAbrPdfFooter(doc,ctx){
   var pages=doc.internal.getNumberOfPages();
@@ -11852,6 +11899,7 @@ function wegcAbrechnungPdf(onlyEigId){
     pdfOwners.forEach(function(o,oi){
       if(oi>0)doc.addPage();
       _wegcAbrRenderOwner(doc,o,d,ctx);
+      if(_wegcAbrHas35a(o,d)){ doc.addPage(); _wegcAbrRender35aPage(doc,o,d,ctx); }
     });
     _wegcAbrPdfFooter(doc,ctx);
     var fnSuffix=(onlyEigId&&pdfOwners.length===1)?('_'+((pdfOwners[0].name||_wegcEigName(pdfOwners[0]))||'Eigentuemer').replace(/[^a-zA-Z0-9]+/g,'_')):'';
@@ -11873,6 +11921,7 @@ async function wegcAbrechnungZip(){
       var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
       var ctx=_wegcAbrPdfCtx(doc,d);
       _wegcAbrRenderOwner(doc,o,d,ctx);
+      if(_wegcAbrHas35a(o,d)){ doc.addPage(); _wegcAbrRender35aPage(doc,o,d,ctx); }
       _wegcAbrPdfFooter(doc,ctx);
       var base=((o.name||_wegcEigName(o))||'Eigentuemer').replace(/[^a-zA-Z0-9]+/g,'_')+'_'+((o.einheit||'').replace(/[^a-zA-Z0-9]+/g,'_'));
       var fname=base; var n=2; while(usedNames[fname]){fname=base+'_'+n;n++;} usedNames[fname]=true;

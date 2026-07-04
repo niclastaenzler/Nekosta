@@ -10429,6 +10429,7 @@ var WEGC_MODS=[
   {id:'wirtschaftsplan',label:'Wirtschaftsplan',icon:'barchart'},
   {id:'abrechnung',   label:'Hausgeldabrechnung', icon:'receipt'},
   {id:'abr-archiv',   label:'Hausgeldabrechnungen', icon:'files'},
+  {id:'individualisierung',label:'Individualisierung',icon:'gear'},
   {id:'beschluesse',  label:'Beschlüsse',    icon:'clipboard'},
   {id:'ruecklagen',   label:'Rücklagen',     icon:'shield'},
   {id:'schaeden',     label:'Schäden',       icon:'alerttriangle'},
@@ -10476,6 +10477,7 @@ function wegcGo(mod){
   if(mod==='wirtschaftsplan'){wegcRenderWplan(c);return;}
   if(mod==='abrechnung'){wegcRenderAbrechnung(c);return;}
   if(mod==='abr-archiv'){wegcRenderAbrArchiv(c);return;}
+  if(mod==='individualisierung'){wegcRenderIndividualisierung(c);return;}
   if(mod==='ruecklagen'){wegcRenderRuecklagen(c);return;}
   if(mod==='beschluesse'){wegcRenderBeschluesse(c);return;}
   if(mod==='schaeden'){wegcRenderSchaeden(c);return;}
@@ -10610,7 +10612,7 @@ async function wegcRenderRuecklagen(c){
   if(relOwners.length&&totMeaRl>0){
     var rlRows=relOwners.map(function(o){
       var frac=_wegcMeaVal(o.weg_einheiten)/totMeaRl;
-      var meaAbs=(parseFloat((o.weg_einheiten&&o.weg_einheiten.mea_zaehler)||0)||0)/100;
+      var meaAbs=(parseFloat((o.weg_einheiten&&o.weg_einheiten.mea_zaehler)||0)||0);
       return '<tr style="border-bottom:1px solid #f3f4f6"><td style="padding:.32rem .5rem;font-weight:600">'+escapeHtml(_wegcEigName(o))+'</td>'
         +'<td style="padding:.32rem .5rem;color:#6b7280">'+escapeHtml((o.weg_einheiten&&o.weg_einheiten.bezeichnung)||'–')+'</td>'
         +'<td style="padding:.32rem .5rem;text-align:right;color:#6b7280">'+meaAbs.toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+'</td>'
@@ -10724,7 +10726,7 @@ var _wegcAbrJahr=null, _wegcAbrData=null, _wegcAbrEig=null, _wegcAbrStep=1, _weg
 var _wegcPersColl=false, _wegcEinzelColl=false;
 function wegcAbrSetJahr(j){_wegcAbrJahr=parseInt(j)||(new Date().getFullYear()-1);_wegcAbrEig=null;wegcRenderAbrechnung();}
 function wegcAbrSetEig(id){_wegcAbrEig=id||null;wegcRenderAbrechnung();}
-function wegcAbrStep(n){_wegcAbrStep=Math.max(1,Math.min(7,parseInt(n)||1));_wegcAbrEditPos=null;wegcRenderAbrechnung();} // 7 = Individualisierung
+function wegcAbrStep(n){_wegcAbrStep=Math.max(1,Math.min(6,parseInt(n)||1));_wegcAbrEditPos=null;wegcRenderAbrechnung();}
 function _wegcTage(j){return ((j%4===0&&j%100!==0)||j%400===0)?366:365;}
 function _daysInMonth(j,m){return new Date(j,m,0).getDate();}
 var _wegcVtLabel={mea:'Eigentumsanteil',einheiten:'Einheiten',pxt:'Personen × Tage',festbetrag:'Festbetrag'};
@@ -10821,7 +10823,7 @@ async function wegcRenderAbrechnung(c){
       sb.from('weg_untergemeinschaften').select('id,name').eq('user_id',currentUser.id).eq('objekt_id',wegId),
       sb.from('weg_festbetrag').select('position_id,eigentuemer_id,betrag').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr),
       sb.from('weg_einheit_personen').select('einheit_id,monat,personen').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr),
-      sb.from('weg_abrechnungen').select('id,finalisiert_am').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr).limit(1),
+      sb.from('weg_abrechnungen').select('id,finalisiert_am,status').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr).limit(1),
       sb.from('weg_abr_override').select('eigentuemer_id,soll,ist,ruecklage,rl_anfang,rl_zuf,rl_ent').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr),
       sb.from('weg_ruecklagen').select('typ,betrag,zweck,jahr,datum').eq('user_id',currentUser.id).eq('objekt_id',wegId),
       sb.from('weg_abr_lohn_split').select('position_id,eigentuemer_id,betrag').eq('user_id',currentUser.id).eq('objekt_id',wegId).eq('jahr',jahr),
@@ -10902,10 +10904,11 @@ async function wegcRenderAbrechnung(c){
   // Validierung: Summe der Miteigentumsanteile vs. Nenner (einheitlicher Nenner erwartet)
   var meaWarn='';
   (function(){
-    var byN={}; units.forEach(function(u){var n=parseInt(u.mea_nenner)||0; if(n>0)byN[n]=(byN[n]||0)+(parseInt(u.mea_zaehler)||0);});
+    var byN={}; units.forEach(function(u){var n=parseFloat(u.mea_nenner)||0; if(n>0)byN[n]=(byN[n]||0)+(parseFloat(u.mea_zaehler)||0);});
     var ns=Object.keys(byN);
-    if(ns.length===1){ var N=parseInt(ns[0]); var sz=byN[N]; if(sz!==N)meaWarn='Die Summe der Miteigentumsanteile ('+sz+') entspricht nicht dem Nenner ('+N+'). Bitte die MEA der Einheiten im Reiter „Einheiten" prüfen.'; }
-    else if(ns.length>1)meaWarn='Es sind unterschiedliche MEA-Nenner hinterlegt ('+ns.join(', ')+'). Für eine korrekte Verteilung sollte der Nenner einheitlich sein.';
+    var _fm=function(v){return (Math.round(v*100)/100).toLocaleString('de-DE',{maximumFractionDigits:2});};
+    if(ns.length===1){ var N=parseFloat(ns[0]); var sz=byN[N]; if(Math.abs(sz-N)>0.5)meaWarn='Die Summe der Miteigentumsanteile ('+_fm(sz)+') entspricht nicht dem Nenner ('+_fm(N)+'). Bitte die MEA der Einheiten im Reiter „Einheiten" prüfen.'; }
+    else if(ns.length>1)meaWarn='Es sind unterschiedliche MEA-Nenner hinterlegt ('+ns.map(_fm).join(', ')+'). Für eine korrekte Verteilung sollte der Nenner einheitlich sein.';
   })();
   var warnMea=meaWarn?'<div style="display:flex;gap:.55rem;align-items:flex-start;background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:10px;padding:.7rem .9rem;margin-bottom:1.1rem;font-size:.82rem;line-height:1.45"><span class="mini-ic" data-icon="alerttriangle" style="margin-top:1px;flex-shrink:0"></span><span>'+escapeHtml(meaWarn)+'</span></div>':'';
   var unverteilt=sumKosten-sumAnteil;
@@ -10920,17 +10923,19 @@ async function wegcRenderAbrechnung(c){
   var hausOpt='<option value="">Gesamte WEG</option>'+haeuser.map(function(h){return '<option value="'+h.id+'">'+escapeHtml(h.name)+'</option>';}).join('');
 
   // ── Kopf + Stepper ──
-  var finalBadge=finalRow?' <span style="font-size:.6rem;font-weight:700;vertical-align:middle;background:#e9f9f0;color:#157f3c;padding:2px 8px;border-radius:7px;cursor:pointer" onclick="wegcGo(\'abr-archiv\')" title="Zur Übersicht der Hausgeldabrechnungen">✓ abgeschlossen</span>':'';
+  var finalBadge='';
+  if(finalRow){ var _fe=(finalRow.status==='entwurf');
+    finalBadge=' <span style="font-size:.6rem;font-weight:700;vertical-align:middle;background:'+(_fe?'#fef3c7':'#e9f9f0')+';color:'+(_fe?'#92400e':'#157f3c')+';padding:2px 8px;border-radius:7px;cursor:pointer" onclick="wegcGo(\'abr-archiv\')" title="Zur Übersicht der Hausgeldabrechnungen">'+(_fe?'✎ Entwurf gespeichert':'✓ abgeschlossen')+'</span>';
+  }
   var html='<div style="margin-bottom:1rem"><h1 style="font-size:1.5rem;font-weight:800;color:#111827">Hausgeldabrechnung <span style="font-size:.95rem;font-weight:600;color:#9ca3af">· '+jahr+'</span>'+finalBadge+'</h1><div style="font-size:.83rem;color:#6b7280;margin-top:2px">§ 28 WEG · '+escapeHtml(_wegcCur.name||'WEG')+'</div></div>';
-  var steps=[['Wirtschaftsjahr'],['Kostenpositionen'],['Hausgeldvorauszahlungen'],['Instandhaltungsrücklage'],['§35a'],['Abschluss & Vorschau']];
-  html+='<div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1.4rem">'+steps.map(function(s,i){var n=i+1;var done=n<step,act=n===step;
+  var steps=[['Wirtschaftsjahr'],['Kostenpositionen'],['Vorauszahlungen'],['Rücklage'],['§ 35a'],['Abschluss']];
+  html+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.45rem;margin-bottom:1.4rem">'+steps.map(function(s,i){var n=i+1;var done=n<step,act=n===step;
     var bg=act?'linear-gradient(135deg,#8e44c0,#6a2d9f)':(done?'#ede4f6':'#f3f4f6');
     var fg=act?'#fff':(done?'#6a2d9f':'#9ca3af');
-    return '<button onclick="wegcAbrStep('+n+')" style="flex:1;min-width:128px;display:flex;align-items:center;gap:.5rem;border:none;cursor:pointer;border-radius:10px;padding:.55rem .7rem;background:'+bg+';color:'+fg+';font-family:var(--ff);text-align:left">'
-      +'<span style="width:23px;height:23px;border-radius:50%;background:'+(act?'rgba(255,255,255,.25)':'#fff')+';display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.76rem;flex-shrink:0">'+(done?'✓':n)+'</span>'
-      +'<span style="font-size:.77rem;font-weight:700;line-height:1.1">'+s[0]+'</span></button>';
+    return '<button onclick="wegcAbrStep('+n+')" style="display:flex;align-items:center;gap:.5rem;border:none;cursor:pointer;border-radius:10px;padding:.6rem .75rem;background:'+bg+';color:'+fg+';font-family:var(--ff);text-align:left;min-width:0">'
+      +'<span style="width:22px;height:22px;border-radius:50%;background:'+(act?'rgba(255,255,255,.25)':'#fff')+';display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.75rem;flex-shrink:0">'+(done?'✓':n)+'</span>'
+      +'<span style="font-size:.76rem;font-weight:700;line-height:1.15;min-width:0;overflow-wrap:anywhere">'+s[0]+'</span></button>';
   }).join('')
-  +'<button onclick="wegcAbrStep(7)" title="Individualisierung: PDF-Kopf & Fußzeile" style="flex:0 0 auto;display:flex;align-items:center;gap:.4rem;border:1.5px solid '+(step===7?'#6a2d9f':'var(--border)')+';cursor:pointer;border-radius:10px;padding:.55rem .8rem;background:'+(step===7?'#ede4f6':'#fff')+';color:'+(step===7?'#6a2d9f':'#6b7280')+';font-family:var(--ff)"><span class="btn-ic" data-icon="gear"></span><span style="font-size:.77rem;font-weight:700">Individualisierung</span></button>'
   +'</div>';
   html+=warnMea;
   html+=warnUnv;
@@ -11150,26 +11155,6 @@ async function wegcRenderAbrechnung(c){
           +'<button class="btn-secondary" style="padding:.5rem 1rem" onclick="wegcAbr35aPdf(_wegcAbrEig)"><span class="btn-ic" data-icon="filetext"></span> Einzel (gewählter Eigentümer)</button>'
         +'</div></div>';
     }
-  } else if(step===7){
-    // Individualisierung (PDF-Kopf & Fußzeile) – gespeichert je WEG in weg_abr_settings
-    var cfgS=_wegcAbrData.cfg||{};
-    var _vNameS=([ (stammdaten||{}).firma,(stammdaten||{}).vname&&(stammdaten||{}).nname?((stammdaten||{}).vname+' '+(stammdaten||{}).nname):''].filter(Boolean).join(' / '))||'NEKOSTA';
-    var _ck=function(id,checked,lbl,sub){return '<label style="display:flex;gap:.6rem;align-items:flex-start;cursor:pointer;padding:.55rem .7rem;border:1px solid var(--border);border-radius:10px;background:#fff"><input type="checkbox" id="'+id+'"'+(checked?' checked':'')+' style="margin-top:2px"><span><span style="font-size:.84rem;font-weight:700;color:#111827">'+lbl+'</span><br><span style="font-size:.72rem;color:#6b7280">'+sub+'</span></span></label>';};
-    html+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:1.1rem 1.2rem;box-shadow:0 1px 2px rgba(16,24,40,.05)">'
-      +'<div style="font-size:.95rem;font-weight:800;color:#111827;margin-bottom:.25rem">⚙ Individualisierung</div>'
-      +'<div style="font-size:.78rem;color:#6b7280;margin-bottom:1rem">Kopf- und Fußzeile der PDFs (Hausgeldabrechnung + §35a-Bescheinigung) – gilt für diese WEG. Standard: neutral, ohne Verwaltername und ohne Ort/Datum.</div>'
-      +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:.7rem;margin-bottom:.9rem">'
-        +_ck('wegc-cfg-verw',!!cfgS.zeige_verwalter,'Verwaltername in der Kopfzeile','Zeigt „'+escapeHtml(_vNameS)+'" oben links.')
-        +_ck('wegc-cfg-ortdat',!!cfgS.zeige_ortdatum,'Ort & Datum in der Kopfzeile','Zeigt „Ort, den TT.MM.JJJJ" oben rechts.')
-      +'</div>'
-      +'<div style="display:flex;gap:.7rem;flex-wrap:wrap;align-items:flex-end;margin-bottom:1rem">'
-        +_wegcFld('Ort für die Datumszeile','<input id="wegc-cfg-ort" type="text" value="'+escapeHtml(cfgS.ort_text||'')+'" placeholder="leer = Ort aus Stammdaten" class="buha-inp" style="min-width:220px">')
-        +_wegcFld('Fußzeilentext','<input id="wegc-cfg-fuss" type="text" value="'+escapeHtml(cfgS.fuss_text||'')+'" placeholder="leer = Adresse der WEG" class="buha-inp" style="min-width:280px">')
-      +'</div>'
-      +'<div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap">'
-        +'<button class="btn-primary" style="padding:.55rem 1.1rem" onclick="wegcAbrCfgSave()"><span class="btn-ic" data-icon="check"></span> Speichern</button>'
-        +'<button class="btn-secondary" style="padding:.5rem 1rem" onclick="wegcAbrechnungPdf(_wegcAbrEig)"'+(ready?'':' disabled')+'><span class="btn-ic" data-icon="filetext"></span> Vorschau (Einzel-PDF)</button>'
-      +'</div></div>';
   } else {
     // Schritt 6: Abschluss & Vorschau
     if(!ready){html+='<div style="text-align:center;color:var(--muted);font-size:.86rem;padding:1.6rem;background:var(--white);border:1px solid #eef0f4;border-radius:12px">'+(!owners.length?'Lege zuerst Eigentümer an.':'Noch keine Kostenpositionen – zurück zu <strong>Schritt 2</strong>.')+'</div>';}
@@ -11230,20 +11215,17 @@ async function wegcRenderAbrechnung(c){
           +_wegcFld('Einzel-PDF für',eigSel2)
           +'<button class="btn-secondary" style="padding:.55rem 1rem" onclick="wegcAbrechnungPdf(_wegcAbrEig)"><span class="btn-ic" data-icon="filetext"></span> Einzel-PDF</button>'
           +'<span style="flex:1"></span>'
+          +'<button class="btn-secondary" style="padding:.55rem 1.1rem" onclick="wegcAbrSaveDraft()"><span class="btn-ic" data-icon="clipboard"></span> Zwischenstand speichern</button>'
           +'<button class="btn-secondary" style="padding:.55rem 1.1rem;background:#157f3c;color:#fff;border-color:#157f3c" onclick="wegcAbrFinalize()"><span class="btn-ic" data-icon="check"></span> Abrechnung abschließen</button>'
-        +'</div><div style="font-size:.7rem;color:#9ca3af;margin-top:.55rem">„Abschließen" speichert die fertige Abrechnung unter dem Reiter <strong>Hausgeldabrechnungen</strong>.</div></div>';
+        +'</div><div style="font-size:.7rem;color:#9ca3af;margin-top:.55rem"><strong>Zwischenstand speichern</strong> = Entwurf unter <strong>Hausgeldabrechnungen</strong> ablegen und später weiterbearbeiten. <strong>Abschließen</strong> = fertige Abrechnung festschreiben. (Deine Eingaben werden ohnehin laufend gespeichert.)</div></div>';
     }
   }
 
   // ── Navigation ──
-  if(step===7){
-    html+='<div style="display:flex;justify-content:flex-start;margin-top:1.5rem"><button onclick="wegcAbrStep(6)" style="padding:.55rem 1.1rem;border:1px solid var(--border);background:#fff;border-radius:9px;cursor:pointer;font-size:.85rem;font-weight:700;color:#374151;font-family:var(--ff)">← Zurück zur Abrechnung</button></div>';
-  } else {
-    html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-top:1.5rem;gap:.6rem">'
-      +(step>1?'<button onclick="wegcAbrStep('+(step-1)+')" style="padding:.55rem 1.1rem;border:1px solid var(--border);background:#fff;border-radius:9px;cursor:pointer;font-size:.85rem;font-weight:700;color:#374151;font-family:var(--ff)">← Zurück</button>':'<span></span>')
-      +(step<6?'<button class="btn-primary" style="padding:.55rem 1.3rem" onclick="wegcAbrStep('+(step+1)+')">Weiter →</button>':'<button class="btn-primary" style="padding:.55rem 1.3rem" onclick="wegcAbrechnungPdf()"'+(ready?'':' disabled')+'><span class="btn-ic" data-icon="download"></span> PDF erstellen</button>')
-    +'</div>';
-  }
+  html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-top:1.5rem;gap:.6rem">'
+    +(step>1?'<button onclick="wegcAbrStep('+(step-1)+')" style="padding:.55rem 1.1rem;border:1px solid var(--border);background:#fff;border-radius:9px;cursor:pointer;font-size:.85rem;font-weight:700;color:#374151;font-family:var(--ff)">← Zurück</button>':'<span></span>')
+    +(step<6?'<button class="btn-primary" style="padding:.55rem 1.3rem" onclick="wegcAbrStep('+(step+1)+')">Weiter →</button>':'<button class="btn-primary" style="padding:.55rem 1.3rem" onclick="wegcAbrechnungPdf()"'+(ready?'':' disabled')+'><span class="btn-ic" data-icon="download"></span> PDF erstellen</button>')
+  +'</div>';
   c.innerHTML=html;
 }
 function _wegcAbrEinzelHtml(bo){
@@ -11461,8 +11443,35 @@ async function wegcAbrSetRl(field,val){
     wegcRenderAbrechnung();
   }catch(e){showToast('Fehler: '+e.message);}
 }
+// ── Individualisierungs-Reiter: PDF-Kopf/Fußzeile je WEG (weg_abr_settings) ──
+async function wegcRenderIndividualisierung(c){
+  renderWegcNav('individualisierung');
+  if(!c)c=document.getElementById('wegc-content'); if(!c)return;
+  c.innerHTML='<div style="color:var(--muted);font-size:.85rem">Lädt…</div>';
+  var cfg={};
+  try{ var r=await sb.from('weg_abr_settings').select('*').eq('user_id',currentUser.id).eq('objekt_id',_wegcCur.id).maybeSingle(); if(!r.error&&r.data)cfg=r.data; }catch(e){}
+  var sm=stammdaten||{};
+  var vName=([sm.firma,sm.vname&&sm.nname?sm.vname+' '+sm.nname:''].filter(Boolean).join(' / '))||'NEKOSTA';
+  var ck=function(id,checked,lbl,sub){return '<label style="display:flex;gap:.6rem;align-items:flex-start;cursor:pointer;padding:.65rem .8rem;border:1px solid var(--border);border-radius:10px;background:#fff"><input type="checkbox" id="'+id+'"'+(checked?' checked':'')+' style="margin-top:2px"><span><span style="font-size:.86rem;font-weight:700;color:#111827">'+lbl+'</span><br><span style="font-size:.74rem;color:#6b7280">'+sub+'</span></span></label>';};
+  var html='<div style="margin-bottom:1.25rem"><h1 style="font-size:1.6rem;font-weight:800;color:#111827">Individualisierung</h1>'
+    +'<div style="font-size:.85rem;color:#6b7280;margin-top:2px">PDF-Kopf & Fußzeile für Hausgeldabrechnung und §35a-Bescheinigung · '+escapeHtml(_wegcCur.name||'WEG')+'</div></div>'
+    +'<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:1.2rem 1.3rem;box-shadow:0 1px 2px rgba(16,24,40,.05);max-width:720px">'
+      +'<div style="font-size:.78rem;color:#6b7280;margin-bottom:1rem">Standard ist neutral – ohne Verwaltername und ohne Ort/Datum in der Kopfzeile. Hier kannst du beides je WEG einblenden und die Fußzeile anpassen.</div>'
+      +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:.7rem;margin-bottom:1rem">'
+        +ck('wegc-cfg-verw',!!cfg.zeige_verwalter,'Verwaltername in der Kopfzeile','Zeigt „'+escapeHtml(vName)+'" oben links.')
+        +ck('wegc-cfg-ortdat',!!cfg.zeige_ortdatum,'Ort & Datum in der Kopfzeile','Zeigt „Ort, den TT.MM.JJJJ" oben rechts.')
+      +'</div>'
+      +'<div style="display:flex;gap:.8rem;flex-wrap:wrap;align-items:flex-end;margin-bottom:1.1rem">'
+        +_wegcFld('Ort für die Datumszeile','<input id="wegc-cfg-ort" type="text" value="'+escapeHtml(cfg.ort_text||'')+'" placeholder="leer = Ort aus Stammdaten" class="buha-inp" style="min-width:220px">')
+        +_wegcFld('Fußzeilentext','<input id="wegc-cfg-fuss" type="text" value="'+escapeHtml(cfg.fuss_text||'')+'" placeholder="leer = Adresse der WEG" class="buha-inp" style="min-width:300px">')
+      +'</div>'
+      +'<button class="btn-primary" style="padding:.6rem 1.3rem" onclick="wegcAbrCfgSave()"><span class="btn-ic" data-icon="check"></span> Speichern</button>'
+    +'</div>';
+  c.innerHTML=html;
+  if(typeof applyIcons==='function')applyIcons(c);
+}
 // §35a-Bescheinigung als PDF (je Eigentümer eine Seite). Anteil je Eigentümer = Lohnanteil × (sein Kostenanteil / Gesamtbetrag der Position).
-// Individualisierung: PDF-Kopf/Fußzeile je WEG speichern (weg_abr_settings, Schritt 7)
+// Individualisierung: PDF-Kopf/Fußzeile je WEG speichern (weg_abr_settings)
 async function wegcAbrCfgSave(){
   if(!_wegcCur)return;
   var g=function(id){return document.getElementById(id);};
@@ -11475,7 +11484,7 @@ async function wegcAbrCfgSave(){
     var r=await sb.from('weg_abr_settings').upsert(row,{onConflict:'objekt_id'});
     if(r.error){showToast('Fehler: '+r.error.message);return;}
     showToast('✅ Individualisierung gespeichert');
-    wegcRenderAbrechnung();
+    if(_wegcAbrData)_wegcAbrData.cfg=row;
   }catch(e){showToast('Fehler: '+e.message);}
 }
 function wegcAbr35aPdf(onlyEigId){
@@ -11536,28 +11545,45 @@ function wegcAbr35aPdf(onlyEigId){
   }catch(e){console.error('§35a-PDF:',e);showToast('⚠️ PDF-Fehler: '+(e.message||e));}
 }
 // Hausgeldabrechnung abschliessen: Snapshot der Ergebnisse in weg_abrechnungen speichern.
+// Snapshot-Datensatz der aktuellen Abrechnung bauen (für Entwurf und Abschluss).
+function _wegcAbrBuildRec(d,status){
+  var _bos=d.billingOwners||_wegcBillingOwners(d.owners);
+  var results=_bos.map(function(bo){
+    var anteil=d.P.reduce(function(s,P){return s+_wegcAbrRowBo(P,bo,d.festByPos).ownerEUR;},0);
+    var rueck=d.P.reduce(function(s,P){return s+(P.istRueck?_wegcAbrRowBo(P,bo,d.festByPos).ownerEUR:0);},0);
+    var soll=_wegcBoSum(d.sollByEig,bo), ist=_wegcBoSum(d.istByEig,bo), ruecklage=_wegcBoSum(d.rlByEig,bo);
+    return {name:bo.name,einheit:bo.einheit,anteil:anteil,rueck:rueck,soll:soll,ist:ist,ruecklage:ruecklage,diff:ist-anteil};
+  });
+  var sumKosten=d.P.reduce(function(s,x){return s+x.gesamtEUR;},0);
+  var sumVz=results.reduce(function(s,r){return s+r.soll;},0);
+  var sumIst=results.reduce(function(s,r){return s+r.ist;},0);
+  var sumRl=results.reduce(function(s,r){return s+r.ruecklage;},0);
+  var positions=d.P.map(function(x){return {name:x.name,vn:x.vn,gesamtEUR:x.gesamtEUR,umlf:!!x.umlf,istRueck:!!x.istRueck};});
+  var snap={jahr:d.jahr,weg:(d.weg&&d.weg.name)||'',positions:positions,results:results,sumKosten:sumKosten,sumVz:sumVz,sumIst:sumIst,sumRl:sumRl,rl:d.rl};
+  return {user_id:currentUser.id,objekt_id:_wegcCur.id,jahr:d.jahr,titel:'Hausgeldabrechnung '+d.jahr,status:status,summe_kosten:sumKosten,summe_vz:sumVz,anzahl_eig:results.length,snapshot:snap,finalisiert_am:(status==='abgeschlossen'?new Date().toISOString():null)};
+}
+async function _wegcAbrPersist(status){
+  var d=_wegcAbrData; var rec=_wegcAbrBuildRec(d,status);
+  await sb.from('weg_abrechnungen').delete().eq('user_id',currentUser.id).eq('objekt_id',_wegcCur.id).eq('jahr',d.jahr);
+  return await sb.from('weg_abrechnungen').insert(rec);
+}
+// Zwischenstand als Entwurf speichern (jederzeit wieder aufrufbar unter „Hausgeldabrechnungen").
+async function wegcAbrSaveDraft(){
+  var d=_wegcAbrData; if(!d||!d.owners||!d.owners.length){showToast('Bitte zuerst die Abrechnung öffnen.');return;}
+  try{
+    var r=await _wegcAbrPersist('entwurf');
+    if(r.error){showToast('Fehler: '+r.error.message);return;}
+    showToast('💾 Zwischenstand gespeichert (Entwurf)');
+    wegcRenderAbrechnung();
+  }catch(e){showToast('Fehler: '+e.message);}
+}
 function wegcAbrFinalize(){
   var d=_wegcAbrData; if(!d||!d.owners||!d.owners.length){showToast('Bitte zuerst die Abrechnung öffnen.');return;}
-  appConfirm({icon:'✅',title:'Abrechnung abschließen?',message:'Die Hausgeldabrechnung '+d.jahr+' wird als <strong>abgeschlossen</strong> gespeichert und erscheint unter „Hausgeldabrechnungen". Eine vorhandene Abrechnung für '+d.jahr+' wird ersetzt.',buttons:[
+  appConfirm({icon:'✅',title:'Abrechnung abschließen?',message:'Die Hausgeldabrechnung '+d.jahr+' wird als <strong>abgeschlossen</strong> gespeichert und erscheint unter „Hausgeldabrechnungen". Ein vorhandener Eintrag (auch Entwurf) für '+d.jahr+' wird ersetzt.',buttons:[
     {label:'Abbrechen',style:'background:#f3f4f6;color:#374151',onClick:appConfirmClose},
     {label:'✅ Abschließen',style:'background:#157f3c;color:#fff',onClick:async function(){appConfirmClose();
       try{
-        var _bos=d.billingOwners||_wegcBillingOwners(d.owners);
-        var results=_bos.map(function(bo){
-          var anteil=d.P.reduce(function(s,P){return s+_wegcAbrRowBo(P,bo,d.festByPos).ownerEUR;},0);
-          var rueck=d.P.reduce(function(s,P){return s+(P.istRueck?_wegcAbrRowBo(P,bo,d.festByPos).ownerEUR:0);},0);
-          var soll=_wegcBoSum(d.sollByEig,bo), ist=_wegcBoSum(d.istByEig,bo), ruecklage=_wegcBoSum(d.rlByEig,bo);
-          return {name:bo.name,einheit:bo.einheit,anteil:anteil,rueck:rueck,soll:soll,ist:ist,ruecklage:ruecklage,diff:ist-anteil};
-        });
-        var sumKosten=d.P.reduce(function(s,x){return s+x.gesamtEUR;},0);
-        var sumVz=results.reduce(function(s,r){return s+r.soll;},0);
-        var sumIst=results.reduce(function(s,r){return s+r.ist;},0);
-        var sumRl=results.reduce(function(s,r){return s+r.ruecklage;},0);
-        var positions=d.P.map(function(x){return {name:x.name,vn:x.vn,gesamtEUR:x.gesamtEUR,umlf:!!x.umlf,istRueck:!!x.istRueck};});
-        var snap={jahr:d.jahr,weg:(d.weg&&d.weg.name)||'',positions:positions,results:results,sumKosten:sumKosten,sumVz:sumVz,sumIst:sumIst,sumRl:sumRl,rl:d.rl};
-        var rec={user_id:currentUser.id,objekt_id:_wegcCur.id,jahr:d.jahr,titel:'Hausgeldabrechnung '+d.jahr,status:'abgeschlossen',summe_kosten:sumKosten,summe_vz:sumVz,anzahl_eig:results.length,snapshot:snap,finalisiert_am:new Date().toISOString()};
-        await sb.from('weg_abrechnungen').delete().eq('user_id',currentUser.id).eq('objekt_id',_wegcCur.id).eq('jahr',d.jahr);
-        var r=await sb.from('weg_abrechnungen').insert(rec);
+        var r=await _wegcAbrPersist('abgeschlossen');
         if(r.error){showToast('Fehler: '+r.error.message);return;}
         showToast('✅ Hausgeldabrechnung '+d.jahr+' abgeschlossen');
         wegcGo('abr-archiv');
@@ -11639,22 +11665,23 @@ async function wegcRenderAbrArchiv(c){
     if(res.error)throw res.error; rows=res.data||[];
   }catch(e){c.innerHTML='<div style="color:#dc2626;font-size:.85rem">Fehler beim Laden: '+escapeHtml(e.message||'')+'</div>';return;}
   var dfmt=function(x){if(!x)return'–';var p=(''+x).slice(0,10).split('-');return p.length===3?p[2]+'.'+p[1]+'.'+p[0]:x;};
-  var html='<div style="margin-bottom:1.25rem"><h1 style="font-size:1.6rem;font-weight:800;color:#111827">Hausgeldabrechnungen</h1><div style="font-size:.85rem;color:#6b7280;margin-top:2px">Abgeschlossene Abrechnungen · '+escapeHtml(_wegcCur.name||'WEG')+'</div></div>';
+  var html='<div style="margin-bottom:1.25rem"><h1 style="font-size:1.6rem;font-weight:800;color:#111827">Hausgeldabrechnungen</h1><div style="font-size:.85rem;color:#6b7280;margin-top:2px">Abgeschlossene Abrechnungen &amp; gespeicherte Entwürfe · '+escapeHtml(_wegcCur.name||'WEG')+'</div></div>';
   if(!rows.length){
-    html+='<div style="text-align:center;color:var(--muted);font-size:.88rem;padding:2.5rem;background:var(--white);border:1px solid #eef0f4;border-radius:12px">Noch keine abgeschlossene Hausgeldabrechnung. Schließe im Modul „Hausgeldabrechnung" (Schritt 4) eine Abrechnung ab.</div>';
+    html+='<div style="text-align:center;color:var(--muted);font-size:.88rem;padding:2.5rem;background:var(--white);border:1px solid #eef0f4;border-radius:12px">Noch keine Hausgeldabrechnung. Im Modul „Hausgeldabrechnung" kannst du jederzeit einen <strong>Zwischenstand speichern</strong> (Entwurf) oder eine Abrechnung <strong>abschließen</strong>.</div>';
   } else {
     html+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;overflow:hidden"><table style="width:100%;border-collapse:collapse;font-size:.85rem"><thead><tr style="border-bottom:1px solid var(--border)">'
-      +['Jahr','Abgeschlossen','Gesamtkosten','Vorauszahlungen','Eigentümer','Status',''].map(function(h,i){return '<th style="padding:.6rem .9rem;text-align:'+((i>=2&&i<=4)?'right':'left')+';font-size:.66rem;text-transform:uppercase;color:var(--muted)">'+h+'</th>';}).join('')
+      +['Jahr','Datum','Gesamtkosten','Vorauszahlungen','Eigentümer','Status',''].map(function(h,i){return '<th style="padding:.6rem .9rem;text-align:'+((i>=2&&i<=4)?'right':'left')+';font-size:.66rem;text-transform:uppercase;color:var(--muted)">'+h+'</th>';}).join('')
       +'</tr></thead><tbody>';
     rows.forEach(function(r){
       var open=(_wegcArchivOpen===r.id);
+      var isEntw=(r.status==='entwurf');
       html+='<tr style="border-bottom:1px solid #f3f4f6">'
         +'<td style="padding:.55rem .9rem;font-weight:700">'+r.jahr+'</td>'
-        +'<td style="padding:.55rem .9rem;color:#4b5563">'+dfmt(r.finalisiert_am||r.created_at)+'</td>'
+        +'<td style="padding:.55rem .9rem;color:#4b5563">'+dfmt(r.finalisiert_am||r.created_at)+(isEntw?' <span style="font-size:.6rem;color:#9ca3af">(gespeichert)</span>':'')+'</td>'
         +'<td style="padding:.55rem .9rem;text-align:right">'+fmtEuro(r.summe_kosten)+'</td>'
         +'<td style="padding:.55rem .9rem;text-align:right;color:#6b7280">'+fmtEuro(r.summe_vz)+'</td>'
         +'<td style="padding:.55rem .9rem;text-align:right">'+(r.anzahl_eig||0)+'</td>'
-        +'<td style="padding:.55rem .9rem"><span style="font-size:.62rem;font-weight:700;padding:1px 8px;border-radius:7px;background:#e9f9f0;color:#157f3c">abgeschlossen</span></td>'
+        +'<td style="padding:.55rem .9rem"><span style="font-size:.62rem;font-weight:700;padding:1px 8px;border-radius:7px;background:'+(isEntw?'#fef3c7':'#e9f9f0')+';color:'+(isEntw?'#92400e':'#157f3c')+'">'+(isEntw?'✎ Entwurf':'abgeschlossen')+'</span></td>'
         +'<td style="padding:.55rem .9rem;text-align:right;white-space:nowrap">'
           +'<button class="btn-small" style="font-size:.66rem;padding:3px 9px" onclick="wegcAbrArchivToggle(\''+r.id+'\')">'+(open?'Schließen':'Details')+'</button> '
           +'<button class="btn-small" style="font-size:.66rem;padding:3px 9px" onclick="wegcAbrArchivOeffnen('+r.jahr+')">Öffnen</button> '
@@ -11692,7 +11719,7 @@ async function wegcAbrArchivPdf(jahr){
 }
 function wegcAbrArchivOeffnen(jahr){ _wegcAbrJahr=parseInt(jahr)||_wegcAbrJahr; _wegcAbrStep=6; wegcGo('abrechnung'); }
 function wegcAbrArchivDel(id,jahr){
-  appConfirm({icon:'🗑',title:'Abrechnung entfernen?',message:'Die abgeschlossene Hausgeldabrechnung '+jahr+' wird aus der Liste entfernt. Die zugrunde liegenden Daten (Positionen, Eigentümer etc.) bleiben unverändert.',buttons:[
+  appConfirm({icon:'🗑',title:'Aus Liste entfernen?',message:'Der gespeicherte Eintrag der Hausgeldabrechnung '+jahr+' (Entwurf oder abgeschlossen) wird aus der Liste entfernt. Die zugrunde liegenden Daten (Positionen, Eigentümer etc.) bleiben unverändert.',buttons:[
     {label:'Abbrechen',style:'background:#f3f4f6;color:#374151',onClick:appConfirmClose},
     {label:'Löschen',style:'background:#dc2626;color:#fff',onClick:async function(){appConfirmClose();try{var r=await sb.from('weg_abrechnungen').delete().eq('id',id);if(r.error){showToast('Fehler: '+r.error.message);return;}showToast('Entfernt');wegcRenderAbrArchiv();}catch(e){showToast('Fehler: '+e.message);}}}
   ]});

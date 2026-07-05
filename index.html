@@ -2448,6 +2448,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
             <span style="font-size:.75rem;font-weight:700;color:var(--muted);white-space:nowrap;display:inline-flex;align-items:center;gap:.35rem"><span class="mini-ic" data-icon="file"></span>PDF-Layout:</span>
             <div style="display:flex;gap:.3rem;flex-wrap:wrap">
               <button type="button" onclick="setPdfLayout('standard')" id="wiz-layout-standard" style="border:2px solid var(--p);border-radius:7px;padding:.3rem .8rem;cursor:pointer;font-size:.72rem;font-weight:700;background:var(--p);color:#fff;font-family:var(--ff)">Standard</button>
+              <button type="button" onclick="setPdfLayout('hausgeld')" id="wiz-layout-hausgeld" style="border:2px solid var(--border);border-radius:7px;padding:.3rem .8rem;cursor:pointer;font-size:.72rem;font-weight:600;background:var(--white);color:var(--muted);font-family:var(--ff)">Hausgeld-Stil</button>
               <button type="button" onclick="setPdfLayout('minimal')" id="wiz-layout-minimal" style="border:2px solid var(--border);border-radius:7px;padding:.3rem .8rem;cursor:pointer;font-size:.72rem;font-weight:600;background:var(--white);color:var(--muted);font-family:var(--ff)">Minimal</button>
               <button type="button" onclick="setPdfLayout('modern')" id="wiz-layout-modern" style="border:2px solid var(--border);border-radius:7px;padding:.3rem .8rem;cursor:pointer;font-size:.72rem;font-weight:600;background:var(--white);color:var(--muted);font-family:var(--ff)">Modern</button>
               <button type="button" onclick="setPdfLayout('compact')" id="wiz-layout-compact" style="border:2px solid var(--border);border-radius:7px;padding:.3rem .8rem;cursor:pointer;font-size:.72rem;font-weight:600;background:var(--white);color:var(--muted);font-family:var(--ff)">Kompakt</button>
@@ -3094,6 +3095,20 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                 </div>
                 <div style="font-size:.8rem;font-weight:700;color:var(--p)">Standard</div>
                 <div style="font-size:.68rem;color:var(--muted)">Lila Akzente, klassisch</div>
+              </div>
+              <!-- Layout: Hausgeld-Stil (grau/weiß wie die WEG-Hausgeldabrechnung) -->
+              <div id="pdf-layout-hausgeld" onclick="setPdfLayout('hausgeld')"
+                style="border:2px solid var(--border);border-radius:10px;padding:.85rem;cursor:pointer">
+                <div style="background:#fff;border-radius:6px;padding:.6rem;margin-bottom:.5rem;border:1px solid var(--border)">
+                  <div style="height:4px;background:#58585c;border-radius:2px;margin-bottom:4px;width:65%"></div>
+                  <div style="height:2px;background:#dadade;border-radius:1px;margin-bottom:4px"></div>
+                  <div style="height:3px;background:#f0f0f2;border-radius:2px;margin-bottom:2px;width:85%"></div>
+                  <div style="height:3px;background:#f0f0f2;border-radius:2px;margin-bottom:2px;width:70%"></div>
+                  <div style="height:2px;background:#dadade;border-radius:1px;margin-bottom:3px"></div>
+                  <div style="height:4px;background:#f6f6f8;border:1px solid #dadade;border-radius:2px;width:45%;margin-left:auto"></div>
+                </div>
+                <div style="font-size:.8rem;font-weight:700">Hausgeld-Stil</div>
+                <div style="font-size:.68rem;color:var(--muted)">Grau/weiß professionell – wie die Hausgeldabrechnung</div>
               </div>
               <!-- Layout 2: Minimal -->
               <div id="pdf-layout-minimal" onclick="setPdfLayout('minimal')"
@@ -5673,6 +5688,8 @@ function getPdfTheme(){
   // Theme definitions: accent[r,g,b], headerBg[r,g,b], headerText[r,g,b], style
   var themes={
     standard:{accent:[106,45,159],headerBg:[235,228,255],headerText:[60,20,120],secBg:[235,228,255],secText:[60,20,120],band:false,clean:true,font:'helvetica',title:'Nebenkostenabrechnung'},
+    // Hausgeld-Stil: komplett neutral grau/weiß wie die WEG-Hausgeldabrechnung (AC=[88,88,92], keine Farbflächen)
+    hausgeld:{accent:[88,88,92],headerBg:[246,246,248],headerText:[45,45,52],secBg:[246,246,248],secText:[80,80,86],band:false,clean:true,font:'helvetica',title:'Nebenkostenabrechnung'},
     modern:{accent:[14,124,123],headerBg:[224,247,246],headerText:[10,90,89],secBg:[224,247,246],secText:[10,90,89],band:true,font:'helvetica',title:'Nebenkostenabrechnung'},
     kompakt:{accent:[60,60,70],headerBg:[240,240,242],headerText:[30,30,40],secBg:[240,240,242],secText:[30,30,40],band:false,compact:true,font:'helvetica',title:'Nebenkostenabrechnung'},
     elegant:{accent:[140,100,30],headerBg:[247,242,230],headerText:[110,75,15],secBg:[247,242,230],secText:[110,75,15],band:false,serif:true,font:'times',title:'Nebenkostenabrechnung'},
@@ -6925,18 +6942,18 @@ function setPdfLayout(layout){
   if(layout==='compact')layout='kompakt';
   currentPdfLayout=layout;
   localStorage.setItem('nekosta-pdf-layout',layout);
-  var names={standard:'Standard',modern:'Modern',kompakt:'Kompakt',elegant:'Elegant'};
+  var names={standard:'Standard',hausgeld:'Hausgeld-Stil',modern:'Modern',kompakt:'Kompakt',elegant:'Elegant'};
   var lbl=document.getElementById('pdf-layout-active-label');
   if(lbl)lbl.textContent='Aktiv: '+(names[layout]||'Standard');
   // Settings-Tab Karten
-  ['standard','modern','kompakt','elegant'].forEach(function(l){
+  ['standard','hausgeld','modern','kompakt','elegant'].forEach(function(l){
     var el=document.getElementById('pdf-layout-'+l);
     if(!el)return;
     if(l===layout){el.style.borderColor='var(--p)';el.style.background='var(--p-light)';}
     else{el.style.borderColor='var(--border)';el.style.background='var(--white)';}
   });
   // Wizard Step4 Buttons
-  ['standard','modern','kompakt','elegant'].forEach(function(l){
+  ['standard','hausgeld','modern','kompakt','elegant'].forEach(function(l){
     var btn=document.getElementById('wiz-layout-'+l);
     if(!btn)return;
     if(l===layout){btn.style.background='var(--p)';btn.style.color='#fff';btn.style.borderColor='var(--p)';}

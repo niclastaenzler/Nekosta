@@ -2447,13 +2447,13 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
           <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:.75rem 1rem;margin-bottom:.75rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
             <span style="font-size:.75rem;font-weight:700;color:var(--muted);white-space:nowrap;display:inline-flex;align-items:center;gap:.35rem"><span class="mini-ic" data-icon="file"></span>PDF-Layout:</span>
             <div style="display:flex;gap:.3rem;flex-wrap:wrap">
-              <button type="button" onclick="setPdfLayout('standard')" id="wiz-layout-standard" style="border:2px solid var(--p);border-radius:7px;padding:.3rem .8rem;cursor:pointer;font-size:.72rem;font-weight:700;background:var(--p);color:#fff;font-family:var(--ff)">Standard</button>
+              <button type="button" onclick="setPdfLayout('modern')" id="wiz-layout-modern" style="border:2px solid var(--p);border-radius:7px;padding:.3rem .8rem;cursor:pointer;font-size:.72rem;font-weight:700;background:var(--p);color:#fff;font-family:var(--ff)">Modern</button>
               <button type="button" onclick="setPdfLayout('hausgeld')" id="wiz-layout-hausgeld" style="border:2px solid var(--border);border-radius:7px;padding:.3rem .8rem;cursor:pointer;font-size:.72rem;font-weight:600;background:var(--white);color:var(--muted);font-family:var(--ff)">Hausgeld-Stil</button>
               <button type="button" onclick="setPdfLayout('minimal')" id="wiz-layout-minimal" style="border:2px solid var(--border);border-radius:7px;padding:.3rem .8rem;cursor:pointer;font-size:.72rem;font-weight:600;background:var(--white);color:var(--muted);font-family:var(--ff)">Minimal</button>
-              <button type="button" onclick="setPdfLayout('modern')" id="wiz-layout-modern" style="border:2px solid var(--border);border-radius:7px;padding:.3rem .8rem;cursor:pointer;font-size:.72rem;font-weight:600;background:var(--white);color:var(--muted);font-family:var(--ff)">Modern</button>
-              <button type="button" onclick="setPdfLayout('compact')" id="wiz-layout-compact" style="border:2px solid var(--border);border-radius:7px;padding:.3rem .8rem;cursor:pointer;font-size:.72rem;font-weight:600;background:var(--white);color:var(--muted);font-family:var(--ff)">Kompakt</button>
+              <button type="button" onclick="setPdfLayout('elegant')" id="wiz-layout-elegant" style="border:2px solid var(--border);border-radius:7px;padding:.3rem .8rem;cursor:pointer;font-size:.72rem;font-weight:600;background:var(--white);color:var(--muted);font-family:var(--ff)">Elegant</button>
+              <button type="button" onclick="setPdfLayout('kompakt')" id="wiz-layout-kompakt" style="border:2px solid var(--border);border-radius:7px;padding:.3rem .8rem;cursor:pointer;font-size:.72rem;font-weight:600;background:var(--white);color:var(--muted);font-family:var(--ff)">Kompakt</button>
             </div>
-            <button onclick="vorschauPdfLayout(currentPdfLayout||'standard')" class="btn-small" style="margin-left:auto;font-size:.7rem;white-space:nowrap"><span class="btn-ic" data-icon="eye"></span> Vorschau</button>
+            <button onclick="vorschauPdfLayout(currentPdfLayout||'modern')" class="btn-small" style="margin-left:auto;font-size:.7rem;white-space:nowrap"><span class="btn-ic" data-icon="eye"></span> Vorschau</button>
           </div>
           <!-- ANSCHREIBEN-OPTIONEN -->
           <div style="background:#faf8fc;border:1px solid var(--border);border-radius:10px;padding:.7rem 1rem;margin-bottom:.75rem;display:flex;align-items:center;gap:1.25rem;flex-wrap:wrap">
@@ -3074,7 +3074,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
             </div>
             <div style="display:flex;justify-content:space-between;align-items:center">
               <div style="font-size:.75rem;color:var(--p);font-style:italic" id="pdf-style-active-label">Aktiv: Modern</div>
-              <button onclick="vorschauPdfLayout(currentPdfLayout||'standard')" class="btn-small" style="font-size:.7rem"><span class="btn-ic" data-icon="eye"></span> Vorschau</button>
+              <button onclick="vorschauPdfLayout(currentPdfLayout||'modern')" class="btn-small" style="font-size:.7rem"><span class="btn-ic" data-icon="eye"></span> Vorschau</button>
             </div>
           </div>
 
@@ -3083,8 +3083,8 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
             <div class="card-title">📄 Nebenkostenabrechnung – Farbvariante</div>
             <div style="font-size:.82rem;color:var(--muted);margin-bottom:1rem">Wählen Sie das Erscheinungsbild Ihrer PDF-Abrechnungen.</div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:.85rem;margin-bottom:1rem">
-              <!-- Layout 1: Standard -->
-              <div id="pdf-layout-standard" onclick="setPdfLayout('standard')"
+              <!-- Layout: Modern (das bewährte bisherige Standard-Design) -->
+              <div id="pdf-layout-modern" onclick="setPdfLayout('modern')"
                 style="border:2px solid var(--p);border-radius:10px;padding:.85rem;cursor:pointer;background:var(--p-light)">
                 <div style="background:#fff;border-radius:6px;padding:.6rem;margin-bottom:.5rem;border:1px solid var(--border)">
                   <div style="height:6px;background:var(--p);border-radius:3px;margin-bottom:4px"></div>
@@ -3093,8 +3093,8 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                   <div style="height:3px;background:var(--p);border-radius:2px;margin-bottom:2px;opacity:.3"></div>
                   <div style="height:3px;background:#eee;border-radius:2px;width:70%"></div>
                 </div>
-                <div style="font-size:.8rem;font-weight:700;color:var(--p)">Standard</div>
-                <div style="font-size:.68rem;color:var(--muted)">Lila Akzente, klassisch</div>
+                <div style="font-size:.8rem;font-weight:700;color:var(--p)">Modern</div>
+                <div style="font-size:.68rem;color:var(--muted)">Lila Akzente, klar strukturiert</div>
               </div>
               <!-- Layout: Hausgeld-Stil (grau/weiß wie die WEG-Hausgeldabrechnung) -->
               <div id="pdf-layout-hausgeld" onclick="setPdfLayout('hausgeld')"
@@ -3110,48 +3110,48 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                 <div style="font-size:.8rem;font-weight:700">Hausgeld-Stil</div>
                 <div style="font-size:.68rem;color:var(--muted)">Grau/weiß professionell – wie die Hausgeldabrechnung</div>
               </div>
-              <!-- Layout 2: Minimal -->
+              <!-- Layout: Minimal (puristisch schwarz-weiß) -->
               <div id="pdf-layout-minimal" onclick="setPdfLayout('minimal')"
                 style="border:2px solid var(--border);border-radius:10px;padding:.85rem;cursor:pointer">
                 <div style="background:#fff;border-radius:6px;padding:.6rem;margin-bottom:.5rem;border:1px solid var(--border)">
-                  <div style="height:6px;background:#1a1a1a;border-radius:3px;margin-bottom:4px"></div>
-                  <div style="height:3px;background:#eee;border-radius:2px;margin-bottom:2px;width:80%"></div>
-                  <div style="height:3px;background:#eee;border-radius:2px;margin-bottom:2px;width:60%"></div>
-                  <div style="height:3px;background:#ddd;border-radius:2px;margin-bottom:2px"></div>
-                  <div style="height:3px;background:#eee;border-radius:2px;width:70%"></div>
+                  <div style="height:6px;background:#111827;border-radius:3px;margin-bottom:4px;width:60%"></div>
+                  <div style="height:2px;background:#111827;border-radius:1px;margin-bottom:4px"></div>
+                  <div style="height:3px;background:#f2f2f4;border-radius:2px;margin-bottom:2px;width:80%"></div>
+                  <div style="height:3px;background:#f2f2f4;border-radius:2px;margin-bottom:2px;width:60%"></div>
+                  <div style="height:2px;background:#111827;border-radius:1px;width:45%;margin-left:auto"></div>
                 </div>
                 <div style="font-size:.8rem;font-weight:700">Minimal</div>
-                <div style="font-size:.68rem;color:var(--muted)">Schwarz-weiß, sachlich</div>
+                <div style="font-size:.68rem;color:var(--muted)">Puristisch schwarz-weiß</div>
               </div>
-              <!-- Layout 3: Modern -->
-              <div id="pdf-layout-modern" onclick="setPdfLayout('modern')"
+              <!-- Layout: Elegant (Marineblau + Serifen) -->
+              <div id="pdf-layout-elegant" onclick="setPdfLayout('elegant')"
                 style="border:2px solid var(--border);border-radius:10px;padding:.85rem;cursor:pointer">
                 <div style="background:#fff;border-radius:6px;padding:.6rem;margin-bottom:.5rem;border:1px solid var(--border)">
-                  <div style="height:6px;background:linear-gradient(90deg,#6a2d9f,#8b5cf6);border-radius:3px;margin-bottom:4px"></div>
-                  <div style="height:3px;background:#e8f5e9;border-radius:2px;margin-bottom:2px;width:80%"></div>
-                  <div style="height:3px;background:#eee;border-radius:2px;margin-bottom:2px;width:60%"></div>
-                  <div style="height:3px;background:#fce4ec;border-radius:2px;margin-bottom:2px"></div>
-                  <div style="height:5px;background:#e8f5e9;border-radius:2px;width:50%"></div>
+                  <div style="height:6px;background:#1e3a5f;border-radius:3px;margin-bottom:4px;width:70%"></div>
+                  <div style="height:3px;background:#eaf0f7;border-radius:2px;margin-bottom:2px;width:85%"></div>
+                  <div style="height:3px;background:#eaf0f7;border-radius:2px;margin-bottom:2px;width:65%"></div>
+                  <div style="height:3px;background:#1e3a5f;border-radius:2px;margin-bottom:2px;opacity:.25"></div>
+                  <div style="height:4px;background:#eaf0f7;border:1px solid #c6d4e4;border-radius:2px;width:50%;margin-left:auto"></div>
                 </div>
-                <div style="font-size:.8rem;font-weight:700">Modern</div>
-                <div style="font-size:.68rem;color:var(--muted)">Farbig, übersichtlich</div>
+                <div style="font-size:.8rem;font-weight:700;font-family:Georgia,serif">Elegant</div>
+                <div style="font-size:.68rem;color:var(--muted)">Marineblau, Serifenschrift – klassisch edel</div>
               </div>
-              <!-- Layout 4: Kompakt -->
-              <div id="pdf-layout-compact" onclick="setPdfLayout('compact')"
+              <!-- Layout: Kompakt (Blaugrau, platzsparend) -->
+              <div id="pdf-layout-kompakt" onclick="setPdfLayout('kompakt')"
                 style="border:2px solid var(--border);border-radius:10px;padding:.85rem;cursor:pointer">
                 <div style="background:#fff;border-radius:6px;padding:.6rem;margin-bottom:.5rem;border:1px solid var(--border)">
-                  <div style="height:4px;background:#2c3e50;border-radius:2px;margin-bottom:3px"></div>
-                  <div style="height:2px;background:#eee;border-radius:1px;margin-bottom:1px;width:80%"></div>
-                  <div style="height:2px;background:#eee;border-radius:1px;margin-bottom:1px;width:60%"></div>
-                  <div style="height:2px;background:#eee;border-radius:1px;margin-bottom:1px"></div>
-                  <div style="height:2px;background:#eee;border-radius:1px;margin-bottom:1px;width:70%"></div>
-                  <div style="height:4px;background:#2c3e50;border-radius:2px;opacity:.2"></div>
+                  <div style="height:4px;background:#334155;border-radius:2px;margin-bottom:3px;width:65%"></div>
+                  <div style="height:2px;background:#f1f5f9;border-radius:1px;margin-bottom:1px;width:85%"></div>
+                  <div style="height:2px;background:#f1f5f9;border-radius:1px;margin-bottom:1px;width:70%"></div>
+                  <div style="height:2px;background:#f1f5f9;border-radius:1px;margin-bottom:1px;width:80%"></div>
+                  <div style="height:2px;background:#f1f5f9;border-radius:1px;margin-bottom:2px;width:60%"></div>
+                  <div style="height:3px;background:#334155;border-radius:2px;opacity:.25;width:40%;margin-left:auto"></div>
                 </div>
                 <div style="font-size:.8rem;font-weight:700">Kompakt</div>
-                <div style="font-size:.68rem;color:var(--muted)">Mehr Infos auf weniger Platz</div>
+                <div style="font-size:.68rem;color:var(--muted)">Blaugrau, mehr Infos auf weniger Platz</div>
               </div>
             </div>
-            <div style="font-size:.75rem;color:var(--p);font-style:italic" id="pdf-layout-active-label">Aktiv: Standard</div>
+            <div style="font-size:.75rem;color:var(--p);font-style:italic" id="pdf-layout-active-label">Aktiv: Modern</div>
           </div>
         </div>
         <div id="einhalt-backup" style="display:none">
@@ -5684,20 +5684,23 @@ async function checkIsFree(){
 
 // ── PDF CORE: writes period content into existing doc ──
 function getPdfTheme(){
-  var L=currentPdfLayout||'standard';
+  var L=currentPdfLayout||'modern';
   // Theme definitions: accent[r,g,b], headerBg[r,g,b], headerText[r,g,b], style
   var themes={
-    standard:{accent:[106,45,159],headerBg:[235,228,255],headerText:[60,20,120],secBg:[235,228,255],secText:[60,20,120],band:false,clean:true,font:'helvetica',title:'Nebenkostenabrechnung'},
+    // Modern = das bewährte bisherige Standard-Design (lila Akzente, cleane Grautöne)
+    modern:{accent:[106,45,159],headerBg:[235,228,255],headerText:[60,20,120],secBg:[235,228,255],secText:[60,20,120],band:false,clean:true,font:'helvetica',title:'Nebenkostenabrechnung'},
     // Hausgeld-Stil: komplett neutral grau/weiß wie die WEG-Hausgeldabrechnung (AC=[88,88,92], keine Farbflächen)
     hausgeld:{accent:[88,88,92],headerBg:[246,246,248],headerText:[45,45,52],secBg:[246,246,248],secText:[80,80,86],band:false,clean:true,font:'helvetica',title:'Nebenkostenabrechnung'},
-    modern:{accent:[14,124,123],headerBg:[224,247,246],headerText:[10,90,89],secBg:[224,247,246],secText:[10,90,89],band:true,font:'helvetica',title:'Nebenkostenabrechnung'},
-    kompakt:{accent:[60,60,70],headerBg:[240,240,242],headerText:[30,30,40],secBg:[240,240,242],secText:[30,30,40],band:false,compact:true,font:'helvetica',title:'Nebenkostenabrechnung'},
-    elegant:{accent:[140,100,30],headerBg:[247,242,230],headerText:[110,75,15],secBg:[247,242,230],secText:[110,75,15],band:false,serif:true,font:'times',title:'Nebenkostenabrechnung'},
-    // legacy alias
-    minimal:{accent:[80,80,90],headerBg:[245,245,247],headerText:[40,40,50],secBg:[245,245,247],secText:[40,40,50],band:false,compact:true,font:'helvetica',title:'Nebenkostenabrechnung'},
-    compact:{accent:[60,60,70],headerBg:[240,240,242],headerText:[30,30,40],secBg:[240,240,242],secText:[30,30,40],band:false,compact:true,font:'helvetica',title:'Nebenkostenabrechnung'}
+    // Minimal: puristisch schwarz-weiß, kräftige Titel, Haarlinien
+    minimal:{accent:[17,24,39],headerBg:[255,255,255],headerText:[17,24,39],secBg:[247,247,248],secText:[17,24,39],band:false,clean:true,font:'helvetica',title:'Nebenkostenabrechnung'},
+    // Elegant: dunkles Marineblau mit Serifenschrift – klassisch edel
+    elegant:{accent:[30,58,95],headerBg:[234,240,247],headerText:[23,42,68],secBg:[234,240,247],secText:[23,42,68],band:false,clean:true,serif:true,font:'times',title:'Nebenkostenabrechnung'},
+    // Kompakt: dezentes Blaugrau, mehr Inhalt je Seite
+    kompakt:{accent:[51,65,85],headerBg:[241,245,249],headerText:[30,41,59],secBg:[241,245,249],secText:[30,41,59],band:false,clean:true,compact:true,font:'helvetica',title:'Nebenkostenabrechnung'}
   };
-  return themes[L]||themes.standard;
+  // Legacy-Aliase (alte gespeicherte Auswahl): standard = jetzt Modern, compact = Kompakt
+  themes.standard=themes.modern; themes.compact=themes.kompakt;
+  return themes[L]||themes.modern;
 }
 
 function buildPeriodContent(doc,we,pe,withWatermark,isFirstPage){
@@ -6917,7 +6920,7 @@ function applyLayoutSettings(){
   // Store
   localStorage.setItem('nekosta-layout',JSON.stringify({compact:compact,largeFont:largeFont,width:width}));
 }
-var currentPdfLayout=localStorage.getItem('nekosta-pdf-layout')||'standard';
+var currentPdfLayout=localStorage.getItem('nekosta-pdf-layout')||'modern';
 // PDF-Aufbau: 'modern' (Ergebnis-Karte zuerst, Eckdaten-Streifen, Kostenbalken) | 'klassisch' (wie vor dem Redesign)
 var currentPdfStyle=localStorage.getItem('nekosta-pdf-style')||'modern';
 
@@ -6937,33 +6940,33 @@ function setPdfStyle(style,silent){
 }
 
 function setPdfLayout(layout){
-  // Normalize legacy names
-  if(layout==='minimal')layout='elegant';
+  // Normalize legacy names: das bisherige "Standard"-Design heißt jetzt "Modern"
+  if(layout==='standard')layout='modern';
   if(layout==='compact')layout='kompakt';
   currentPdfLayout=layout;
   localStorage.setItem('nekosta-pdf-layout',layout);
-  var names={standard:'Standard',hausgeld:'Hausgeld-Stil',modern:'Modern',kompakt:'Kompakt',elegant:'Elegant'};
+  var names={modern:'Modern',hausgeld:'Hausgeld-Stil',minimal:'Minimal',elegant:'Elegant',kompakt:'Kompakt'};
   var lbl=document.getElementById('pdf-layout-active-label');
-  if(lbl)lbl.textContent='Aktiv: '+(names[layout]||'Standard');
+  if(lbl)lbl.textContent='Aktiv: '+(names[layout]||'Modern');
   // Settings-Tab Karten
-  ['standard','hausgeld','modern','kompakt','elegant'].forEach(function(l){
+  ['modern','hausgeld','minimal','elegant','kompakt'].forEach(function(l){
     var el=document.getElementById('pdf-layout-'+l);
     if(!el)return;
     if(l===layout){el.style.borderColor='var(--p)';el.style.background='var(--p-light)';}
     else{el.style.borderColor='var(--border)';el.style.background='var(--white)';}
   });
   // Wizard Step4 Buttons
-  ['standard','hausgeld','modern','kompakt','elegant'].forEach(function(l){
+  ['modern','hausgeld','minimal','elegant','kompakt'].forEach(function(l){
     var btn=document.getElementById('wiz-layout-'+l);
     if(!btn)return;
     if(l===layout){btn.style.background='var(--p)';btn.style.color='#fff';btn.style.borderColor='var(--p)';}
     else{btn.style.background='var(--white)';btn.style.color='var(--muted)';btn.style.borderColor='var(--border)';}
   });
-  showToast('✅ PDF-Layout: '+(names[layout]||'Standard'));
+  showToast('✅ PDF-Layout: '+(names[layout]||'Modern'));
 }
 
 function vorschauAktuellesLayout(){
-  vorschauPdfLayout(currentPdfLayout||'standard');
+  vorschauPdfLayout(currentPdfLayout||'modern');
 }
 
 function loadPdfLayoutUI(){

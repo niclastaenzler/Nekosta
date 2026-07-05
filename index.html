@@ -10805,7 +10805,10 @@ function _wegc35aOwner(P,bo,d){
   var split=d.lohnByPos&&d.lohnByPos[P.id];
   if(split&&Object.keys(split).length){ return _wegcBoSum(split,bo); }
   var lo=parseFloat(P.lohn)||0; if(!(lo>0))return 0;
-  var rr=_wegcAbrRowBo(P,bo,d.festByPos); var frac=P.gesamtEUR>0?rr.ownerEUR/P.gesamtEUR:0;
+  // Bei einer Rücklagen-Entnahme ist der Positionsbetrag negativ. Der §35a-Lohnanteil wird
+  // trotzdem wie ein positiver Kostenanteil verteilt (Betrag & Anteil absolut) – 0,00 € war falsch.
+  var rr=_wegcAbrRowBo(P,bo,d.festByPos); var g=parseFloat(P.gesamtEUR)||0;
+  var frac=Math.abs(g)>1e-9?Math.abs(rr.ownerEUR/g):0;
   return lo*frac;
 }
 async function wegcRenderAbrechnung(c){
@@ -11392,7 +11395,7 @@ async function wegcAbr35aSplitAuto(posId,mode){
   var P=(d.P||[]).filter(function(x){return x.id===posId;})[0];
   var weightOf=function(bo){
     if(mode==='mea')return bo.mea||0;
-    if(mode==='kostenanteil')return P?_wegcAbrRowBo(P,bo,d.festByPos).ownerEUR:0;
+    if(mode==='kostenanteil')return P?Math.abs(_wegcAbrRowBo(P,bo,d.festByPos).ownerEUR):0;
     if(mode==='pxt')return bo.eigs.reduce(function(s,e){var u=e.weg_einheiten||{};var pd=(u._pd!=null)?u._pd:((parseFloat(u.personen)||0)*(d.tage||365));return s+pd;},0);
     return 1; // einheiten / equal
   };

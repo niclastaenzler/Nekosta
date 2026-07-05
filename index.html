@@ -2914,6 +2914,14 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
         <div class="card"><div class="card-title">📊 Nutzungsstatistiken</div><div id="admin-stats"><div style="color:var(--muted);font-size:.85rem;padding:.5rem">Wird geladen...</div></div></div>
         <div class="card">
           <div class="card-title" style="display:flex;align-items:center;justify-content:space-between">
+            <span>👥 Nutzer &amp; Tarife</span>
+            <button class="btn-small" style="font-size:.7rem" onclick="loadAdminUsers()"><span class="btn-ic" data-icon="refresh"></span> Aktualisieren</button>
+          </div>
+          <div style="font-size:.75rem;color:var(--muted);margin-bottom:.6rem">Tarife werden ausschließlich hier vom Verwalter vergeben – Nutzer können ihren Tarif nicht selbst ändern.</div>
+          <div id="admin-users"><div style="color:var(--muted);font-size:.85rem;padding:.5rem">Wird geladen...</div></div>
+        </div>
+        <div class="card">
+          <div class="card-title" style="display:flex;align-items:center;justify-content:space-between">
             <span style="display:inline-flex;align-items:center;gap:.4rem"><span class="mini-ic" data-icon="inbox"></span>Nachrichten &amp; Feedback</span>
             <button class="btn-small" style="font-size:.7rem" onclick="loadFeedback()"><span class="btn-ic" data-icon="refresh"></span> Aktualisieren</button>
           </div>
@@ -4116,7 +4124,7 @@ function showPage(name){
   if(name==='stammdaten'){loadStammdaten();}
   if(name==='abrechnung'){loadAbrLanding();}
   if(name==='einstellungen'){showEinstellTab(_profilTab||'profil');loadProfile();loadLayoutSettings();}
-  if(name==='adminpanel'&&isAdmin){loadAdminStats();loadFeedback();}
+  if(name==='adminpanel'&&isAdmin){loadAdminStats();loadAdminUsers();loadFeedback();}
   if(name==='tokens'){
     loadSubscription().then(function(){renderAboPage();});
   }
@@ -7619,7 +7627,8 @@ async function loadTokenBalance(){return loadSubscription();}
 async function setPlan(plan){
   if(!PLAN_DEFS[plan])return;
   if(plan===currentPlan){showToast('Das ist bereits dein aktueller Tarif.');return;}
-  // In production this would open a payment flow. Here we set directly.
+  // Tarife vergibt ausschließlich der Verwalter (serverseitig per Trigger erzwungen).
+  if(!isAdmin){showToast('ℹ️ Tarifänderungen übernimmt der Verwalter – bitte über „Feedback & Support" oder per E-Mail anfragen.');return;}
   if(plan!=='free'){
     var ok=confirm('Tarif "'+PLAN_DEFS[plan].name+'" wählen?\n\n(In der Live-Version folgt hier der Bezahlvorgang.)');
     if(!ok)return;
@@ -7991,6 +8000,7 @@ async function saveProfile(){
   // Also save to profiles table
   var {error:e2}=await sb.from('user_profiles').upsert({
     user_id:currentUser.id,
+    email:currentUser.email,
     username:username,
     phone:phone,
     updated_at:new Date().toISOString()
@@ -8584,6 +8594,41 @@ async function loadAdminStats(){
       +'<div style="background:var(--p-light);border-radius:8px;padding:.75rem;text-align:center"><div style="font-size:1rem;font-weight:700;color:var(--p)">'+(planCount.free||0)+' / '+(planCount.pro||0)+' / '+(planCount.business||0)+'</div><div style="font-size:.78rem;color:var(--muted)">Free / Pro / Business</div></div>'
       +'</div>';
   }catch(e){container.innerHTML='<div style="color:var(--muted);font-size:.85rem">Statistiken nicht verfügbar.</div>';}
+}
+
+// ── ADMIN: Nutzer & Tarife (Tarife vergibt ausschließlich der Verwalter; serverseitig per Trigger erzwungen) ──
+async function loadAdminUsers(){
+  var c=document.getElementById('admin-users'); if(!c)return;
+  try{
+    var {data,error}=await sb.from('user_profiles').select('user_id,email,username,plan,plan_trial_end').order('email');
+    if(error)throw error;
+    data=data||[];
+    if(!data.length){c.innerHTML='<div style="color:var(--muted);font-size:.85rem;padding:.5rem">Keine Nutzer gefunden.</div>';return;}
+    var planKeys=['free','basis','plus','pro','individuell'];
+    c.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:.82rem"><thead><tr style="border-bottom:1px solid var(--border)">'
+      +'<th style="text-align:left;padding:.4rem .5rem;font-size:.64rem;text-transform:uppercase;color:var(--muted)">Nutzer</th>'
+      +'<th style="text-align:left;padding:.4rem .5rem;font-size:.64rem;text-transform:uppercase;color:var(--muted)">Testphase bis</th>'
+      +'<th style="text-align:left;padding:.4rem .5rem;font-size:.64rem;text-transform:uppercase;color:var(--muted)">Tarif</th></tr></thead><tbody>'
+      +data.map(function(u){
+        var cur=(u.plan==='business'?'pro':(u.plan||'free')); // Alt-Alias auf Pro mappen
+        var opts=planKeys.map(function(k){return '<option value="'+k+'"'+(cur===k?' selected':'')+'>'+PLAN_DEFS[k].name+(PLAN_DEFS[k].preis?' ('+PLAN_DEFS[k].preis.toFixed(2).replace('.',',')+' €)':'')+'</option>';}).join('');
+        var trial=u.plan_trial_end?new Date(u.plan_trial_end).toLocaleDateString('de-DE'):'–';
+        var isMe=currentUser&&u.user_id===currentUser.id;
+        return '<tr style="border-bottom:1px solid #f3f4f6"><td style="padding:.4rem .5rem">'+escapeHtml(u.email||u.username||u.user_id)+(isMe?' <span style="font-size:.62rem;color:var(--p);font-weight:700">(du)</span>':'')+'</td>'
+          +'<td style="padding:.4rem .5rem;color:var(--muted)">'+trial+'</td>'
+          +'<td style="padding:.4rem .5rem"><select onchange="adminSetUserPlan(\''+u.user_id+'\',this.value)" style="border:1px solid var(--border);border-radius:7px;padding:3px 6px;font-size:.78rem;font-family:var(--ff)">'+opts+'</select></td></tr>';
+      }).join('')+'</tbody></table>';
+  }catch(e){c.innerHTML='<div style="color:var(--muted);font-size:.85rem;padding:.5rem">Fehler: '+escapeHtml(e.message||'')+'</div>';}
+}
+async function adminSetUserPlan(userId,plan){
+  if(!isAdmin||!PLAN_DEFS[plan])return;
+  try{
+    var r=await sb.from('user_profiles').update({plan:plan}).eq('user_id',userId);
+    if(r.error){showToast('❌ Fehler: '+r.error.message);loadAdminUsers();return;}
+    showToast('✅ Tarif „'+PLAN_DEFS[plan].name+'" zugewiesen');
+    if(currentUser&&userId===currentUser.id){currentPlan=plan;planObjektLimit=planDef().objektLimit;updateTokenUI();}
+    loadAdminStats();
+  }catch(e){showToast('❌ Fehler: '+e.message);}
 }
 
 // ── ADMIN: Feedback / Nachrichten ──

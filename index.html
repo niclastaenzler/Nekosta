@@ -1102,6 +1102,8 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
       <div class="sidebar-section" role="button" onclick="toggleSidebarGroup('sg-k-verw')">VERWALTUNG <span class="sg-arrow open" id="arr-k-verw">▾</span></div>
       <div class="sg-content" id="sg-k-verw">
         <div class="nav-item" onclick="showPage('objekte')" id="nav-objekte-k"><span class="ni-icon" data-icon="building2"></span>Objekte</div>
+        <div class="nav-item" onclick="showPage('weg')" id="nav-k-weg" style="display:none"><span class="ni-icon" data-icon="landmark"></span>WEG-Verwaltung</div>
+        <div class="nav-item" onclick="showPage('mieter')" id="nav-k-mieter" style="display:none"><span class="ni-icon" data-icon="users"></span>Mieter</div>
         <div class="nav-item" onclick="showPage('kontakte')" id="nav-kontakte-k"><span class="ni-icon" data-icon="users"></span>Kontakte</div>
         <div class="nav-item" onclick="showPage('dokumente')" id="nav-dokumente-k"><span class="ni-icon" data-icon="filetext"></span>Dokumente</div>
       </div>
@@ -1110,12 +1112,14 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
       <div class="sg-content" id="sg-k-erst">
         <div class="nav-item" onclick="showPage('abrechnung')" id="nav-tool-k"><span class="ni-icon" data-icon="receipt"></span>Abrechnung</div>
         <div class="nav-item" onclick="showPage('auftraege')" id="nav-auftraege-k"><span class="ni-icon" data-icon="clipboard"></span>Aufträge</div>
-        <div class="nav-item" style="opacity:.4;cursor:not-allowed;pointer-events:none"><span class="ni-icon" data-icon="mail"></span>Anschreiben<span class="nav-badge" style="background:#eee;color:#aaa">Bald</span></div>
+        <div class="nav-item" onclick="showPage('anschreiben')" id="nav-k-anschreiben" style="display:none"><span class="ni-icon" data-icon="mail"></span>Anschreiben</div>
+        <div class="nav-item" id="nav-k-anschreiben-soon" style="opacity:.4;cursor:not-allowed;pointer-events:none"><span class="ni-icon" data-icon="mail"></span>Anschreiben<span class="nav-badge" style="background:#eee;color:#aaa">Bald</span></div>
       </div>
       <div class="sidebar-divider"></div>
       <div class="sidebar-section" role="button" onclick="toggleSidebarGroup('sg-k-abr')">ABRECHNUNGEN <span class="sg-arrow open" id="arr-k-abr">▾</span></div>
       <div class="sg-content" id="sg-k-abr">
         <div class="nav-item" onclick="showPage('kunden')" id="nav-kunden"><span class="ni-icon" data-icon="files"></span>Alle Abrechnungen</div>
+        <div class="nav-item" onclick="showPage('mahnwesen')" id="nav-k-mahnwesen" style="display:none"><span class="ni-icon" data-icon="alertcircle"></span>Offene Posten</div>
       </div>
       <div class="sidebar-divider"></div>
       <div class="nav-item" onclick="showPage('tarife')" id="nav-tarife-k"><span class="ni-icon" data-icon="creditcard"></span>Tarife</div>
@@ -3976,6 +3980,7 @@ async function initApp(user){
   }else{
     document.getElementById('kunden-menu').style.display='block';
     document.getElementById('btn-speichern').style.display='block';
+    applyModulRechte(); // vom Verwalter freigeschaltete Module einblenden
     showPage('dashboard');
     await loadKundenAbrechnungen();
   }
@@ -4064,10 +4069,13 @@ function showPage(name){
 
   var adminVisible=document.getElementById('admin-menu').style.display!=='none';
 
-  // Block customers from locked pages - redirect to dashboard
-  var lockedForCustomers=['anschreiben','heizkostenerstellen','mieter','adminpanel','weg','mahnwesen'];
-  if(!adminVisible&&lockedForCustomers.indexOf(name)>=0){
-    showToast('🔒 Diese Funktion ist für Verwalter vorbehalten.');
+  // Zugriffsschutz: Admin-Panel nur für den Verwalter; Module je Nutzer-Freischaltung (Admin-Panel → Nutzer & Tarife)
+  var pageModule={anschreiben:'anschreiben',heizkostenerstellen:'heizkosten',mieter:'mieter',weg:'weg','weg-cockpit':'weg',mahnwesen:'mahnwesen'};
+  if(name==='adminpanel'&&!isAdmin){
+    showToast('🔒 Das Admin-Panel ist dem Verwalter vorbehalten.');
+    name='dashboard';
+  } else if(!isAdmin&&pageModule[name]&&!hasModulRecht(pageModule[name])){
+    showToast('🔒 Dieses Modul ist für dich nicht freigeschaltet – der Verwalter kann es freigeben.');
     name='dashboard';
   }
 
@@ -7564,6 +7572,18 @@ let planObjektLimit=2;          // max objects for current plan
 let tokenBalance=999;           // legacy shim - kept so old references don't crash
 let selectedPkg={tokens:0,price:0};
 let activeDiscount={code:'',percent:0};
+// Modul-Rechte (vom Verwalter im Admin-Panel je Nutzer vergeben; serverseitig Admin-only)
+let userModulRechte={};
+var MODUL_DEFS=[['weg','WEG-Verwaltung'],['mieter','Mieter'],['mahnwesen','Offene Posten'],['anschreiben','Anschreiben'],['heizkosten','Heizkosten']];
+function hasModulRecht(m){return isAdmin||!!(userModulRechte&&userModulRechte[m]);}
+// Freigeschaltete Module im Kunden-Menü einblenden
+function applyModulRechte(){
+  if(isAdmin)return;
+  var map={'nav-k-weg':'weg','nav-k-mieter':'mieter','nav-k-mahnwesen':'mahnwesen','nav-k-anschreiben':'anschreiben'};
+  Object.keys(map).forEach(function(id){var el=document.getElementById(id);if(el)el.style.display=hasModulRecht(map[id])?'':'none';});
+  var soon=document.getElementById('nav-k-anschreiben-soon');
+  if(soon)soon.style.display=hasModulRecht('anschreiben')?'none':'';
+}
 
 // Plan definitions – einheiten-basiert (2026-05-31): 14-Tage-Testphase + 3 Stufen + individuell
 // storageMB = Speicher-Kontingent fürs Dokumenten-Modul (vorläufig, später feinjustierbar)
@@ -7607,11 +7627,12 @@ function updateTokenUI(){
 
 async function loadSubscription(){
   try{
-    var {data}=await sb.from('user_profiles').select('plan,plan_trial_end').eq('user_id',currentUser.id).maybeSingle();
+    var {data}=await sb.from('user_profiles').select('plan,plan_trial_end,module_rechte').eq('user_id',currentUser.id).maybeSingle();
     if(data){
       currentPlan=data.plan||'free';
       planTrialEnd=data.plan_trial_end||null;
     }
+    userModulRechte=(data&&data.module_rechte)||{};
     // If free and no trial set yet, start 14-day trial
     if(currentPlan==='free'&&!planTrialEnd){
       planTrialEnd=localDateStr(new Date(Date.now()+14*24*60*60*1000));
@@ -8600,24 +8621,34 @@ async function loadAdminStats(){
 async function loadAdminUsers(){
   var c=document.getElementById('admin-users'); if(!c)return;
   try{
-    var {data,error}=await sb.from('user_profiles').select('user_id,email,username,plan,plan_trial_end').order('email');
+    var {data,error}=await sb.from('user_profiles').select('user_id,email,username,plan,plan_trial_end,module_rechte').order('email');
     if(error)throw error;
     data=data||[];
     if(!data.length){c.innerHTML='<div style="color:var(--muted);font-size:.85rem;padding:.5rem">Keine Nutzer gefunden.</div>';return;}
     var planKeys=['free','basis','plus','pro','individuell'];
-    c.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:.82rem"><thead><tr style="border-bottom:1px solid var(--border)">'
+    c.innerHTML='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.82rem"><thead><tr style="border-bottom:1px solid var(--border)">'
       +'<th style="text-align:left;padding:.4rem .5rem;font-size:.64rem;text-transform:uppercase;color:var(--muted)">Nutzer</th>'
       +'<th style="text-align:left;padding:.4rem .5rem;font-size:.64rem;text-transform:uppercase;color:var(--muted)">Testphase bis</th>'
-      +'<th style="text-align:left;padding:.4rem .5rem;font-size:.64rem;text-transform:uppercase;color:var(--muted)">Tarif</th></tr></thead><tbody>'
+      +'<th style="text-align:left;padding:.4rem .5rem;font-size:.64rem;text-transform:uppercase;color:var(--muted)">Tarif</th>'
+      +'<th style="text-align:left;padding:.4rem .5rem;font-size:.64rem;text-transform:uppercase;color:var(--muted)">Freigeschaltete Module</th></tr></thead><tbody>'
       +data.map(function(u){
         var cur=(u.plan==='business'?'pro':(u.plan||'free')); // Alt-Alias auf Pro mappen
         var opts=planKeys.map(function(k){return '<option value="'+k+'"'+(cur===k?' selected':'')+'>'+PLAN_DEFS[k].name+(PLAN_DEFS[k].preis?' ('+PLAN_DEFS[k].preis.toFixed(2).replace('.',',')+' €)':'')+'</option>';}).join('');
         var trial=u.plan_trial_end?new Date(u.plan_trial_end).toLocaleDateString('de-DE'):'–';
         var isMe=currentUser&&u.user_id===currentUser.id;
+        var isAdm=(u.email||'').endsWith('@'+ADMIN_DOMAIN);
+        var mr=u.module_rechte||{};
+        var modCell=isAdm
+          ?'<span style="font-size:.7rem;color:var(--p);font-weight:700">alle (Verwalter)</span>'
+          :MODUL_DEFS.map(function(m){
+            return '<label style="display:inline-flex;align-items:center;gap:.25rem;font-size:.72rem;margin-right:.55rem;white-space:nowrap;cursor:pointer">'
+              +'<input type="checkbox"'+(mr[m[0]]?' checked':'')+' onchange="adminSetModulRecht(\''+u.user_id+'\',\''+m[0]+'\',this.checked)">'+m[1]+'</label>';
+          }).join('');
         return '<tr style="border-bottom:1px solid #f3f4f6"><td style="padding:.4rem .5rem">'+escapeHtml(u.email||u.username||u.user_id)+(isMe?' <span style="font-size:.62rem;color:var(--p);font-weight:700">(du)</span>':'')+'</td>'
           +'<td style="padding:.4rem .5rem;color:var(--muted)">'+trial+'</td>'
-          +'<td style="padding:.4rem .5rem"><select onchange="adminSetUserPlan(\''+u.user_id+'\',this.value)" style="border:1px solid var(--border);border-radius:7px;padding:3px 6px;font-size:.78rem;font-family:var(--ff)">'+opts+'</select></td></tr>';
-      }).join('')+'</tbody></table>';
+          +'<td style="padding:.4rem .5rem"><select onchange="adminSetUserPlan(\''+u.user_id+'\',this.value)" style="border:1px solid var(--border);border-radius:7px;padding:3px 6px;font-size:.78rem;font-family:var(--ff)">'+opts+'</select></td>'
+          +'<td style="padding:.4rem .5rem">'+modCell+'</td></tr>';
+      }).join('')+'</tbody></table></div>';
   }catch(e){c.innerHTML='<div style="color:var(--muted);font-size:.85rem;padding:.5rem">Fehler: '+escapeHtml(e.message||'')+'</div>';}
 }
 async function adminSetUserPlan(userId,plan){
@@ -8628,6 +8659,19 @@ async function adminSetUserPlan(userId,plan){
     showToast('✅ Tarif „'+PLAN_DEFS[plan].name+'" zugewiesen');
     if(currentUser&&userId===currentUser.id){currentPlan=plan;planObjektLimit=planDef().objektLimit;updateTokenUI();}
     loadAdminStats();
+  }catch(e){showToast('❌ Fehler: '+e.message);}
+}
+// Modul-Recht eines Nutzers an/aus (Read-Modify-Write auf module_rechte-JSON)
+async function adminSetModulRecht(userId,mod,on){
+  if(!isAdmin)return;
+  try{
+    var {data}=await sb.from('user_profiles').select('module_rechte').eq('user_id',userId).maybeSingle();
+    var r=(data&&data.module_rechte)||{};
+    if(on)r[mod]=true; else delete r[mod];
+    var up=await sb.from('user_profiles').update({module_rechte:r}).eq('user_id',userId);
+    if(up.error){showToast('❌ Fehler: '+up.error.message);loadAdminUsers();return;}
+    var lbl=(MODUL_DEFS.filter(function(m){return m[0]===mod;})[0]||[,mod])[1];
+    showToast(on?('✅ „'+lbl+'" freigeschaltet'):('🔒 „'+lbl+'" entzogen'));
   }catch(e){showToast('❌ Fehler: '+e.message);}
 }
 

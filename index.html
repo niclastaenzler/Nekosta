@@ -3114,14 +3114,14 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
               <div id="pdf-layout-minimal" onclick="setPdfLayout('minimal')"
                 style="border:2px solid var(--border);border-radius:10px;padding:.85rem;cursor:pointer">
                 <div style="background:#fff;border-radius:6px;padding:.6rem;margin-bottom:.5rem;border:1px solid var(--border)">
-                  <div style="height:6px;background:#111827;border-radius:3px;margin-bottom:4px;width:60%"></div>
-                  <div style="height:2px;background:#111827;border-radius:1px;margin-bottom:4px"></div>
+                  <div style="height:6px;background:#111827;border-radius:3px;margin-bottom:4px"></div>
                   <div style="height:3px;background:#f2f2f4;border-radius:2px;margin-bottom:2px;width:80%"></div>
                   <div style="height:3px;background:#f2f2f4;border-radius:2px;margin-bottom:2px;width:60%"></div>
-                  <div style="height:2px;background:#111827;border-radius:1px;width:45%;margin-left:auto"></div>
+                  <div style="height:4px;background:#111827;border-radius:2px;margin-bottom:2px;width:55%"></div>
+                  <div style="height:3px;background:#f2f2f4;border-radius:2px;width:70%"></div>
                 </div>
                 <div style="font-size:.8rem;font-weight:700">Minimal</div>
-                <div style="font-size:.68rem;color:var(--muted)">Puristisch schwarz-weiß</div>
+                <div style="font-size:.68rem;color:var(--muted)">Schwarz-weiß mit markanten Kopfbändern</div>
               </div>
               <!-- Layout: Elegant (Marineblau + Serifen) -->
               <div id="pdf-layout-elegant" onclick="setPdfLayout('elegant')"
@@ -3136,19 +3136,19 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                 <div style="font-size:.8rem;font-weight:700;font-family:Georgia,serif">Elegant</div>
                 <div style="font-size:.68rem;color:var(--muted)">Marineblau, Serifenschrift – klassisch edel</div>
               </div>
-              <!-- Layout: Kompakt (Blaugrau, platzsparend) -->
+              <!-- Layout: Kompakt (Dunkelgrün, engere Zeilen) -->
               <div id="pdf-layout-kompakt" onclick="setPdfLayout('kompakt')"
                 style="border:2px solid var(--border);border-radius:10px;padding:.85rem;cursor:pointer">
                 <div style="background:#fff;border-radius:6px;padding:.6rem;margin-bottom:.5rem;border:1px solid var(--border)">
-                  <div style="height:4px;background:#334155;border-radius:2px;margin-bottom:3px;width:65%"></div>
-                  <div style="height:2px;background:#f1f5f9;border-radius:1px;margin-bottom:1px;width:85%"></div>
-                  <div style="height:2px;background:#f1f5f9;border-radius:1px;margin-bottom:1px;width:70%"></div>
-                  <div style="height:2px;background:#f1f5f9;border-radius:1px;margin-bottom:1px;width:80%"></div>
-                  <div style="height:2px;background:#f1f5f9;border-radius:1px;margin-bottom:2px;width:60%"></div>
-                  <div style="height:3px;background:#334155;border-radius:2px;opacity:.25;width:40%;margin-left:auto"></div>
+                  <div style="height:4px;background:#166534;border-radius:2px;margin-bottom:3px;width:65%"></div>
+                  <div style="height:2px;background:#e8f4ec;border-radius:1px;margin-bottom:1px;width:85%"></div>
+                  <div style="height:2px;background:#e8f4ec;border-radius:1px;margin-bottom:1px;width:70%"></div>
+                  <div style="height:2px;background:#e8f4ec;border-radius:1px;margin-bottom:1px;width:80%"></div>
+                  <div style="height:2px;background:#e8f4ec;border-radius:1px;margin-bottom:2px;width:60%"></div>
+                  <div style="height:3px;background:#166534;border-radius:2px;opacity:.25;width:40%;margin-left:auto"></div>
                 </div>
                 <div style="font-size:.8rem;font-weight:700">Kompakt</div>
-                <div style="font-size:.68rem;color:var(--muted)">Blaugrau, mehr Infos auf weniger Platz</div>
+                <div style="font-size:.68rem;color:var(--muted)">Dunkelgrün, engere Zeilen – mehr auf einer Seite</div>
               </div>
             </div>
             <div style="font-size:.75rem;color:var(--p);font-style:italic" id="pdf-layout-active-label">Aktiv: Modern</div>
@@ -5687,16 +5687,16 @@ function getPdfTheme(){
   var L=currentPdfLayout||'modern';
   // Theme definitions: accent[r,g,b], headerBg[r,g,b], headerText[r,g,b], style
   var themes={
-    // Modern = das bewährte bisherige Standard-Design (lila Akzente, cleane Grautöne)
-    modern:{accent:[106,45,159],headerBg:[235,228,255],headerText:[60,20,120],secBg:[235,228,255],secText:[60,20,120],band:false,clean:true,font:'helvetica',title:'Nebenkostenabrechnung'},
-    // Hausgeld-Stil: komplett neutral grau/weiß wie die WEG-Hausgeldabrechnung (AC=[88,88,92], keine Farbflächen)
+    // Modern = das bewährte bisherige Standard-Design (lila Akzente, cleane Grautöne, mit Kostenbalken-Infografik)
+    modern:{accent:[106,45,159],headerBg:[235,228,255],headerText:[60,20,120],secBg:[235,228,255],secText:[60,20,120],band:false,clean:true,bar:true,font:'helvetica',title:'Nebenkostenabrechnung'},
+    // Hausgeld-Stil: komplett neutral grau/weiß wie die WEG-Hausgeldabrechnung (AC=[88,88,92], keine Farbflächen, kein Balken)
     hausgeld:{accent:[88,88,92],headerBg:[246,246,248],headerText:[45,45,52],secBg:[246,246,248],secText:[80,80,86],band:false,clean:true,font:'helvetica',title:'Nebenkostenabrechnung'},
-    // Minimal: puristisch schwarz-weiß, kräftige Titel, Haarlinien
-    minimal:{accent:[17,24,39],headerBg:[255,255,255],headerText:[17,24,39],secBg:[247,247,248],secText:[17,24,39],band:false,clean:true,font:'helvetica',title:'Nebenkostenabrechnung'},
-    // Elegant: dunkles Marineblau mit Serifenschrift – klassisch edel
-    elegant:{accent:[30,58,95],headerBg:[234,240,247],headerText:[23,42,68],secBg:[234,240,247],secText:[23,42,68],band:false,clean:true,serif:true,font:'times',title:'Nebenkostenabrechnung'},
-    // Kompakt: dezentes Blaugrau, mehr Inhalt je Seite
-    kompakt:{accent:[51,65,85],headerBg:[241,245,249],headerText:[30,41,59],secBg:[241,245,249],secText:[30,41,59],band:false,clean:true,compact:true,font:'helvetica',title:'Nebenkostenabrechnung'}
+    // Minimal: puristisch schwarz-weiß – schwarzes Kopfband, schwarze Abschnittsbänder, graue Zebra-Zeilen
+    minimal:{accent:[17,24,39],headerBg:[240,240,242],headerText:[17,24,39],secBg:[240,240,242],secText:[17,24,39],band:true,font:'helvetica',title:'Nebenkostenabrechnung'},
+    // Elegant: dunkles Marineblau mit Serifenschrift (Times), Doppellinie oben, hellblaue Abschnittsflächen
+    elegant:{accent:[30,58,95],headerBg:[234,240,247],headerText:[23,42,68],secBg:[234,240,247],secText:[23,42,68],band:false,serif:true,font:'times',title:'Nebenkostenabrechnung'},
+    // Kompakt: dunkelgrün, engere Zeilen – mehr Inhalt je Seite
+    kompakt:{accent:[22,101,52],headerBg:[232,244,236],headerText:[21,87,49],secBg:[232,244,236],secText:[21,87,49],band:false,compact:true,font:'helvetica',title:'Nebenkostenabrechnung'}
   };
   // Legacy-Aliase (alte gespeicherte Auswahl): standard = jetzt Modern, compact = Kompakt
   themes.standard=themes.modern; themes.compact=themes.kompakt;
@@ -5862,8 +5862,8 @@ function buildPeriodContent(doc,we,pe,withWatermark,isFirstPage){
   hLine(L,W-R,y+13,MD[0],MD[1],MD[2],0.4);
   y+=19;
 
-  // ── KOSTENSTRUKTUR-BALKEN (Infografik) ──
-  if(heroGes>0.005){
+  // ── KOSTENSTRUKTUR-BALKEN (Infografik) – nur im Layout "Modern" (TH.bar) ──
+  if(heroGes>0.005&&TH.bar){
     var segs=[];
     if(e.hasHK&&heroHK>0.005){
       segs=[{n:'Betriebskosten',v:heroBK,c:AC},{n:'Heizkosten',v:heroHK,c:tint(0.45)}];
@@ -5964,7 +5964,8 @@ function buildPeriodContent(doc,we,pe,withWatermark,isFirstPage){
     var subtotal=0;
     posList.forEach(function(pos,pi){
       npi(10);
-      var rowH=pos.notiz?10:6.5;
+      // Kompakt-Layout: engere Zeilen (mehr Positionen je Seite)
+      var rowH=pos.notiz?(TH.compact?9:10):(TH.compact?5.4:6.5);
       if(pi%2!==0)cfill(L,y,C,rowH,LT[0],LT[1],LT[2]);
       hLine(L,W-R,y+rowH,MD[0],MD[1],MD[2],0.3);
       setFont(8,'normal',30,30,30);doc.text(pos.name,L+2,y+4.2,{maxWidth:C*0.28});

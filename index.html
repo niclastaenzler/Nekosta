@@ -5689,8 +5689,8 @@ function getPdfTheme(){
   var themes={
     // Modern = das bewährte bisherige Standard-Design (lila Akzente, cleane Grautöne, mit Kostenbalken-Infografik)
     modern:{accent:[106,45,159],headerBg:[235,228,255],headerText:[60,20,120],secBg:[235,228,255],secText:[60,20,120],band:false,clean:true,bar:true,font:'helvetica',title:'Nebenkostenabrechnung'},
-    // Hausgeld-Stil: komplett neutral grau/weiß wie die WEG-Hausgeldabrechnung (AC=[88,88,92], keine Farbflächen, kein Balken)
-    hausgeld:{accent:[88,88,92],headerBg:[246,246,248],headerText:[45,45,52],secBg:[246,246,248],secText:[80,80,86],band:false,clean:true,font:'helvetica',title:'Nebenkostenabrechnung'},
+    // Hausgeld-Stil: eigener Aufbau, fast identisch mit der WEG-Hausgeldabrechnung (hausgeld:true -> eigener Render-Pfad)
+    hausgeld:{accent:[88,88,92],headerBg:[246,246,248],headerText:[45,45,52],secBg:[246,246,248],secText:[80,80,86],band:false,clean:true,hausgeld:true,font:'helvetica',title:'Nebenkostenabrechnung'},
     // Minimal: puristisch schwarz-weiß – schwarzes Kopfband, schwarze Abschnittsbänder, graue Zebra-Zeilen
     minimal:{accent:[17,24,39],headerBg:[240,240,242],headerText:[17,24,39],secBg:[240,240,242],secText:[17,24,39],band:true,font:'helvetica',title:'Nebenkostenabrechnung'},
     // Elegant: dunkles Marineblau mit Serifenschrift (Times), Doppellinie oben, hellblaue Abschnittsflächen
@@ -5775,6 +5775,126 @@ function buildPeriodContent(doc,we,pe,withWatermark,isFirstPage){
       y+=9;
     }
   };
+
+  // ── HAUSGELD-STIL: eigener Aufbau, fast identisch mit der WEG-Hausgeldabrechnung ──
+  // Oben Kopf + Verteilungsgrundlagen, dann Positionstabelle mit "Verteilt nach",
+  // unten die Abrechnung als schlichte Summenzeilen (kein Ergebnis-Kasten, kein Balken).
+  if(TH.hausgeld){
+    var HG=[88,88,92];
+    var skLab={flaeche:'Wohnfläche',person:'Personenanzahl',mea:'Eigentumsanteil (MEA)',einheiten:'Einheiten (gleich)',direkt:'Direkte Zuordnung',hkv:'HeizkostenV (Grund+Verbrauch)',auswahl:'Ausgewählte Einheiten'};
+    var hgVn=function(k){ if(!k)return '–'; var s=k.schluessel||'flaeche'; if(s&&s.indexOf('vs:')===0)return 'Individueller Schlüssel'; return skLab[s]||s; };
+    var hgGrund=function(k){
+      if(!k)return '';
+      var s=k.schluessel||'flaeche';
+      if(s==='flaeche')return (we.wohnung.flaeche||0).toLocaleString('de-DE')+' / '+(objektFlaeche||0).toLocaleString('de-DE')+' m²';
+      if(s==='person')return (p.isLeerstand?0:(p.personen||0))+' Pers.';
+      if(s==='mea')return (we.wohnung.meaNum||0)+' MEA';
+      if(s==='direkt')return 'direkt';
+      if(s==='hkv'){var g=(k.hkv&&k.hkv.grund!=null)?parseFloat(k.hkv.grund):30;return g+' % Grundkosten';}
+      return '';
+    };
+    var hgx={pos:L+1,vn:L+52,gr:L+88,geur:L+142,aeur:W-R-1};
+    var hgColHead=function(){
+      setFont(6,'bold',120,120,125);
+      doc.text('Kostenart',hgx.pos,y);doc.text('Verteilt nach',hgx.vn,y);doc.text('Grundlage',hgx.gr,y);
+      doc.text('Gesamt',hgx.geur,y,{align:'right'});doc.text('Ihr Anteil',hgx.aeur,y,{align:'right'});
+      y+=2;hLine(L,W-R,y,150,150,155,0.4);y+=3.5;
+    };
+    // Kopf (wie Hausgeldabrechnung: dezente Kopfzeile, Name, Titel + graues Jahr)
+    y=18;
+    setFont(7.5,'normal',135,135,140);
+    doc.text(vName,L,y);
+    doc.text((sm.ort?sm.ort+', den ':'')+(e.datum?new Date(e.datum).toLocaleDateString('de-DE'):new Date().toLocaleDateString('de-DE')),W-R,y,{align:'right'});
+    y=29;setFont(8.5,'bold',45,45,50);doc.text(p.isLeerstand?'Leerstand':(p.name||'–'),L,y);y+=9;
+    var hgTtl=p.isLeerstand?'Leerstand-Abrechnung':'Nebenkostenabrechnung';
+    setFont(15,'bold',28,28,34);doc.text(hgTtl,L,y);
+    var hgTw=doc.getTextWidth(hgTtl+' ');setFont(15,'bold',HG[0],HG[1],HG[2]);doc.text(String(e.jahr),L+hgTw,y);y+=6;
+    setFont(9,'bold',55,55,60);doc.text(e.objekt||'Objekt',L,y);
+    var hgNw=doc.getTextWidth(e.objekt||'Objekt');setFont(9,'normal',120,120,125);doc.text('   ·   Einheit: '+(we.wohnung.bez||'–'),L+hgNw,y);y+=5;
+    setFont(8,'normal',90,90,95);doc.text('Abrechnungszeitraum: '+fmtDatum(p.von)+' – '+fmtDatum(p.bis)+' ('+p.days+' Tage)',L,y);y+=8;
+    // Verteilungsgrundlagen oben
+    var hgInfo=[['IHRE FLÄCHE',(we.wohnung.flaeche||0).toLocaleString('de-DE')+' m²'],['OBJEKT GESAMT',objektFlaeche>0?objektFlaeche.toLocaleString('de-DE')+' m²':'–'],['FLÄCHENANTEIL',anteilPct],['NUTZUNGSTAGE',p.days+' / 365'],['PERSONEN',p.isLeerstand?'0':String(p.personen||0)]];
+    if(we.wohnung.mea)hgInfo.push(['MEA',String(we.wohnung.mea)]);
+    var hgIw=C/hgInfo.length;
+    hgInfo.forEach(function(ic,i){var ix=L+hgIw*i;setFont(6,'bold',120,120,125);doc.text(ic[0],ix,y);setFont(8.5,'bold',45,45,52);doc.text(ic[1],ix,y+4.5);});
+    y+=7;hLine(L,W-R,y,150,150,155,0.4);y+=6;
+    hgColHead();
+    var hgRows=function(list,kosten,title){
+      if(!list||!list.length)return 0;
+      if(y>262){doc.addPage();y=20;hgColHead();}
+      setFont(7.5,'bold',88,88,92);doc.text(title,hgx.pos,y);y+=5;
+      var sub=0;
+      list.forEach(function(pos){
+        if(y>272){doc.addPage();y=20;hgColHead();}
+        var kOrig=null;for(var ki=0;ki<kosten.length;ki++){if(kosten[ki].name===pos.name){kOrig=kosten[ki];break;}}
+        setFont(7.5,'normal',55,55,60);doc.text(pos.name,hgx.pos,y,{maxWidth:47});
+        setFont(7,'normal',120,120,125);doc.text(hgVn(kOrig),hgx.vn,y,{maxWidth:33});
+        doc.text(hgGrund(kOrig),hgx.gr,y,{maxWidth:38});
+        setFont(7.5,'normal',70,70,75);doc.text(kOrig?fmt(kOrig.betrag):'–',hgx.geur,y,{align:'right'});
+        setFont(7.5,'bold',40,40,45);doc.text(fmt(pos.anteil),hgx.aeur,y,{align:'right'});
+        sub+=(pos.anteil||0);y+=5;
+      });
+      if(y>268){doc.addPage();y=20;hgColHead();}
+      hLine(L,W-R,y-1,150,150,155,0.3);
+      setFont(7.5,'bold',40,40,45);doc.text('Zwischensumme '+title,hgx.pos,y+2);doc.text(fmt(sub),hgx.aeur,y+2,{align:'right'});
+      y+=8;
+      return sub;
+    };
+    var hgHk=e.hasHK?hgRows(pe.hkPos,e.hkKosten||[],'Heizkosten'):0;
+    var hgBk=hgRows(pe.bkPos,e.bkKosten||[],'Betriebskosten');
+    var hgGes=hgBk+hgHk;
+    var hgVz=p.isLeerstand?0:((p.vorauszBK||0)+(e.hasHK?(p.vorauszHK||0):0));
+    var hgDiff=hgVz-hgGes;
+    // Abrechnung unten – schlichte Summenzeilen
+    if(y>240){doc.addPage();y=20;}
+    hLine(L,W-R,y,150,150,155,0.5);y+=4;
+    setFont(9,'bold',40,40,45);doc.text('Summe Kosten (Ihr Anteil) für den Abrechnungszeitraum',hgx.pos,y);doc.text(fmt(hgGes),hgx.aeur,y,{align:'right'});y+=6;
+    if(!p.isLeerstand){
+      setFont(8.5,'normal',70,70,75);doc.text('Ihre Vorauszahlungen im Abrechnungszeitraum',hgx.pos,y);doc.text(fmt(hgVz),hgx.aeur,y,{align:'right'});y+=5;
+      if(e.hasHK){
+        setFont(8,'normal',110,110,115);
+        doc.text('davon Betriebskosten-Vorauszahlung',hgx.pos+2,y);doc.text(fmt(p.vorauszBK||0),hgx.aeur,y,{align:'right'});y+=4.5;
+        doc.text('davon Heizkosten-Vorauszahlung',hgx.pos+2,y);doc.text(fmt(p.vorauszHK||0),hgx.aeur,y,{align:'right'});y+=5;
+      }
+      hLine(L+100,W-R,y+1,150,150,155,0.4);y+=5.5;
+      setFont(11,'bold',55,55,60);doc.text(hgDiff<0?'Ihre Nachzahlung':'Ihr Guthaben',hgx.pos,y);doc.text(fmt(hgDiff),hgx.aeur,y,{align:'right'});y+=8;
+    } else {
+      hLine(L+100,W-R,y+1,150,150,155,0.4);y+=5.5;
+      setFont(11,'bold',55,55,60);doc.text('Kosten zu Lasten des Eigentümers',hgx.pos,y);doc.text(fmt(hgGes),hgx.aeur,y,{align:'right'});y+=8;
+    }
+    // USt-Ausweis (Gewerbe) – im Hausgeld-Stil als schlichte Tabelle
+    if(!p.isLeerstand&&pe.ustPflichtig&&pe.ust){
+      var hgUG=pe.ust.gruppen||{};
+      var hgUS=[['19','19 %'],['7','7 %'],['0','0 % / steuerfrei']].filter(function(s){return hgUG[s[0]]&&hgUG[s[0]].brutto>0.005;});
+      if(y+16+hgUS.length*6>270){doc.addPage();y=20;}
+      y+=2;setFont(8.5,'bold',45,45,50);doc.text('Umsatzsteuer-Ausweis (Gewerbe)',hgx.pos,y);y+=2;hLine(L,W-R,y,150,150,155,0.3);y+=4;
+      setFont(6.5,'bold',120,120,125);doc.text('Steuersatz',hgx.pos,y);doc.text('Netto',L+82,y,{align:'right'});doc.text('USt',L+114,y,{align:'right'});doc.text('Brutto',hgx.aeur,y,{align:'right'});y+=4;
+      hgUS.forEach(function(s){var row=hgUG[s[0]];
+        setFont(8,'normal',70,70,75);doc.text('Kosten mit '+s[1],hgx.pos,y);
+        doc.text(fmt(row.netto),L+82,y,{align:'right'});doc.text(s[0]==='0'?'–':fmt(row.steuer),L+114,y,{align:'right'});
+        setFont(8,'bold',40,40,45);doc.text(fmt(row.brutto),hgx.aeur,y,{align:'right'});y+=4.8;});
+      hLine(L,W-R,y-1,150,150,155,0.3);
+      setFont(8,'bold',45,45,50);doc.text('Summe',hgx.pos,y+2.5);doc.text(fmt(pe.ust.netto),L+82,y+2.5,{align:'right'});doc.text(fmt(pe.ust.ust19+pe.ust.ust7),L+114,y+2.5,{align:'right'});doc.text(fmt(pe.ust.brutto),hgx.aeur,y+2.5,{align:'right'});y+=9;
+    }
+    // §35a-Hinweis als Textzeile (wie in der Hausgeldabrechnung)
+    if(!p.isLeerstand&&pe.est35a&&pe.est35a.gesamt>0.005){
+      if(y>260){doc.addPage();y=20;}
+      setFont(7.5,'normal',90,90,95);
+      var hgT35=doc.splitTextToSize('§ 35a EStG – in den Kosten enthaltene begünstigte Lohnanteile: Handwerkerleistungen '+fmt(pe.est35a.handwerker||0)+', haushaltsnahe Dienstleistungen '+fmt(pe.est35a.haushaltsnah||0)+' (insgesamt '+fmt(pe.est35a.gesamt)+'). 20 % dieser Lohnkosten sind direkt von der Steuerschuld abziehbar (Höchstbeträge beachten).',C);
+      doc.text(hgT35,hgx.pos,y);y+=hgT35.length*3.6+2;
+    }
+    // DEMO-Wasserzeichen wie im Standardpfad
+    if(withWatermark){
+      var hgPages=doc.internal.getNumberOfPages();
+      for(var hpi=1;hpi<=hgPages;hpi++){
+        doc.setPage(hpi);
+        doc.setTextColor(200,190,220);doc.setFontSize(80);doc.setFont('helvetica','bold');
+        doc.saveGraphicsState();doc.setGState(new doc.GState({opacity:0.1}));
+        doc.text('DEMO',W/2,160,{align:'center',angle:45});doc.restoreGraphicsState();
+      }
+    }
+    return;
+  }
 
   if(MODERN){
   // ── KOPF: Absender dezent + Datum rechts, großer Titel, Meta-Zeile ──

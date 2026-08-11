@@ -1604,6 +1604,12 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                 </div>
               </div>
 
+              <!-- BUCHHALTUNG (bei Bedarf zuschaltbar) -->
+              <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:1.1rem;margin-bottom:1.25rem">
+                <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:.85rem">📒 Buchhaltung</div>
+                <div id="od-buha-karte"></div>
+              </div>
+
               <!-- ANSCHREIBEN ZU DIESEM OBJEKT -->
               <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:1.1rem;margin-bottom:1.25rem">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.85rem">
@@ -1779,7 +1785,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
             </div>
 
             <!-- ── WEG: BUCHHALTUNG (pro WEG + Untergemeinschaft) ── -->
-            <div id="tab-content-buchhaltung" style="display:none">
+            <div id="tab-content-buchhaltung" style="display:none;padding-bottom:4.5rem">
               <div style="display:flex;justify-content:space-between;align-items:center;gap:.75rem;flex-wrap:wrap;margin-bottom:1rem">
                 <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
                   <span style="font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)">Buchungskreis</span>
@@ -1789,12 +1795,13 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                 <select id="buha-jahr" onchange="buhaReload()" style="border:1px solid var(--border);border-radius:8px;padding:.45rem .7rem;font-size:.84rem;font-family:var(--ff);background:var(--white);outline:none"></select>
               </div>
               <!-- Tabs (Hausgeld ist ein eigenes Cockpit-Modul, daher hier KEIN Hausgeld-Tab) -->
-              <div id="buha-tabbar" style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:1.1rem;flex-wrap:wrap">
+              <div id="buha-tabbar" style="display:flex;gap:.1rem;flex-wrap:wrap;justify-content:center;position:fixed;left:0;right:0;bottom:0;z-index:900;background:var(--white);border-top:2px solid var(--border);box-shadow:0 -2px 14px rgba(0,0,0,.10);padding:.3rem .6rem;margin:0">
                 <button type="button" id="buha-tab-buchen" onclick="buhaTab('buchen')" style="background:none;border:none;border-bottom:2px solid var(--p);margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;font-weight:700;color:var(--p);font-family:var(--ff)"><span class="btn-ic" data-icon="pencil"></span> Buchungen</button>
                 <button type="button" id="buha-tab-op" onclick="buhaTab('op')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:var(--ff)"><span class="btn-ic" data-icon="users"></span> Debitoren/Kreditoren</button>
                 <button type="button" id="buha-tab-konten" onclick="buhaTab('konten')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:var(--ff)"><span class="btn-ic" data-icon="bookopen"></span> Kontenrahmen</button>
                 <button type="button" id="buha-tab-ausw" onclick="buhaTab('ausw')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:var(--ff)"><span class="btn-ic" data-icon="barchart"></span> Auswertungen</button>
                 <button type="button" id="buha-tab-import" onclick="buhaTab('import')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:var(--ff)"><span class="btn-ic" data-icon="download"></span> DATEV-Import</button>
+                <button type="button" id="buha-tab-gewinn" onclick="buhaTab('gewinn')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:var(--ff)">📈 Gewinn</button>
                 <button type="button" id="buha-tab-audit" onclick="buhaTab('audit')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:var(--ff)"><span class="btn-ic" data-icon="shield"></span> Audit</button>
               </div>
               <!-- TAB: BUCHEN -->
@@ -1903,6 +1910,27 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                 <div id="buha-konten" style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow-x:auto"></div>
               </div>
               <!-- TAB: AUSWERTUNGEN -->
+              <!-- TAB: GEWINNERMITTLUNG -->
+              <div id="buha-pane-gewinn" style="display:none">
+                <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:.9rem">
+                  <span style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Zeitraum</span>
+                  <select id="gew-jahr" onchange="renderGewinn()" style="border:1px solid var(--border);border-radius:8px;padding:.45rem .7rem;font-size:.84rem;font-family:var(--ff);background:var(--white)"></select>
+                  <label style="display:flex;align-items:center;gap:.35rem;font-size:.8rem;color:var(--text);cursor:pointer">
+                    <input type="checkbox" id="gew-vergleich" onchange="renderGewinn()"> Vorjahr vergleichen
+                  </label>
+                  <div style="margin-left:auto;display:flex;gap:.5rem;flex-wrap:wrap">
+                    <button class="btn-small" onclick="gewinnPdf('vorschau')"><span class="btn-ic" data-icon="file"></span> PDF-Vorschau</button>
+                    <button class="btn-small gruen" onclick="gewinnPdf('download')"><span class="btn-ic" data-icon="download"></span> PDF</button>
+                    <button class="btn-small grau" onclick="gewinnCsv()"><span class="btn-ic" data-icon="download"></span> CSV</button>
+                  </div>
+                </div>
+                <div id="gew-content"></div>
+                <div style="font-size:.72rem;color:var(--muted);margin-top:.8rem;line-height:1.6">
+                  Einnahmen-Überschuss-Rechnung nach § 4 Abs. 3 EStG: Erträge abzüglich Aufwendungen des gewählten Wirtschaftsjahres.
+                  Grundlage sind die gebuchten Erlös- und Aufwandskonten. Abschreibungen und private Anteile sind nicht automatisch berücksichtigt.
+                </div>
+              </div>
+
               <div id="buha-pane-ausw" style="display:none">
                 <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:.9rem">
                   <select id="ausw-typ" onchange="renderAuswertungen()" style="border:1px solid var(--border);border-radius:8px;padding:.45rem .7rem;font-size:.84rem;font-family:var(--ff);background:var(--white);outline:none">
@@ -3828,6 +3856,21 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
     </div>
 
 
+    <!-- BUCHHALTUNGS-COCKPIT (Mietverwaltung) -->
+    <div id="page-buha-cockpit" style="display:none">
+      <div style="padding:1.5rem 2rem 5.5rem">
+        <div onclick="closeBuhaCockpit()" style="font-size:.8rem;color:var(--muted);cursor:pointer;margin-bottom:.75rem;display:inline-block">← Zurück zum Objekt</div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:.75rem;margin-bottom:1.25rem">
+          <div>
+            <h1 style="font-size:1.6rem;font-weight:800;letter-spacing:-.01em;display:flex;align-items:center;gap:.5rem">📒 Buchhaltung</h1>
+            <div id="buhac-objekt" style="font-size:.85rem;color:var(--muted);margin-top:.25rem"></div>
+          </div>
+          <div id="buhac-kpis" style="display:flex;gap:.6rem;flex-wrap:wrap"></div>
+        </div>
+        <div id="buhac-content"></div>
+      </div>
+    </div>
+
     <!-- IMPRESSUM & DATENSCHUTZ -->
     <div id="page-impressum" style="display:none">
       <div class="page-wrap" style="margin:0" style="max-width:720px;margin:0">
@@ -4290,7 +4333,7 @@ function showPage(name){
   if(name==='stammdaten'){name='einstellungen';_profilTab='stammdaten';}
   else if(name==='tokens'){name='einstellungen';_profilTab='abo';}
   var allPages=['tool','abrechnung','archiv','mahnwesen','stammdaten','anschreiben','kunden','tokens','tarife','auftraege',
-    'einstellungen','heizkostenerstellen','impressum','welcome','bearbeitungsnotizen',
+    'einstellungen','heizkostenerstellen','impressum','welcome','bearbeitungsnotizen','buha-cockpit',
     'adminpanel','dashboard','hausverwalter','eigentuemer','objekte','weg','weg-cockpit','mieter','objekt-detail','kontakte','dokumente','buchhaltung'];
 
   var adminVisible=document.getElementById('admin-menu').style.display!=='none';
@@ -10416,6 +10459,255 @@ async function deleteFeedback(id){
 var buha={objektId:null, jahr:null, ug:'', ugListe:[], konten:[], buchungen:[], vorlagen:[], steuer:[], sort:{col:'buchungsdatum',dir:-1}};
 function buhaEuro(n){return (parseFloat(n)||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';}
 
+// ══════════════════════════════════════════════════════════════════════════
+//  BUCHHALTUNGS-COCKPIT für Mietobjekte
+//  Das Buchhaltungsmodul ist bereits objektbezogen (ladeBuchhaltung(objId)) –
+//  es war bisher nur über das WEG-Cockpit erreichbar. Hier wird derselbe
+//  Knoten für ein Mietobjekt eingebettet. Aktivierung je Objekt über
+//  objekte.buchhaltung_aktiv.
+// ══════════════════════════════════════════════════════════════════════════
+var _buhaCockpitObj=null;
+async function buchhaltungAktivieren(objId){
+  objId=objId||(aktivesObjekt&&aktivesObjekt.id);
+  if(!objId||!currentUser)return;
+  try{
+    var r=await sb.from('objekte').update({buchhaltung_aktiv:true}).eq('id',objId).eq('user_id',currentUser.id);
+    if(r.error)throw r.error;
+    if(aktivesObjekt&&aktivesObjekt.id===objId)aktivesObjekt.buchhaltung_aktiv=true;
+    showToast('✅ Buchhaltung für dieses Objekt aktiviert');
+    renderObjektBuchhaltungKarte();
+    openBuhaCockpit(objId);
+  }catch(e){ showToast('⚠️ Fehler: '+(e.message||e)); }
+}
+async function buchhaltungDeaktivieren(objId){
+  objId=objId||(aktivesObjekt&&aktivesObjekt.id);
+  if(!objId)return;
+  appConfirm({icon:'📒',title:'Buchhaltung ausblenden?',
+    message:'Die erfassten Buchungen bleiben erhalten und erscheinen wieder, sobald du die Buchhaltung erneut aktivierst.',
+    buttons:[{label:'Abbrechen',style:'background:var(--bg);color:var(--text)'},
+             {label:'Ausblenden',style:'background:var(--p);color:#fff',onClick:async function(){
+               try{
+                 var r=await sb.from('objekte').update({buchhaltung_aktiv:false}).eq('id',objId).eq('user_id',currentUser.id);
+                 if(r.error)throw r.error;
+                 if(aktivesObjekt&&aktivesObjekt.id===objId)aktivesObjekt.buchhaltung_aktiv=false;
+                 showToast('Buchhaltung ausgeblendet');
+                 renderObjektBuchhaltungKarte();
+               }catch(e){ showToast('⚠️ Fehler: '+(e.message||e)); }
+             }}]});
+}
+// Karte in der Objektansicht: aktivieren oder öffnen
+function renderObjektBuchhaltungKarte(){
+  var box=document.getElementById('od-buha-karte'); if(!box)return;
+  var o=aktivesObjekt; if(!o){box.innerHTML='';return;}
+  if(o.buchhaltung_aktiv){
+    box.innerHTML='<div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">'
+      +'<div style="flex:1;min-width:180px"><div style="font-size:.86rem;font-weight:700">Buchhaltung aktiv</div>'
+      +'<div style="font-size:.78rem;color:var(--muted)">Buchungen, Auswertungen und Gewinnermittlung für dieses Objekt.</div></div>'
+      +'<button class="btn-primary" style="font-size:.82rem" onclick="openBuhaCockpit()"><span class="btn-ic" data-icon="inbox"></span> Buchhaltung öffnen</button>'
+      +'<button class="btn-small grau" onclick="buchhaltungDeaktivieren()" title="Aus der Objektansicht ausblenden">Ausblenden</button>'
+      +'</div>';
+  }else{
+    box.innerHTML='<div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">'
+      +'<div style="flex:1;min-width:180px"><div style="font-size:.86rem;font-weight:700">Buchhaltung für dieses Objekt</div>'
+      +'<div style="font-size:.78rem;color:var(--muted)">Einnahmen und Ausgaben erfassen und daraus die Gewinnermittlung erstellen.</div></div>'
+      +'<button class="btn-primary" style="font-size:.82rem" onclick="buchhaltungAktivieren()">+ Buchhaltung hinzufügen</button>'
+      +'</div>';
+  }
+  if(typeof applyIcons==='function')applyIcons(box);
+}
+// Cockpit öffnen: Buchhaltungsknoten einbetten und Daten laden
+async function openBuhaCockpit(objId){
+  var o=null;
+  if(objId&&(!aktivesObjekt||aktivesObjekt.id!==objId)){
+    try{ var r=await sb.from('objekte').select('*').eq('id',objId).maybeSingle(); o=r.data; }catch(e){}
+  }
+  o=o||aktivesObjekt;
+  if(!o){showToast('Bitte zuerst ein Objekt öffnen.');return;}
+  _buhaCockpitObj=o; aktivesObjekt=o;
+  showPage('buha-cockpit');
+  var titel=document.getElementById('buhac-objekt');
+  if(titel)titel.textContent=[o.name,[o.plz,o.ort].filter(Boolean).join(' ')].filter(Boolean).join(' · ');
+  var c=document.getElementById('buhac-content'); if(!c)return;
+  var node=document.getElementById('tab-content-buchhaltung');
+  if(!node){c.innerHTML='<div style="color:#c0392b;font-size:.85rem">Buchhaltungs-Modul nicht gefunden.</div>';return;}
+  if(!_buhaHomeParent)_buhaHomeParent=node.parentNode;
+  c.innerHTML=''; c.appendChild(node); node.style.display='block';
+  var tb=document.getElementById('buha-tabbar'); if(tb)tb.style.display='flex';
+  try{ await ladeBuchhaltung(o.id); }catch(e){ console.warn('buha load:',e); }
+  try{ buhaTab('buchen'); }catch(e){}
+  renderBuhaCockpitKpis();
+}
+function closeBuhaCockpit(){
+  // Knoten an seinen ursprünglichen Platz zurückschieben, sonst fehlt er anderswo
+  var node=document.getElementById('tab-content-buchhaltung');
+  if(node&&_buhaHomeParent&&node.parentNode!==_buhaHomeParent){ _buhaHomeParent.appendChild(node); node.style.display='none'; }
+  var o=_buhaCockpitObj;
+  if(o&&typeof openObjektDetail==='function')openObjektDetail(o.id);
+  else showPage('objekte');
+}
+// Kennzahlen im Cockpit-Kopf
+function renderBuhaCockpitKpis(){
+  var box=document.getElementById('buhac-kpis'); if(!box)return;
+  var g=gewinnBerechnen(buha.jahr);
+  var kpi=function(label,wert,farbe){
+    return '<div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:.5rem .9rem;text-align:right;min-width:120px">'
+      +'<div style="font-size:.64rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">'+label+'</div>'
+      +'<div style="font-size:1rem;font-weight:800;color:'+(farbe||'var(--text)')+'">'+buhaEuro(wert)+'</div></div>';
+  };
+  box.innerHTML=kpi('Einnahmen '+(buha.jahr||''),g.sumEin,'#1a7a4a')
+    +kpi('Ausgaben',g.sumAus,'#c0392b')
+    +kpi('Ergebnis',g.ergebnis,g.ergebnis>=0?'#1a7a4a':'#c0392b');
+}
+
+// ── Gewinnermittlung (EÜR) ──────────────────────────────────────────────
+// Erträge minus Aufwendungen des Wirtschaftsjahres, je Konto aufgeschlüsselt.
+function gewinnBerechnen(jahr){
+  var typByNr={},nameByNr={};
+  (buha.konten||[]).forEach(function(k){typByNr[k.nummer]=k.typ;nameByNr[k.nummer]=k.name;});
+  var agg={};
+  (buha.buchungen||[]).forEach(function(b){
+    if(b.storniert||b.ist_storno)return;
+    if(jahr&&b.wirtschaftsjahr&&parseInt(b.wirtschaftsjahr,10)!==parseInt(jahr,10))return;
+    var betrag=parseFloat(b.betrag)||0;
+    [[b.soll_konto,'soll'],[b.haben_konto,'haben']].forEach(function(p){
+      if(!p[0])return;
+      if(!agg[p[0]])agg[p[0]]={soll:0,haben:0};
+      agg[p[0]][p[1]]+=betrag;
+    });
+  });
+  var ein=[],aus=[],sumEin=0,sumAus=0;
+  Object.keys(agg).sort(function(a,b){return String(a).localeCompare(String(b),undefined,{numeric:true});}).forEach(function(nr){
+    var a=agg[nr],t=typByNr[nr];
+    if(t==='ertrag'){ var v=a.haben-a.soll; if(Math.abs(v)>0.004){sumEin+=v;ein.push({nr:nr,name:nameByNr[nr]||'',betrag:v});} }
+    else if(t==='aufwand'){ var w=a.soll-a.haben; if(Math.abs(w)>0.004){sumAus+=w;aus.push({nr:nr,name:nameByNr[nr]||'',betrag:w});} }
+  });
+  return {jahr:jahr,ein:ein,aus:aus,sumEin:sumEin,sumAus:sumAus,ergebnis:sumEin-sumAus};
+}
+function _gewJahre(){
+  var js={};
+  (buha.buchungen||[]).forEach(function(b){ if(b.wirtschaftsjahr)js[parseInt(b.wirtschaftsjahr,10)]=1; });
+  if(buha.jahr)js[parseInt(buha.jahr,10)]=1;
+  return Object.keys(js).map(Number).sort(function(a,b){return b-a;});
+}
+function renderGewinn(){
+  var sel=document.getElementById('gew-jahr'), c=document.getElementById('gew-content');
+  if(!c)return;
+  var jahre=_gewJahre();
+  if(sel){
+    var cur=sel.value||buha.jahr;
+    sel.innerHTML=jahre.map(function(j){return '<option value="'+j+'">Wirtschaftsjahr '+j+'</option>';}).join('');
+    if(cur&&jahre.indexOf(parseInt(cur,10))>=0)sel.value=cur; else if(jahre.length)sel.value=jahre[0];
+  }
+  var jahr=parseInt((sel&&sel.value)||buha.jahr,10);
+  var g=gewinnBerechnen(jahr);
+  var vergleich=(document.getElementById('gew-vergleich')||{}).checked;
+  var v=vergleich?gewinnBerechnen(jahr-1):null;
+  buha._gewLetzte={g:g,v:v,jahr:jahr};
+
+  if(!g.ein.length&&!g.aus.length){
+    c.innerHTML='<div style="padding:2.5rem;text-align:center;color:var(--muted);font-size:.86rem">'
+      +'Für '+jahr+' sind noch keine Erlös- oder Aufwandsbuchungen erfasst.<br>'
+      +'<span style="font-size:.78rem">Buche im Reiter „Buchen" Einnahmen und Ausgaben – die Gewinnermittlung entsteht daraus automatisch.</span></div>';
+    renderBuhaCockpitKpis();
+    return;
+  }
+  var vg=function(betrag,liste){
+    if(!v)return '';
+    var alt=(liste||[]).filter(function(x){return x.nr===betrag.nr;})[0];
+    var d=betrag.betrag-(alt?alt.betrag:0);
+    var col=d>0?'#1a7a4a':(d<0?'#c0392b':'var(--muted)');
+    return '<span style="min-width:110px;text-align:right;color:'+col+';font-size:.78rem">'+(d>0?'+':'')+buhaEuro(d)+'</span>';
+  };
+  var zeile=function(x,liste){
+    return '<div style="display:flex;justify-content:space-between;gap:.5rem;padding:.38rem .9rem;border-bottom:1px solid #f5f5f7">'
+      +'<span style="color:var(--muted);min-width:58px;font-variant-numeric:tabular-nums">'+escapeHtml(x.nr)+'</span>'
+      +'<span style="flex:1;min-width:0">'+escapeHtml(x.name)+'</span>'
+      +'<span style="min-width:110px;text-align:right;font-variant-numeric:tabular-nums">'+buhaEuro(x.betrag)+'</span>'
+      +vg(x,liste)+'</div>';
+  };
+  var kopf=function(t,farbe,summe,altSumme){
+    return '<div style="display:flex;justify-content:space-between;gap:.5rem;padding:.45rem .9rem;background:var(--bg);font-weight:700;color:'+farbe+'">'
+      +'<span style="flex:1">'+t+'</span>'
+      +'<span style="min-width:110px;text-align:right">'+buhaEuro(summe)+'</span>'
+      +(v?'<span style="min-width:110px;text-align:right;font-size:.78rem;color:var(--muted)">Vj. '+buhaEuro(altSumme)+'</span>':'')
+      +'</div>';
+  };
+  var erg=g.ergebnis, ergCol=erg>=0?'#1a7a4a':'#c0392b';
+  c.innerHTML='<div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--white)">'
+    +'<div style="padding:.7rem .9rem;font-weight:700;border-bottom:1px solid var(--border)">Gewinnermittlung '+jahr
+      +(_buhaCockpitObj?' · '+escapeHtml(_buhaCockpitObj.name||''):'')+'</div>'
+    +kopf('Einnahmen','#1a7a4a',g.sumEin,v?v.sumEin:0)
+    +g.ein.map(function(x){return zeile(x,v&&v.ein);}).join('')
+    +kopf('Ausgaben','#c0392b',g.sumAus,v?v.sumAus:0)
+    +g.aus.map(function(x){return zeile(x,v&&v.aus);}).join('')
+    +'<div style="display:flex;justify-content:space-between;gap:.5rem;padding:.8rem .9rem;background:var(--p-light);font-weight:800;font-size:1.02rem">'
+      +'<span style="flex:1">'+(erg>=0?'Überschuss':'Fehlbetrag')+'</span>'
+      +'<span style="min-width:110px;text-align:right;color:'+ergCol+'">'+buhaEuro(erg)+'</span>'
+      +(v?'<span style="min-width:110px;text-align:right;font-size:.8rem;color:var(--muted)">Vj. '+buhaEuro(v.ergebnis)+'</span>':'')
+    +'</div></div>';
+  renderBuhaCockpitKpis();
+}
+function gewinnCsv(){
+  var d=buha._gewLetzte; if(!d){showToast('Bitte zuerst die Gewinnermittlung öffnen.');return;}
+  var zeilen=[['Art','Konto','Bezeichnung','Betrag']];
+  d.g.ein.forEach(function(x){zeilen.push(['Einnahme',x.nr,x.name,x.betrag.toFixed(2)]);});
+  d.g.aus.forEach(function(x){zeilen.push(['Ausgabe',x.nr,x.name,x.betrag.toFixed(2)]);});
+  zeilen.push(['Summe Einnahmen','','',d.g.sumEin.toFixed(2)]);
+  zeilen.push(['Summe Ausgaben','','',d.g.sumAus.toFixed(2)]);
+  zeilen.push(['Ergebnis','','',d.g.ergebnis.toFixed(2)]);
+  var csv=zeilen.map(function(r){return r.map(function(f){return '"'+String(f).replace(/"/g,'""')+'"';}).join(';');}).join('\r\n');
+  var blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='Gewinnermittlung_'+String((_buhaCockpitObj&&_buhaCockpitObj.name)||'Objekt').replace(/[^a-zA-Z0-9]+/g,'_')+'_'+d.jahr+'.csv';
+  a.click(); URL.revokeObjectURL(a.href);
+}
+function gewinnPdf(action){
+  var d=buha._gewLetzte; if(!d){showToast('Bitte zuerst die Gewinnermittlung öffnen.');return;}
+  try{
+    var {jsPDF}=window.jspdf;
+    var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    var W=210,L=18,R=18,y=22;
+    var sm=stammdaten||{};
+    var eur=function(n){return (n||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' EUR';};
+    var sf=function(sz,st,r,g2,b){doc.setFontSize(sz);doc.setFont('helvetica',st||'normal');doc.setTextColor(r==null?35:r,g2==null?35:g2,b==null?40:b);};
+    sf(8,'normal',130,130,135);
+    doc.text([sm.firma||((sm.vname&&sm.nname)?sm.vname+' '+sm.nname:'')].filter(Boolean).join(''),L,y);
+    doc.text(new Date().toLocaleDateString('de-DE'),W-R,y,{align:'right'});
+    y+=10; sf(15,'bold',25,25,30); doc.text('Einnahmen-Überschuss-Rechnung',L,y);
+    y+=7; sf(10,'normal',80,80,85);
+    doc.text('Wirtschaftsjahr '+d.jahr+((_buhaCockpitObj&&_buhaCockpitObj.name)?' · '+_buhaCockpitObj.name:''),L,y);
+    y+=10;
+    var block=function(titel,rows,summe,farbe){
+      if(y>255){doc.addPage();y=22;}
+      sf(10,'bold',farbe[0],farbe[1],farbe[2]); doc.text(titel,L,y); y+=5;
+      sf(9,'normal',60,60,65);
+      rows.forEach(function(x){
+        if(y>272){doc.addPage();y=22;}
+        doc.text(String(x.nr),L,y);
+        doc.text(String(x.name||''),L+18,y,{maxWidth:110});
+        doc.text(eur(x.betrag),W-R,y,{align:'right'});
+        y+=5;
+      });
+      doc.setDrawColor(210,210,214); doc.setLineWidth(.3); doc.line(L,y-1.5,W-R,y-1.5);
+      sf(10,'bold',35,35,40); doc.text('Summe '+titel,L,y+2.5); doc.text(eur(summe),W-R,y+2.5,{align:'right'});
+      y+=11;
+    };
+    block('Einnahmen',d.g.ein,d.g.sumEin,[26,122,74]);
+    block('Ausgaben',d.g.aus,d.g.sumAus,[192,57,43]);
+    if(y>258){doc.addPage();y=22;}
+    doc.setDrawColor(120,120,125); doc.setLineWidth(.6); doc.line(L,y-2,W-R,y-2);
+    sf(12,'bold',35,35,40);
+    doc.text(d.g.ergebnis>=0?'Überschuss':'Fehlbetrag',L,y+5);
+    doc.text(eur(d.g.ergebnis),W-R,y+5,{align:'right'});
+    y+=16; sf(7.5,'normal',130,130,135);
+    var hinweis='Ermittlung nach § 4 Abs. 3 EStG auf Grundlage der gebuchten Erlös- und Aufwandskonten. '
+      +'Abschreibungen, private Anteile und periodenfremde Abgrenzungen sind nicht automatisch berücksichtigt. Ohne Gewähr.';
+    doc.text(doc.splitTextToSize(hinweis,W-L-R),L,y);
+    var fname='Gewinnermittlung_'+String((_buhaCockpitObj&&_buhaCockpitObj.name)||'Objekt').replace(/[^a-zA-Z0-9]+/g,'_')+'_'+d.jahr+'.pdf';
+    if(typeof showDoc==='function')showDoc(doc,fname,action||'vorschau'); else doc.save(fname);
+  }catch(e){ console.error('gewinnPdf:',e); showToast('⚠️ PDF-Fehler: '+(e.message||e)); }
+}
+
 async function ladeBuchhaltung(objId){
   if(!currentUser)return;
   // ── Tastatursteuerung (einmalig) ──
@@ -10499,13 +10791,14 @@ async function buhaReload(){
 }
 
 function buhaTab(t){
-  ['buchen','hausgeld','op','konten','ausw','import','audit'].forEach(function(x){
+  ['buchen','hausgeld','op','konten','ausw','gewinn','import','audit'].forEach(function(x){
     var pane=document.getElementById('buha-pane-'+x); if(pane)pane.style.display=(x===t?'block':'none');
     var btn=document.getElementById('buha-tab-'+x);
     if(btn){var on=x===t;btn.style.color=on?'var(--p)':'var(--muted)';btn.style.fontWeight=on?'700':'400';btn.style.borderBottomColor=on?'var(--p)':'transparent';}
   });
   if(t==='audit')renderBuhaAudit();
   if(t==='ausw')renderAuswertungen();
+  if(t==='gewinn')renderGewinn();
   if(t==='hausgeld')ladeHausgeld();
   if(t==='op')ladeOP();
   if(t==='import'){var kr=document.getElementById('buha-imp-kreis');if(kr){var ug=(buha.ugListe||[]).filter(function(u){return u.id===buha.ug;})[0];kr.textContent=ug?ug.name:'Gesamt-WEG';}}
@@ -15785,7 +16078,7 @@ async function openObjektDetail(objId,opts){
     // Show page - use global showPage
     currentPageName='objekt-detail';
     var allP=['tool','abrechnung','archiv','mahnwesen','stammdaten','anschreiben','kunden','tokens',
-      'einstellungen','heizkostenerstellen','impressum','welcome','bearbeitungsnotizen',
+      'einstellungen','heizkostenerstellen','impressum','welcome','bearbeitungsnotizen','buha-cockpit',
       'adminpanel','dashboard','objekte','weg','weg-cockpit','mieter','objekt-detail','kontakte'];
     allP.forEach(function(p){
       var el=document.getElementById('page-'+p);
@@ -15806,6 +16099,7 @@ async function openObjektDetail(objId,opts){
       loadObjektAbrechnungen(objId).catch(function(e){console.warn('abr:',e);}),
       odLadeAnschreiben(objId).catch(function(e){console.warn('anschreiben:',e);}),
     ]);
+    try{ renderObjektBuchhaltungKarte(); }catch(e){ console.warn('buha-karte:',e); }
     applyObjektTypTabs();
     try{loadObjektUebersichtTab(objId);}catch(e){console.warn('uebersicht:',e);}
     try{loadSollIstChart(objId);}catch(e){console.warn('sollist:',e);}

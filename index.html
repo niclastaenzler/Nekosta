@@ -2603,7 +2603,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
           <h1 style="font-size:1.5rem;font-weight:700">Meine Abrechnungen</h1>
           <button class="btn-primary" onclick="startNeueAbrechnung()" style="display:flex;align-items:center;gap:.35rem"><span>+</span> Neue Abrechnung</button>
         </div>
-        <div id="kunden-content"><div class="empty-state"><div class="empty-icon">📄</div>Noch keine Abrechnungen vorhanden.</div></div>
+        <div id="kunden-content"><div class="empty-state"><div class="empty-icon">📄</div>Noch keine Abrechnungen vorhanden.<br><span style="font-size:.78rem">Fragen: info@nekosta.de</span></div></div>
       </div>
     </div>
     <div id="page-stammdaten" style="display:none">
@@ -3128,13 +3128,6 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
 
 
     <!-- KUNDEN -->
-    <div id="page-kunden" style="display:none">
-      <div style="padding:2rem">
-        <div class="page-header"><div class="page-title">📄 Meine Abrechnungen</div><div class="page-sub">Ihre Nebenkostenabrechnungen im Überblick</div></div>
-        <div id="kunden-content"><div class="empty-state"><div class="empty-icon">📄</div>Noch keine Abrechnungen vorhanden.<br><span style="font-size:.78rem">Fragen: info@nekosta.de</span></div></div>
-      </div>
-    </div>
-
     <!-- EINSTELLUNGEN -->
     <div id="page-einstellungen" style="display:none">
       <div style="padding:2rem;max-width:720px">
@@ -4347,6 +4340,7 @@ function showPage(name){
   }
   if(name==='auftraege'){loadAuftraege();}
   if(name==='dokumente'){loadDokumente();}
+  if(name==='heizkostenerstellen'&&typeof hkInit==='function')hkInit();
   if(name==='anschreiben'){
     if(typeof loadBriefbogen==='function'){loadBriefbogen().then(function(){renderBriefbogenPreview();});}else if(typeof renderBriefbogenPreview==='function'){renderBriefbogenPreview();}
     // Objekte, Platzhalter-Chips und gespeicherte Anschreiben bereitstellen
@@ -9152,7 +9146,9 @@ function anschrSpeichereLayout(){
   anschrBriefpapierStatus();
   anschrRenderPosVorschau();
 }
+var _anschrLayoutGeladen=false;
 function anschrLadeLayout(){
+  _anschrLayoutGeladen=true;
   try{
     var raw=localStorage.getItem(_anschrLayoutKey());
     if(raw){
@@ -9930,6 +9926,9 @@ function _anschrZerlege(text){
 // DIN 5008: Anschriftfeld, Informationsblock (Datum), Betreff und Text an den
 // genormten Positionen – passend für Fensterumschläge DIN lang.
 async function _anschrPdfAusTexten(briefe,fname,action){
+  // Gespeicherte Briefpapier-/Positionseinstellungen sicherstellen – ein PDF kann
+  // auch aus der Objektansicht erzeugt werden, ohne dass die Seite je offen war.
+  if(!_anschrLayoutGeladen&&typeof anschrLadeLayout==='function'){ try{anschrLadeLayout();}catch(e){} }
   if(_anschrLayoutModus()!=='einfach')return _anschrPdfDin(briefe,fname,action);
   return _anschrPdfEinfach(briefe,fname,action);
 }
@@ -10066,6 +10065,143 @@ async function _anschrPdfEinfach(briefe,fname,action){
     }
   });
   if(typeof showDoc==='function')showDoc(doc,fname,action||'vorschau'); else doc.save(fname);
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  HEIZKOSTENABRECHNUNG (HeizkV)
+//  Die Seite war vollständig gestaltet, aber ohne Logik – die Eingaben und
+//  Schaltflächen riefen nicht vorhandene Funktionen auf.
+//  Heiz- und Warmwasserkosten werden getrennt in Grundkosten (nach Fläche)
+//  und Verbrauchskosten (nach Wärmemenge) aufgeteilt; § 7 HeizkV erlaubt
+//  50–70 % nach Verbrauch.
+// ══════════════════════════════════════════════════════════════════════════
+function hkZeileHtml(name,flaeche,kwhHeiz,kwhWW,vz){
+  var inp='style="width:100%;border:1px solid var(--border);border-radius:6px;padding:.3rem .45rem;font-size:.82rem;font-family:var(--ff);background:var(--white);outline:none"';
+  var num='type="number" step="0.01" oninput="hkBerechnen()" '+inp+' ';
+  return '<tr class="hk-row" style="border-bottom:1px solid var(--border)">'
+    +'<td style="padding:.35rem .5rem"><input type="text" class="hk-name" value="'+escapeHtml(name||'')+'" placeholder="z. B. Whg. EG links" oninput="hkBerechnen()" '+inp+'></td>'
+    +'<td style="padding:.35rem .5rem"><input class="hk-fl"   '+num+'value="'+(flaeche||'')+'" style="text-align:right"></td>'
+    +'<td style="padding:.35rem .5rem"><input class="hk-kwh"  '+num+'value="'+(kwhHeiz||'')+'" style="text-align:right"></td>'
+    +'<td style="padding:.35rem .5rem"><input class="hk-kwhww" '+num+'value="'+(kwhWW||'')+'" style="text-align:right"></td>'
+    +'<td style="padding:.35rem .5rem"><input class="hk-vz"   '+num+'value="'+(vz||'')+'" style="text-align:right"></td>'
+    +'<td style="padding:.35rem .3rem;text-align:center">'
+      +'<button onclick="this.closest(\'tr\').remove();hkBerechnen()" title="Zeile entfernen" '
+      +'style="border:none;background:none;color:#c0392b;cursor:pointer;font-size:1rem;line-height:1">×</button></td>'
+    +'</tr>';
+}
+function addHKWohn(name,flaeche,kwhHeiz,kwhWW,vz){
+  var tb=document.getElementById('hk-wohn-tbody'); if(!tb)return;
+  tb.insertAdjacentHTML('beforeend',hkZeileHtml(name,flaeche,kwhHeiz,kwhWW,vz));
+}
+// Beim Öffnen der Seite: leere Tabelle mit ein paar Zeilen vorbereiten
+function hkInit(){
+  var tb=document.getElementById('hk-wohn-tbody'); if(!tb)return;
+  if(!tb.querySelector('tr')){ for(var i=0;i<3;i++)addHKWohn(); }
+  var j=document.getElementById('hk-jahr');
+  if(j&&!j.value)j.value=new Date().getFullYear()-1;
+}
+// Wohneinheiten aus dem Formular lesen
+function hkGetZeilen(){
+  return Array.from(document.querySelectorAll('#hk-wohn-tbody .hk-row')).map(function(tr,i){
+    var g=function(sel){return (tr.querySelector(sel)||{value:''}).value;};
+    return {name:(g('.hk-name')||'').trim()||('Einheit '+(i+1)),
+            fl:parseNum(g('.hk-fl')), kwh:parseNum(g('.hk-kwh')),
+            kwhww:parseNum(g('.hk-kwhww')), vz:parseNum(g('.hk-vz'))};
+  }).filter(function(z){return z.fl>0||z.kwh>0||z.kwhww>0||z.vz>0;});
+}
+function hkBerechnen(){
+  var card=document.getElementById('hk-ergebnis-card');
+  var out=document.getElementById('hk-einzel-ergebnis');
+  if(!out)return;
+  var kostenHeiz=parseNum((document.getElementById('hk-gesamtkosten')||{value:''}).value);
+  var kostenWW  =parseNum((document.getElementById('hk-ww-kosten')||{value:''}).value);
+  var flAnteil  =(parseFloat((document.getElementById('hk-verteilung')||{value:'30'}).value)||30)/100;
+  var zeilen=hkGetZeilen();
+  if(!zeilen.length||(kostenHeiz<=0&&kostenWW<=0)){ if(card)card.style.display='none'; return; }
+
+  var sumFl   =zeilen.reduce(function(s,z){return s+z.fl;},0);
+  var sumKwh  =zeilen.reduce(function(s,z){return s+z.kwh;},0);
+  var sumKwhWW=zeilen.reduce(function(s,z){return s+z.kwhww;},0);
+
+  // Grund- und Verbrauchsanteil je Kostenart
+  var grundHeiz=kostenHeiz*flAnteil, verbrHeiz=kostenHeiz-grundHeiz;
+  var grundWW  =kostenWW  *flAnteil, verbrWW  =kostenWW  -grundWW;
+  var eur=function(n){return (n||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';};
+  var q=function(teil,summe){return summe>0?(teil/summe):0;};
+
+  var rows=zeilen.map(function(z){
+    var grund=grundHeiz*q(z.fl,sumFl)+grundWW*q(z.fl,sumFl);
+    var verbr=verbrHeiz*q(z.kwh,sumKwh)+verbrWW*q(z.kwhww,sumKwhWW);
+    var gesamt=grund+verbr, vzJahr=z.vz*12;
+    return {z:z,grund:grund,verbr:verbr,gesamt:gesamt,vzJahr:vzJahr,saldo:vzJahr-gesamt};
+  });
+
+  // Kennzahlen oben
+  var setTxt=function(id,t){var el=document.getElementById(id); if(el)el.textContent=t;};
+  setTxt('hk-res-gesamt',eur(kostenHeiz+kostenWW));
+  setTxt('hk-res-flaeche',eur(grundHeiz+grundWW));
+  setTxt('hk-res-verbrauch',eur(verbrHeiz+verbrWW));
+  setTxt('hk-res-waerme',(sumKwh+sumKwhWW).toLocaleString('de-DE')+' kWh');
+
+  // Plausibilitätshinweise – lieber warnen als still falsch rechnen
+  var warn=[];
+  var flObj=parseNum((document.getElementById('hk-gesamtflaeche')||{value:''}).value);
+  if(flObj>0&&sumFl>0&&Math.abs(flObj-sumFl)>0.5)
+    warn.push('Die Summe der Einzelflächen ('+sumFl.toLocaleString('de-DE')+' m²) weicht von der Gesamtwohnfläche ('+flObj.toLocaleString('de-DE')+' m²) ab.');
+  var kwhObj=parseNum((document.getElementById('hk-waerme-gesamt')||{value:''}).value);
+  if(kwhObj>0&&(sumKwh+sumKwhWW)>0&&Math.abs(kwhObj-(sumKwh+sumKwhWW))>1)
+    warn.push('Die Summe der Einzelverbräuche ('+(sumKwh+sumKwhWW).toLocaleString('de-DE')+' kWh) weicht von der Gesamtwärmemenge ('+kwhObj.toLocaleString('de-DE')+' kWh) ab.');
+  var wwObj=parseNum((document.getElementById('hk-ww-waerme')||{value:''}).value);
+  if(wwObj>0&&sumKwhWW>0&&Math.abs(wwObj-sumKwhWW)>1)
+    warn.push('Die Summe der Warmwasser-Verbräuche ('+sumKwhWW.toLocaleString('de-DE')+' kWh) weicht von der Angabe oben ('+wwObj.toLocaleString('de-DE')+' kWh) ab.');
+  if(verbrHeiz>0&&sumKwh<=0)  warn.push('Es sind keine Heizungs-Verbräuche erfasst – die Verbrauchskosten der Heizung können nicht verteilt werden.');
+  if(verbrWW>0&&sumKwhWW<=0)  warn.push('Es sind keine Warmwasser-Verbräuche erfasst – diese Verbrauchskosten können nicht verteilt werden.');
+  if(sumFl<=0)                warn.push('Es sind keine Flächen erfasst – die Grundkosten können nicht verteilt werden.');
+
+  var th=function(t,r){return '<th style="text-align:'+(r?'right':'left')+';padding:.5rem .6rem;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1px solid var(--border)">'+t+'</th>';};
+  var html='';
+  if(warn.length){
+    html+='<div style="background:#fdf6ec;border:1px solid #f0c987;border-radius:8px;padding:.7rem .9rem;margin-bottom:.9rem;font-size:.8rem;color:#8a5a00;line-height:1.6">⚠️ '
+      +warn.map(escapeHtml).join('<br>')+'</div>';
+  }
+  html+='<table style="width:100%;border-collapse:collapse;font-size:.82rem;min-width:640px"><thead><tr>'
+    +th('Wohneinheit')+th('Fläche m²',1)+th('Grundkosten',1)+th('Verbrauchskosten',1)
+    +th('Gesamt',1)+th('Vorauszahlung',1)+th('Nachzahlung / Guthaben',1)+'</tr></thead><tbody>';
+  rows.forEach(function(r,i){
+    var pos=r.saldo>=0;
+    html+='<tr style="border-bottom:1px solid #f5f5f7;background:'+(i%2?'#faf8ff':'transparent')+'">'
+      +'<td style="padding:.4rem .6rem">'+escapeHtml(r.z.name)+'</td>'
+      +'<td style="padding:.4rem .6rem;text-align:right;color:var(--muted)">'+r.z.fl.toLocaleString('de-DE')+'</td>'
+      +'<td style="padding:.4rem .6rem;text-align:right">'+eur(r.grund)+'</td>'
+      +'<td style="padding:.4rem .6rem;text-align:right">'+eur(r.verbr)+'</td>'
+      +'<td style="padding:.4rem .6rem;text-align:right;font-weight:700">'+eur(r.gesamt)+'</td>'
+      +'<td style="padding:.4rem .6rem;text-align:right;color:var(--muted)">'+eur(r.vzJahr)+'</td>'
+      +'<td style="padding:.4rem .6rem;text-align:right;font-weight:700;color:'+(pos?'#1a7a4a':'#c0392b')+'">'
+        +(pos?'+':'')+eur(r.saldo)+'<br><span style="font-size:.68rem;font-weight:400">'+(pos?'Guthaben':'Nachzahlung')+'</span></td>'
+      +'</tr>';
+  });
+  var sG=rows.reduce(function(s,r){return s+r.gesamt;},0);
+  var sV=rows.reduce(function(s,r){return s+r.vzJahr;},0);
+  html+='</tbody><tfoot><tr style="border-top:2px solid var(--border);font-weight:700">'
+    +'<td style="padding:.5rem .6rem">Summe</td>'
+    +'<td style="padding:.5rem .6rem;text-align:right">'+sumFl.toLocaleString('de-DE')+'</td>'
+    +'<td style="padding:.5rem .6rem;text-align:right">'+eur(grundHeiz+grundWW)+'</td>'
+    +'<td style="padding:.5rem .6rem;text-align:right">'+eur(verbrHeiz+verbrWW)+'</td>'
+    +'<td style="padding:.5rem .6rem;text-align:right">'+eur(sG)+'</td>'
+    +'<td style="padding:.5rem .6rem;text-align:right">'+eur(sV)+'</td>'
+    +'<td style="padding:.5rem .6rem;text-align:right">'+eur(sV-sG)+'</td>'
+    +'</tr></tfoot></table>';
+  out.innerHTML=html;
+  if(card)card.style.display='block';
+}
+function hkReset(){
+  ['hk-objekt','hk-gesamtflaeche','hk-gesamtkosten','hk-ww-kosten','hk-waerme-gesamt','hk-ww-waerme']
+    .forEach(function(id){var el=document.getElementById(id); if(el)el.value='';});
+  var v=document.getElementById('hk-verteilung'); if(v)v.value='30';
+  var tb=document.getElementById('hk-wohn-tbody'); if(tb)tb.innerHTML='';
+  for(var i=0;i<3;i++)addHKWohn();
+  var card=document.getElementById('hk-ergebnis-card'); if(card)card.style.display='none';
+  showToast('↺ Heizkostenabrechnung zurückgesetzt');
 }
 
 // ── STAMMDATEN CHECK ──

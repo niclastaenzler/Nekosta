@@ -2657,32 +2657,10 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
       <div style="padding:2rem;max-width:820px">
         <div class="page-header"><div class="page-title">✉️ Anschreiben erstellen</div><div class="page-sub">Professionelle Briefe an Mieter in Sekunden generieren</div></div>
 
-        <!-- BRIEFBOGEN (A4-Vorlage) -->
+        <!-- SCHRITT 1: EMPFÄNGER AUS DEM DATENBESTAND -->
         <div class="card">
-          <div class="card-title">📄 Eigener Briefbogen (A4-Vorlage)</div>
-          <div style="font-size:.82rem;color:var(--muted);margin-bottom:1rem">Lade dein Briefpapier als ganzseitiges A4-Bild (PNG/JPG, Hochformat) hoch. Es wird als Hintergrund hinter den Brieftext gelegt; der Text beginnt automatisch unterhalb des Kopfbereichs.</div>
-          <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-start">
-            <div style="flex:1;min-width:240px">
-              <input type="file" id="briefbogen-file" accept="image/png,image/jpeg" onchange="handleBriefbogenUpload(this)" style="font-size:.84rem;font-family:var(--ff)">
-              <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.8rem">
-                <button class="btn-secondary" onclick="downloadBriefbogenBeispiel()" style="font-size:.8rem"><span class="btn-ic" data-icon="download"></span> NEKOSTA-Beispiel herunterladen</button>
-                <button class="btn-secondary" onclick="entferneBriefbogen()" id="briefbogen-remove-btn" style="font-size:.8rem;display:none;color:#c0392b;border-color:#c0392b"><span class="btn-ic" data-icon="trash"></span> Briefbogen entfernen</button>
-              </div>
-              <div id="briefbogen-msg" style="display:none;margin-top:.7rem;font-size:.8rem;padding:.45rem .7rem;border-radius:6px"></div>
-              <div style="font-size:.72rem;color:var(--muted);margin-top:.7rem">💡 In deinem Konto gespeichert (geräteübergreifend). Empfohlen: A4 Hochformat, mind. 1240 × 1754 px.</div>
-            </div>
-            <div style="width:150px">
-              <div id="briefbogen-preview" style="border:1px dashed var(--border);border-radius:10px;height:212px;display:flex;align-items:center;justify-content:center;background:var(--bg);overflow:hidden">
-                <span style="font-size:.75rem;color:var(--muted);text-align:center;padding:.5rem">Kein Briefbogen<br>hinterlegt</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- EMPFÄNGER AUS DEM DATENBESTAND -->
-        <div class="card">
-          <div class="card-title">👥 Empfänger wählen</div>
-          <div style="font-size:.82rem;color:var(--muted);margin-bottom:1rem">Objekt auswählen – die Mietparteien werden automatisch aus deinen Daten geladen. Name, Anrede, Einheit und Anschrift werden für jeden Brief eingesetzt.</div>
+          <div class="card-title">① Objekt &amp; Mietparteien wählen</div>
+          <div style="font-size:.82rem;color:var(--muted);margin-bottom:1rem">Objekt auswählen – die Mietverhältnisse werden automatisch geladen. Anrede, Name, Einheit und Anschrift setzt NEKOSTA für jeden Brief ein.</div>
           <div style="display:grid;grid-template-columns:1fr auto;gap:.7rem;align-items:end;margin-bottom:.9rem">
             <div class="field"><label>Objekt</label>
               <select id="anschr-objekt-select" onchange="anschrObjektGewaehlt()">
@@ -2702,13 +2680,18 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
           <div id="anschr-empf-leer" style="font-size:.82rem;color:var(--muted);padding:.85rem;border:1px dashed var(--border);border-radius:10px">Noch kein Objekt gewählt – du kannst die Empfängerdaten alternativ unten von Hand eintragen.</div>
         </div>
 
-        <!-- VORLAGE WÄHLEN -->
+        <!-- SCHRITT 2: VORLAGE -->
         <div class="card">
-          <div class="card-title">📋 Vorlage wählen</div>
+          <div class="card-title">② Art des Schreibens</div>
           <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.75rem;margin-bottom:.25rem">
-            <div onclick="setAnschrVorlage('nk')" id="vorlage-nk" style="border:2px solid var(--p);border-radius:10px;padding:.85rem;cursor:pointer;background:var(--p-light)">
+            <div onclick="setAnschrVorlage('info')" id="vorlage-info" style="border:2px solid var(--p);border-radius:10px;padding:.85rem;cursor:pointer;background:var(--p-light)">
+              <div style="font-size:1.2rem;margin-bottom:.3rem">✍️</div>
+              <div style="font-size:.85rem;font-weight:700;color:var(--p)">Freier Text</div>
+              <div style="font-size:.72rem;color:var(--muted)">Eigenes Anschreiben / Mitteilung</div>
+            </div>
+            <div onclick="setAnschrVorlage('nk')" id="vorlage-nk" style="border:2px solid var(--border);border-radius:10px;padding:.85rem;cursor:pointer">
               <div style="font-size:1.2rem;margin-bottom:.3rem">📄</div>
-              <div style="font-size:.85rem;font-weight:700;color:var(--p)">Nebenkostenabrechnung</div>
+              <div style="font-size:.85rem;font-weight:700">Nebenkostenabrechnung</div>
               <div style="font-size:.72rem;color:var(--muted)">Nachzahlung oder Guthaben</div>
             </div>
             <div onclick="setAnschrVorlage('mahnung')" id="vorlage-mahnung" style="border:2px solid var(--border);border-radius:10px;padding:.85rem;cursor:pointer">
@@ -2721,29 +2704,30 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
               <div style="font-size:.85rem;font-weight:700">Vorauszahlungsänderung</div>
               <div style="font-size:.72rem;color:var(--muted)">Anpassung ab nächstem Monat</div>
             </div>
-            <div onclick="setAnschrVorlage('info')" id="vorlage-info" style="border:2px solid var(--border);border-radius:10px;padding:.85rem;cursor:pointer">
-              <div style="font-size:1.2rem;margin-bottom:.3rem">ℹ️</div>
-              <div style="font-size:.85rem;font-weight:700">Allgemeines Anschreiben</div>
-              <div style="font-size:.72rem;color:var(--muted)">Freier Text / Mitteilung</div>
-            </div>
           </div>
         </div>
 
-        <!-- FELDER -->
+        <!-- SCHRITT 3: INHALT -->
         <div class="card">
-          <div class="card-title">✏️ Angaben</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-bottom:.7rem">
-            <div class="field"><label>Anrede Mieter</label>
-              <select id="anschr-anrede"><option value="Sehr geehrter Herr">Sehr geehrter Herr</option><option value="Sehr geehrte Frau">Sehr geehrte Frau</option><option value="Sehr geehrte Eheleute">Sehr geehrte Eheleute</option><option value="Sehr geehrte Damen und Herren">Sehr geehrte Damen und Herren</option></select>
+          <div class="card-title">③ Inhalt</div>
+          <!-- Empfängerdaten von Hand: nur nötig, wenn oben kein Objekt gewählt wurde -->
+          <details id="anschr-manuell-box" style="margin-bottom:.9rem;border:1px solid var(--border);border-radius:10px;padding:.6rem .8rem;background:var(--bg)">
+            <summary style="cursor:pointer;font-size:.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Empfängerdaten von Hand <span id="anschr-manuell-hint" style="font-weight:400;text-transform:none;letter-spacing:0"></span></summary>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-top:.8rem">
+              <div class="field"><label>Anrede Mieter</label>
+                <select id="anschr-anrede"><option value="Sehr geehrter Herr">Sehr geehrter Herr</option><option value="Sehr geehrte Frau">Sehr geehrte Frau</option><option value="Sehr geehrte Eheleute">Sehr geehrte Eheleute</option><option value="Sehr geehrte Damen und Herren">Sehr geehrte Damen und Herren</option></select>
+              </div>
+              <div class="field"><label>Name Mieter</label><input type="text" id="anschr-mieter" placeholder="Mustermann"></div>
+              <div class="field"><label>Wohneinheit</label><input type="text" id="anschr-wohnung" placeholder="Whg. EG links"></div>
+              <div class="field"><label>Objekt / Adresse</label><input type="text" id="anschr-objekt" placeholder="Musterstr. 10, Euskirchen"></div>
             </div>
-            <div class="field"><label>Name Mieter</label><input type="text" id="anschr-mieter" placeholder="Mustermann"></div>
-            <div class="field"><label>Wohneinheit</label><input type="text" id="anschr-wohnung" placeholder="Whg. EG links"></div>
-            <div class="field"><label>Objekt / Adresse</label><input type="text" id="anschr-objekt" placeholder="Musterstr. 10, Euskirchen"></div>
+          </details>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-bottom:.7rem">
             <div class="field"><label>Abrechnungsjahr</label><input type="number" id="anschr-jahr" value="2024"></div>
             <div class="field"><label>Datum des Schreibens</label><input type="date" id="anschr-datum"></div>
           </div>
           <!-- NK-spezifisch -->
-          <div id="anschr-nk-felder">
+          <div id="anschr-nk-felder" style="display:none">
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.7rem;margin-bottom:.7rem">
               <div class="field"><label>Ergebnis</label>
                 <select id="anschr-ergebnis"><option value="nachzahlung">Nachzahlung</option><option value="guthaben">Guthaben/Erstattung</option></select>
@@ -2776,7 +2760,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
             </div>
           </div>
           <!-- Freier Brief (Vorlage „Allgemeines Anschreiben") -->
-          <div id="anschr-info-felder" style="display:none">
+          <div id="anschr-info-felder">
             <div class="field" style="margin-bottom:.7rem"><label>Betreff</label>
               <input type="text" id="anschr-betreff" placeholder="z. B. Information zur Nebenkostenabrechnung">
             </div>
@@ -2816,7 +2800,8 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
             <button class="btn-small grau" onclick="anschrVorschauNav(1)">→</button>
             <span id="anschr-nav-empf" style="font-size:.78rem;color:var(--muted);margin-left:auto"></span>
           </div>
-          <div id="anschr-text" style="font-family:var(--ff);font-size:.9rem;line-height:1.9;white-space:pre-wrap;background:var(--white);border-radius:8px;padding:2rem;border:1px solid var(--border);min-height:200px"></div>
+          <div style="font-size:.76rem;color:var(--muted);margin-bottom:.4rem">✏️ Der Text ist direkt bearbeitbar – Änderungen landen im PDF und beim Speichern. „PDF-Vorschau" zeigt das fertige DIN-5008-Layout.</div>
+          <textarea id="anschr-text" oninput="anschrTextBearbeitet()" spellcheck="true" style="font-family:var(--ff);font-size:.9rem;line-height:1.7;background:var(--white);border-radius:8px;padding:1.5rem;border:1px solid var(--border);min-height:340px;width:100%;resize:vertical;outline:none"></textarea>
         </div>
 
         <!-- GESPEICHERTE ANSCHREIBEN -->
@@ -2839,6 +2824,72 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
             </tr></thead>
             <tbody id="anschr-gs-tbody"><tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--muted);font-size:.85rem">Wird geladen…</td></tr></tbody>
           </table></div>
+        </div>
+
+        <!-- BRIEFPAPIER & LAYOUT (Einstellungen) -->
+        <div class="card">
+          <details>
+            <summary style="cursor:pointer;list-style:none">
+              <span class="card-title" style="margin:0;display:inline-flex">⚙️ Briefpapier &amp; Layout</span>
+              <span style="font-size:.78rem;color:var(--muted);margin-left:.5rem" id="anschr-bp-status"></span>
+            </summary>
+            <div style="margin-top:1rem">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-bottom:1.2rem">
+                <div class="field"><label>Briefpapier</label>
+                  <select id="anschr-briefpapier" onchange="anschrSpeichereLayout()">
+                    <option value="auto">Automatisch (Briefbogen, sonst Briefkopf)</option>
+                    <option value="bogen">Briefbogen (ganzseitiges A4-Bild)</option>
+                    <option value="kopf">Eigener Briefkopf (Kopfbereich)</option>
+                    <option value="ohne">Ohne – nur Absenderzeile</option>
+                  </select>
+                </div>
+                <div class="field"><label>Layout</label>
+                  <select id="anschr-layout" onchange="anschrSpeichereLayout()">
+                    <option value="dinB">DIN 5008 Form B (Briefkopf, Anschrift ab 45 mm)</option>
+                    <option value="dinA">DIN 5008 Form A (kleiner Kopf, Anschrift ab 27 mm)</option>
+                    <option value="einfach">Einfach (fortlaufender Text wie bisher)</option>
+                  </select>
+                </div>
+              </div>
+              <div style="font-size:.72rem;color:var(--muted);margin-bottom:1.2rem">💡 DIN 5008 setzt Anschrift, Datum und Betreff an die genormten Positionen – passend für Fensterumschläge (DIN lang). Form B lässt oben Platz für deinen Briefkopf.</div>
+
+              <div style="border-top:1px solid var(--border);padding-top:1.1rem">
+                <div style="font-size:.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem">Briefbogen (ganzseitiges A4-Bild)</div>
+                <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-start">
+                  <div style="flex:1;min-width:240px">
+                    <input type="file" id="briefbogen-file" accept="image/png,image/jpeg" onchange="handleBriefbogenUpload(this)" style="font-size:.84rem;font-family:var(--ff)">
+                    <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.8rem">
+                      <button class="btn-secondary" onclick="downloadBriefbogenBeispiel()" style="font-size:.8rem"><span class="btn-ic" data-icon="download"></span> NEKOSTA-Beispiel</button>
+                      <button class="btn-secondary" onclick="entferneBriefbogen()" id="briefbogen-remove-btn" style="font-size:.8rem;display:none;color:#c0392b;border-color:#c0392b"><span class="btn-ic" data-icon="trash"></span> Entfernen</button>
+                    </div>
+                    <div id="briefbogen-msg" style="display:none;margin-top:.7rem;font-size:.8rem;padding:.45rem .7rem;border-radius:6px"></div>
+                    <div style="font-size:.72rem;color:var(--muted);margin-top:.7rem">💡 Im Konto gespeichert. Empfohlen: A4 Hochformat, mind. 1240 × 1754 px.</div>
+                  </div>
+                  <div style="width:130px">
+                    <div id="briefbogen-preview" style="border:1px dashed var(--border);border-radius:10px;height:184px;display:flex;align-items:center;justify-content:center;background:var(--bg);overflow:hidden">
+                      <span style="font-size:.72rem;color:var(--muted);text-align:center;padding:.5rem">Kein Briefbogen<br>hinterlegt</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div style="border-top:1px solid var(--border);padding-top:1.1rem;margin-top:1.1rem">
+                <div style="font-size:.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem">Eigener Briefkopf (nur Kopfbereich)</div>
+                <div style="font-size:.8rem;color:var(--muted);margin-bottom:.7rem">Wird oben auf der Seite eingefügt; die Anschrift bleibt an der DIN-Position darunter. Verwaltet unter <b>Stammdaten</b>.</div>
+                <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-start">
+                  <div style="flex:1;min-width:240px">
+                    <input type="file" id="anschr-briefkopf-file" accept="image/png,image/jpeg" onchange="handleBriefkopfUpload(this)" style="font-size:.84rem;font-family:var(--ff)">
+                    <div id="anschr-briefkopf-msg" style="display:none;margin-top:.7rem;font-size:.8rem;padding:.45rem .7rem;border-radius:6px"></div>
+                  </div>
+                  <div style="width:200px">
+                    <div id="anschr-briefkopf-preview" style="border:1px dashed var(--border);border-radius:10px;min-height:70px;display:flex;align-items:center;justify-content:center;background:var(--bg);overflow:hidden">
+                      <span style="font-size:.72rem;color:var(--muted);text-align:center;padding:.5rem">Kein Briefkopf<br>hinterlegt</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </details>
         </div>
       </div>
     </div>
@@ -4229,6 +4280,9 @@ function showPage(name){
     if(typeof anschrLadeObjekte==='function')anschrLadeObjekte();
     if(typeof anschrInitPlatzhalter==='function')anschrInitPlatzhalter();
     if(typeof anschrLadeGespeicherte==='function')anschrLadeGespeicherte();
+    if(typeof anschrLadeLayout==='function')anschrLadeLayout();
+    if(typeof renderBriefkopfPreview==='function')renderBriefkopfPreview();
+    if(typeof anschrAktualisiereZaehler==='function')anschrAktualisiereZaehler();
   }
 }
 
@@ -4453,20 +4507,23 @@ async function loadStammdaten(){
   }catch(e){}
 }
 function renderBriefkopfPreview(){
-  var prev=document.getElementById('briefkopf-preview'); var rm=document.getElementById('briefkopf-remove-btn');
-  if(!prev)return;
-  if(stammdaten&&stammdaten.briefkopf){
-    prev.innerHTML='<img src="'+stammdaten.briefkopf+'" style="max-width:100%;max-height:160px;display:block">';
-    if(rm)rm.style.display='inline-block';
-  }else{
-    prev.innerHTML='<span style="font-size:.8rem;color:var(--muted)">Kein Briefkopf hinterlegt</span>';
-    if(rm)rm.style.display='none';
-  }
+  var rm=document.getElementById('briefkopf-remove-btn');
+  var hat=!!(stammdaten&&stammdaten.briefkopf);
+  // Vorschau auf der Stammdaten-Seite UND im Anschreiben-Modul aktualisieren
+  ['briefkopf-preview','anschr-briefkopf-preview'].forEach(function(id){
+    var prev=document.getElementById(id); if(!prev)return;
+    prev.innerHTML=hat
+      ?'<img src="'+stammdaten.briefkopf+'" style="max-width:100%;max-height:160px;display:block">'
+      :'<span style="font-size:.8rem;color:var(--muted)">Kein Briefkopf hinterlegt</span>';
+  });
+  if(rm)rm.style.display=hat?'inline-block':'none';
+  if(typeof anschrBriefpapierStatus==='function')anschrBriefpapierStatus();
 }
 function handleBriefkopfUpload(input){
   var file=input.files&&input.files[0]; if(!file)return;
-  var msg=document.getElementById('briefkopf-msg');
-  var show=function(t,ok){if(msg){msg.textContent=t;msg.style.background=ok?'#eaf7ef':'#fdf0ef';msg.style.color=ok?'#1a7a4a':'#c0392b';msg.style.display='block';}};
+  // Meldung in beiden Oberflächen anzeigen (Stammdaten + Anschreiben)
+  var msgs=['briefkopf-msg','anschr-briefkopf-msg'].map(function(id){return document.getElementById(id);}).filter(Boolean);
+  var show=function(t,ok){msgs.forEach(function(m){m.textContent=t;m.style.background=ok?'#eaf7ef':'#fdf0ef';m.style.color=ok?'#1a7a4a':'#c0392b';m.style.display='block';});};
   if(file.size>4*1024*1024){show('Datei zu groß (max. 4 MB).',false);return;}
   var reader=new FileReader();
   reader.onload=function(ev){
@@ -8575,7 +8632,7 @@ async function downloadAsZip(periods,withWatermark,zipName){
 }
 
 // ── ANSCHREIBEN ──
-var aktuelleVorlage='nk';
+var aktuelleVorlage='info';
 
 function setAnschrVorlage(v){
   aktuelleVorlage=v;
@@ -8606,7 +8663,7 @@ function resetAnschreiben(){
   anschrEmpfaenger=[]; anschrAktualisiereZaehler();
 }
 function kopierenAnschreiben(){
-  var txt=document.getElementById('anschr-text').textContent;
+  var txt=_anschrTextGet();
   navigator.clipboard.writeText(txt).then(function(){showToast('📋 Anschreiben kopiert!');});
 }
 
@@ -8668,7 +8725,7 @@ function generiereAnschreiben(emp){
   var _out=function(t){
     t=anschrPlatzhalter(t,emp);
     if(emp)return t;
-    document.getElementById('anschr-text').textContent=t;
+    _anschrTextSet(t);
     document.getElementById('anschr-preview').style.display='block';
     return t;
   };
@@ -8989,9 +9046,64 @@ function anschrAuswahlListe(){
   return anschrEmpfaenger.filter(function(e){return anschrAuswahl[e.id];});
 }
 function anschrAktualisiereZaehler(){
-  var c=document.getElementById('anschr-empf-count'); if(!c)return;
   var n=anschrAuswahlListe().length;
-  c.textContent=n===0?'Keine Auswahl':(n===1?'1 Mietpartei ausgewählt':n+' Mietparteien ausgewählt');
+  var c=document.getElementById('anschr-empf-count');
+  if(c)c.textContent=n===0?'Keine Auswahl':(n===1?'1 Mietpartei ausgewählt':n+' Mietparteien ausgewählt');
+  // Manuelle Empfängerfelder nur hervorheben, wenn keine Auswahl getroffen wurde
+  var hint=document.getElementById('anschr-manuell-hint');
+  if(hint)hint.textContent=n>0?'– nicht nötig, '+(n===1?'1 Empfänger':n+' Empfänger')+' ausgewählt':'– nur nötig ohne Objektauswahl';
+  var box=document.getElementById('anschr-manuell-box');
+  if(box&&n>0)box.open=false;
+}
+
+// ── Vorschau-Text: die Vorschau ist eine Textarea und damit bearbeitbar ─
+function _anschrTextGet(){ var el=document.getElementById('anschr-text'); return el?(el.value||''):''; }
+function _anschrTextSet(t){ var el=document.getElementById('anschr-text'); if(el)el.value=t||''; }
+// Nutzer hat den Text bearbeitet → Änderung dem angezeigten Brief zuordnen
+function anschrTextBearbeitet(){
+  if(!anschrBriefe.length)anschrBriefe=[{emp:null,text:''}];
+  var i=Math.min(Math.max(anschrVorschauIdx,0),anschrBriefe.length-1);
+  anschrBriefe[i].text=_anschrTextGet();
+  anschrBriefe[i].bearbeitet=true;
+}
+
+// ── Briefpapier & Layout ────────────────────────────────────────────────
+function _anschrLayoutKey(){return 'nekosta-anschr-layout-'+((typeof currentUser!=='undefined'&&currentUser)?currentUser.id:'anon');}
+function anschrSpeichereLayout(){
+  try{ localStorage.setItem(_anschrLayoutKey(),JSON.stringify({
+    bp:(document.getElementById('anschr-briefpapier')||{value:'auto'}).value,
+    ly:(document.getElementById('anschr-layout')||{value:'dinB'}).value
+  })); }catch(e){}
+  anschrBriefpapierStatus();
+}
+function anschrLadeLayout(){
+  try{
+    var raw=localStorage.getItem(_anschrLayoutKey()); if(!raw)return anschrBriefpapierStatus();
+    var o=JSON.parse(raw);
+    var bp=document.getElementById('anschr-briefpapier'); if(bp&&o.bp)bp.value=o.bp;
+    var ly=document.getElementById('anschr-layout'); if(ly&&o.ly)ly.value=o.ly;
+  }catch(e){}
+  anschrBriefpapierStatus();
+}
+// Effektives Briefpapier: 'bogen' | 'kopf' | 'ohne'
+function _anschrBriefpapierModus(){
+  var w=(document.getElementById('anschr-briefpapier')||{value:'auto'}).value;
+  var hatBogen=!!(typeof getBriefbogen==='function'&&getBriefbogen());
+  var hatKopf=!!(stammdaten&&stammdaten.briefkopf);
+  if(w==='bogen')return hatBogen?'bogen':'ohne';
+  if(w==='kopf') return hatKopf ?'kopf' :'ohne';
+  if(w==='ohne') return 'ohne';
+  return hatBogen?'bogen':(hatKopf?'kopf':'ohne');   // auto
+}
+function _anschrLayoutModus(){
+  return (document.getElementById('anschr-layout')||{value:'dinB'}).value||'dinB';
+}
+function anschrBriefpapierStatus(){
+  var el=document.getElementById('anschr-bp-status'); if(!el)return;
+  var m=_anschrBriefpapierModus(), l=_anschrLayoutModus();
+  var mt={bogen:'Briefbogen',kopf:'Eigener Briefkopf',ohne:'ohne Briefpapier'}[m]||m;
+  var lt={dinB:'DIN 5008 Form B',dinA:'DIN 5008 Form A',einfach:'Einfaches Layout'}[l]||l;
+  el.textContent='– '+mt+' · '+lt;
 }
 
 // ── Platzhalter ─────────────────────────────────────────────────────────
@@ -9051,7 +9163,15 @@ function anschrFuegePlatzhalter(name){
 }
 
 // ── Briefe erzeugen ─────────────────────────────────────────────────────
-function anschrGenerieren(){
+function anschrGenerieren(force){
+  // Von Hand bearbeitete Texte nicht ungefragt überschreiben
+  if(!force&&anschrBriefe.some(function(b){return b.bearbeitet;})){
+    appConfirm({icon:'✏️',title:'Bearbeiteten Text verwerfen?',
+      message:'Du hast den Brieftext von Hand geändert.<br>Beim Neu-Erzeugen gehen diese Änderungen verloren.',
+      buttons:[{label:'Abbrechen',style:'background:var(--bg);color:var(--text)'},
+               {label:'Neu erzeugen',style:'background:var(--p);color:#fff',onClick:function(){anschrGenerieren(true);}}]});
+    return;
+  }
   var sel=anschrAuswahlListe();
   var nav=document.getElementById('anschr-nav');
   if(!sel.length){
@@ -9070,13 +9190,13 @@ function anschrGenerieren(){
   else showToast('✅ '+anschrBriefe.length+' Anschreiben erzeugt');
 }
 function anschrZeigeVorschau(){
-  var el=document.getElementById('anschr-text'), pv=document.getElementById('anschr-preview');
+  var pv=document.getElementById('anschr-preview');
   var nav=document.getElementById('anschr-nav'), info=document.getElementById('anschr-nav-info'), ne=document.getElementById('anschr-nav-empf');
   if(!anschrBriefe.length){ if(nav)nav.style.display='none'; return; }
   if(anschrVorschauIdx<0)anschrVorschauIdx=anschrBriefe.length-1;
   if(anschrVorschauIdx>=anschrBriefe.length)anschrVorschauIdx=0;
   var b=anschrBriefe[anschrVorschauIdx];
-  if(el)el.textContent=b.text;
+  _anschrTextSet(b.text);
   if(pv)pv.style.display='block';
   if(nav){
     nav.style.display=anschrBriefe.length>1?'flex':'none';
@@ -9089,7 +9209,7 @@ function anschrVorschauNav(d){ anschrVorschauIdx+=d; anschrZeigeVorschau(); }
 function anschrAktuelleBriefe(){
   if(!anschrBriefe.length)anschrGenerieren();
   if(!anschrBriefe.length){
-    var t=(document.getElementById('anschr-text')||{textContent:''}).textContent||'';
+    var t=_anschrTextGet();
     if(t.trim())return [{emp:null,text:t}];
   }
   return anschrBriefe;
@@ -9219,7 +9339,7 @@ function anschrOeffnen(id,alsKopie){
   anschrAktualisiereZaehler();
   // Gespeicherten Text unverändert anzeigen
   anschrBriefe=[{emp:null,text:a.inhalt||''}]; anschrVorschauIdx=0;
-  var el2=document.getElementById('anschr-text'); if(el2)el2.textContent=a.inhalt||'';
+  _anschrTextSet(a.inhalt||'');
   var pv=document.getElementById('anschr-preview'); if(pv)pv.style.display='block';
   var nav=document.getElementById('anschr-nav'); if(nav)nav.style.display='none';
   anschrEditId=alsKopie?null:a.id;
@@ -9266,21 +9386,136 @@ async function anschreibenPdf(action){
   await _anschrPdfAusTexten(briefe,nm+'.pdf',action||'vorschau');
 }
 
-// Gemeinsamer PDF-Renderer: je Brief eine neue Seite, Briefbogen auf jeder Seite.
-// Layout identisch zur bisherigen Einzelbrief-Ausgabe (x=20 mm, Breite 170 mm).
+// Zerlegt den erzeugten Brieftext in seine Bestandteile.
+// Erwartetes Format: Absenderzeilen · Leerzeile · "Ort, Datum" · Leerzeile · "Betreff: …" · Leerzeile · Rest.
+// Schlägt das fehl (z. B. nach starker Bearbeitung), wird alles als Fließtext behandelt.
+function _anschrZerlege(text){
+  var zeilen=String(text||'').split('\n');
+  var bi=-1;
+  for(var i=0;i<zeilen.length;i++){ if(/^Betreff:\s*/.test(zeilen[i])){bi=i;break;} }
+  if(bi<0)return {ok:false,body:String(text||'')};
+  var betreff=zeilen[bi].replace(/^Betreff:\s*/,'').trim();
+  // Datum = letzte nichtleere Zeile vor dem Betreff
+  var datum='',kopfEnde=bi;
+  for(var j=bi-1;j>=0;j--){ if(zeilen[j].trim()){datum=zeilen[j].trim();kopfEnde=j;break;} }
+  var absender=zeilen.slice(0,kopfEnde).filter(function(z){return z.trim();});
+  var body=zeilen.slice(bi+1).join('\n').replace(/^\n+/,'');
+  return {ok:true,absender:absender,datum:datum,betreff:betreff,body:body};
+}
+
+// Gemeinsamer PDF-Renderer.
+// DIN 5008: Anschriftfeld, Informationsblock (Datum), Betreff und Text an den
+// genormten Positionen – passend für Fensterumschläge DIN lang.
 async function _anschrPdfAusTexten(briefe,fname,action){
+  if(_anschrLayoutModus()!=='einfach')return _anschrPdfDin(briefe,fname,action);
+  return _anschrPdfEinfach(briefe,fname,action);
+}
+
+async function _anschrPdfDin(briefe,fname,action){
+  if(typeof loadBriefbogen==='function' && !_briefbogenLoaded){ try{await loadBriefbogen();}catch(e){} }
+  var {jsPDF}=window.jspdf;
+  var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  var modus=_anschrBriefpapierModus(), formA=_anschrLayoutModus()==='dinA';
+  var bogen=modus==='bogen'?getBriefbogen():null;
+  var kopf =modus==='kopf'?(stammdaten&&stammdaten.briefkopf):null;
+
+  // ── DIN-5008-Maße (mm) ──
+  var L=25, R=20, BREITE=210-L-R;          // Schreibbereich
+  var ANSCHRIFT_Y=formA?27:45;             // Oberkante Anschriftfeld
+  var RUECK_Y=ANSCHRIFT_Y+0.5;             // Rücksendeangabe (Zusatz-/Vermerkzone)
+  var ADR_Y=ANSCHRIFT_Y+5.8;               // erste Anschriftzeile
+  var INFO_Y=ANSCHRIFT_Y+5.8;              // Informationsblock rechts
+  var BETREFF_Y=formA?80.4:98.4;
+  var ZEILE=4.6, UNTEN=272;
+  var TEXT_Y=BETREFF_Y+2*ZEILE;            // Betreff + Leerzeile → DIN: 107,7 mm
+
+  var drawBogen=function(){
+    if(!bogen)return;
+    try{var f=/^data:image\/png/i.test(bogen)?'PNG':'JPEG';doc.addImage(bogen,f,0,0,210,297);}catch(e){}
+  };
+  // Briefkopf-Bild oben einpassen. Die Höhe wird so begrenzt, dass das Bild
+  // oberhalb des Anschriftfelds endet – sonst würde es die Anschrift überdecken.
+  var KOPF_TOP=8, KOPF_LUFT=4;
+  var drawKopf=function(){
+    if(!kopf)return;
+    try{
+      var pr=doc.getImageProperties(kopf);
+      var maxH=Math.max(10,ANSCHRIFT_Y-KOPF_TOP-KOPF_LUFT), maxW=BREITE;
+      var w=maxW, hh=w*(pr.height/pr.width);
+      if(hh>maxH){hh=maxH;w=hh*(pr.width/pr.height);}
+      var f=/png/i.test(kopf.slice(0,30))?'PNG':'JPEG';
+      doc.addImage(kopf,f,(210-w)/2,KOPF_TOP,w,hh);
+    }catch(e){}
+  };
+
+  var sm=stammdaten||{};
+  var rueckZeile=[sm.firma||((sm.vname&&sm.nname)?sm.vname+' '+sm.nname:''),sm.strasse,
+                  [sm.plz,sm.ort].filter(Boolean).join(' ')].filter(Boolean).join(' · ');
+
+  briefe.forEach(function(b,bi){
+    if(bi>0)doc.addPage();
+    drawBogen(); drawKopf();
+    var teile=_anschrZerlege(b.text);
+
+    // ── Anschriftfeld ──
+    var adr=(b.emp&&b.emp.adressZeilen&&b.emp.adressZeilen.length)?b.emp.adressZeilen.slice(0):[];
+    if(!adr.length){
+      // Manueller Betrieb: Empfänger aus den Formularfeldern
+      var nm=((document.getElementById('anschr-mieter')||{value:''}).value||'').trim();
+      var ob=((document.getElementById('anschr-objekt')||{value:''}).value||'').trim();
+      adr=[nm,ob].filter(Boolean);
+    }
+    // Rücksendeangabe klein über der Anschrift (nur ohne Briefbogen sinnvoll)
+    if(rueckZeile&&modus!=='bogen'){
+      doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(110,110,115);
+      doc.text(doc.splitTextToSize(rueckZeile,85)[0],L,RUECK_Y);
+    }
+    doc.setFont('helvetica','normal');doc.setFontSize(11);doc.setTextColor(20,20,25);
+    adr.slice(0,6).forEach(function(z,i){ doc.text(String(z),L,ADR_Y+i*ZEILE,{maxWidth:85}); });
+
+    // ── Informationsblock rechts (Ort, Datum) ──
+    if(teile.datum){
+      doc.setFontSize(10);
+      doc.text(String(teile.datum),210-R,INFO_Y,{align:'right'});
+      doc.setFontSize(11);
+    }
+
+    // ── Betreff (fett) ──
+    var y=BETREFF_Y;
+    if(teile.ok&&teile.betreff){
+      doc.setFont('helvetica','bold');
+      var bl=doc.splitTextToSize(teile.betreff,BREITE);
+      for(var k=0;k<bl.length;k++){ doc.text(bl[k],L,y); y+=ZEILE; }
+      doc.setFont('helvetica','normal');
+      y=Math.max(TEXT_Y,y+ZEILE);
+    } else { y=TEXT_Y; }
+
+    // ── Fließtext ──
+    var body=teile.ok?teile.body:String(b.text||'');
+    var lines=doc.splitTextToSize(body,BREITE);
+    for(var i2=0;i2<lines.length;i2++){
+      if(y>UNTEN){ doc.addPage(); drawBogen(); y=formA?27:35; }
+      doc.text(lines[i2],L,y); y+=ZEILE;
+    }
+  });
+  if(typeof showDoc==='function')showDoc(doc,fname,action||'vorschau'); else doc.save(fname);
+}
+
+// Bisheriges einfaches Layout (fortlaufender Text) – weiterhin wählbar.
+async function _anschrPdfEinfach(briefe,fname,action){
   // Briefbogen ggf. aus Storage nachladen (Cache füllen), damit er im PDF erscheint
   if(typeof loadBriefbogen==='function' && !_briefbogenLoaded){ try{await loadBriefbogen();}catch(e){} }
   var {jsPDF}=window.jspdf;
   var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-  // Ganzseitiger Briefbogen (A4-Vorlage) als Hintergrund – hat Vorrang vor dem Briefkopf-Bild
-  var bogen=getBriefbogen();
+  // Briefpapier nach Auswahl (auto/bogen/kopf/ohne)
+  var _m=_anschrBriefpapierModus();
+  var bogen=_m==='bogen'?getBriefbogen():null;
   var topMargin=bogen?70:24, bottomLimit=bogen?258:282;
   var drawBogen=function(){
     if(!bogen)return;
     try{var fmt=/^data:image\/png/i.test(bogen)?'PNG':'JPEG';doc.addImage(bogen,fmt,0,0,210,297);}catch(e){}
   };
-  var bk=!bogen && stammdaten && stammdaten.briefkopf;
+  var bk=_m==='kopf' && stammdaten && stammdaten.briefkopf;
   var drawKopf=function(){
     var y=topMargin;
     if(!bk)return y;

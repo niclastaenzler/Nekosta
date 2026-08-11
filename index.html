@@ -1693,7 +1693,16 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
             <div id="tab-content-einheiten" style="display:none">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
                 <h3 style="font-size:.9rem;font-weight:700">Einheiten &amp; Mietverhältnisse</h3>
-                <button class="btn-primary" style="font-size:.82rem;padding:.5rem 1rem" onclick="openEinheitModal()">+ Einheit hinzufügen</button>
+                <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+                  <label style="font-size:.72rem;color:var(--muted)">Sortierung</label>
+                  <select id="od-einheit-sort" onchange="setEinheitSort(this.value)" style="border:1px solid var(--border);border-radius:8px;padding:.35rem .55rem;font-size:.8rem;font-family:var(--ff);background:var(--white);outline:none">
+                    <option value="lage">Lage im Haus (EG → DG)</option>
+                    <option value="bezeichnung">Bezeichnung (A–Z)</option>
+                    <option value="flaeche">Fläche (größte zuerst)</option>
+                    <option value="miete">Kaltmiete (höchste zuerst)</option>
+                  </select>
+                  <button class="btn-primary" style="font-size:.82rem;padding:.5rem 1rem" onclick="openEinheitModal()">+ Einheit hinzufügen</button>
+                </div>
               </div>
               <div id="od-einheiten-list"><div style="color:var(--muted);font-size:.85rem;text-align:center;padding:2rem">Wird geladen...</div></div>
             </div>
@@ -3623,6 +3632,19 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
               <button onclick="schnellKontaktAnlegen()" style="background:var(--p);color:#fff;border:none;border-radius:8px;padding:.55rem .9rem;cursor:pointer;font-size:.82rem;font-family:var(--ff);white-space:nowrap;font-weight:600">+ Neu</button>
             </div>
             <div id="mv-kontakt-info" style="display:none;margin-top:.5rem;font-size:.78rem;color:var(--p);background:var(--p-light);border-radius:6px;padding:.35rem .6rem"></div>
+
+            <!-- Weitere Mieter desselben Mietvertrags (z. B. Ehepaar, WG) -->
+            <div style="margin-top:.85rem;border-top:1px solid var(--border);padding-top:.75rem">
+              <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.5rem">👥 Weitere Mieter im selben Vertrag</div>
+              <div id="mv-mitmieter-liste" style="margin-bottom:.5rem"></div>
+              <div style="display:flex;gap:.5rem;align-items:center">
+                <select id="mv-mitmieter-select" style="flex:1;border:1px solid var(--border);border-radius:8px;padding:.45rem .7rem;font-size:.84rem;font-family:var(--ff);background:var(--white);outline:none">
+                  <option value="">– Kontakt hinzufügen –</option>
+                </select>
+                <button onclick="mvMitmieterHinzufuegen()" style="background:var(--white);color:var(--p);border:1px solid var(--p);border-radius:8px;padding:.45rem .8rem;cursor:pointer;font-size:.8rem;font-family:var(--ff);white-space:nowrap;font-weight:600">+ Hinzufügen</button>
+              </div>
+              <div style="font-size:.7rem;color:var(--muted);margin-top:.45rem">Ein Mietvertrag, mehrere Personen – Miete und Vorauszahlungen werden nur einmal gezählt. Anschreiben gehen an alle gemeinsam.</div>
+            </div>
 
             <!-- Quick-Kontakt Panel -->
             <div id="mv-quick-kontakt" style="display:none;margin-top:.85rem;padding:.85rem;background:var(--white);border-radius:8px;border:1px solid var(--border)">
@@ -9000,7 +9022,7 @@ async function anschrLadeEmpfaenger(objektId){
   try{
     var er=await sb.from('einheiten').select('id,bezeichnung').eq('user_id',currentUser.id).eq('objekt_id',objektId).order('bezeichnung');
     einheiten=er.data||[];
-    var mr=await sb.from('mietverhaeltnisse').select('id,einheit_id,kontakt_id,aktiv,kontakte(anrede,vorname,nachname,strasse,plz,ort)')
+    var mr=await sb.from('mietverhaeltnisse').select('id,einheit_id,kontakt_id,aktiv,kontakte(anrede,vorname,nachname,strasse,plz,ort),mietverhaeltnis_mieter(kontakt_id,kontakte(anrede,vorname,nachname,strasse,plz,ort))')
              .eq('user_id',currentUser.id).eq('objekt_id',objektId).eq('aktiv',true);
     mvs=mr.data||[];
   }catch(e){ console.error('anschrLadeEmpfaenger (neu):',e); }
@@ -9011,8 +9033,14 @@ async function anschrLadeEmpfaenger(objektId){
   einheiten.forEach(function(e){
     var liste=mvByEinheit[e.id]||[];
     if(!liste.length)return;   // Leerstand → kein Empfänger
-    // Mehrere Mietverhältnisse auf derselben Einheit = eine Mietpartei mit mehreren Personen
-    var personen=liste.map(function(mv){return mv.kontakte||{};}).filter(function(k){return _anschrPersonName(k);});
+    // Eine Mietpartei = ein Mietvertrag; Hauptmieter plus weitere Mieter desselben
+    // Vertrags. Mehrere Verträge auf einer Einheit werden ebenfalls zusammengefasst.
+    var personen=[];
+    liste.forEach(function(mv){
+      if(mv.kontakte)personen.push(mv.kontakte);
+      (mv.mietverhaeltnis_mieter||[]).forEach(function(x){ if(x.kontakte)personen.push(x.kontakte); });
+    });
+    personen=personen.filter(function(k){return _anschrPersonName(k);});
     if(!personen.length)return;
     var k0=personen[0];
     // Eigene Anschrift des Kontakts hat Vorrang, sonst Objektadresse
@@ -9055,7 +9083,10 @@ async function anschrLadeEmpfaenger(objektId){
     });
   }catch(e){ console.error('anschrLadeEmpfaenger (alt):',e); }
 
-  anschrEmpfaenger.sort(function(a,b){return (a.einheitLabel||'').localeCompare(b.einheitLabel||'','de');});
+  // Nach Lage im Haus sortieren, nicht alphabetisch (sonst steht das EG hinten)
+  anschrEmpfaenger.sort(function(a,b){
+    return einheitVergleich({bezeichnung:a.einheitLabel||''},{bezeichnung:b.einheitLabel||''});
+  });
 }
 
 // ── Auswahl-UI ──────────────────────────────────────────────────────────
@@ -15105,6 +15136,53 @@ function showKontaktInfo(kontaktId){
   info.innerHTML=(k.email?'✉ '+k.email:'')+(k.telefon?' · 📞 '+k.telefon:'')+(k.strasse?' · '+k.strasse:'');
 }
 
+// ── Sortierung von Einheiten ────────────────────────────────────────────
+// Alphabetisch landet das Erdgeschoss hinter dem Dachgeschoss ("1. OG" <
+// "2. OG" < "DG" < "EG"). Deshalb Sortierung nach tatsächlicher Lage im Haus.
+function _einheitEtage(bez){
+  var b=(bez||'').toLowerCase();
+  if(/\b(kg|ug|keller|untergeschoss|souterrain)\b/.test(b))return -20;
+  if(/\b(eg|erdgeschoss|parterre)\b/.test(b))return 0;
+  if(/\bhochparterre\b/.test(b))return 0.5;
+  var m=/(\d+)\s*\.?\s*(og|obergeschoss|stock|etage)/.exec(b);
+  if(m)return parseInt(m[1],10);
+  if(/\b(dg|dachgeschoss|dach|mansarde)\b/.test(b))return 90;
+  if(/\b(spitzboden|spitzb)\b/.test(b))return 95;
+  return 50;   // Unbekanntes zwischen Obergeschossen und Dach
+}
+function _einheitSeite(bez){
+  var b=(bez||'').toLowerCase();
+  if(/\blinks\b/.test(b))return 0;
+  if(/\bmitte\b/.test(b))return 1;
+  if(/\brechts\b/.test(b))return 2;
+  return 3;
+}
+// Vergleichsfunktion: Etage, dann Seite, dann natürliche Zahlenfolge im Namen
+function einheitVergleich(a,b){
+  var ba=(a&&a.bezeichnung)||'', bb=(b&&b.bezeichnung)||'';
+  var d=_einheitEtage(ba)-_einheitEtage(bb); if(d)return d;
+  d=_einheitSeite(ba)-_einheitSeite(bb); if(d)return d;
+  return ba.localeCompare(bb,'de',{numeric:true,sensitivity:'base'});
+}
+// Sortierung der Einheitenliste im Objekt (vom Nutzer umschaltbar)
+var einheitSortModus=(function(){
+  try{ return localStorage.getItem('nekosta-einheit-sort')||'lage'; }catch(e){ return 'lage'; }
+})();
+function setEinheitSort(m){
+  einheitSortModus=m||'lage';
+  try{ localStorage.setItem('nekosta-einheit-sort',einheitSortModus); }catch(e){}
+  if(typeof aktivesObjekt!=='undefined'&&aktivesObjekt)loadObjektEinheiten(aktivesObjekt.id);
+}
+function einheitenSortieren(list){
+  var l=(list||[]).slice();
+  switch(einheitSortModus){
+    case 'bezeichnung': return l.sort(function(a,b){return (a.bezeichnung||'').localeCompare(b.bezeichnung||'','de',{numeric:true,sensitivity:'base'});});
+    case 'flaeche':     return l.sort(function(a,b){return (parseFloat(b.flaeche)||0)-(parseFloat(a.flaeche)||0);});
+    case 'miete':       return l.sort(function(a,b){return (parseFloat(b.kaltmiete)||0)-(parseFloat(a.kaltmiete)||0);});
+    default:            return l.sort(einheitVergleich);
+  }
+}
+
 // ── MIETVERHÄLTNISSE (Modal) ──
 async function openMietverhModal(einheitId,objektId,einheitBez,data){
   document.getElementById('mietverh-modal-title').textContent=data?'Mietverhältnis bearbeiten':'Neues Mietverhältnis';
@@ -15144,6 +15222,7 @@ async function openMietverhModal(einheitId,objektId,einheitBez,data){
   if(selEl){selEl.onchange=function(){showKontaktInfo(this.value);};}
   var qk=document.getElementById('mv-quick-kontakt');if(qk)qk.style.display='none';
   mvRecalcWarm();
+  await mvLadeMitmieter(data?data.id:null);
   mvLoadStaffeln(data?data.id:null);
   mvLoadEinnahmen(data?data.id:null);
   document.getElementById('mietverh-modal').style.display='flex';
@@ -15155,6 +15234,77 @@ function mvRecalcWarm(){
   if(el)el.textContent=w.toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
 }
 function closeMietverhModal(){document.getElementById('mietverh-modal').style.display='none';}
+
+// ── Weitere Mieter desselben Mietvertrags ───────────────────────────────
+// Ein Mietvertrag kann mehrere Personen haben (Ehepaar, WG). Miete und
+// Vorauszahlungen hängen am Vertrag und werden dadurch nur einmal gezählt.
+var _mvMitmieter=[];          // [{kontakt_id,name}] im Modal
+async function mvLadeMitmieter(mvId){
+  _mvMitmieter=[];
+  if(mvId&&currentUser){
+    try{
+      var r=await sb.from('mietverhaeltnis_mieter')
+        .select('kontakt_id,kontakte(anrede,vorname,nachname)')
+        .eq('user_id',currentUser.id).eq('mietverhaeltnis_id',mvId);
+      _mvMitmieter=(r.data||[]).map(function(x){
+        var k=x.kontakte||{};
+        return {kontakt_id:x.kontakt_id,name:[k.vorname,k.nachname].filter(Boolean).join(' ').trim()||'Kontakt'};
+      });
+    }catch(e){ console.warn('mvLadeMitmieter:',e); }
+  }
+  mvRenderMitmieter();
+}
+function mvRenderMitmieter(){
+  var box=document.getElementById('mv-mitmieter-liste'); if(!box)return;
+  if(!_mvMitmieter.length){
+    box.innerHTML='<div style="font-size:.78rem;color:var(--muted)">Nur eine Person in diesem Vertrag.</div>';
+  }else{
+    box.innerHTML=_mvMitmieter.map(function(m,i){
+      return '<span style="display:inline-flex;align-items:center;gap:.35rem;background:var(--p-light);color:var(--p);border-radius:14px;padding:.2rem .6rem;font-size:.78rem;font-weight:600;margin:0 .35rem .35rem 0">'
+        +escapeHtml(m.name)
+        +'<button onclick="mvMitmieterEntfernen('+i+')" title="Entfernen" style="border:none;background:none;color:var(--p);cursor:pointer;font-size:.9rem;line-height:1;padding:0">×</button></span>';
+    }).join('');
+  }
+  // Auswahl mit den Kontakten der Hauptauswahl füllen, bereits verwendete ausblenden
+  var haupt=document.getElementById('mv-kontakt-select');
+  var sel=document.getElementById('mv-mitmieter-select');
+  if(sel&&haupt){
+    var belegt={}; _mvMitmieter.forEach(function(m){belegt[m.kontakt_id]=1;});
+    if(haupt.value)belegt[haupt.value]=1;
+    sel.innerHTML='<option value="">– Kontakt hinzufügen –</option>'
+      +Array.prototype.filter.call(haupt.options,function(o){return o.value&&!belegt[o.value];})
+        .map(function(o){return '<option value="'+o.value+'">'+escapeHtml(o.textContent)+'</option>';}).join('');
+  }
+}
+function mvMitmieterHinzufuegen(){
+  var sel=document.getElementById('mv-mitmieter-select'); if(!sel||!sel.value)return;
+  var name=sel.selectedOptions&&sel.selectedOptions[0]?sel.selectedOptions[0].textContent:'Kontakt';
+  if(_mvMitmieter.some(function(m){return m.kontakt_id===sel.value;}))return;
+  _mvMitmieter.push({kontakt_id:sel.value,name:name});
+  sel.value=''; mvRenderMitmieter();
+}
+function mvMitmieterEntfernen(i){ _mvMitmieter.splice(i,1); mvRenderMitmieter(); }
+// Beim Speichern abgleichen: alles ersetzen, was am Vertrag hängt
+async function mvSpeichereMitmieter(mvId){
+  if(!mvId||!currentUser)return;
+  await sb.from('mietverhaeltnis_mieter').delete().eq('user_id',currentUser.id).eq('mietverhaeltnis_id',mvId);
+  if(!_mvMitmieter.length)return;
+  await sb.from('mietverhaeltnis_mieter').insert(_mvMitmieter.map(function(m){
+    return {user_id:currentUser.id,mietverhaeltnis_id:mvId,kontakt_id:m.kontakt_id};
+  }));
+}
+// Alle Personen eines Vertrags als Text, z. B. "Rima Masri und Nabil Chahrour"
+function mvPersonenText(mv){
+  var k=mv&&mv.kontakte;
+  var namen=[];
+  if(k)namen.push([k.vorname,k.nachname].filter(Boolean).join(' ').trim());
+  (mv&&mv.mietverhaeltnis_mieter||[]).forEach(function(x){
+    var kk=x.kontakte||{};
+    var n=[kk.vorname,kk.nachname].filter(Boolean).join(' ').trim();
+    if(n)namen.push(n);
+  });
+  return namen.filter(Boolean).join(' und ');
+}
 
 // ── Staffelmiete (#12) ──
 var _mvStaffeln=[];
@@ -15385,6 +15535,8 @@ async function saveMietverhaeltnis(){
         showToast('📊 Monatliche Mietzahlungen generiert!');
       }
     }
+    // Weitere Mieter desselben Vertrags speichern (ein Vertrag, mehrere Personen)
+    if(targetId){ try{ await mvSpeichereMitmieter(targetId); }catch(e){ console.warn('Mitmieter:',e); } }
     // Mietvertrag-Dateien (staged) hochladen → landen automatisch im Objekt-Ordner „Mietverträge"
     if(_mvPendingVertrag.length && targetId){
       var okc=0;
@@ -15637,9 +15789,9 @@ async function loadObjektSidebar(objId){
     return;
   }
 
-  // Group by type
+  // Group by type – innerhalb der Gruppen nach Lage im Haus
   var grouped={};
-  einh.forEach(function(e){
+  einheitenSortieren(einh).forEach(function(e){
     var g=e.typ||'Sonstiges';
     if(!grouped[g])grouped[g]=[];
     grouped[g].push(e);
@@ -15655,7 +15807,7 @@ async function loadObjektSidebar(objId){
       +'<div>';
     grouped[typ].forEach(function(e){
       var aktivMV=(mvs||[]).filter(function(m){return m.einheit_id===e.id&&m.aktiv;});
-      var mietText=aktivMV.length?aktivMV.map(function(m){var k=m.kontakte;return k?(k.vorname+' '+k.nachname).trim():'Mieter';}).join(', '):'LEERSTAND';
+      var mietText=aktivMV.length?aktivMV.map(function(m){return mvPersonenText(m)||'Mieter';}).join(', '):'LEERSTAND';
       var kaltmiete=e.kaltmiete||(aktivMV.reduce(function(s,m){return s+(m.kaltmiete||0);},0));
       var isLeer=aktivMV.length===0;
       html+='<div style="border:1px solid var(--border);border-radius:8px;padding:.6rem .75rem;margin-bottom:.35rem;cursor:pointer;background:var(--bg)" onclick="showObjektTab(\'einheiten\')">'
@@ -16742,7 +16894,7 @@ async function loadMietansicht(objId){
 
     var rows=einh.map(function(e){
       var mv=mvList.find(function(m){return m.einheit_id===e.id;});
-      var mieterName=mv&&mv.kontakte?((mv.kontakte.vorname||'')+' '+(mv.kontakte.nachname||'')).trim():null;
+      var mieterName=mv?(mvPersonenText(mv)||null):null;
       var sollMiete=mv?(parseFloat(mv.kaltmiete)||0)+(parseFloat(mv.vorausz_bk)||0)+(parseFloat(mv.vorausz_hk)||0):0;
 
       var monthCells=months.map(function(mm){
@@ -16855,8 +17007,13 @@ async function loadObjektEinheiten(objId){
 
   var [{data:einh},{data:mv}]=await Promise.all([
     sb.from('einheiten').select('*').eq('user_id',currentUser.id).eq('objekt_id',objId).order('bezeichnung'),
-    sb.from('mietverhaeltnisse').select('*,kontakte(anrede,vorname,nachname,email,telefon)').eq('user_id',currentUser.id).eq('objekt_id',objId).order('einzug',{ascending:false})
+    sb.from('mietverhaeltnisse').select('*,kontakte(anrede,vorname,nachname,email,telefon),mietverhaeltnis_mieter(kontakt_id,kontakte(anrede,vorname,nachname))').eq('user_id',currentUser.id).eq('objekt_id',objId).order('einzug',{ascending:false})
   ]);
+
+  // Reihenfolge nach Lage im Haus statt alphabetisch (EG vor 1. OG vor DG)
+  if(einh&&einh.length)einh=einheitenSortieren(einh);
+  var _sortSel=document.getElementById('od-einheit-sort');
+  if(_sortSel&&_sortSel.value!==einheitSortModus)_sortSel.value=einheitSortModus;
 
   if(!einh||!einh.length){
     container.innerHTML='<div style="text-align:center;padding:2rem;color:var(--muted)">'
@@ -16881,7 +17038,8 @@ async function loadObjektEinheiten(objId){
         +'<div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:.4rem">Mietverhältnisse</div>';
       mvForEinheit.forEach(function(m){
         var k=m.kontakte;
-        var name=k?k.anrede+' '+k.vorname+' '+k.nachname:'Unbekannter Mieter';
+        var _mit=mvPersonenText(m);
+        var name=_mit?((k&&k.anrede?k.anrede+' ':'')+_mit):'Unbekannter Mieter';
         var einzug=m.einzug?new Date(m.einzug).toLocaleDateString('de-DE'):'–';
         var auszug=m.auszug?new Date(m.auszug).toLocaleDateString('de-DE'):'heute';
         mvHtml+='<div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem .6rem;border-radius:6px;background:'+(m.aktiv?'#f8f5fc':'#f8f8f8')+';margin-bottom:.25rem;cursor:pointer" onclick="editMietverhaeltnis(\''+m.id+'\',\''+e.id+'\',\''+aktivesObjekt.id+'\',\''+e.bezeichnung+'\')">'
@@ -16949,7 +17107,7 @@ async function loadObjektMieter(objId){
 
   // Only show people with actual Mietverhältnisse - NOT all contacts
   var {data:mvData}=await sb.from('mietverhaeltnisse')
-    .select('*,kontakte(anrede,vorname,nachname,email,telefon,mobil)')
+    .select('*,kontakte(anrede,vorname,nachname,email,telefon,mobil),mietverhaeltnis_mieter(kontakt_id,kontakte(anrede,vorname,nachname))')
     .eq('user_id',currentUser.id)
     .eq('objekt_id',objId)
     .order('einzug',{ascending:false});
@@ -16969,7 +17127,8 @@ async function loadObjektMieter(objId){
 
   function renderMVRow(m,ri){
     var k=m.kontakte||{};
-    var name=k.anrede?(k.anrede+' '+k.vorname+' '+k.nachname).trim():'Unbekannt';
+    var _mit=mvPersonenText(m);
+    var name=_mit?((k.anrede?k.anrede+' ':'')+_mit).trim():'Unbekannt';
     var einzug=m.einzug?new Date(m.einzug).toLocaleDateString('de-DE'):'–';
     var auszug=m.auszug?new Date(m.auszug).toLocaleDateString('de-DE'):'–';
     var einheit=m.einheit_id?'<span style="font-size:.7rem;color:var(--p);background:var(--p-light);padding:1px 6px;border-radius:8px">'+m.einheit_id+'</span>':'';
@@ -17504,7 +17663,7 @@ async function loadEinheitInfo(einheitId){
   var container=document.getElementById('ed-info-content');if(!container)return;
   var [{data:e},{data:mv}]=await Promise.all([
     sb.from('einheiten').select('*').eq('id',einheitId).maybeSingle(),
-    sb.from('mietverhaeltnisse').select('*,kontakte(anrede,vorname,nachname)').eq('einheit_id',einheitId).eq('user_id',currentUser.id).order('einzug',{ascending:false})
+    sb.from('mietverhaeltnisse').select('*,kontakte(anrede,vorname,nachname),mietverhaeltnis_mieter(kontakt_id,kontakte(anrede,vorname,nachname))').eq('einheit_id',einheitId).eq('user_id',currentUser.id).order('einzug',{ascending:false})
   ]);
   if(!e){container.innerHTML='<div style="color:var(--muted)">Nicht gefunden</div>';return;}
   container.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:.65rem;margin-bottom:1rem">'

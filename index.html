@@ -1801,6 +1801,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                 <button type="button" id="buha-tab-konten" onclick="buhaTab('konten')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:var(--ff)"><span class="btn-ic" data-icon="bookopen"></span> Kontenrahmen</button>
                 <button type="button" id="buha-tab-ausw" onclick="buhaTab('ausw')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:var(--ff)"><span class="btn-ic" data-icon="barchart"></span> Auswertungen</button>
                 <button type="button" id="buha-tab-import" onclick="buhaTab('import')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:var(--ff)"><span class="btn-ic" data-icon="download"></span> DATEV-Import</button>
+                <button type="button" id="buha-tab-anlagen" onclick="buhaTab('anlagen')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:var(--ff)">🏗 Anlagen</button>
                 <button type="button" id="buha-tab-gewinn" onclick="buhaTab('gewinn')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:var(--ff)">📈 Gewinn</button>
                 <button type="button" id="buha-tab-audit" onclick="buhaTab('audit')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:var(--ff)"><span class="btn-ic" data-icon="shield"></span> Audit</button>
               </div>
@@ -1811,7 +1812,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                 <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.6rem">
                   <span style="font-size:.88rem;font-weight:700;display:inline-flex;align-items:center;gap:.4rem"><span class="mini-ic" data-icon="bookopen" style="color:var(--p)"></span>Journal</span>
                   <input type="text" id="buha-suche" oninput="renderBuhaJournal()" placeholder="🔍 Volltextsuche … (F10)" style="border:1px solid var(--border);border-radius:8px;padding:.4rem .7rem;font-size:.82rem;font-family:var(--ff);outline:none;flex:1;min-width:180px">
-                  <button class="btn-small" onclick="buhaExportCsv()"><span class="btn-ic" data-icon="download"></span> CSV</button>
+                  <button class="btn-small" onclick="buhaExportCsv()"><span class="btn-ic" data-icon="download"></span> CSV</button><button class="btn-small gruen" onclick="buhaDatevExport()" title="Buchungsstapel im DATEV-Format für den Steuerberater"><span class="btn-ic" data-icon="download"></span> DATEV-Export</button><button class="btn-small grau" onclick="buhaFestschreibenDialog()" title="Buchungen unveränderlich machen (GoBD)" style="color:#9a6700">🔒 Festschreiben</button>
                 </div>
                 <div id="buha-journal" style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow-x:auto"></div>
                 <!-- STICKY BUCHUNGSMASKE (unten, DATEV-Stil) -->
@@ -1910,6 +1911,20 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                 <div id="buha-konten" style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow-x:auto"></div>
               </div>
               <!-- TAB: AUSWERTUNGEN -->
+              <!-- TAB: ANLAGEN / AfA -->
+              <div id="buha-pane-anlagen" style="display:none">
+                <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:.9rem">
+                  <span style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Anlagenverzeichnis</span>
+                  <button class="btn-small" onclick="anlageNeu()">+ Anlagegut</button>
+                  <span id="anl-summe" style="margin-left:auto;font-size:.82rem;font-weight:700;color:var(--p)"></span>
+                </div>
+                <div id="anl-content"></div>
+                <div style="font-size:.72rem;color:var(--muted);margin-top:.8rem;line-height:1.6">
+                  Lineare AfA nach § 7 EStG. Gebäude werden ab dem Anschaffungsmonat zeitanteilig abgeschrieben; der Anteil für Grund und Boden ist nicht abschreibbar.
+                  Übliche Sätze: 2 % (Fertigstellung ab 1925), 2,5 % (davor), 3 % (Fertigstellung ab 2023). Die Jahres-AfA fließt automatisch in die Gewinnermittlung.
+                </div>
+              </div>
+
               <!-- TAB: GEWINNERMITTLUNG -->
               <div id="buha-pane-gewinn" style="display:none">
                 <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:.9rem">
@@ -2671,6 +2686,8 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
           <div class="stamm-grid">
             <div class="field"><label>Bank</label><input type="text" id="s-bank" placeholder="Sparkasse Euskirchen"></div>
             <div class="field"><label>IBAN</label><input type="text" id="s-iban" placeholder="DE12 3456 7890 ..."></div>
+            <div class="field"><label>DATEV-Beraternummer <span style="font-size:.7rem;font-weight:400;color:var(--muted)">(für den Export)</span></label><input type="text" id="s-datev_berater" placeholder="1234567"></div>
+            <div class="field"><label>DATEV-Mandantennummer</label><input type="text" id="s-datev_mandant" placeholder="77777"></div>
             <div class="field"><label>BIC</label><input type="text" id="s-bic" placeholder="BELADEBEXXX"></div>
           </div>
           <div class="btn-row" style="margin-top:1.1rem">
@@ -4637,7 +4654,7 @@ async function loadStammdaten(){
     const {data}=await sb.from('stammdaten').select('*').eq('user_id',currentUser.id).single();
     if(data){
       stammdaten=data;
-      ['vname','nname','firma','tel','email','steuernr','strasse','plz','ort','bank','iban','bic'].forEach(k=>{
+      ['vname','nname','firma','tel','email','steuernr','strasse','plz','ort','bank','iban','bic','datev_berater','datev_mandant'].forEach(k=>{
         const el=document.getElementById('s-'+k);if(el&&data[k])el.value=data[k];
       });
     }
@@ -4828,7 +4845,7 @@ function downloadBriefbogenBeispiel(){
 }
 async function saveStammdaten(){
   const d={user_id:currentUser.id};
-  ['vname','nname','firma','tel','email','steuernr','strasse','plz','ort','bank','iban','bic'].forEach(k=>{const el=document.getElementById('s-'+k);if(el)d[k]=el.value.trim();});
+  ['vname','nname','firma','tel','email','steuernr','strasse','plz','ort','bank','iban','bic','datev_berater','datev_mandant'].forEach(k=>{const el=document.getElementById('s-'+k);if(el)d[k]=el.value.trim();});
   const {error}=await sb.from('stammdaten').upsert(d,{onConflict:'user_id'});
   const msg=document.getElementById('stamm-msg');
   if(error){msg.style.background='#fdf0ef';msg.style.color='#c0392b';msg.textContent='Fehler: '+error.message;}
@@ -10534,6 +10551,7 @@ async function openBuhaCockpit(objId){
   c.innerHTML=''; c.appendChild(node); node.style.display='block';
   var tb=document.getElementById('buha-tabbar'); if(tb)tb.style.display='flex';
   try{ await ladeBuchhaltung(o.id); }catch(e){ console.warn('buha load:',e); }
+  try{ await ladeAnlagen(o.id); }catch(e){ console.warn('anlagen:',e); }
   try{ buhaTab('buchen'); }catch(e){}
   renderBuhaCockpitKpis();
 }
@@ -10581,7 +10599,10 @@ function gewinnBerechnen(jahr){
     if(t==='ertrag'){ var v=a.haben-a.soll; if(Math.abs(v)>0.004){sumEin+=v;ein.push({nr:nr,name:nameByNr[nr]||'',betrag:v});} }
     else if(t==='aufwand'){ var w=a.soll-a.haben; if(Math.abs(w)>0.004){sumAus+=w;aus.push({nr:nr,name:nameByNr[nr]||'',betrag:w});} }
   });
-  return {jahr:jahr,ein:ein,aus:aus,sumEin:sumEin,sumAus:sumAus,ergebnis:sumEin-sumAus};
+  // Abschreibungen aus dem Anlagenverzeichnis als eigene Ausgabeposition
+  var afa=(typeof anlagenAfaSumme==='function')?anlagenAfaSumme(jahr):0;
+  if(afa>0.004){ aus.push({nr:'AfA',name:'Abschreibungen (Anlagenverzeichnis)',betrag:afa,istAfa:true}); sumAus+=afa; }
+  return {jahr:jahr,ein:ein,aus:aus,sumEin:sumEin,sumAus:sumAus,afa:afa,ergebnis:sumEin-sumAus};
 }
 function _gewJahre(){
   var js={};
@@ -10791,13 +10812,14 @@ async function buhaReload(){
 }
 
 function buhaTab(t){
-  ['buchen','hausgeld','op','konten','ausw','gewinn','import','audit'].forEach(function(x){
+  ['buchen','hausgeld','op','konten','ausw','anlagen','gewinn','import','audit'].forEach(function(x){
     var pane=document.getElementById('buha-pane-'+x); if(pane)pane.style.display=(x===t?'block':'none');
     var btn=document.getElementById('buha-tab-'+x);
     if(btn){var on=x===t;btn.style.color=on?'var(--p)':'var(--muted)';btn.style.fontWeight=on?'700':'400';btn.style.borderBottomColor=on?'var(--p)':'transparent';}
   });
   if(t==='audit')renderBuhaAudit();
   if(t==='ausw')renderAuswertungen();
+  if(t==='anlagen')renderAnlagen();
   if(t==='gewinn')renderGewinn();
   if(t==='hausgeld')ladeHausgeld();
   if(t==='op')ladeOP();
@@ -10980,6 +11002,12 @@ async function buhaSaveBuchung(){
   if(!kontoExists(haben)){showToast('Gegenkonto „'+haben+'" gibt es nicht im Kontenrahmen.');document.getElementById('bu-haben').classList.add('err');return;}
   if(soll===haben){showToast('Konto und Gegenkonto müssen verschieden sein.');return;}
   if(!(brutto>0)){showToast('Bitte einen Betrag > 0 eingeben.');return;}
+  // GoBD: in einen festgeschriebenen Zeitraum darf nicht nachgebucht werden
+  var _bd=buhaVal('bu-datum')||todayStr();
+  if(typeof buhaIstFestgeschrieben==='function' && buhaIstFestgeschrieben(_bd)){
+    showToast('🔒 Der Zeitraum ist festgeschrieben – bitte ein späteres Buchungsdatum wählen oder per Storno korrigieren.');
+    return;
+  }
   var c=buhaCalcSteuer();
   var sk=buhaVal('bu-schluessel')||'0';
   var row={user_id:currentUser.id,objekt_id:buha.objektId,wirtschaftsjahr:buha.jahr,untergemeinschaft_id:buha.ug||null,
@@ -11205,6 +11233,291 @@ function buhaStorno(id){
       showToast('↺ Storniert'); await buhaReload();
     }},{label:'Abbrechen',style:'background:var(--bg);color:var(--muted)',onClick:function(){}}]});
 }
+// ══════════════════════════════════════════════════════════════════════════
+//  DATEV-BUCHUNGSSTAPEL EXPORT (EXTF, Format „Buchungsstapel" 700/13)
+//  Gegenstück zum vorhandenen Import: erzeugt eine Datei, die der
+//  Steuerberater in DATEV Rechnungswesen einlesen kann.
+//  Aufbau: Kopfzeile (EXTF-Header) · Spaltenüberschriften · Buchungszeilen.
+// ══════════════════════════════════════════════════════════════════════════
+function _datevQ(v){ v=(v==null?'':String(v)); return '"'+v.replace(/"/g,'""')+'"'; }
+function _datevBetrag(n){ return (Math.abs(parseFloat(n)||0)).toFixed(2).replace('.',','); }
+function _datevTag(d){ // YYYY-MM-DD → TTMM (DATEV Belegdatum im Buchungsstapel)
+  if(!d)return '';
+  var p=String(d).split('-'); if(p.length<3)return '';
+  return p[2].slice(0,2)+p[1].slice(0,2);
+}
+function _datevStamp(dt){
+  var p=function(n,l){return String(n).padStart(l||2,'0');};
+  return ''+dt.getFullYear()+p(dt.getMonth()+1)+p(dt.getDate())+p(dt.getHours())+p(dt.getMinutes())+p(dt.getSeconds())+p(dt.getMilliseconds(),3);
+}
+// Spalten des Buchungsstapels (Auszug bis „Buchungstext"); Namen exakt wie in DATEV,
+// damit auch der eigene Import sie wiederfindet.
+var DATEV_SPALTEN=['Umsatz (ohne Soll/Haben-Kz)','Soll/Haben-Kennzeichen','WKZ Umsatz','Kurs','Basis-Umsatz','WKZ Basis-Umsatz',
+  'Konto','Gegenkonto (ohne BU-Schlüssel)','BU-Schlüssel','Belegdatum','Belegfeld 1','Belegfeld 2','Skonto','Buchungstext',
+  'Postensperre','Diverse Adressnummer','Geschäftspartnerbank','Sachverhalt','Zinssperre','Beleglink',
+  'Beleginfo - Art 1','Beleginfo - Inhalt 1','KOST1 - Kostenstelle','KOST2 - Kostenstelle','KOST-Menge','Festschreibung'];
+
+function buhaDatevExport(){
+  if(!buha.buchungen||!buha.buchungen.length){showToast('Keine Buchungen zum Exportieren.');return;}
+  var jahr=parseInt(buha.jahr,10)||new Date().getFullYear();
+  var liste=buha.buchungen.filter(function(b){
+    return !b.wirtschaftsjahr||parseInt(b.wirtschaftsjahr,10)===jahr;
+  });
+  if(!liste.length){showToast('Für '+jahr+' sind keine Buchungen vorhanden.');return;}
+  var sm=stammdaten||{};
+  var berater=String(sm.datev_berater||'').replace(/\D/g,'')||'';
+  var mandant=String(sm.datev_mandant||'').replace(/\D/g,'')||'';
+  var bez=((_buhaCockpitObj&&_buhaCockpitObj.name)||(aktivesObjekt&&aktivesObjekt.name)||'Buchungsstapel')+' '+jahr;
+
+  // ── Kopfzeile nach EXTF-Spezifikation ──
+  var kopf=['"EXTF"','700','21','"Buchungsstapel"','13',_datevStamp(new Date()),'','""','"RE"','""',
+    (berater||''),(mandant||''),(jahr+'0101'),'4',(jahr+'0101'),(jahr+'1231'),
+    _datevQ(bez),'""','1','0','0','"EUR"','','""','','','""','""','""','""','""'].join(';');
+
+  var zeilen=liste.map(function(b){
+    var betrag=parseFloat(b.betrag)||0;
+    // Im Buchungsstapel steht der Betrag ohne Vorzeichen; die Richtung liefert das S/H-Kennzeichen.
+    // Soll-Buchung auf „Konto" = S, Gegenkonto ist das Habenkonto.
+    var f=[];
+    f[0]=_datevBetrag(betrag);
+    f[1]='"S"';
+    f[2]='"EUR"'; f[3]=''; f[4]=''; f[5]='';
+    f[6]=_datevQ(b.soll_konto||'');
+    f[7]=_datevQ(b.haben_konto||'');
+    f[8]=_datevQ(b.steuer_kz||'');
+    f[9]=_datevTag(b.belegdatum||b.buchungsdatum);
+    f[10]=_datevQ((b.belegnr||'').slice(0,36));
+    f[11]=''; f[12]='';
+    f[13]=_datevQ((b.text||'').slice(0,60));
+    f[14]=''; f[15]=''; f[16]=''; f[17]=''; f[18]=''; f[19]='';
+    f[20]=''; f[21]='';
+    f[22]=_datevQ(b.kostenstelle||'');
+    f[23]=''; f[24]='';
+    f[25]=b.festgeschrieben?'1':'0';
+    for(var i=0;i<DATEV_SPALTEN.length;i++){ if(f[i]==null)f[i]=''; }
+    return f.join(';');
+  });
+
+  var inhalt=kopf+'\r\n'+DATEV_SPALTEN.map(_datevQ).join(';')+'\r\n'+zeilen.join('\r\n')+'\r\n';
+  // DATEV erwartet Windows-1252; UTF-8 mit BOM wird von aktuellen Versionen ebenfalls gelesen.
+  var blob=new Blob(['﻿'+inhalt],{type:'text/csv;charset=utf-8;'});
+  var a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='EXTF_Buchungsstapel_'+String(bez).replace(/[^a-zA-Z0-9]+/g,'_')+'.csv';
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+  showToast('📤 '+zeilen.length+' Buchungen als DATEV-Stapel exportiert'+((!berater||!mandant)?' – Berater-/Mandantennummer fehlt noch':''));
+}
+
+// ── Festschreibung (GoBD) ───────────────────────────────────────────────
+// Festgeschriebene Buchungen sind unveränderlich; Korrekturen nur per Storno.
+function buhaIstFestgeschrieben(datum){
+  if(!datum)return false;
+  var d=String(datum).slice(0,10);
+  return (buha.buchungen||[]).some(function(b){
+    return b.festgeschrieben && String(b.buchungsdatum||'').slice(0,10)>=d
+      && parseInt(b.wirtschaftsjahr,10)===parseInt(buha.jahr,10);
+  });
+}
+function buhaFestschreibenDialog(){
+  var offen=(buha.buchungen||[]).filter(function(b){return !b.festgeschrieben;});
+  if(!offen.length){showToast('Alle Buchungen dieses Zeitraums sind bereits festgeschrieben.');return;}
+  appConfirm({icon:'🔒',title:'Buchungen festschreiben?',
+    message:'<b>'+offen.length+' Buchung'+(offen.length===1?'':'en')+'</b> des Wirtschaftsjahres '+buha.jahr+' werden festgeschrieben.<br><br>'
+      +'Danach sind sie unveränderlich – Korrekturen sind nur noch über eine Stornobuchung möglich. '
+      +'Das entspricht den Anforderungen der GoBD und lässt sich nicht rückgängig machen.',
+    buttons:[{label:'Abbrechen',style:'background:var(--bg);color:var(--text)'},
+             {label:'🔒 Festschreiben',style:'background:#9a6700;color:#fff',onClick:async function(){
+               try{
+                 var jetzt=new Date().toISOString();
+                 var r=await sb.from('weg_buchungen')
+                   .update({festgeschrieben:true,festgeschrieben_am:jetzt})
+                   .eq('user_id',currentUser.id).eq('objekt_id',buha.objektId)
+                   .eq('wirtschaftsjahr',buha.jahr).neq('festgeschrieben',true);
+                 if(r.error)throw r.error;
+                 try{ await logAudit('festschreibung','wirtschaftsjahr',null,{jahr:buha.jahr,anzahl:offen.length}); }catch(e){}
+                 showToast('🔒 '+offen.length+' Buchungen festgeschrieben');
+                 await buhaReload();
+               }catch(e){ showToast('⚠️ Fehler: '+(e.message||e)); }
+             }}]});
+}
+
+// ── Anlagenbuchführung mit linearer AfA ─────────────────────────────────
+// Gebäude-AfA läuft monatsgenau ab dem Anschaffungsmonat (§ 7 Abs. 1 S. 4 EStG).
+var anlagenListe=[];
+function anlageJahresAfa(a,jahr){
+  var wert=(parseFloat(a.anschaffungswert)||0)-(parseFloat(a.grundstuecksanteil)||0);
+  if(wert<=0)return {afa:0,rest:0,voll:0};
+  var satz=parseFloat(a.afa_satz)||0;
+  if(!satz&&a.nutzungsdauer>0)satz=100/parseInt(a.nutzungsdauer,10);
+  if(satz<=0)return {afa:0,rest:wert,voll:0};
+  var jahresAfa=wert*satz/100;
+  if(!a.anschaffungsdatum)return {afa:0,rest:wert,voll:jahresAfa};
+  var d=new Date(a.anschaffungsdatum+'T00:00:00');
+  var startJahr=d.getFullYear(), startMonat=d.getMonth()+1;
+  if(jahr<startJahr)return {afa:0,rest:wert,voll:jahresAfa};
+  // Monate im ersten Jahr anteilig
+  var afaFuer=function(j){
+    if(j<startJahr)return 0;
+    var monate=(j===startJahr)?(13-startMonat):12;
+    return jahresAfa*monate/12;
+  };
+  var kumuliert=0;
+  for(var j=startJahr;j<jahr;j++){ kumuliert+=afaFuer(j); if(kumuliert>=wert){kumuliert=wert;break;} }
+  var rest=Math.max(0,wert-kumuliert);
+  var afa=Math.min(afaFuer(jahr),rest);
+  return {afa:afa,rest:Math.max(0,rest-afa),voll:jahresAfa,kumuliert:kumuliert+afa,basis:wert};
+}
+function anlagenAfaSumme(jahr){
+  return (anlagenListe||[]).filter(function(a){return a.aktiv!==false;})
+    .reduce(function(s,a){return s+anlageJahresAfa(a,jahr).afa;},0);
+}
+async function ladeAnlagen(objId){
+  objId=objId||buha.objektId;
+  anlagenListe=[];
+  if(!currentUser||!objId)return;
+  try{
+    var r=await sb.from('anlagen').select('*').eq('user_id',currentUser.id).eq('objekt_id',objId).order('anschaffungsdatum');
+    if(r.error)throw r.error;
+    anlagenListe=r.data||[];
+  }catch(e){ console.warn('ladeAnlagen:',e); }
+}
+
+// Anlagenverzeichnis darstellen (Buchwert, Jahres-AfA, Restwert)
+function renderAnlagen(){
+  var c=document.getElementById('anl-content'); if(!c)return;
+  var jahr=parseInt(buha.jahr,10)||new Date().getFullYear();
+  var liste=(anlagenListe||[]).filter(function(a){return a.aktiv!==false;});
+  var sum=document.getElementById('anl-summe');
+  if(!liste.length){
+    c.innerHTML='<div style="padding:2.5rem;text-align:center;color:var(--muted);font-size:.86rem">'
+      +'Noch keine Anlagegüter erfasst.<br><span style="font-size:.78rem">Trage Gebäude, Außenanlagen oder Inventar ein – die Abschreibung fließt automatisch in die Gewinnermittlung.</span></div>';
+    if(sum)sum.textContent='';
+    return;
+  }
+  var artLabel={gebaeude:'Gebäude',aussenanlage:'Außenanlage',inventar:'Inventar',sonstiges:'Sonstiges'};
+  var th=function(t,r){return '<th style="text-align:'+(r?'right':'left')+';padding:.5rem .6rem;font-size:.64rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap">'+t+'</th>';};
+  var gesamt=0;
+  var rows=liste.map(function(a,i){
+    var r=anlageJahresAfa(a,jahr); gesamt+=r.afa;
+    var satz=parseFloat(a.afa_satz)||(a.nutzungsdauer>0?100/parseInt(a.nutzungsdauer,10):0);
+    return '<tr style="border-bottom:1px solid #f5f5f7;background:'+(i%2?'#faf8ff':'transparent')+'">'
+      +'<td style="padding:.45rem .6rem"><div style="font-weight:600">'+escapeHtml(a.bezeichnung||'')+'</div>'
+        +'<div style="font-size:.72rem;color:var(--muted)">'+escapeHtml(artLabel[a.art]||a.art||'')
+        +(a.anschaffungsdatum?' · seit '+fmtDatum(a.anschaffungsdatum):'')+'</div></td>'
+      +'<td style="padding:.45rem .6rem;text-align:right;font-variant-numeric:tabular-nums">'+buhaEuro(a.anschaffungswert)+'</td>'
+      +'<td style="padding:.45rem .6rem;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums">'+buhaEuro(a.grundstuecksanteil||0)+'</td>'
+      +'<td style="padding:.45rem .6rem;text-align:right;font-variant-numeric:tabular-nums">'+(satz?satz.toLocaleString('de-DE',{maximumFractionDigits:2})+' %':'–')+'</td>'
+      +'<td style="padding:.45rem .6rem;text-align:right;font-weight:700;color:#c0392b;font-variant-numeric:tabular-nums">'+buhaEuro(r.afa)+'</td>'
+      +'<td style="padding:.45rem .6rem;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums">'+buhaEuro(r.rest)+'</td>'
+      +'<td style="padding:.45rem .6rem;text-align:right;white-space:nowrap">'
+        +'<button class="btn-small" onclick="anlageBearbeiten(\''+a.id+'\')" title="Bearbeiten">✏️</button> '
+        +'<button class="btn-small grau" onclick="anlageLoeschen(\''+a.id+'\')" title="Löschen" style="color:#c0392b">🗑</button>'
+      +'</td></tr>';
+  }).join('');
+  c.innerHTML='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.83rem;min-width:660px">'
+    +'<thead><tr>'+th('Anlagegut')+th('Anschaffung',1)+th('davon Grundstück',1)+th('AfA-Satz',1)+th('AfA '+jahr,1)+th('Restwert',1)+th('',1)+'</tr></thead>'
+    +'<tbody>'+rows+'</tbody>'
+    +'<tfoot><tr style="border-top:2px solid var(--border);font-weight:700">'
+      +'<td colspan="4" style="padding:.55rem .6rem">Abschreibung '+jahr+' gesamt</td>'
+      +'<td style="padding:.55rem .6rem;text-align:right;color:#c0392b">'+buhaEuro(gesamt)+'</td><td></td><td></td>'
+    +'</tr></tfoot></table></div>';
+  if(sum)sum.textContent='AfA '+jahr+': '+buhaEuro(gesamt);
+}
+function anlageNeu(){ _anlageDialog(null); }
+function anlageBearbeiten(id){ _anlageDialog((anlagenListe||[]).filter(function(a){return a.id===id;})[0]||null); }
+function _anlageDialog(a){
+  var m=document.getElementById('anlage-modal');
+  if(!m){
+    m=document.createElement('div'); m.id='anlage-modal';
+    m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1200;display:none;align-items:center;justify-content:center;padding:1rem';
+    m.innerHTML='<div class="modal-box" style="max-width:520px;width:100%">'
+      +'<h3 id="anlage-titel">Anlagegut</h3>'
+      +'<input type="hidden" id="anl-id">'
+      +'<div class="field" style="margin-bottom:.7rem"><label>Bezeichnung *</label><input type="text" id="anl-bez" placeholder="z. B. Gebäude Bendengasse 6"></div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-bottom:.7rem">'
+        +'<div class="field"><label>Art</label><select id="anl-art" onchange="_anlageArtWechsel()">'
+          +'<option value="gebaeude">Gebäude</option><option value="aussenanlage">Außenanlage</option>'
+          +'<option value="inventar">Inventar</option><option value="sonstiges">Sonstiges</option></select></div>'
+        +'<div class="field"><label>Anschaffungsdatum</label><input type="date" id="anl-datum"></div>'
+        +'<div class="field"><label>Anschaffungskosten (€)</label><input type="number" step="0.01" id="anl-wert" oninput="_anlageVorschau()"></div>'
+        +'<div class="field"><label>davon Grund und Boden (€)</label><input type="number" step="0.01" id="anl-grund" oninput="_anlageVorschau()"></div>'
+        +'<div class="field"><label>AfA-Satz (% p. a.)</label><input type="number" step="0.01" id="anl-satz" placeholder="2" oninput="_anlageVorschau()"></div>'
+        +'<div class="field"><label>oder Nutzungsdauer (Jahre)</label><input type="number" id="anl-nd" placeholder="50" oninput="_anlageVorschau()"></div>'
+      +'</div>'
+      +'<div id="anl-vorschau" style="font-size:.8rem;color:var(--p);background:var(--p-light);border-radius:8px;padding:.5rem .7rem;margin-bottom:.7rem"></div>'
+      +'<div class="field"><label>Notiz</label><input type="text" id="anl-notiz" placeholder="optional"></div>'
+      +'<div class="modal-box-btns" style="margin-top:1.1rem">'
+        +'<button class="btn-secondary" onclick="document.getElementById(\'anlage-modal\').style.display=\'none\'">Abbrechen</button>'
+        +'<button class="btn-primary" onclick="anlageSpeichern()">Speichern</button>'
+      +'</div></div>';
+    document.body.appendChild(m);
+  }
+  var g=function(id){return document.getElementById(id);};
+  g('anlage-titel').textContent=a?'Anlagegut bearbeiten':'Neues Anlagegut';
+  g('anl-id').value=a?a.id:'';
+  g('anl-bez').value=a?(a.bezeichnung||''):'';
+  g('anl-art').value=a?(a.art||'gebaeude'):'gebaeude';
+  g('anl-datum').value=a?(a.anschaffungsdatum||''):'';
+  g('anl-wert').value=a?(a.anschaffungswert||''):'';
+  g('anl-grund').value=a?(a.grundstuecksanteil||''):'';
+  g('anl-satz').value=a?(a.afa_satz||''):'2';
+  g('anl-nd').value=a?(a.nutzungsdauer||''):'';
+  g('anl-notiz').value=a?(a.notiz||''):'';
+  _anlageVorschau();
+  m.style.display='flex';
+}
+function _anlageArtWechsel(){
+  var art=(document.getElementById('anl-art')||{value:''}).value;
+  var satz=document.getElementById('anl-satz'), nd=document.getElementById('anl-nd');
+  if(satz&&!satz.value){ satz.value=(art==='gebaeude')?'2':''; }
+  if(nd&&!nd.value&&art==='inventar'){ nd.value='10'; }
+  _anlageVorschau();
+}
+function _anlageVorschau(){
+  var box=document.getElementById('anl-vorschau'); if(!box)return;
+  var v=function(id){return parseFloat((document.getElementById(id)||{value:''}).value)||0;};
+  var basis=v('anl-wert')-v('anl-grund');
+  var satz=v('anl-satz')||(v('anl-nd')>0?100/v('anl-nd'):0);
+  if(basis<=0||satz<=0){ box.textContent='Abschreibungsbasis und Satz eingeben, um die Jahres-AfA zu sehen.'; return; }
+  var jahres=basis*satz/100;
+  box.textContent='Abschreibungsbasis '+buhaEuro(basis)+' · volle Jahres-AfA '+buhaEuro(jahres)
+    +' · Abschreibungsdauer rund '+Math.round(100/satz)+' Jahre';
+}
+async function anlageSpeichern(){
+  var g=function(id){return (document.getElementById(id)||{value:''}).value;};
+  var bez=(g('anl-bez')||'').trim();
+  if(!bez){showToast('Bitte eine Bezeichnung angeben.');return;}
+  var wert=parseFloat(g('anl-wert'))||0, grund=parseFloat(g('anl-grund'))||0;
+  if(grund>wert){showToast('Der Grundstücksanteil kann nicht größer als die Anschaffungskosten sein.');return;}
+  var row={user_id:currentUser.id,objekt_id:buha.objektId,bezeichnung:bez,art:g('anl-art')||'gebaeude',
+    anschaffungsdatum:g('anl-datum')||null,anschaffungswert:wert,grundstuecksanteil:grund,
+    afa_satz:parseFloat(g('anl-satz'))||null,nutzungsdauer:parseInt(g('anl-nd'),10)||null,
+    notiz:(g('anl-notiz')||'').trim()||null,updated_at:new Date().toISOString()};
+  try{
+    var id=g('anl-id');
+    var r=id?await sb.from('anlagen').update(row).eq('id',id).eq('user_id',currentUser.id)
+            :await sb.from('anlagen').insert(row);
+    if(r.error)throw r.error;
+    document.getElementById('anlage-modal').style.display='none';
+    await ladeAnlagen(buha.objektId);
+    renderAnlagen(); renderBuhaCockpitKpis();
+    showToast('✅ Anlagegut gespeichert');
+  }catch(e){ showToast('⚠️ Fehler: '+(e.message||e)); }
+}
+function anlageLoeschen(id){
+  var a=(anlagenListe||[]).filter(function(x){return x.id===id;})[0]; if(!a)return;
+  appConfirm({icon:'🗑',title:'Anlagegut löschen?',
+    message:'<b>'+escapeHtml(a.bezeichnung||'')+'</b><br><br>Die Abschreibung entfällt damit in allen Jahren.',
+    buttons:[{label:'Abbrechen',style:'background:var(--bg);color:var(--text)'},
+             {label:'Löschen',style:'background:#c0392b;color:#fff',onClick:async function(){
+               try{
+                 var r=await sb.from('anlagen').delete().eq('id',id).eq('user_id',currentUser.id);
+                 if(r.error)throw r.error;
+                 await ladeAnlagen(buha.objektId); renderAnlagen(); renderBuhaCockpitKpis();
+                 showToast('🗑 Anlagegut gelöscht');
+               }catch(e){ showToast('⚠️ Fehler: '+(e.message||e)); }
+             }}]});
+}
+
 function buhaExportCsv(){
   if(!buha.buchungen.length){showToast('Keine Buchungen zum Export.');return;}
   var nm={}; buha.konten.forEach(function(k){nm[k.nummer]=k.name;});

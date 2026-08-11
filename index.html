@@ -1604,6 +1604,15 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                 </div>
               </div>
 
+              <!-- ANSCHREIBEN ZU DIESEM OBJEKT -->
+              <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:1.1rem;margin-bottom:1.25rem">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.85rem">
+                  <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Anschreiben</div>
+                  <button onclick="anschrNeuFuerObjekt()" style="font-size:.72rem;color:var(--p);background:none;border:none;cursor:pointer">+ Neues Anschreiben</button>
+                </div>
+                <div id="od-anschreiben-list"><div style="color:var(--muted);font-size:.82rem">Wird geladen...</div></div>
+              </div>
+
               <!-- MIETANSICHT JE EINHEIT (letzte 2 Monate) -->
               <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:1.1rem;margin-bottom:1.25rem">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.85rem">
@@ -2761,6 +2770,20 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
           </div>
           <!-- Freier Brief (Vorlage „Allgemeines Anschreiben") -->
           <div id="anschr-info-felder">
+            <!-- Eigene Vorlagen: einmal schreiben, immer wiederverwenden -->
+            <div style="border:1px solid var(--border);border-radius:10px;padding:.6rem .8rem;background:var(--bg);margin-bottom:.9rem">
+              <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:end">
+                <div class="field" style="flex:1;min-width:180px"><label>Eigene Vorlage</label>
+                  <select id="anschr-vorlage-select" onchange="anschrVorlageAnwenden()">
+                    <option value="">– Vorlage wählen –</option>
+                  </select>
+                </div>
+                <button class="btn-small" onclick="anschrVorlageSpeichern()" title="Aktuellen Betreff und Brieftext als Vorlage sichern"><span class="btn-ic" data-icon="save"></span> Als Vorlage speichern</button>
+                <button class="btn-small grau" onclick="anschrVorlageUeberschreiben()" title="Gewählte Vorlage mit dem aktuellen Text aktualisieren"><span class="btn-ic" data-icon="refresh"></span> Aktualisieren</button>
+                <button class="btn-small grau" onclick="anschrVorlageLoeschen()" title="Gewählte Vorlage löschen" style="color:#c0392b"><span class="btn-ic" data-icon="trash"></span></button>
+              </div>
+              <div style="font-size:.72rem;color:var(--muted);margin-top:.5rem">Platzhalter wie <code>{{mietername}}</code> bleiben in der Vorlage erhalten und werden erst beim Erzeugen je Empfänger ersetzt.</div>
+            </div>
             <div class="field" style="margin-bottom:.7rem"><label>Betreff</label>
               <input type="text" id="anschr-betreff" placeholder="z. B. Information zur Nebenkostenabrechnung">
             </div>
@@ -2814,16 +2837,34 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
             <span class="mini-ic" data-icon="search" style="position:absolute;left:.7rem;top:50%;transform:translateY(-50%);color:var(--muted)"></span>
             <input type="text" id="anschr-gs-search" oninput="anschrRenderGespeicherte()" placeholder="Suche nach Mieter, Objekt oder Betreff..." style="width:100%;border:1px solid var(--border);border-radius:var(--r);padding:.48rem .72rem .48rem 2.2rem;font-size:.86rem;font-family:var(--ff);background:var(--bg);outline:none">
           </div>
-          <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;min-width:620px">
-            <thead><tr>
-              <th style="padding:.6rem .5rem;text-align:left;font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border)">Datum</th>
-              <th style="padding:.6rem .5rem;text-align:left;font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border)">Betreff</th>
-              <th style="padding:.6rem .5rem;text-align:left;font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border)">Empfänger</th>
-              <th style="padding:.6rem .5rem;text-align:left;font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border)">Objekt</th>
-              <th style="padding:.6rem .5rem;text-align:right;font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border)">Aktionen</th>
-            </tr></thead>
-            <tbody id="anschr-gs-tbody"><tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--muted);font-size:.85rem">Wird geladen…</td></tr></tbody>
-          </table></div>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-bottom:.8rem">
+            <select id="anschr-gs-status" onchange="anschrRenderGespeicherte()" style="border:1px solid var(--border);border-radius:var(--r);padding:.4rem .6rem;font-size:.82rem;font-family:var(--ff);background:var(--bg)">
+              <option value="">Alle</option>
+              <option value="offen">Noch nicht versendet</option>
+              <option value="versendet">Versendet</option>
+            </select>
+            <button class="btn-small grau" onclick="anschrAlleGruppen(true)">Alle aufklappen</button>
+            <button class="btn-small grau" onclick="anschrAlleGruppen(false)">Alle zuklappen</button>
+          </div>
+          <div id="anschr-gs-liste"><div style="text-align:center;padding:2rem;color:var(--muted);font-size:.85rem">Wird geladen…</div></div>
+        </div>
+
+        <!-- ZUORDNEN-DIALOG -->
+        <div id="anschr-zu-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1150;align-items:center;justify-content:center;padding:1rem">
+          <div class="modal-box" style="max-width:440px;width:100%">
+            <h3>Anschreiben zuordnen</h3>
+            <div id="anschr-zu-info" style="font-size:.84rem;color:var(--muted);margin-bottom:1rem"></div>
+            <div class="field" style="margin-bottom:.7rem"><label>Objekt</label>
+              <select id="anschr-zu-objekt" onchange="anschrZuEinheiten()"></select>
+            </div>
+            <div class="field"><label>Einheit (optional)</label>
+              <select id="anschr-zu-einheit"></select>
+            </div>
+            <div class="modal-box-btns" style="margin-top:1.2rem">
+              <button class="btn-secondary" onclick="closeAnschrZuordnen()">Abbrechen</button>
+              <button class="btn-primary" onclick="anschrZuordnenSpeichern()"><span class="btn-ic" data-icon="check"></span> Zuordnen</button>
+            </div>
+          </div>
         </div>
 
         <!-- BRIEFPAPIER & LAYOUT (Einstellungen) -->
@@ -4313,6 +4354,7 @@ function showPage(name){
     if(typeof anschrInitPlatzhalter==='function')anschrInitPlatzhalter();
     if(typeof anschrLadeGespeicherte==='function')anschrLadeGespeicherte();
     if(typeof anschrLadeLayout==='function')anschrLadeLayout();
+    if(typeof anschrLadeVorlagen==='function')anschrLadeVorlagen();
     if(typeof renderBriefkopfPreview==='function')renderBriefkopfPreview();
     if(typeof anschrAktualisiereZaehler==='function')anschrAktualisiereZaehler();
   }
@@ -9363,6 +9405,13 @@ function anschrAktuelleBriefe(){
 }
 
 // ── Speichern ───────────────────────────────────────────────────────────
+// UUID für die Serien-Kennung (crypto, mit Rückfallebene für ältere Browser)
+function _anschrUuid(){
+  try{ if(window.crypto&&crypto.randomUUID)return crypto.randomUUID(); }catch(e){}
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){
+    var r=Math.random()*16|0, v=c==='x'?r:((r&0x3)|0x8); return v.toString(16);
+  });
+}
 function _anschrBetreffAus(text){
   var m=/^Betreff:\s*(.+)$/m.exec(text||'');
   return m?m[1].trim():'(ohne Betreff)';
@@ -9385,10 +9434,16 @@ async function anschrSpeichern(){
   if(!briefe.length||!briefe[0].text||!briefe[0].text.trim()){showToast('Bitte zuerst ein Anschreiben erzeugen.');return;}
   var felder=_anschrFormFelder();
   var vorlageText=felder['anschr-freitext']||'';
+  // Serienbriefe erhalten eine gemeinsame Kennung, damit die Übersicht sie
+  // als einen Vorgang zeigt statt als viele Einzelzeilen.
+  var serieId=briefe.length>1?_anschrUuid():null;
+  var serieTitel=briefe.length>1?(_anschrBetreffAus(briefe[0].text)):null;
   var rows=briefe.map(function(b){
     var e=b.emp;
     return {
       user_id:currentUser.id,
+      serie_id:serieId,
+      serie_titel:serieTitel,
       objekt_id:e?e.objektId:null,
       einheit_id:e?e.einheitId:null,
       mietverhaeltnis_id:e?e.mietverhaeltnisId:null,
@@ -9422,8 +9477,9 @@ async function anschrSpeichern(){
 
 // ── Verwaltung: laden, filtern, rendern ─────────────────────────────────
 async function anschrLadeGespeicherte(){
-  var tb=document.getElementById('anschr-gs-tbody'); if(!tb)return;
-  if(!currentUser){tb.innerHTML='<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--muted);font-size:.85rem">Bitte anmelden.</td></tr>';return;}
+  var box=document.getElementById('anschr-gs-liste'); if(!box)return;
+  var meldung=function(t,farbe){box.innerHTML='<div style="text-align:center;padding:2rem;color:'+(farbe||'var(--muted)')+';font-size:.85rem">'+t+'</div>';};
+  if(!currentUser){meldung('Bitte anmelden.');return;}
   try{
     var r=await sb.from('anschreiben').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}).limit(500);
     if(r.error)throw r.error;
@@ -9431,41 +9487,361 @@ async function anschrLadeGespeicherte(){
     anschrRenderGespeicherte();
   }catch(e){
     console.error('anschrLadeGespeicherte:',e);
-    tb.innerHTML='<tr><td colspan="5" style="text-align:center;padding:2rem;color:#c0392b;font-size:.85rem">Fehler beim Laden: '+escapeHtml(e.message||'')+'</td></tr>';
+    meldung('Fehler beim Laden: '+escapeHtml(e.message||''),'#c0392b');
   }
 }
-function anschrRenderGespeicherte(){
-  var tb=document.getElementById('anschr-gs-tbody'); if(!tb)return;
+// Gefilterte Liste nach Suchbegriff und Status
+function _anschrGefiltert(){
   var q=(((document.getElementById('anschr-gs-search')||{value:''}).value)||'').toLowerCase().trim();
-  var list=anschrGespeichert.filter(function(a){
+  var st=((document.getElementById('anschr-gs-status')||{value:''}).value)||'';
+  return anschrGespeichert.filter(function(a){
+    if(st==='offen'&&a.versendet_am)return false;
+    if(st==='versendet'&&!a.versendet_am)return false;
     if(!q)return true;
-    return [a.empfaenger_name,a.objekt_label,a.betreff,a.einheit_label].some(function(v){
+    return [a.empfaenger_name,a.objekt_label,a.betreff,a.einheit_label,a.serie_titel].some(function(v){
       return (v||'').toLowerCase().indexOf(q)>=0;
     });
   });
+}
+// Nach Objekt gruppieren; Serienbriefe innerhalb eines Objekts zu einem Vorgang bündeln
+function _anschrGruppiert(list){
+  var grp={},reihenfolge=[];
+  list.forEach(function(a){
+    var k=a.objekt_id||'_none';
+    if(!grp[k]){grp[k]={id:a.objekt_id||null,label:a.objekt_label||'',eintraege:[],anzahl:0,neuestes:0};reihenfolge.push(k);}
+    grp[k].anzahl++;
+    if(!grp[k].label&&a.objekt_label)grp[k].label=a.objekt_label;
+    var t=a.created_at?new Date(a.created_at).getTime():0;
+    if(t>grp[k].neuestes)grp[k].neuestes=t;
+    // Serie sammeln oder Einzelbrief anhängen
+    if(a.serie_id){
+      var s=grp[k].eintraege.filter(function(e){return e.serie===a.serie_id;})[0];
+      if(!s){s={serie:a.serie_id,titel:a.serie_titel||a.betreff||'',briefe:[],zeit:t};grp[k].eintraege.push(s);}
+      s.briefe.push(a); if(t>s.zeit)s.zeit=t;
+    }else{
+      grp[k].eintraege.push({serie:null,titel:a.betreff||'',briefe:[a],zeit:t});
+    }
+  });
+  reihenfolge.sort(function(x,y){
+    if(x==='_none')return 1; if(y==='_none')return -1;      // „Nicht zugeordnet" ans Ende
+    return grp[y].neuestes-grp[x].neuestes;
+  });
+  reihenfolge.forEach(function(k){ grp[k].eintraege.sort(function(a,b){return b.zeit-a.zeit;}); });
+  return reihenfolge.map(function(k){return grp[k];});
+}
+var _anschrOffeneGruppen={};   // aufgeklappte Objekte
+var _anschrOffeneSerien={};    // aufgeklappte Serien
+function anschrToggleGruppe(k){ _anschrOffeneGruppen[k]=!_anschrOffeneGruppen[k]; anschrRenderGespeicherte(); }
+function anschrAlleGruppen(auf){
+  _anschrOffeneGruppen={};
+  if(auf)_anschrGruppiert(_anschrGefiltert()).forEach(function(g){_anschrOffeneGruppen[g.id||'_none']=true;});
+  anschrRenderGespeicherte();
+}
+function anschrToggleSerie(s){ _anschrOffeneSerien[s]=!_anschrOffeneSerien[s]; anschrRenderGespeicherte(); }
+
+function anschrRenderGespeicherte(){
+  var box=document.getElementById('anschr-gs-liste'); if(!box)return;
+  var list=_anschrGefiltert();
   if(!list.length){
-    tb.innerHTML='<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--muted);font-size:.85rem">'
-      +(anschrGespeichert.length?'Keine Treffer.':'Noch keine Anschreiben gespeichert.')+'</td></tr>';
+    box.innerHTML='<div style="text-align:center;padding:2.5rem 1rem;color:var(--muted);font-size:.85rem">'
+      +(anschrGespeichert.length?'Keine Treffer für diese Suche.':'Noch keine Anschreiben gespeichert.<br><span style="font-size:.78rem">Erstelle oben ein Anschreiben und speichere es – hier siehst du es dann nach Objekt sortiert.</span>')
+      +'</div>';
     return;
   }
-  tb.innerHTML=list.map(function(a,i){
-    var d=a.created_at?new Date(a.created_at).toLocaleDateString('de-DE'):'';
-    return '<tr style="border-bottom:1px solid var(--border);background:'+(i%2===0?'transparent':'#faf8ff')+'">'
-      +'<td style="padding:.55rem .5rem;font-size:.82rem;white-space:nowrap">'+escapeHtml(d)+'</td>'
-      +'<td style="padding:.55rem .5rem;font-size:.82rem">'+escapeHtml(a.betreff||'')+'</td>'
-      +'<td style="padding:.55rem .5rem;font-size:.82rem">'+escapeHtml(a.empfaenger_name||'')
-        +(a.einheit_label?'<br><span style="font-size:.72rem;color:var(--muted)">'+escapeHtml(a.einheit_label)+'</span>':'')+'</td>'
-      +'<td style="padding:.55rem .5rem;font-size:.82rem">'+escapeHtml(a.objekt_label||'')+'</td>'
-      +'<td style="padding:.55rem .5rem;text-align:right;white-space:nowrap">'
-        +'<button class="btn-small" onclick="anschrOeffnen(\''+a.id+'\')" title="Öffnen und bearbeiten"><span class="btn-ic" data-icon="pencil"></span></button> '
-        +'<button class="btn-small grau" onclick="anschrDuplizieren(\''+a.id+'\')" title="Duplizieren"><span class="btn-ic" data-icon="copy"></span></button> '
-        +'<button class="btn-small gruen" onclick="anschrPdfEinzel(\''+a.id+'\')" title="Als PDF"><span class="btn-ic" data-icon="download"></span></button> '
-        +'<button class="btn-small grau" onclick="anschrLoeschen(\''+a.id+'\')" title="Löschen" style="color:#c0392b"><span class="btn-ic" data-icon="trash"></span></button>'
-      +'</td></tr>';
+  var gruppen=_anschrGruppiert(list);
+  box.innerHTML=gruppen.map(function(g){
+    var key=g.id||'_none';
+    var auf=!!_anschrOffeneGruppen[key];
+    var titel=g.id?(g.label||'(ohne Namen)'):'⚠ Nicht zugeordnet';
+    var farbe=g.id?'var(--p)':'#c0392b';
+    var kopf='<div onclick="anschrToggleGruppe(\''+key+'\')" style="display:flex;align-items:center;gap:.5rem;padding:.6rem .75rem;cursor:pointer;background:var(--bg);border-bottom:1px solid var(--border)">'
+      +'<span style="font-size:.8rem;color:var(--muted);width:.8rem">'+(auf?'▾':'▸')+'</span>'
+      +'<span style="font-size:.86rem;font-weight:700;color:'+farbe+';flex:1;min-width:0">'+escapeHtml(titel)+'</span>'
+      +(g.id?'':'<button class="btn-small" onclick="event.stopPropagation();anschrZuordnenGruppe(\''+key+'\')" style="margin-right:.4rem">Objekt zuordnen</button>')
+      +'<span style="font-size:.76rem;color:var(--muted);white-space:nowrap">'+g.anzahl+(g.anzahl===1?' Brief':' Briefe')+'</span>'
+      +'</div>';
+    if(!auf)return '<div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:.6rem">'+kopf+'</div>';
+    var inhalt=g.eintraege.map(function(e){
+      return e.serie?_anschrSerieHtml(e):_anschrBriefHtml(e.briefe[0],false);
+    }).join('');
+    return '<div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:.6rem">'+kopf+inhalt+'</div>';
   }).join('');
-  if(typeof applyIcons==='function')applyIcons(tb);
+  if(typeof applyIcons==='function')applyIcons(box);
+}
+// Serienbrief als ein Vorgang, aufklappbar auf die einzelnen Empfänger
+function _anschrSerieHtml(e){
+  var auf=!!_anschrOffeneSerien[e.serie];
+  var d=e.zeit?new Date(e.zeit).toLocaleDateString('de-DE'):'';
+  var vers=e.briefe.filter(function(b){return b.versendet_am;}).length;
+  var badge=vers===e.briefe.length?'<span style="font-size:.68rem;color:#1a7a4a;border:1px solid #1a7a4a;border-radius:4px;padding:.05rem .3rem">versendet</span>'
+           :(vers>0?'<span style="font-size:.68rem;color:var(--muted);border:1px solid var(--border);border-radius:4px;padding:.05rem .3rem">'+vers+'/'+e.briefe.length+' versendet</span>':'');
+  var kopf='<div onclick="anschrToggleSerie(\''+e.serie+'\')" style="display:flex;align-items:center;gap:.5rem;padding:.5rem .75rem .5rem 1.6rem;cursor:pointer;border-bottom:1px solid #f5f5f7">'
+    +'<span style="font-size:.75rem;color:var(--muted);width:.8rem">'+(auf?'▾':'▸')+'</span>'
+    +'<span style="font-size:.76rem;color:var(--muted);white-space:nowrap">'+escapeHtml(d)+'</span>'
+    +'<span style="font-size:.83rem;font-weight:600;flex:1;min-width:0">'+escapeHtml(e.titel)+'</span>'
+    +badge
+    +'<span style="font-size:.72rem;color:var(--p);white-space:nowrap;font-weight:700">Rundschreiben · '+e.briefe.length+'</span>'
+    +'<button class="btn-small gruen" onclick="event.stopPropagation();anschrSeriePdf(\''+e.serie+'\')" title="Alle als ein PDF"><span class="btn-ic" data-icon="download"></span></button>'
+    +'</div>';
+  if(!auf)return kopf;
+  return kopf+e.briefe.map(function(b){return _anschrBriefHtml(b,true);}).join('');
+}
+// Eine Briefzeile
+function _anschrBriefHtml(a,inSerie){
+  var d=a.created_at?new Date(a.created_at).toLocaleDateString('de-DE'):'';
+  var vers=a.versendet_am
+    ?'<span title="Versendet am '+escapeHtml(new Date(a.versendet_am).toLocaleDateString('de-DE'))+'" style="font-size:.68rem;color:#1a7a4a;border:1px solid #1a7a4a;border-radius:4px;padding:.05rem .3rem;white-space:nowrap">✓ '+escapeHtml(new Date(a.versendet_am).toLocaleDateString('de-DE'))+'</span>'
+    :'<button class="btn-small grau" onclick="anschrVersendet(\''+a.id+'\')" title="Als versendet markieren" style="font-size:.66rem">als versendet</button>';
+  return '<div style="display:flex;align-items:center;gap:.5rem;padding:.45rem .75rem .45rem '+(inSerie?'3rem':'1.6rem')+';border-bottom:1px solid #f5f5f7;flex-wrap:wrap">'
+    +(inSerie?'':'<span style="font-size:.76rem;color:var(--muted);white-space:nowrap">'+escapeHtml(d)+'</span>')
+    +'<span style="flex:1;min-width:140px">'
+      +(inSerie?'':'<span style="font-size:.83rem;font-weight:600">'+escapeHtml(a.betreff||'')+'</span><br>')
+      +'<span style="font-size:.78rem;color:'+(inSerie?'var(--text)':'var(--muted)')+'">'+escapeHtml(a.empfaenger_name||'')
+      +(a.einheit_label?' · '+escapeHtml(a.einheit_label):'')+'</span>'
+    +'</span>'
+    +vers
+    +'<span style="white-space:nowrap">'
+      +'<button class="btn-small" onclick="anschrOeffnen(\''+a.id+'\')" title="Öffnen und bearbeiten"><span class="btn-ic" data-icon="pencil"></span></button> '
+      +'<button class="btn-small grau" onclick="anschrZuordnen(\''+a.id+'\')" title="Objekt/Einheit zuordnen"><span class="btn-ic" data-icon="building2"></span></button> '
+      +'<button class="btn-small grau" onclick="anschrDuplizieren(\''+a.id+'\')" title="Duplizieren"><span class="btn-ic" data-icon="copy"></span></button> '
+      +'<button class="btn-small gruen" onclick="anschrPdfEinzel(\''+a.id+'\')" title="Als PDF"><span class="btn-ic" data-icon="download"></span></button> '
+      +'<button class="btn-small grau" onclick="anschrLoeschen(\''+a.id+'\')" title="Löschen" style="color:#c0392b"><span class="btn-ic" data-icon="trash"></span></button>'
+    +'</span></div>';
+}
+// Alle Briefe einer Serie in einem PDF
+async function anschrSeriePdf(serieId){
+  var briefe=anschrGespeichert.filter(function(a){return a.serie_id===serieId;});
+  if(!briefe.length)return;
+  await _anschrPdfAusTexten(briefe.map(function(a){
+    return {emp:{adressZeilen:(a.empfaenger_adresse||'').split('\n').filter(Boolean),briefName:a.empfaenger_name||''},text:a.inhalt||''};
+  }),'Rundschreiben_'+String(briefe[0].serie_titel||'Serie').replace(/[^a-zA-Z0-9]+/g,'_')+'.pdf','download');
+}
+// Status „versendet"
+async function anschrVersendet(id){
+  var a=_anschrById(id); if(!a)return;
+  try{
+    var jetzt=new Date().toISOString();
+    var r=await sb.from('anschreiben').update({versendet_am:jetzt,status:'versendet'}).eq('id',id);
+    if(r.error)throw r.error;
+    a.versendet_am=jetzt; a.status='versendet';
+    anschrRenderGespeicherte();
+    showToast('✅ Als versendet markiert');
+  }catch(e){ showToast('⚠️ Fehler: '+(e.message||e)); }
 }
 function _anschrById(id){return anschrGespeichert.filter(function(a){return a.id===id;})[0];}
+
+// ── Eigene Textvorlagen ─────────────────────────────────────────────────
+// Betreff + Brieftext benannt speichern und wiederverwenden. Platzhalter
+// bleiben unersetzt erhalten und greifen erst beim Erzeugen der Briefe.
+var anschrVorlagen=[];
+async function anschrLadeVorlagen(){
+  var sel=document.getElementById('anschr-vorlage-select'); if(!sel||!currentUser)return;
+  try{
+    var r=await sb.from('anschreiben_vorlagen').select('*').eq('user_id',currentUser.id).order('name');
+    if(r.error)throw r.error;
+    anschrVorlagen=r.data||[];
+    var cur=sel.value;
+    sel.innerHTML='<option value="">– Vorlage wählen –</option>'+anschrVorlagen.map(function(v){
+      return '<option value="'+v.id+'">'+escapeHtml(v.name||'(ohne Namen)')+'</option>';
+    }).join('');
+    if(cur)sel.value=cur;
+  }catch(e){ console.error('anschrLadeVorlagen:',e); }
+}
+function _anschrVorlageAktiv(){
+  var id=(document.getElementById('anschr-vorlage-select')||{value:''}).value;
+  return anschrVorlagen.filter(function(v){return v.id===id;})[0]||null;
+}
+function anschrVorlageAnwenden(){
+  var v=_anschrVorlageAktiv(); if(!v)return;
+  var b=document.getElementById('anschr-betreff'), t=document.getElementById('anschr-freitext');
+  if(b)b.value=v.betreff||'';
+  if(t)t.value=v.text||'';
+  if(typeof setAnschrVorlage==='function'&&aktuelleVorlage!=='info')setAnschrVorlage('info');
+  showToast('📋 Vorlage „'+(v.name||'')+'" eingefügt');
+}
+async function anschrVorlageSpeichern(){
+  if(!currentUser){showToast('Bitte zuerst anmelden.');return;}
+  var betreff=((document.getElementById('anschr-betreff')||{value:''}).value||'').trim();
+  var text=((document.getElementById('anschr-freitext')||{value:''}).value||'').trim();
+  if(!text&&!betreff){showToast('Bitte zuerst Betreff oder Brieftext ausfüllen.');return;}
+  var name=window.prompt('Name der Vorlage:',betreff||'Neue Vorlage');
+  if(name===null)return;
+  name=String(name).trim(); if(!name){showToast('Bitte einen Namen angeben.');return;}
+  try{
+    var r=await sb.from('anschreiben_vorlagen').insert({user_id:currentUser.id,name:name,betreff:betreff,text:text}).select().single();
+    if(r.error)throw r.error;
+    await anschrLadeVorlagen();
+    var sel=document.getElementById('anschr-vorlage-select'); if(sel&&r.data)sel.value=r.data.id;
+    showToast('✅ Vorlage „'+name+'" gespeichert');
+  }catch(e){ showToast('⚠️ Speichern fehlgeschlagen: '+(e.message||e)); }
+}
+async function anschrVorlageUeberschreiben(){
+  var v=_anschrVorlageAktiv();
+  if(!v){showToast('Bitte zuerst eine Vorlage auswählen.');return;}
+  var betreff=((document.getElementById('anschr-betreff')||{value:''}).value||'').trim();
+  var text=((document.getElementById('anschr-freitext')||{value:''}).value||'').trim();
+  try{
+    var r=await sb.from('anschreiben_vorlagen').update({betreff:betreff,text:text,updated_at:new Date().toISOString()}).eq('id',v.id);
+    if(r.error)throw r.error;
+    await anschrLadeVorlagen();
+    showToast('✅ Vorlage „'+(v.name||'')+'" aktualisiert');
+  }catch(e){ showToast('⚠️ Fehler: '+(e.message||e)); }
+}
+function anschrVorlageLoeschen(){
+  var v=_anschrVorlageAktiv();
+  if(!v){showToast('Bitte zuerst eine Vorlage auswählen.');return;}
+  appConfirm({icon:'🗑',title:'Vorlage löschen?',
+    message:'<b>'+escapeHtml(v.name||'')+'</b><br><br>Die Vorlage wird dauerhaft gelöscht. Bereits erstellte Anschreiben bleiben erhalten.',
+    buttons:[{label:'Abbrechen',style:'background:var(--bg);color:var(--text)'},
+             {label:'Löschen',style:'background:#c0392b;color:#fff',onClick:async function(){
+               try{
+                 var r=await sb.from('anschreiben_vorlagen').delete().eq('id',v.id);
+                 if(r.error)throw r.error;
+                 var sel=document.getElementById('anschr-vorlage-select'); if(sel)sel.value='';
+                 await anschrLadeVorlagen();
+                 showToast('🗑 Vorlage gelöscht');
+               }catch(e){ showToast('⚠️ Fehler: '+(e.message||e)); }
+             }}]});
+}
+
+// ── Anschreiben in der Objektansicht / im Einheiten-Cockpit ─────────────
+// Kompakte Liste der letzten Briefe zu einem Objekt bzw. einer Einheit.
+async function odLadeAnschreiben(objektId){
+  var box=document.getElementById('od-anschreiben-list'); if(!box)return;
+  if(!currentUser||!objektId){box.innerHTML='';return;}
+  try{
+    var r=await sb.from('anschreiben').select('id,betreff,empfaenger_name,einheit_label,created_at,versendet_am,serie_id,serie_titel')
+           .eq('user_id',currentUser.id).eq('objekt_id',objektId).order('created_at',{ascending:false}).limit(60);
+    if(r.error)throw r.error;
+    box.innerHTML=_anschrKompaktListe(r.data||[],'Für dieses Objekt wurde noch kein Anschreiben gespeichert.');
+    if(typeof applyIcons==='function')applyIcons(box);
+  }catch(e){
+    box.innerHTML='<div style="color:#c0392b;font-size:.8rem">Fehler beim Laden: '+escapeHtml(e.message||'')+'</div>';
+  }
+}
+async function ecLadeAnschreiben(einheitId){
+  var box=document.getElementById('ec-anschreiben-list'); if(!box)return;
+  if(!currentUser||!einheitId){box.innerHTML='';return;}
+  try{
+    var r=await sb.from('anschreiben').select('id,betreff,empfaenger_name,einheit_label,created_at,versendet_am,serie_id,serie_titel')
+           .eq('user_id',currentUser.id).eq('einheit_id',einheitId).order('created_at',{ascending:false}).limit(40);
+    if(r.error)throw r.error;
+    box.innerHTML=_anschrKompaktListe(r.data||[],'Für diese Einheit wurde noch kein Anschreiben gespeichert.');
+    if(typeof applyIcons==='function')applyIcons(box);
+  }catch(e){ box.innerHTML=''; }
+}
+// Gemeinsame kompakte Darstellung; Serienbriefe werden zu einer Zeile gebündelt
+function _anschrKompaktListe(rows,leerText){
+  if(!rows.length)return '<div style="color:var(--muted);font-size:.82rem">'+escapeHtml(leerText)+'</div>';
+  var gesehen={},zeilen=[];
+  rows.forEach(function(a){
+    if(a.serie_id){
+      if(gesehen[a.serie_id]){gesehen[a.serie_id].n++; if(a.versendet_am)gesehen[a.serie_id].v++; return;}
+      gesehen[a.serie_id]={n:1,v:a.versendet_am?1:0,row:a}; zeilen.push({serie:a.serie_id});
+    } else zeilen.push({row:a});
+  });
+  return zeilen.slice(0,12).map(function(z){
+    var a=z.serie?gesehen[z.serie].row:z.row;
+    var n=z.serie?gesehen[z.serie].n:1, v=z.serie?gesehen[z.serie].v:(a.versendet_am?1:0);
+    var d=a.created_at?new Date(a.created_at).toLocaleDateString('de-DE'):'';
+    var titel=z.serie?(a.serie_titel||a.betreff||''):(a.betreff||'');
+    var wer=z.serie?('Rundschreiben · '+n+' Empfänger'):((a.empfaenger_name||'')+(a.einheit_label?' · '+a.einheit_label:''));
+    var badge=(v===n&&n>0)?'<span style="font-size:.66rem;color:#1a7a4a;border:1px solid #1a7a4a;border-radius:4px;padding:.05rem .3rem;white-space:nowrap">versendet</span>':'';
+    return '<div style="display:flex;align-items:center;gap:.5rem;padding:.4rem 0;border-bottom:1px solid #f5f5f7">'
+      +'<span style="font-size:.74rem;color:var(--muted);white-space:nowrap;min-width:62px">'+escapeHtml(d)+'</span>'
+      +'<span style="flex:1;min-width:0"><span style="font-size:.82rem;font-weight:600">'+escapeHtml(titel)+'</span>'
+      +'<br><span style="font-size:.74rem;color:var(--muted)">'+escapeHtml(wer)+'</span></span>'
+      +badge
+      +'<button class="btn-small gruen" onclick="anschrPdfAusId(\''+a.id+'\')" title="Als PDF"><span class="btn-ic" data-icon="download"></span></button>'
+      +'<button class="btn-small" onclick="anschrOeffnenAusObjekt(\''+a.id+'\')" title="Im Anschreiben-Modul öffnen"><span class="btn-ic" data-icon="pencil"></span></button>'
+      +'</div>';
+  }).join('');
+}
+// PDF direkt aus der Objektansicht (Datensatz ggf. nachladen)
+async function anschrPdfAusId(id){
+  var a=_anschrById(id);
+  if(!a){ try{ var r=await sb.from('anschreiben').select('*').eq('id',id).maybeSingle(); a=r.data; }catch(e){} }
+  if(!a){showToast('Anschreiben nicht gefunden.');return;}
+  await _anschrPdfAusTexten([{emp:{adressZeilen:(a.empfaenger_adresse||'').split('\n').filter(Boolean),briefName:a.empfaenger_name||''},text:a.inhalt||''}],
+    'Anschreiben_'+String(a.empfaenger_name||'Mieter').replace(/[^a-zA-Z0-9]+/g,'_')+'.pdf','vorschau');
+}
+// Aus der Objektansicht ins Anschreiben-Modul springen und dort öffnen
+async function anschrOeffnenAusObjekt(id){
+  showPage('anschreiben');
+  await anschrLadeGespeicherte();
+  anschrOeffnen(id);
+}
+// „+ Neues Anschreiben" aus der Objektansicht: Modul öffnen, Objekt vorwählen
+async function anschrNeuFuerObjekt(){
+  var objId=(typeof aktivesObjekt!=='undefined'&&aktivesObjekt)?aktivesObjekt.id:null;
+  showPage('anschreiben');
+  await anschrLadeObjekte();
+  var sel=document.getElementById('anschr-objekt-select');
+  if(sel&&objId){
+    var passt=Array.prototype.some.call(sel.options,function(o){return o.value===objId;});
+    if(passt){ sel.value=objId; await anschrObjektGewaehlt(); }
+    else showToast('Für dieses Objekt sind keine Mietparteien hinterlegt.');
+  }
+}
+
+// ── Zuordnung: Brief einem Objekt / einer Einheit zuweisen ──────────────
+var _anschrZuordnenIds=[];
+async function anschrZuordnen(id){ _anschrZuordnenIds=[id]; await _anschrZuordnenDialog(); }
+async function anschrZuordnenGruppe(key){
+  // Alle nicht zugeordneten Briefe gemeinsam zuweisen
+  _anschrZuordnenIds=_anschrGefiltert().filter(function(a){return (a.objekt_id||'_none')===key;}).map(function(a){return a.id;});
+  if(!_anschrZuordnenIds.length)return;
+  await _anschrZuordnenDialog();
+}
+async function _anschrZuordnenDialog(){
+  await anschrLadeObjekte();
+  var n=_anschrZuordnenIds.length;
+  var erster=_anschrById(_anschrZuordnenIds[0])||{};
+  var sel=document.getElementById('anschr-zu-objekt');
+  if(sel){
+    sel.innerHTML='<option value="">– kein Objekt –</option>'+anschrObjekte.map(function(o){
+      return '<option value="'+o.id+'"'+(o.id===erster.objekt_id?' selected':'')+'>'+escapeHtml(o.name||'')+'</option>';
+    }).join('');
+  }
+  var info=document.getElementById('anschr-zu-info');
+  if(info)info.textContent=n===1?('„'+(erster.betreff||'')+'" an '+(erster.empfaenger_name||'')):(n+' Anschreiben gemeinsam zuordnen');
+  await anschrZuEinheiten();
+  var m=document.getElementById('anschr-zu-modal'); if(m)m.style.display='flex';
+}
+function closeAnschrZuordnen(){ var m=document.getElementById('anschr-zu-modal'); if(m)m.style.display='none'; }
+// Einheiten des gewählten Objekts nachladen
+async function anschrZuEinheiten(){
+  var objId=(document.getElementById('anschr-zu-objekt')||{value:''}).value;
+  var sel=document.getElementById('anschr-zu-einheit'); if(!sel)return;
+  sel.innerHTML='<option value="">– keine Einheit –</option>';
+  if(!objId||!currentUser)return;
+  try{
+    var r=await sb.from('einheiten').select('id,bezeichnung').eq('user_id',currentUser.id).eq('objekt_id',objId).order('bezeichnung');
+    var erster=_anschrById(_anschrZuordnenIds[0])||{};
+    sel.innerHTML='<option value="">– keine Einheit –</option>'+(r.data||[]).map(function(e){
+      return '<option value="'+e.id+'"'+(e.id===erster.einheit_id?' selected':'')+'>'+escapeHtml(e.bezeichnung||'')+'</option>';
+    }).join('');
+  }catch(e){}
+}
+async function anschrZuordnenSpeichern(){
+  var objId=(document.getElementById('anschr-zu-objekt')||{value:''}).value||null;
+  var einId=(document.getElementById('anschr-zu-einheit')||{value:''}).value||null;
+  var o=anschrObjekte.filter(function(x){return x.id===objId;})[0];
+  var einSel=document.getElementById('anschr-zu-einheit');
+  var einLabel=(einId&&einSel&&einSel.selectedOptions&&einSel.selectedOptions[0])?einSel.selectedOptions[0].textContent:'';
+  var upd={objekt_id:objId,einheit_id:einId,
+           objekt_label:o?(o.name||''):'',
+           einheit_label:einLabel||'',
+           updated_at:new Date().toISOString()};
+  try{
+    var r=await sb.from('anschreiben').update(upd).in('id',_anschrZuordnenIds);
+    if(r.error)throw r.error;
+    showToast('✅ '+_anschrZuordnenIds.length+(_anschrZuordnenIds.length===1?' Anschreiben zugeordnet':' Anschreiben zugeordnet'));
+    closeAnschrZuordnen();
+    if(objId)_anschrOffeneGruppen[objId]=true;
+    await anschrLadeGespeicherte();
+  }catch(e){ showToast('⚠️ Zuordnen fehlgeschlagen: '+(e.message||e)); }
+}
 
 // Gespeichertes Anschreiben in das Formular zurückladen
 function anschrOeffnen(id,alsKopie){
@@ -14768,8 +15144,13 @@ async function openEinheitCockpit(einheitId){
     var staffeln=[], einnahmen=[];
     if(mvIds.length){ var sR=await sb.from('miet_staffel').select('*').in('mietverhaeltnis_id',mvIds); staffeln=sR.data||[]; }
     var enR=await sb.from('miet_einnahme').select('*').eq('einheit_id',einheitId); einnahmen=enR.data||[];
-    box.innerHTML=_einheitCockpitHtml(e,mvs,staffeln,einnahmen);
+    box.innerHTML=_einheitCockpitHtml(e,mvs,staffeln,einnahmen)
+      +'<div style="padding:0 1.5rem 1.5rem"><div style="border-top:1px solid var(--border);padding-top:1rem">'
+      +'<div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:.6rem">Anschreiben</div>'
+      +'<div id="ec-anschreiben-list"><div style="color:var(--muted);font-size:.82rem">Wird geladen…</div></div>'
+      +'</div></div>';
     if(typeof applyIcons==='function')applyIcons(box);
+    ecLadeAnschreiben(einheitId);
   }catch(err){ box.innerHTML='<div style="padding:2rem;color:#dc2626">Fehler: '+escapeHtml(err.message||'')+'</div>'; }
 }
 function closeEinheitCockpit(){var m=document.getElementById('einheit-cockpit-modal');if(m)m.style.display='none';}
@@ -15040,6 +15421,7 @@ async function openObjektDetail(objId,opts){
       loadObjektEinheiten(objId).catch(function(e){console.warn('einheiten:',e);}),
       loadObjektMieter(objId).catch(function(e){console.warn('mieter:',e);}),
       loadObjektAbrechnungen(objId).catch(function(e){console.warn('abr:',e);}),
+      odLadeAnschreiben(objId).catch(function(e){console.warn('anschreiben:',e);}),
     ]);
     applyObjektTypTabs();
     try{loadObjektUebersichtTab(objId);}catch(e){console.warn('uebersicht:',e);}

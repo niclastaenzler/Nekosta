@@ -2882,8 +2882,33 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
             <button class="btn-small grau" onclick="anschrVorschauNav(1)">→</button>
             <span id="anschr-nav-empf" style="font-size:.78rem;color:var(--muted);margin-left:auto"></span>
           </div>
-          <div style="font-size:.76rem;color:var(--muted);margin-bottom:.4rem">✏️ Der Text ist direkt bearbeitbar – Änderungen landen im PDF und beim Speichern. „PDF-Vorschau" zeigt das fertige DIN-5008-Layout.</div>
-          <textarea id="anschr-text" oninput="anschrTextBearbeitet()" spellcheck="true" style="font-family:var(--ff);font-size:.9rem;line-height:1.7;background:var(--white);border-radius:8px;padding:1.5rem;border:1px solid var(--border);min-height:340px;width:100%;resize:vertical;outline:none"></textarea>
+          <div style="font-size:.76rem;color:var(--muted);margin-bottom:.5rem">✏️ Der Text ist direkt bearbeitbar und formatierbar – Änderungen landen im PDF und beim Speichern. „PDF-Vorschau" zeigt das fertige DIN-5008-Layout.</div>
+          <!-- SYMBOLLEISTE -->
+          <div style="display:flex;gap:.3rem;flex-wrap:wrap;align-items:center;background:var(--bg);border:1px solid var(--border);border-bottom:none;border-radius:8px 8px 0 0;padding:.4rem .5rem">
+            <button type="button" id="anschr-fmt-bold" onmousedown="event.preventDefault()" onclick="anschrFormat('bold')" title="Fett (Strg+B)"
+              style="width:30px;height:28px;border:1px solid var(--border);background:var(--white);border-radius:5px;cursor:pointer;font-family:var(--ff);font-weight:800;font-size:.86rem">F</button>
+            <button type="button" id="anschr-fmt-italic" onmousedown="event.preventDefault()" onclick="anschrFormat('italic')" title="Kursiv (Strg+I)"
+              style="width:30px;height:28px;border:1px solid var(--border);background:var(--white);border-radius:5px;cursor:pointer;font-family:var(--ff);font-style:italic;font-size:.86rem">K</button>
+            <button type="button" id="anschr-fmt-underline" onmousedown="event.preventDefault()" onclick="anschrFormat('underline')" title="Unterstrichen (Strg+U)"
+              style="width:30px;height:28px;border:1px solid var(--border);background:var(--white);border-radius:5px;cursor:pointer;font-family:var(--ff);text-decoration:underline;font-size:.86rem">U</button>
+            <span style="width:1px;height:20px;background:var(--border);margin:0 .25rem"></span>
+            <button type="button" onmousedown="event.preventDefault()" onclick="anschrFormat('insertUnorderedList')" title="Aufzählung"
+              style="height:28px;padding:0 .5rem;border:1px solid var(--border);background:var(--white);border-radius:5px;cursor:pointer;font-family:var(--ff);font-size:.8rem">• Liste</button>
+            <button type="button" onmousedown="event.preventDefault()" onclick="anschrFormat('insertOrderedList')" title="Nummerierte Liste"
+              style="height:28px;padding:0 .5rem;border:1px solid var(--border);background:var(--white);border-radius:5px;cursor:pointer;font-family:var(--ff);font-size:.8rem">1. Liste</button>
+            <span style="width:1px;height:20px;background:var(--border);margin:0 .25rem"></span>
+            <button type="button" onmousedown="event.preventDefault()" onclick="anschrFormat('removeFormat')" title="Formatierung entfernen"
+              style="height:28px;padding:0 .5rem;border:1px solid var(--border);background:var(--white);border-radius:5px;cursor:pointer;font-family:var(--ff);font-size:.8rem">Format löschen</button>
+            <span style="width:1px;height:20px;background:var(--border);margin:0 .25rem"></span>
+            <button type="button" onmousedown="event.preventDefault()" onclick="anschrFormat('undo')" title="Rückgängig (Strg+Z)"
+              style="width:30px;height:28px;border:1px solid var(--border);background:var(--white);border-radius:5px;cursor:pointer;font-size:.86rem">↶</button>
+            <button type="button" onmousedown="event.preventDefault()" onclick="anschrFormat('redo')" title="Wiederholen (Strg+Y)"
+              style="width:30px;height:28px;border:1px solid var(--border);background:var(--white);border-radius:5px;cursor:pointer;font-size:.86rem">↷</button>
+            <span style="margin-left:auto;font-size:.7rem;color:var(--muted)">Fett und Kursiv erscheinen genauso im PDF</span>
+          </div>
+          <div id="anschr-text" contenteditable="true" spellcheck="true"
+            oninput="anschrTextBearbeitet()" onkeyup="anschrFormatStatus()" onmouseup="anschrFormatStatus()" onfocus="anschrFormatStatus()"
+            style="font-family:var(--ff);font-size:.9rem;line-height:1.7;background:var(--white);border-radius:0 0 8px 8px;padding:1.5rem;border:1px solid var(--border);min-height:340px;width:100%;box-sizing:border-box;outline:none;overflow-y:auto;max-height:70vh"></div>
         </div>
 
         <!-- GESPEICHERTE ANSCHREIBEN -->
@@ -9220,15 +9245,197 @@ function anschrAktualisiereZaehler(){
   if(box&&n>0)box.open=false;
 }
 
-// ── Vorschau-Text: die Vorschau ist eine Textarea und damit bearbeitbar ─
-function _anschrTextGet(){ var el=document.getElementById('anschr-text'); return el?(el.value||''):''; }
-function _anschrTextSet(t){ var el=document.getElementById('anschr-text'); if(el)el.value=t||''; }
+// ══════════════════════════════════════════════════════════════════════════
+//  FORMATIERTER BRIEFTEXT (fett / kursiv / unterstrichen)
+//  Der Editor liefert einfaches HTML. Für das PDF wird es in Absätze aus
+//  „Runs" zerlegt – zusammenhängende Textstücke gleicher Formatierung.
+//  Bewusst ohne DOM gelöst: so ist die Zerlegung eindeutig und prüfbar.
+// ══════════════════════════════════════════════════════════════════════════
+function _htmlEntities(s){
+  return String(s||'')
+    .replace(/&nbsp;/gi,' ').replace(/&auml;/gi,'ä').replace(/&ouml;/gi,'ö').replace(/&uuml;/gi,'ü')
+    .replace(/&Auml;/g,'Ä').replace(/&Ouml;/g,'Ö').replace(/&Uuml;/g,'Ü').replace(/&szlig;/gi,'ß')
+    .replace(/&quot;/gi,'"').replace(/&#0?39;/g,"'").replace(/&apos;/gi,"'")
+    .replace(/&lt;/gi,'<').replace(/&gt;/gi,'>')
+    .replace(/&#(\d+);/g,function(m,d){try{return String.fromCharCode(parseInt(d,10));}catch(e){return m;}})
+    .replace(/&amp;/gi,'&');
+}
+function _escHtml(s){
+  return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+// HTML → [ Absatz, ... ] mit Absatz = [ {t,b,i,u}, ... ]
+function anschrHtmlAbsaetze(html){
+  var absaetze=[],runs=[],stil={b:0,i:0,u:0};
+  var BLOCK=/^(div|p|li|h[1-6]|tr|section|article|blockquote)$/i;
+  var neuerAbsatz=function(){ absaetze.push(runs); runs=[]; };
+  var text=function(s){
+    s=_htmlEntities(s).replace(/[\t\r\n]+/g,' ');
+    if(!s)return;
+    var letzter=runs[runs.length-1];
+    var b=!!stil.b,i=!!stil.i,u=!!stil.u;
+    if(letzter&&letzter.b===b&&letzter.i===i&&letzter.u===u)letzter.t+=s;
+    else runs.push({t:s,b:b,i:i,u:u});
+  };
+  var re=/<\/?([a-zA-Z][a-zA-Z0-9]*)\b([^>]*)>|([^<]+)/g,m;
+  var blockOffen=false, brGesetzt=false;
+  while((m=re.exec(String(html||'')))){
+    if(m[3]!=null){ if(_htmlEntities(m[3]))brGesetzt=false; text(m[3]); continue; }
+    var tag=(m[1]||'').toLowerCase(), attr=m[2]||'', schliessend=m[0].charAt(1)==='/';
+    if(tag==='br'){ neuerAbsatz(); brGesetzt=true; continue; }
+    if(BLOCK.test(tag)){
+      if(!schliessend){ if(blockOffen||runs.length)neuerAbsatz(); blockOffen=true; brGesetzt=false; }
+      // Ein <br> als einziger Inhalt eines Blocks hat den Umbruch bereits gesetzt –
+      // sonst würde aus einer Leerzeile im Editor eine doppelte im PDF.
+      else { if(!(brGesetzt&&!runs.length))neuerAbsatz(); blockOffen=false; brGesetzt=false; }
+      continue;
+    }
+    var fett=(tag==='b'||tag==='strong')||/font-weight\s*:\s*(bold|[6-9]00)/i.test(attr);
+    var kursiv=(tag==='i'||tag==='em')||/font-style\s*:\s*italic/i.test(attr);
+    var unter=(tag==='u')||/text-decoration[^;"']*underline/i.test(attr);
+    if(fett)  stil.b+=schliessend?-1:1;
+    if(kursiv)stil.i+=schliessend?-1:1;
+    if(unter) stil.u+=schliessend?-1:1;
+    if(stil.b<0)stil.b=0; if(stil.i<0)stil.i=0; if(stil.u<0)stil.u=0;
+  }
+  if(runs.length)absaetze.push(runs);
+  // Leere Absätze am Ende entfernen, innenliegende als Leerzeile behalten
+  while(absaetze.length&&!absaetze[absaetze.length-1].some(function(r){return r.t.trim();}))absaetze.pop();
+  return absaetze;
+}
+function anschrAbsaetzeZuText(absaetze){
+  return (absaetze||[]).map(function(a){return a.map(function(r){return r.t;}).join('');}).join('\n');
+}
+function anschrHtmlZuText(html){
+  if(html==null)return '';
+  if(String(html).indexOf('<')<0)return _htmlEntities(html);
+  return anschrAbsaetzeZuText(anschrHtmlAbsaetze(html));
+}
+function anschrTextZuHtml(text){
+  return String(text==null?'':text).split(/\r\n|\r|\n/)
+    .map(function(z){return '<div>'+(z?_escHtml(z):'<br>')+'</div>';}).join('');
+}
+// Runs eines Absatzes auf eine Breite umbrechen; misst mit der jeweiligen Schrift
+function anschrRunsUmbrechen(doc,runs,breite){
+  var zeilen=[],aktuell=[],x=0;
+  var zeileAbschliessen=function(){
+    // Leerzeichen am Zeilenende verwerfen, sonst rutscht der Text optisch nach links
+    while(aktuell.length){
+      var l=aktuell[aktuell.length-1];
+      l.t=l.t.replace(/\s+$/,'');
+      if(l.t)break;
+      aktuell.pop();
+    }
+    zeilen.push(aktuell); aktuell=[]; x=0;
+  };
+  var messe=function(txt,r){
+    doc.setFont('helvetica',(r.b&&r.i)?'bolditalic':(r.b?'bold':(r.i?'italic':'normal')));
+    return doc.getTextWidth(txt);
+  };
+  var anhaengen=function(txt,r){
+    var letzter=aktuell[aktuell.length-1];
+    if(letzter&&letzter.b===r.b&&letzter.i===r.i&&letzter.u===r.u)letzter.t+=txt;
+    else aktuell.push({t:txt,b:r.b,i:r.i,u:r.u});
+  };
+  (runs||[]).forEach(function(r){
+    // an Leerzeichen trennen, Trennzeichen behalten
+    var teile=String(r.t).split(/(\s+)/).filter(function(s){return s!=='';});
+    teile.forEach(function(w){
+      var wb=messe(w,r);
+      if(/^\s+$/.test(w)){
+        if(!aktuell.length)return;              // führende Leerzeichen einer Zeile verwerfen
+        if(x+wb>breite)return;                  // Umbruch schluckt das Leerzeichen
+        anhaengen(w,r); x+=wb; return;
+      }
+      if(x+wb>breite&&aktuell.length){ zeileAbschliessen(); }
+      // Einzelwort länger als die Zeile: hart trennen
+      if(wb>breite){
+        var rest=w;
+        while(rest.length>1&&messe(rest,r)>breite){
+          var n=Math.max(1,Math.floor(rest.length*breite/messe(rest,r))-1);
+          while(n>1&&messe(rest.slice(0,n),r)>breite)n--;
+          anhaengen(rest.slice(0,n),r); zeileAbschliessen();
+          rest=rest.slice(n);
+        }
+        if(rest){ anhaengen(rest,r); x=messe(rest,r); }
+        return;
+      }
+      anhaengen(w,r); x+=wb;
+    });
+  });
+  if(aktuell.length)zeileAbschliessen();
+  if(!zeilen.length)zeilen.push([]);            // Leerzeile erhalten
+  return zeilen;
+}
+// Eine Zeile aus Runs setzen; liefert nichts, zeichnet nur
+function anschrZeileZeichnen(doc,zeile,x,y,groesse){
+  (zeile||[]).forEach(function(r){
+    if(!r.t)return;
+    doc.setFont('helvetica',(r.b&&r.i)?'bolditalic':(r.b?'bold':(r.i?'italic':'normal')));
+    doc.text(r.t,x,y);
+    var w=doc.getTextWidth(r.t);
+    if(r.u){ doc.setLineWidth(0.25); doc.line(x,y+0.9,x+w,y+0.9); }
+    x+=w;
+  });
+  doc.setFont('helvetica','normal');
+}
+// Zerlegung wie _anschrZerlege, aber auf formatierten Absätzen
+function anschrZerlegeAbsaetze(absaetze){
+  var texte=(absaetze||[]).map(function(a){return a.map(function(r){return r.t;}).join('');});
+  var bi=-1;
+  for(var i=0;i<texte.length;i++){ if(/^Betreff:\s*/.test(texte[i])){bi=i;break;} }
+  if(bi<0)return {ok:false,body:absaetze||[]};
+  // Betreff ohne das Präfix, Formatierung erhalten
+  var betreff=(absaetze[bi]||[]).map(function(r){return {t:r.t,b:r.b,i:r.i,u:r.u};});
+  var weg=texte[bi].length-texte[bi].replace(/^Betreff:\s*/,'').length;
+  while(weg>0&&betreff.length){
+    if(betreff[0].t.length<=weg){ weg-=betreff[0].t.length; betreff.shift(); }
+    else { betreff[0].t=betreff[0].t.slice(weg); weg=0; }
+  }
+  var datum='',kopfEnde=bi;
+  for(var j=bi-1;j>=0;j--){ if(texte[j].trim()){datum=texte[j].trim();kopfEnde=j;break;} }
+  var absender=texte.slice(0,kopfEnde).filter(function(t){return t.trim();});
+  var body=absaetze.slice(bi+1);
+  while(body.length&&!body[0].some(function(r){return r.t.trim();}))body.shift();
+  return {ok:true,absender:absender,datum:datum,betreff:betreff,body:body};
+}
+
+// ── Vorschau-Text: der Editor ist formatierbar (fett/kursiv/unterstrichen) ─
+function _anschrEl(){ return document.getElementById('anschr-text'); }
+function _anschrHtmlGet(){ var el=_anschrEl(); return el?(el.innerHTML||''):''; }
+function _anschrHtmlSet(html){ var el=_anschrEl(); if(el)el.innerHTML=html||'<div><br></div>'; }
+function _anschrTextGet(){ return anschrHtmlZuText(_anschrHtmlGet()); }
+// Nimmt reinen Text oder HTML entgegen
+function _anschrTextSet(t){
+  t=t||'';
+  _anschrHtmlSet(String(t).indexOf('<')>=0?t:anschrTextZuHtml(t));
+}
 // Nutzer hat den Text bearbeitet → Änderung dem angezeigten Brief zuordnen
 function anschrTextBearbeitet(){
   if(!anschrBriefe.length)anschrBriefe=[{emp:null,text:''}];
   var i=Math.min(Math.max(anschrVorschauIdx,0),anschrBriefe.length-1);
+  anschrBriefe[i].html=_anschrHtmlGet();
   anschrBriefe[i].text=_anschrTextGet();
   anschrBriefe[i].bearbeitet=true;
+}
+// Formatierung auf die Auswahl anwenden (Word-artig)
+function anschrFormat(befehl,wert){
+  var el=_anschrEl(); if(!el)return;
+  el.focus();
+  try{ document.execCommand('styleWithCSS',false,false); }catch(e){}
+  try{ document.execCommand(befehl,false,wert==null?null:wert); }catch(e){}
+  anschrTextBearbeitet();
+  anschrFormatStatus();
+}
+// Zustand der Schaltflächen an der Cursorposition spiegeln
+function anschrFormatStatus(){
+  [['bold','anschr-fmt-bold'],['italic','anschr-fmt-italic'],['underline','anschr-fmt-underline']]
+    .forEach(function(p){
+      var btn=document.getElementById(p[1]); if(!btn)return;
+      var an=false; try{ an=document.queryCommandState(p[0]); }catch(e){}
+      btn.style.background=an?'var(--p-light)':'var(--white)';
+      btn.style.color=an?'var(--p)':'var(--text)';
+      btn.style.borderColor=an?'var(--p)':'var(--border)';
+    });
 }
 
 // ── Briefpapier & Layout ────────────────────────────────────────────────
@@ -9460,11 +9667,11 @@ function anschrGenerieren(force){
     anschrBriefe=[]; anschrVorschauIdx=0;
     if(nav)nav.style.display='none';
     var t=generiereAnschreiben();
-    if(t&&t.trim())anschrBriefe=[{emp:null,text:t}];
+    if(t&&t.trim())anschrBriefe=[{emp:null,text:t,html:anschrTextZuHtml(t)}];
     return;
   }
   var unvollstaendig=sel.filter(function(e){return !e.vollstaendig;});
-  anschrBriefe=sel.map(function(e){ return {emp:e,text:generiereAnschreiben(e)}; });
+  anschrBriefe=sel.map(function(e){ var t=generiereAnschreiben(e); return {emp:e,text:t,html:anschrTextZuHtml(t)}; });
   anschrVorschauIdx=0;
   anschrZeigeVorschau();
   if(unvollstaendig.length)showToast('⚠️ '+unvollstaendig.length+' Empfänger ohne vollständige Anschrift.');
@@ -9477,7 +9684,7 @@ function anschrZeigeVorschau(){
   if(anschrVorschauIdx<0)anschrVorschauIdx=anschrBriefe.length-1;
   if(anschrVorschauIdx>=anschrBriefe.length)anschrVorschauIdx=0;
   var b=anschrBriefe[anschrVorschauIdx];
-  _anschrTextSet(b.text);
+  _anschrHtmlSet(b.html||anschrTextZuHtml(b.text||''));
   if(pv)pv.style.display='block';
   if(nav){
     nav.style.display=anschrBriefe.length>1?'flex':'none';
@@ -9546,6 +9753,7 @@ async function anschrSpeichern(){
       vorlage:felder._vorlage,
       betreff:_anschrBetreffAus(b.text),
       inhalt:b.text,
+      inhalt_html:b.html||anschrTextZuHtml(b.text||''),
       vorlage_text:vorlageText,
       felder:felder,
       status:'erstellt'
@@ -9747,7 +9955,7 @@ function anschrVorlageAnwenden(){
   var v=_anschrVorlageAktiv(); if(!v)return;
   var b=document.getElementById('anschr-betreff'), t=document.getElementById('anschr-freitext');
   if(b)b.value=v.betreff||'';
-  if(t)t.value=v.text||'';
+  if(t)t.value=v.text_html?anschrHtmlZuText(v.text_html):(v.text||'');
   if(typeof setAnschrVorlage==='function'&&aktuelleVorlage!=='info')setAnschrVorlage('info');
   showToast('📋 Vorlage „'+(v.name||'')+'" eingefügt');
 }
@@ -9953,8 +10161,9 @@ function anschrOeffnen(id,alsKopie){
   if(leer){leer.style.display='block';leer.textContent=alsKopie?'Kopie – Empfänger unten anpassen oder erneut ein Objekt wählen.':'Gespeichertes Anschreiben – Empfängerdaten stehen im Text.';}
   anschrAktualisiereZaehler();
   // Gespeicherten Text unverändert anzeigen
-  anschrBriefe=[{emp:null,text:a.inhalt||''}]; anschrVorschauIdx=0;
-  _anschrTextSet(a.inhalt||'');
+  var _html=a.inhalt_html||anschrTextZuHtml(a.inhalt||'');
+  anschrBriefe=[{emp:null,text:a.inhalt||'',html:_html}]; anschrVorschauIdx=0;
+  _anschrHtmlSet(_html);
   var pv=document.getElementById('anschr-preview'); if(pv)pv.style.display='block';
   var nav=document.getElementById('anschr-nav'); if(nav)nav.style.display='none';
   anschrEditId=alsKopie?null:a.id;
@@ -10075,6 +10284,9 @@ async function _anschrPdfDin(briefe,fname,action){
     if(bi>0)doc.addPage();
     drawBogen(); drawKopf();
     var teile=_anschrZerlege(b.text);
+    // Formatierte Fassung: aus dem HTML des Editors, sonst aus dem reinen Text
+    var rAbsaetze=anschrHtmlAbsaetze(b.html||anschrTextZuHtml(b.text||''));
+    var rTeile=anschrZerlegeAbsaetze(rAbsaetze);
 
     // ── Anschriftfeld ──
     var adr=(b.emp&&b.emp.adressZeilen&&b.emp.adressZeilen.length)?b.emp.adressZeilen.slice(0):[];
@@ -10101,21 +10313,24 @@ async function _anschrPdfDin(briefe,fname,action){
 
     // ── Betreff (fett) ──
     var y=BETREFF_Y;
-    if(teile.ok&&teile.betreff){
-      doc.setFont('helvetica','bold');
-      var bl=doc.splitTextToSize(teile.betreff,BREITE);
-      for(var k=0;k<bl.length;k++){ doc.text(bl[k],TXT_X,y); y+=ZEILE; }
-      doc.setFont('helvetica','normal');
+    if(rTeile.ok&&rTeile.betreff&&rTeile.betreff.length){
+      // Betreff immer fett, eigene Auszeichnungen bleiben erhalten
+      var betrRuns=rTeile.betreff.map(function(r){return {t:r.t,b:true,i:r.i,u:r.u};});
+      anschrRunsUmbrechen(doc,betrRuns,BREITE).forEach(function(zl){
+        anschrZeileZeichnen(doc,zl,TXT_X,y,11); y+=ZEILE;
+      });
       y=Math.max(TEXT_Y,y+ZEILE);
     } else { y=TEXT_Y; }
 
-    // ── Fließtext ──
-    var body=teile.ok?teile.body:String(b.text||'');
-    var lines=doc.splitTextToSize(body,BREITE);
-    for(var i2=0;i2<lines.length;i2++){
-      if(y>UNTEN){ doc.addPage(); drawBogen(); y=formA?27:35; }
-      doc.text(lines[i2],TXT_X,y); y+=ZEILE;
-    }
+    // ── Fließtext mit Formatierung ──
+    var bodyAbs=rTeile.ok?rTeile.body:rAbsaetze;
+    bodyAbs.forEach(function(absatz){
+      var zeilen=anschrRunsUmbrechen(doc,absatz,BREITE);
+      zeilen.forEach(function(zl){
+        if(y>UNTEN){ doc.addPage(); drawBogen(); y=formA?27:35; }
+        anschrZeileZeichnen(doc,zl,TXT_X,y,11); y+=ZEILE;
+      });
+    });
   });
   if(typeof showDoc==='function')showDoc(doc,fname,action||'vorschau'); else doc.save(fname);
 }

@@ -1712,7 +1712,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                 </div>
               </div>
               <div id="od-einheit-manuell-hinweis" style="display:none;align-items:center;gap:.6rem;flex-wrap:wrap;background:var(--p-light);border-radius:8px;padding:.5rem .8rem;margin-bottom:.75rem;font-size:.78rem;color:var(--p)">
-                <span>⠿ Karten am Griff ziehen oder mit ▲ ▼ verschieben – die Reihenfolge wird sofort gespeichert.</span>
+                <span>⠿ Blöcke ziehen oder mit ▲ ▼ verschieben – die Reihenfolge wird sofort gespeichert.</span>
                 <button class="btn-small grau" onclick="einheitenReihenfolgeZuruecksetzen()" style="margin-left:auto">↺ Nach Lage im Haus ordnen</button>
               </div>
               <div id="od-einheiten-list"><div style="color:var(--muted);font-size:.85rem;text-align:center;padding:2rem">Wird geladen...</div></div>
@@ -2725,6 +2725,14 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
       <div style="padding:2rem;max-width:820px">
         <div class="page-header"><div class="page-title">✉️ Anschreiben erstellen</div><div class="page-sub">Professionelle Briefe an Mieter in Sekunden generieren</div></div>
 
+        <!-- REITER -->
+        <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:1.25rem;flex-wrap:wrap">
+          <button type="button" id="anschr-reiter-erstellen" onclick="anschrReiter('erstellen')"
+            style="background:none;border:none;border-bottom:2px solid var(--p);margin-bottom:-2px;padding:.6rem 1.1rem;cursor:pointer;font-size:.88rem;font-weight:700;color:var(--p);font-family:var(--ff)">✉️ Anschreiben</button>
+          <button type="button" id="anschr-reiter-einstellungen" onclick="anschrReiter('einstellungen')"
+            style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.6rem 1.1rem;cursor:pointer;font-size:.88rem;color:var(--muted);font-family:var(--ff)">⚙️ Einstellungen</button>
+        </div>
+        <div id="anschr-bereich-erstellen">
         <!-- SCHRITT 1: EMPFÄNGER AUS DEM DATENBESTAND -->
         <div class="card">
           <div class="card-title">① Objekt &amp; Mietparteien wählen</div>
@@ -2847,7 +2855,25 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
               <input type="text" id="anschr-betreff" placeholder="z. B. Information zur Nebenkostenabrechnung">
             </div>
             <div class="field"><label>Brieftext</label>
-              <textarea id="anschr-freitext" onfocus="_anschrLetztesFeld='anschr-freitext'" style="border:1px solid var(--border);border-radius:var(--r);padding:.5rem .75rem;font-size:.88rem;font-family:var(--ff);width:100%;min-height:170px;resize:vertical;outline:none;background:var(--bg)" placeholder="Sehr geehrte/r {{anrede_name}},&#10;&#10;bezüglich Ihrer Wohnung {{einheit}} in {{objektadresse}} möchten wir Sie informieren ..."></textarea>
+              <div style="display:flex;gap:.3rem;flex-wrap:wrap;align-items:center;background:var(--bg);border:1px solid var(--border);border-bottom:none;border-radius:8px 8px 0 0;padding:.35rem .45rem">
+                <button type="button" id="frei-fmt-bold" onmousedown="event.preventDefault()" onclick="anschrFreiFormat('bold')" title="Fett (Strg+B)"
+                  style="width:28px;height:26px;border:1px solid var(--border);background:var(--white);border-radius:5px;cursor:pointer;font-family:var(--ff);font-weight:800;font-size:.82rem">F</button>
+                <button type="button" id="frei-fmt-italic" onmousedown="event.preventDefault()" onclick="anschrFreiFormat('italic')" title="Kursiv (Strg+I)"
+                  style="width:28px;height:26px;border:1px solid var(--border);background:var(--white);border-radius:5px;cursor:pointer;font-family:var(--ff);font-style:italic;font-size:.82rem">K</button>
+                <button type="button" id="frei-fmt-underline" onmousedown="event.preventDefault()" onclick="anschrFreiFormat('underline')" title="Unterstrichen (Strg+U)"
+                  style="width:28px;height:26px;border:1px solid var(--border);background:var(--white);border-radius:5px;cursor:pointer;font-family:var(--ff);text-decoration:underline;font-size:.82rem">U</button>
+                <span style="width:1px;height:18px;background:var(--border);margin:0 .2rem"></span>
+                <button type="button" onmousedown="event.preventDefault()" onclick="anschrFreiFormat('insertUnorderedList')" title="Aufzählung"
+                  style="height:26px;padding:0 .45rem;border:1px solid var(--border);background:var(--white);border-radius:5px;cursor:pointer;font-family:var(--ff);font-size:.76rem">• Liste</button>
+                <button type="button" onmousedown="event.preventDefault()" onclick="anschrFreiFormat('removeFormat')" title="Formatierung entfernen"
+                  style="height:26px;padding:0 .45rem;border:1px solid var(--border);background:var(--white);border-radius:5px;cursor:pointer;font-family:var(--ff);font-size:.76rem">Format löschen</button>
+                <span style="margin-left:auto;font-size:.68rem;color:var(--muted)">Formatierung bleibt bis ins PDF erhalten</span>
+              </div>
+              <div id="anschr-freitext" contenteditable="true" spellcheck="true"
+                onfocus="_anschrLetztesFeld='anschr-freitext';anschrFreiFormatStatus()"
+                onkeyup="anschrFreiFormatStatus()" onmouseup="anschrFreiFormatStatus()"
+                data-platzhalter="Sehr geehrte/r {{anrede_name}}, …"
+                style="border:1px solid var(--border);border-radius:0 0 8px 8px;padding:.7rem .8rem;font-size:.88rem;font-family:var(--ff);width:100%;min-height:170px;box-sizing:border-box;outline:none;background:var(--white);line-height:1.6;overflow-y:auto;max-height:50vh"></div>
             </div>
           </div>
           <div class="field"><label>Individuelle Ergänzung (optional)</label>
@@ -2871,7 +2897,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
             <div style="display:flex;gap:.5rem;flex-wrap:wrap">
               <button class="btn-small" onclick="anschrSpeichern()"><span class="btn-ic" data-icon="save"></span> Speichern</button>
               <button class="btn-small" onclick="anschreibenPdf('vorschau')"><span class="btn-ic" data-icon="file"></span> PDF-Vorschau</button>
-              <button class="btn-small gruen" onclick="anschreibenPdf('download')"><span class="btn-ic" data-icon="download"></span> PDF</button>
+              <button class="btn-small gruen" onclick="anschreibenPdf('download')"><span class="btn-ic" data-icon="download"></span> PDF</button><button class="btn-small" onclick="anschrWordExport()" title="Als Word-Dokument (.docx) herunterladen"><span class="btn-ic" data-icon="download"></span> Word</button>
               <button class="btn-small grau" onclick="kopierenAnschreiben()"><span class="btn-ic" data-icon="copy"></span> Kopieren</button>
             </div>
           </div>
@@ -2933,31 +2959,15 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
           <div id="anschr-gs-liste"><div style="text-align:center;padding:2rem;color:var(--muted);font-size:.85rem">Wird geladen…</div></div>
         </div>
 
-        <!-- ZUORDNEN-DIALOG -->
-        <div id="anschr-zu-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1150;align-items:center;justify-content:center;padding:1rem">
-          <div class="modal-box" style="max-width:440px;width:100%">
-            <h3>Anschreiben zuordnen</h3>
-            <div id="anschr-zu-info" style="font-size:.84rem;color:var(--muted);margin-bottom:1rem"></div>
-            <div class="field" style="margin-bottom:.7rem"><label>Objekt</label>
-              <select id="anschr-zu-objekt" onchange="anschrZuEinheiten()"></select>
-            </div>
-            <div class="field"><label>Einheit (optional)</label>
-              <select id="anschr-zu-einheit"></select>
-            </div>
-            <div class="modal-box-btns" style="margin-top:1.2rem">
-              <button class="btn-secondary" onclick="closeAnschrZuordnen()">Abbrechen</button>
-              <button class="btn-primary" onclick="anschrZuordnenSpeichern()"><span class="btn-ic" data-icon="check"></span> Zuordnen</button>
-            </div>
-          </div>
         </div>
-
+        <div id="anschr-bereich-einstellungen" style="display:none">
         <!-- BRIEFPAPIER & LAYOUT (Einstellungen) -->
         <div class="card">
-          <details ontoggle="anschrRenderPosVorschau()">
-            <summary style="cursor:pointer;list-style:none">
+          <div>
+            <div style="margin-bottom:.6rem">
               <span class="card-title" style="margin:0;display:inline-flex">⚙️ Briefpapier &amp; Layout</span>
               <span style="font-size:.78rem;color:var(--muted);margin-left:.5rem" id="anschr-bp-status"></span>
-            </summary>
+            </div>
             <div style="margin-top:1rem">
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-bottom:1.2rem">
                 <div class="field"><label>Briefpapier</label>
@@ -2992,6 +3002,20 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                 <div id="anschr-rueck-vorschau" style="margin-top:.6rem;font-size:.72rem;color:var(--muted)"></div>
 
                 <div style="margin-top:1.1rem;border-top:1px solid var(--border);padding-top:1rem">
+                  <div style="font-size:.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem">Grußformel</div>
+                  <div style="font-size:.8rem;color:var(--muted);margin-bottom:.7rem">Wird automatisch an jeden Brief angehängt. Abschaltbar, wenn du sie lieber selbst schreibst.</div>
+                  <label style="display:flex;align-items:center;gap:.5rem;font-size:.84rem;cursor:pointer;margin-bottom:.7rem">
+                    <input type="checkbox" id="anschr-gruss-zeigen" onchange="anschrGrussSpeichern()"> Grußformel automatisch anhängen
+                  </label>
+                  <div class="field">
+                    <label>Eigener Wortlaut (mehrzeilig möglich)</label>
+                    <textarea id="anschr-gruss-text" rows="3" onchange="anschrGrussSpeichern()" oninput="anschrGrussVorschau()"
+                      style="width:100%;border:1px solid var(--border);border-radius:var(--r);padding:.5rem .7rem;font-size:.86rem;font-family:var(--ff);background:var(--bg);outline:none;resize:vertical;box-sizing:border-box"></textarea>
+                  </div>
+                  <div id="anschr-gruss-vorschau" style="margin-top:.6rem;font-size:.74rem;color:var(--muted);white-space:pre-line;background:var(--bg);border-radius:8px;padding:.6rem .8rem"></div>
+                </div>
+
+                <div style="margin-top:1.1rem;border-top:1px solid var(--border);padding-top:1rem">
                   <div style="font-size:.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem">Wohnung in der Anschrift</div>
                   <div style="font-size:.8rem;color:var(--muted);margin-bottom:.7rem">Mehrere Mietparteien haben dieselbe Postanschrift – die Wohnungsbezeichnung macht den Empfänger eindeutig.</div>
                   <div class="field" style="max-width:320px">
@@ -3017,6 +3041,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                       <!-- Sichtfenster-Markierung DIN lang -->
                       <div id="anschr-pos-fenster" style="position:absolute;border:1px dashed #c0392b;border-radius:2px;pointer-events:none;opacity:.55"></div>
                       <div id="anschr-pos-adr" data-block="adr" style="position:absolute;border:1.5px solid var(--p);background:rgba(106,45,159,.10);border-radius:3px;cursor:grab;font-size:.6rem;color:var(--p);font-weight:700;padding:1px 3px;overflow:hidden">Anschrift</div>
+                      <div id="anschr-pos-dat" data-block="dat" style="position:absolute;border:1.5px solid #b45309;background:rgba(180,83,9,.10);border-radius:3px;cursor:grab;font-size:.58rem;color:#b45309;font-weight:700;padding:1px 3px;overflow:hidden;text-align:right">Datum</div>
                       <div id="anschr-pos-txt" data-block="txt" style="position:absolute;border:1.5px solid #1a7a4a;background:rgba(26,122,74,.08);border-radius:3px;cursor:grab;font-size:.6rem;color:#1a7a4a;font-weight:700;padding:1px 3px;overflow:hidden">Betreff &amp; Text</div>
                     </div>
                     <div style="font-size:.66rem;color:var(--muted);margin-top:.4rem;text-align:center">--- Sichtfenster DIN lang</div>
@@ -3027,6 +3052,8 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                       <div class="field"><label>Anschrift ↑ ↓ (mm)</label><input type="number" id="anschr-off-adry" step="1" value="0" oninput="anschrOffsetsAusFeldern()"></div>
                       <div class="field"><label>Text ← → (mm)</label><input type="number" id="anschr-off-txtx" step="1" value="0" oninput="anschrOffsetsAusFeldern()"></div>
                       <div class="field"><label>Text ↑ ↓ (mm)</label><input type="number" id="anschr-off-txty" step="1" value="0" oninput="anschrOffsetsAusFeldern()"></div>
+                      <div class="field"><label>Datum ← → (mm)</label><input type="number" id="anschr-off-datx" step="1" value="0" oninput="anschrOffsetsAusFeldern()"></div>
+                      <div class="field"><label>Datum ↑ ↓ (mm)</label><input type="number" id="anschr-off-daty" step="1" value="0" oninput="anschrOffsetsAusFeldern()"></div>
                     </div>
                     <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.8rem">
                       <button class="btn-small grau" onclick="anschrOffsetsReset()"><span class="btn-ic" data-icon="refresh"></span> Auf DIN zurücksetzen</button>
@@ -3073,8 +3100,27 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                 </div>
               </div>
             </div>
-          </details>
+          </div>
         </div>
+        </div>
+        <!-- ZUORDNEN-DIALOG -->
+        <div id="anschr-zu-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1150;align-items:center;justify-content:center;padding:1rem">
+          <div class="modal-box" style="max-width:440px;width:100%">
+            <h3>Anschreiben zuordnen</h3>
+            <div id="anschr-zu-info" style="font-size:.84rem;color:var(--muted);margin-bottom:1rem"></div>
+            <div class="field" style="margin-bottom:.7rem"><label>Objekt</label>
+              <select id="anschr-zu-objekt" onchange="anschrZuEinheiten()"></select>
+            </div>
+            <div class="field"><label>Einheit (optional)</label>
+              <select id="anschr-zu-einheit"></select>
+            </div>
+            <div class="modal-box-btns" style="margin-top:1.2rem">
+              <button class="btn-secondary" onclick="closeAnschrZuordnen()">Abbrechen</button>
+              <button class="btn-primary" onclick="anschrZuordnenSpeichern()"><span class="btn-ic" data-icon="check"></span> Zuordnen</button>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -4494,6 +4540,7 @@ function showPage(name){
     if(typeof anschrLadeLayout==='function')anschrLadeLayout();
     if(typeof anschrLadeVorlagen==='function')anschrLadeVorlagen();
     if(typeof anschrRueckFelderFuellen==='function')anschrRueckFelderFuellen();
+    if(typeof anschrReiter==='function'){var _r='erstellen';try{_r=localStorage.getItem('nekosta-anschr-reiter')||'erstellen';}catch(e){}anschrReiter(_r);}
     if(typeof renderBriefkopfPreview==='function')renderBriefkopfPreview();
     if(typeof anschrAktualisiereZaehler==='function')anschrAktualisiereZaehler();
   }
@@ -8943,8 +8990,9 @@ function setAnschrVorlage(v){
 function resetAnschreiben(){
   ['anschr-mieter','anschr-wohnung','anschr-objekt','anschr-betrag','anschr-frist',
    'anschr-bk-neu','anschr-hk-neu','anschr-rueckstand','anschr-bk-alt','anschr-bk-neu2','anschr-zusatz',
-   'anschr-betreff','anschr-freitext']
+   'anschr-betreff']
   .forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  if(typeof anschrFreitextSetzen==='function')anschrFreitextSetzen('');
   document.getElementById('anschr-preview').style.display='none';
   // Auswahl und Bearbeitungszustand zurücksetzen
   anschrAuswahl={}; anschrBriefe=[]; anschrVorschauIdx=0; anschrEditId=null;
@@ -9014,10 +9062,12 @@ function anschreibenFuerPeriode(wi,pi,withVZ){
 function generiereAnschreiben(emp){
   var sm=stammdaten||{};
   emp=emp||null;
-  var _out=function(t){
+  // Liefert den reinen Text; die formatierte Fassung landet in _anschrHtmlLetzt
+  var _out=function(t,html){
     t=anschrPlatzhalter(t,emp);
+    _anschrHtmlLetzt=html?anschrPlatzhalter(html,emp):anschrTextZuHtml(t);
     if(emp)return t;
-    _anschrTextSet(t);
+    _anschrHtmlSet(_anschrHtmlLetzt);
     document.getElementById('anschr-preview').style.display='block';
     return t;
   };
@@ -9040,15 +9090,26 @@ function generiereAnschreiben(emp){
 
   // ── ALLGEMEINES ANSCHREIBEN (freier Text) ──
   if(typeof aktuelleVorlage!=='undefined'&&aktuelleVorlage==='info'){
-    var frei=((document.getElementById('anschr-freitext')||{value:''}).value||'').trim();
-    var it=absender+'\n\n'+(ort?ort+', ':'')+datum+'\n\n';
-    if(betreffFeld)it+='Betreff: '+betreffFeld+'\n\n';
-    // Eigene Anrede im Freitext respektieren – sonst automatisch voranstellen
-    if(!/^\s*sehr geehrte|^\s*hallo|^\s*guten tag|^\s*liebe/i.test(frei))it+=anredeZeile+',\n\n';
-    it+=frei||'(Bitte Brieftext eingeben.)';
-    if(zusatz)it+='\n\n'+zusatz;
-    it+='\n\nMit freundlichen Grüßen\n\n'+(sm.firma||(sm.vname&&sm.nname?sm.vname+' '+sm.nname:'Ihre Hausverwaltung'));
-    return _out(it);
+    // Der Brieftext ist formatierbar – deshalb wird der Brief als HTML gebaut
+    // und der reine Text daraus abgeleitet. So bleibt Fett bis ins PDF erhalten.
+    var freiHtml=(typeof anschrFreitextHtml==='function')?anschrFreitextHtml():'';
+    var freiText=anschrHtmlZuText(freiHtml).trim();
+    var teile=[];
+    absender.split('\n').forEach(function(z){ teile.push(_escHtml(z)); });
+    teile.push('');
+    teile.push(_escHtml((ort?ort+', ':'')+datum));
+    teile.push('');
+    if(betreffFeld){ teile.push('Betreff: '+_escHtml(betreffFeld)); teile.push(''); }
+    if(!/^\s*sehr geehrte|^\s*hallo|^\s*guten tag|^\s*liebe/i.test(freiText)){ teile.push(_escHtml(anredeZeile+',')); teile.push(''); }
+    var kopfHtml=teile.map(function(z){return '<div>'+(z||'<br>')+'</div>';}).join('');
+    var rumpfHtml=freiHtml&&freiText?freiHtml:'<div>(Bitte Brieftext eingeben.)</div>';
+    var fussTeile=[];
+    if(zusatz){ fussTeile.push(''); zusatz.split('\n').forEach(function(z){fussTeile.push(_escHtml(z));}); }
+    var grussZeilen=anschrGrussZeilen();
+    if(grussZeilen.length){ fussTeile.push(''); grussZeilen.forEach(function(z){fussTeile.push(_escHtml(z));}); }
+    var fussHtml=fussTeile.map(function(z){return '<div>'+(z||'<br>')+'</div>';}).join('');
+    var gesamtHtml=kopfHtml+rumpfHtml+fussHtml;
+    return _out(anschrHtmlZuText(gesamtHtml),gesamtHtml);
   }
 
   // ── VORAUSZAHLUNGSÄNDERUNG (§ 560 BGB) ──
@@ -9071,7 +9132,7 @@ function generiereAnschreiben(emp){
     et+='Für Rückfragen stehen wir Ihnen gerne zur Verfügung.';
     if(sm.tel)et+='\nTelefon: '+sm.tel;
     if(sm.email)et+='\nE-Mail: '+sm.email;
-    et+='\n\nMit freundlichen Grüßen\n\n'+(sm.firma||(sm.vname&&sm.nname?sm.vname+' '+sm.nname:'Ihre Hausverwaltung'));
+    et+=anschrGrussText();
     return _out(et);
   }
 
@@ -9088,7 +9149,7 @@ function generiereAnschreiben(emp){
     mt+='Verwendungszweck: Mietrückstand'+(wohnung?' / '+wohnung:'')+'\n\n';
     mt+='Sollten Sie den Betrag zwischenzeitlich überwiesen haben, betrachten Sie dieses Schreiben bitte als gegenstandslos.\n\n';
     if(zusatz)mt+=zusatz+'\n\n';
-    mt+='Mit freundlichen Grüßen\n\n'+(sm.firma||(sm.vname&&sm.nname?sm.vname+' '+sm.nname:'Ihre Hausverwaltung'));
+    mt+=anschrGrussText().replace(/^\n\n/,'');
     return _out(mt);
   }
 
@@ -9130,7 +9191,7 @@ function generiereAnschreiben(emp){
   text+='Für Rückfragen stehen wir Ihnen gerne zur Verfügung.';
   if(sm.tel)text+='\nTelefon: '+sm.tel;
   if(sm.email)text+='\nE-Mail: '+sm.email;
-  text+='\n\nMit freundlichen Grüßen\n\n'+(sm.firma||(sm.vname&&sm.nname?sm.vname+' '+sm.nname:'Ihre Hausverwaltung'));
+  text+=anschrGrussText();
 
   return _out(text);
 }
@@ -9515,7 +9576,11 @@ function anschrZerlegeAbsaetze(absaetze){
   var texte=(absaetze||[]).map(function(a){return a.map(function(r){return r.t;}).join('');});
   var bi=-1;
   for(var i=0;i<texte.length;i++){ if(/^Betreff:\s*/.test(texte[i])){bi=i;break;} }
-  if(bi<0)return {ok:false,body:absaetze||[]};
+  if(bi<0){
+    var kopf=_anschrKopfLaenge(texte);
+    if(kopf)return {ok:false,body:(absaetze||[]).slice(kopf.ende),datum:kopf.datum};
+    return {ok:false,body:absaetze||[]};
+  }
   // Betreff ohne das Präfix, Formatierung erhalten
   var betreff=(absaetze[bi]||[]).map(function(r){return {t:r.t,b:r.b,i:r.i,u:r.u};});
   var weg=texte[bi].length-texte[bi].replace(/^Betreff:\s*/,'').length;
@@ -9549,6 +9614,33 @@ function anschrTextBearbeitet(){
   anschrBriefe[i].text=_anschrTextGet();
   anschrBriefe[i].bearbeitet=true;
 }
+// ── Formatierbarer Brieftext (Schritt ③) ───────────────────────────────
+function _anschrFreiEl(){ return document.getElementById('anschr-freitext'); }
+function anschrFreitextHtml(){ var el=_anschrFreiEl(); return el?(el.innerHTML||''):''; }
+function anschrFreitextText(){ return anschrHtmlZuText(anschrFreitextHtml()); }
+function anschrFreitextSetzen(inhalt){
+  var el=_anschrFreiEl(); if(!el)return;
+  inhalt=inhalt||'';
+  el.innerHTML=String(inhalt).indexOf('<')>=0?inhalt:anschrTextZuHtml(inhalt);
+}
+function anschrFreiFormat(befehl,wert){
+  var el=_anschrFreiEl(); if(!el)return;
+  el.focus();
+  try{ document.execCommand('styleWithCSS',false,false); }catch(e){}
+  try{ document.execCommand(befehl,false,wert==null?null:wert); }catch(e){}
+  anschrFreiFormatStatus();
+}
+function anschrFreiFormatStatus(){
+  [['bold','frei-fmt-bold'],['italic','frei-fmt-italic'],['underline','frei-fmt-underline']]
+    .forEach(function(p){
+      var btn=document.getElementById(p[1]); if(!btn)return;
+      var an=false; try{ an=document.queryCommandState(p[0]); }catch(e){}
+      btn.style.background=an?'var(--p-light)':'var(--white)';
+      btn.style.color=an?'var(--p)':'var(--text)';
+      btn.style.borderColor=an?'var(--p)':'var(--border)';
+    });
+}
+
 // Formatierung auf die Auswahl anwenden (Word-artig)
 function anschrFormat(befehl,wert){
   var el=_anschrEl(); if(!el)return;
@@ -9570,28 +9662,69 @@ function anschrFormatStatus(){
     });
 }
 
+// ── Reiter im Anschreiben-Modul ─────────────────────────────────────────
+// Erstellen und Einstellungen getrennt, damit die Arbeitsseite übersichtlich bleibt.
+function anschrReiter(name){
+  name=(name==='einstellungen')?'einstellungen':'erstellen';
+  ['erstellen','einstellungen'].forEach(function(n){
+    var box=document.getElementById('anschr-bereich-'+n);
+    if(box)box.style.display=(n===name)?'block':'none';
+    var btn=document.getElementById('anschr-reiter-'+n);
+    if(btn){
+      var an=(n===name);
+      btn.style.color=an?'var(--p)':'var(--muted)';
+      btn.style.fontWeight=an?'700':'400';
+      btn.style.borderBottomColor=an?'var(--p)':'transparent';
+    }
+  });
+  try{ localStorage.setItem('nekosta-anschr-reiter',name); }catch(e){}
+  if(name==='einstellungen'){
+    if(typeof anschrRueckFelderFuellen==='function')anschrRueckFelderFuellen();
+    if(typeof anschrRenderPosVorschau==='function')anschrRenderPosVorschau();
+    if(typeof renderBriefkopfPreview==='function')renderBriefkopfPreview();
+    if(typeof renderBriefbogenPreview==='function')renderBriefbogenPreview();
+  }
+}
+
 // ── Briefpapier & Layout ────────────────────────────────────────────────
 function _anschrLayoutKey(){return 'nekosta-anschr-layout-'+((typeof currentUser!=='undefined'&&currentUser)?currentUser.id:'anon');}
-function anschrSpeichereLayout(){
-  try{ localStorage.setItem(_anschrLayoutKey(),JSON.stringify({
-    bp:(document.getElementById('anschr-briefpapier')||{value:'auto'}).value,
-    ly:(document.getElementById('anschr-layout')||{value:'dinB'}).value,
-    off:anschrOffsets
-  })); }catch(e){}
+async function anschrSpeichereLayout(){
+  var bp=(document.getElementById('anschr-briefpapier')||{value:'auto'}).value;
+  var ly=(document.getElementById('anschr-layout')||{value:'dinB'}).value;
+  // Im Browser als Rückfallebene, dauerhaft im Konto
+  try{ localStorage.setItem(_anschrLayoutKey(),JSON.stringify({bp:bp,ly:ly,off:anschrOffsets})); }catch(e){}
   anschrBriefpapierStatus();
   anschrRenderPosVorschau();
+  if(!currentUser)return;
+  try{
+    stammdaten=stammdaten||{};
+    stammdaten.anschr_briefpapier=bp; stammdaten.anschr_layout=ly;
+    stammdaten.anschr_offsets=Object.assign({},anschrOffsets);
+    var r=await sb.from('stammdaten').upsert({user_id:currentUser.id,
+      anschr_briefpapier:bp,anschr_layout:ly,anschr_offsets:anschrOffsets},{onConflict:'user_id'});
+    if(r.error)throw r.error;
+  }catch(e){ console.warn('Layout speichern:',e); }
 }
 var _anschrLayoutGeladen=false;
+var _anschrHtmlLetzt='';   // formatierte Fassung des zuletzt erzeugten Briefes
 function anschrLadeLayout(){
   _anschrLayoutGeladen=true;
+  // Konto hat Vorrang; der Browser dient nur als Rückfallebene
+  var sm=stammdaten||{};
+  var quelle=null;
+  if(sm.anschr_briefpapier||sm.anschr_layout||sm.anschr_offsets){
+    quelle={bp:sm.anschr_briefpapier,ly:sm.anschr_layout,off:sm.anschr_offsets};
+  }else{
+    try{ var raw=localStorage.getItem(_anschrLayoutKey()); if(raw)quelle=JSON.parse(raw); }catch(e){}
+  }
   try{
-    var raw=localStorage.getItem(_anschrLayoutKey());
-    if(raw){
-      var o=JSON.parse(raw);
-      var bp=document.getElementById('anschr-briefpapier'); if(bp&&o.bp)bp.value=o.bp;
-      var ly=document.getElementById('anschr-layout'); if(ly&&o.ly)ly.value=o.ly;
-      if(o.off)anschrOffsets={adrX:_anschrClamp(o.off.adrX,-24,60),adrY:_anschrClamp(o.off.adrY,-40,80),
-                              txtX:_anschrClamp(o.off.txtX,-24,60),txtY:_anschrClamp(o.off.txtY,-60,80)};
+    if(quelle){
+      var bp=document.getElementById('anschr-briefpapier'); if(bp&&quelle.bp)bp.value=quelle.bp;
+      var ly=document.getElementById('anschr-layout'); if(ly&&quelle.ly)ly.value=quelle.ly;
+      var o=quelle.off;
+      if(o)anschrOffsets={adrX:_anschrClamp(o.adrX,-24,60),adrY:_anschrClamp(o.adrY,-40,80),
+                          txtX:_anschrClamp(o.txtX,-24,60),txtY:_anschrClamp(o.txtY,-60,80),
+                          datX:_anschrClamp(o.datX,-80,20),datY:_anschrClamp(o.datY,-60,80)};
     }
   }catch(e){}
   anschrOffsetsInFelder();
@@ -9600,7 +9733,7 @@ function anschrLadeLayout(){
   anschrRenderPosVorschau();
 }
 // ── Position der Blöcke (Verschiebung gegenüber der DIN-Position, in mm) ──
-var anschrOffsets={adrX:0,adrY:0,txtX:0,txtY:0};
+var anschrOffsets={adrX:0,adrY:0,txtX:0,txtY:0,datX:0,datY:0};
 // Geometrie des aktuellen Layouts – eine Quelle für PDF und Vorschau
 function _anschrGeo(){
   var formA=_anschrLayoutModus()==='dinA';
@@ -9611,6 +9744,7 @@ function _anschrGeo(){
   return {formA:formA,L:L,R:R,BREITE:210-L-R,ZEILE:ZEILE,
     ANSCHRIFT_Y:ANSCHRIFT_Y, RUECK_Y:ANSCHRIFT_Y+0.5, ADR_Y:ANSCHRIFT_Y+5.8, INFO_Y:ANSCHRIFT_Y+5.8,
     BETREFF_Y:BETREFF_Y, TEXT_Y:BETREFF_Y+2*ZEILE, UNTEN:272,
+    DATUM_Y:BETREFF_Y-2*ZEILE,   // rechtsbündig kurz über dem Betreff (üblich)
     KOPF_TOP:8, KOPF_LUFT:4};
 }
 function _anschrClamp(v,min,max){v=parseFloat(v);if(isNaN(v))v=0;return Math.max(min,Math.min(max,Math.round(v)));}
@@ -9619,16 +9753,19 @@ function anschrOffsetsAusFeldern(){
   anschrOffsets={adrX:_anschrClamp(g('anschr-off-adrx'),-24,60),
                  adrY:_anschrClamp(g('anschr-off-adry'),-40,80),
                  txtX:_anschrClamp(g('anschr-off-txtx'),-24,60),
-                 txtY:_anschrClamp(g('anschr-off-txty'),-60,80)};
+                 txtY:_anschrClamp(g('anschr-off-txty'),-60,80),
+                 datX:_anschrClamp(g('anschr-off-datx'),-80,20),
+                 datY:_anschrClamp(g('anschr-off-daty'),-60,80)};
   anschrSpeichereLayout();
   anschrRenderPosVorschau();
 }
 function anschrOffsetsInFelder(){
-  [['anschr-off-adrx','adrX'],['anschr-off-adry','adrY'],['anschr-off-txtx','txtX'],['anschr-off-txty','txtY']]
+  [['anschr-off-adrx','adrX'],['anschr-off-adry','adrY'],['anschr-off-txtx','txtX'],['anschr-off-txty','txtY'],
+   ['anschr-off-datx','datX'],['anschr-off-daty','datY']]
     .forEach(function(p){var el=document.getElementById(p[0]); if(el)el.value=anschrOffsets[p[1]];});
 }
 function anschrOffsetsReset(){
-  anschrOffsets={adrX:0,adrY:0,txtX:0,txtY:0};
+  anschrOffsets={adrX:0,adrY:0,txtX:0,txtY:0,datX:0,datY:0};
   anschrOffsetsInFelder(); anschrSpeichereLayout(); anschrRenderPosVorschau();
   showToast('↺ Positionen auf DIN zurückgesetzt');
 }
@@ -9657,6 +9794,11 @@ function anschrRenderPosVorschau(){
   var adr=document.getElementById('anschr-pos-adr');
   if(adr){ adr.style.left=((g.L+anschrOffsets.adrX)*s)+'px'; adr.style.top=((g.ADR_Y-1.5+anschrOffsets.adrY)*s)+'px';
            adr.style.width=(85*s)+'px'; adr.style.height=(6*g.ZEILE*s)+'px'; }
+  var dat=document.getElementById('anschr-pos-dat');
+  if(dat){ var dw=45;
+    dat.style.left=((210-g.R-dw+(anschrOffsets.datX||0))*s)+'px';
+    dat.style.top=((g.DATUM_Y-3.2+(anschrOffsets.datY||0))*s)+'px';
+    dat.style.width=(dw*s)+'px'; dat.style.height=(4.4*s)+'px'; }
   var txt=document.getElementById('anschr-pos-txt');
   if(txt){ txt.style.left=((g.L+anschrOffsets.txtX)*s)+'px'; txt.style.top=((g.BETREFF_Y-2+anschrOffsets.txtY)*s)+'px';
            txt.style.width=(g.BREITE*s)+'px'; txt.style.height=((g.UNTEN-g.BETREFF_Y)*s)+'px'; }
@@ -9670,8 +9812,8 @@ function anschrInitPosDrag(){
     var el=ev.target.closest?ev.target.closest('[data-block]'):null; if(!el)return;
     akt=el.getAttribute('data-block');
     startX=ev.clientX; startY=ev.clientY;
-    basisX=akt==='adr'?anschrOffsets.adrX:anschrOffsets.txtX;
-    basisY=akt==='adr'?anschrOffsets.adrY:anschrOffsets.txtY;
+    var feldX={adr:'adrX',txt:'txtX',dat:'datX'}[akt], feldY={adr:'adrY',txt:'txtY',dat:'datY'}[akt];
+    basisX=anschrOffsets[feldX]||0; basisY=anschrOffsets[feldY]||0;
     el.setPointerCapture&&el.setPointerCapture(ev.pointerId);
     el.style.cursor='grabbing'; ev.preventDefault();
   });
@@ -9680,6 +9822,7 @@ function anschrInitPosDrag(){
     var s=(blatt.clientWidth||250)/210;
     var dx=(ev.clientX-startX)/s, dy=(ev.clientY-startY)/s;
     if(akt==='adr'){ anschrOffsets.adrX=_anschrClamp(basisX+dx,-24,60); anschrOffsets.adrY=_anschrClamp(basisY+dy,-40,80); }
+    else if(akt==='dat'){ anschrOffsets.datX=_anschrClamp(basisX+dx,-80,20); anschrOffsets.datY=_anschrClamp(basisY+dy,-60,80); }
     else           { anschrOffsets.txtX=_anschrClamp(basisX+dx,-24,60); anschrOffsets.txtY=_anschrClamp(basisY+dy,-60,80); }
     anschrOffsetsInFelder(); anschrRenderPosVorschau();
   });
@@ -9773,13 +9916,20 @@ function anschrInitPlatzhalter(){
 // Fügt an der Cursorposition im zuletzt fokussierten Textfeld ein
 var _anschrLetztesFeld='anschr-freitext';
 function anschrFuegePlatzhalter(name){
-  var el=document.getElementById(_anschrLetztesFeld)||document.getElementById('anschr-freitext')||document.getElementById('anschr-zusatz');
+  var el=document.getElementById(_anschrLetztesFeld)||_anschrFreiEl()||document.getElementById('anschr-zusatz');
   if(!el){showToast('Bitte zuerst in ein Textfeld klicken.');return;}
   var t='{{'+name+'}}';
-  var s=el.selectionStart, e=el.selectionEnd;
-  if(typeof s==='number'){ el.value=el.value.slice(0,s)+t+el.value.slice(e); el.selectionStart=el.selectionEnd=s+t.length; }
-  else el.value+=t;
   el.focus();
+  if(el.isContentEditable){
+    // an der Cursorposition einsetzen, sonst am Ende anhängen
+    var ok=false;
+    try{ ok=document.execCommand('insertText',false,t); }catch(e){}
+    if(!ok)el.innerHTML=(el.innerHTML||'')+_escHtml(t);
+    return;
+  }
+  var a=el.selectionStart, b=el.selectionEnd;
+  if(typeof a==='number'){ el.value=el.value.slice(0,a)+t+el.value.slice(b); el.selectionStart=el.selectionEnd=a+t.length; }
+  else el.value+=t;
 }
 
 // ── Briefe erzeugen ─────────────────────────────────────────────────────
@@ -9799,11 +9949,11 @@ function anschrGenerieren(force){
     anschrBriefe=[]; anschrVorschauIdx=0;
     if(nav)nav.style.display='none';
     var t=generiereAnschreiben();
-    if(t&&t.trim())anschrBriefe=[{emp:null,text:t,html:anschrTextZuHtml(t)}];
+    if(t&&t.trim())anschrBriefe=[{emp:null,text:t,html:_anschrHtmlLetzt||anschrTextZuHtml(t)}];
     return;
   }
   var unvollstaendig=sel.filter(function(e){return !e.vollstaendig;});
-  anschrBriefe=sel.map(function(e){ var t=generiereAnschreiben(e); return {emp:e,text:t,html:anschrTextZuHtml(t)}; });
+  anschrBriefe=sel.map(function(e){ var t=generiereAnschreiben(e); return {emp:e,text:t,html:_anschrHtmlLetzt||anschrTextZuHtml(t)}; });
   anschrVorschauIdx=0;
   anschrZeigeVorschau();
   if(unvollstaendig.length)showToast('⚠️ '+unvollstaendig.length+' Empfänger ohne vollständige Anschrift.');
@@ -9852,9 +10002,11 @@ function _anschrFormFelder(){
   ['anschr-anrede','anschr-mieter','anschr-wohnung','anschr-objekt','anschr-jahr','anschr-datum',
    'anschr-ergebnis','anschr-betrag','anschr-frist','anschr-bk-neu','anschr-hk-neu','anschr-rueckstand',
    'anschr-faellig','anschr-letzte-frist','anschr-bk-alt','anschr-bk-neu2','anschr-gilt-ab',
-   'anschr-betreff','anschr-freitext','anschr-zusatz'].forEach(function(id){
+   'anschr-betreff','anschr-zusatz'].forEach(function(id){
     var el=document.getElementById(id); if(el)f[id]=el.value;
   });
+  f['anschr-freitext']=(typeof anschrFreitextText==='function')?anschrFreitextText():'';
+  f['anschr-freitext-html']=(typeof anschrFreitextHtml==='function')?anschrFreitextHtml():'';
   var cb=document.getElementById('anschr-vz-anpassen'); if(cb)f['anschr-vz-anpassen']=!!cb.checked;
   f._vorlage=(typeof aktuelleVorlage!=='undefined')?aktuelleVorlage:'nk';
   return f;
@@ -10087,20 +10239,21 @@ function anschrVorlageAnwenden(){
   var v=_anschrVorlageAktiv(); if(!v)return;
   var b=document.getElementById('anschr-betreff'), t=document.getElementById('anschr-freitext');
   if(b)b.value=v.betreff||'';
-  if(t)t.value=v.text_html?anschrHtmlZuText(v.text_html):(v.text||'');
+  if(t)anschrFreitextSetzen(v.text_html||v.text||'');
   if(typeof setAnschrVorlage==='function'&&aktuelleVorlage!=='info')setAnschrVorlage('info');
   showToast('📋 Vorlage „'+(v.name||'')+'" eingefügt');
 }
 async function anschrVorlageSpeichern(){
   if(!currentUser){showToast('Bitte zuerst anmelden.');return;}
   var betreff=((document.getElementById('anschr-betreff')||{value:''}).value||'').trim();
-  var text=((document.getElementById('anschr-freitext')||{value:''}).value||'').trim();
+  var text=anschrFreitextText().trim();
+  var textHtml=anschrFreitextHtml();
   if(!text&&!betreff){showToast('Bitte zuerst Betreff oder Brieftext ausfüllen.');return;}
   var name=window.prompt('Name der Vorlage:',betreff||'Neue Vorlage');
   if(name===null)return;
   name=String(name).trim(); if(!name){showToast('Bitte einen Namen angeben.');return;}
   try{
-    var r=await sb.from('anschreiben_vorlagen').insert({user_id:currentUser.id,name:name,betreff:betreff,text:text}).select().single();
+    var r=await sb.from('anschreiben_vorlagen').insert({user_id:currentUser.id,name:name,betreff:betreff,text:text,text_html:textHtml}).select().single();
     if(r.error)throw r.error;
     await anschrLadeVorlagen();
     var sel=document.getElementById('anschr-vorlage-select'); if(sel&&r.data)sel.value=r.data.id;
@@ -10111,9 +10264,10 @@ async function anschrVorlageUeberschreiben(){
   var v=_anschrVorlageAktiv();
   if(!v){showToast('Bitte zuerst eine Vorlage auswählen.');return;}
   var betreff=((document.getElementById('anschr-betreff')||{value:''}).value||'').trim();
-  var text=((document.getElementById('anschr-freitext')||{value:''}).value||'').trim();
+  var text=anschrFreitextText().trim();
+  var textHtml=anschrFreitextHtml();
   try{
-    var r=await sb.from('anschreiben_vorlagen').update({betreff:betreff,text:text,updated_at:new Date().toISOString()}).eq('id',v.id);
+    var r=await sb.from('anschreiben_vorlagen').update({betreff:betreff,text:text,text_html:textHtml,updated_at:new Date().toISOString()}).eq('id',v.id);
     if(r.error)throw r.error;
     await anschrLadeVorlagen();
     showToast('✅ Vorlage „'+(v.name||'')+'" aktualisiert');
@@ -10280,10 +10434,12 @@ function anschrOeffnen(id,alsKopie){
   var a=_anschrById(id); if(!a)return;
   var f=a.felder||{};
   Object.keys(f).forEach(function(k){
-    if(k==='_vorlage')return;
+    if(k==='_vorlage'||k==='anschr-freitext'||k==='anschr-freitext-html')return;
     var el=document.getElementById(k); if(!el)return;
     if(el.type==='checkbox')el.checked=!!f[k]; else el.value=f[k]==null?'':f[k];
   });
+  if(typeof anschrFreitextSetzen==='function')
+    anschrFreitextSetzen(f['anschr-freitext-html']||f['anschr-freitext']||'');
   if(f._vorlage&&typeof setAnschrVorlage==='function')setAnschrVorlage(f._vorlage);
   // Empfängerauswahl aufheben – der Brief ist bereits personalisiert
   anschrAuswahl={};
@@ -10327,6 +10483,90 @@ async function anschrPdfEinzel(id){
     'Anschreiben_'+String(a.empfaenger_name||'Mieter').replace(/[^a-zA-Z0-9]+/g,'_')+'.pdf','download');
 }
 
+// ══════════════════════════════════════════════════════════════════════════
+//  WORD-EXPORT (.docx)
+//  Eine .docx ist ein ZIP mit XML-Teilen – JSZip ist bereits geladen.
+//  Die Absätze und Runs aus dem Editor werden direkt zu w:p/w:r, damit
+//  Fett, Kursiv und Unterstrichen in Word erhalten bleiben.
+// ══════════════════════════════════════════════════════════════════════════
+function _wordEsc(s){
+  return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function _wordRun(r){
+  var eig='';
+  if(r.b)eig+='<w:b/>';
+  if(r.i)eig+='<w:i/>';
+  if(r.u)eig+='<w:u w:val="single"/>';
+  var rpr=eig?('<w:rPr>'+eig+'</w:rPr>'):'';
+  return '<w:r>'+rpr+'<w:t xml:space="preserve">'+_wordEsc(r.t)+'</w:t></w:r>';
+}
+function _wordAbsatz(runs,opt){
+  opt=opt||{};
+  // Reihenfolge nach OOXML-Schema: w:spacing steht vor w:jc
+  var pPr='<w:pPr><w:spacing w:after="'+(opt.abstand==null?0:opt.abstand)+'" w:line="240" w:lineRule="auto"/>'
+    +(opt.rechts?'<w:jc w:val="right"/>':'')+'</w:pPr>';
+  var inhalt=(runs||[]).filter(function(r){return r.t!=='';}).map(_wordRun).join('');
+  return '<w:p>'+pPr+inhalt+'</w:p>';
+}
+function _wordSeitenumbruch(){
+  return '<w:p><w:r><w:br w:type="page"/></w:r></w:p>';
+}
+// Einen Brief in Word-Absätze übersetzen (Anschrift, Datum, Betreff, Text)
+function _wordBrief(b){
+  var abs=anschrHtmlAbsaetze(b.html||anschrTextZuHtml(b.text||''));
+  var teile=anschrZerlegeAbsaetze(abs);
+  var out=[];
+  var adr=(b.emp&&b.emp.adressZeilen&&b.emp.adressZeilen.length)?b.emp.adressZeilen:[];
+  adr.forEach(function(z){ out.push(_wordAbsatz([{t:z}])); });
+  if(adr.length)out.push(_wordAbsatz([{t:''}],{abstand:240}));
+  var datum=teile.datum||'';
+  if(datum)out.push(_wordAbsatz([{t:datum}],{rechts:true,abstand:240}));
+  if(teile.ok&&teile.betreff&&teile.betreff.length){
+    out.push(_wordAbsatz(teile.betreff.map(function(r){return {t:r.t,b:true,i:r.i,u:r.u};}),{abstand:240}));
+  }
+  var body=teile.ok?teile.body:(teile.body||abs);
+  body.forEach(function(a){ out.push(_wordAbsatz(a)); });
+  return out.join('');
+}
+async function anschrWordExport(){
+  var briefe=anschrAktuelleBriefe();
+  if(!briefe.length||!(briefe[0].text||'').trim()){showToast('Bitte zuerst die Angaben ausfüllen.');return;}
+  if(typeof JSZip==='undefined'){showToast('Word-Export ist gerade nicht verfügbar (JSZip fehlt).');return;}
+  try{
+    var koerper=briefe.map(function(b,i){ return (i>0?_wordSeitenumbruch():'')+_wordBrief(b); }).join('');
+    var doc='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+      +'<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+      +'<w:body>'+koerper
+      +'<w:sectPr><w:pgSz w:w="11906" w:h="16838"/>'
+      +'<w:pgMar w:top="1418" w:right="1134" w:bottom="1134" w:left="1418" w:header="708" w:footer="708" w:gutter="0"/>'
+      +'</w:sectPr></w:body></w:document>';
+    var typen='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+      +'<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+      +'<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+      +'<Default Extension="xml" ContentType="application/xml"/>'
+      +'<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'
+      +'</Types>';
+    var rels='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+      +'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+      +'<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>'
+      +'</Relationships>';
+    var zip=new JSZip();
+    zip.file('[Content_Types].xml',typen);
+    zip.folder('_rels').file('.rels',rels);
+    zip.folder('word').file('document.xml',doc);
+    var blob=await zip.generateAsync({type:'blob',
+      mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+    var e0=briefe[0].emp;
+    var name=briefe.length>1
+      ? (briefe.length+'_Anschreiben')
+      : ('Anschreiben_'+String(e0?e0.briefName:((document.getElementById('anschr-mieter')||{value:''}).value||'Mieter')).replace(/[^a-zA-Z0-9]+/g,'_'));
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(blob); a.download=name+'.docx';
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+    showToast('📝 '+briefe.length+(briefe.length===1?' Anschreiben':' Anschreiben')+' als Word-Datei gespeichert');
+  }catch(e){ console.error('Word-Export:',e); showToast('⚠️ Word-Export fehlgeschlagen: '+(e.message||e)); }
+}
+
 // Anschreiben als echtes PDF (Vorschau im Modal via showDoc, oder Download)
 async function anschreibenPdf(action){
   var briefe=anschrAktuelleBriefe();
@@ -10345,11 +10585,44 @@ async function anschreibenPdf(action){
 // Zerlegt den erzeugten Brieftext in seine Bestandteile.
 // Erwartetes Format: Absenderzeilen · Leerzeile · "Ort, Datum" · Leerzeile · "Betreff: …" · Leerzeile · Rest.
 // Schlägt das fehl (z. B. nach starker Bearbeitung), wird alles als Fließtext behandelt.
+// Erkennt den Absenderblock am Briefanfang, auch wenn keine Betreffzeile
+// vorhanden ist. Ohne das landet der eigene Name oben im Anschriftbereich.
+// Grußformel: abschaltbar und im Wortlaut änderbar.
+// Liefert die Zeilen (leer = keine Grußformel anhängen).
+function anschrGrussZeilen(){
+  var sm=stammdaten||{};
+  if(sm.gruss_zeigen===false)return [];
+  var text=(sm.gruss_text||'').trim();
+  if(text)return text.split(/\r\n|\r|\n/);
+  return ['Mit freundlichen Grüßen','',(sm.firma||((sm.vname&&sm.nname)?(sm.vname+' '+sm.nname):'Ihre Hausverwaltung'))];
+}
+function anschrGrussText(){
+  var z=anschrGrussZeilen();
+  return z.length?('\n\n'+z.join('\n')):'';
+}
+
+function _anschrKopfLaenge(texte){
+  var sm=stammdaten||{};
+  var erste=(sm.firma||((sm.vname&&sm.nname)?(sm.vname+' '+sm.nname):'')||'').trim();
+  if(!erste||!texte.length||texte[0].trim()!==erste)return null;
+  var k=1;
+  while(k<texte.length&&!/\d{1,2}\.\d{1,2}\.\d{2,4}/.test(texte[k]))k++;
+  if(k>=texte.length)return null;                 // keine Datumszeile gefunden
+  var datum=texte[k].trim();
+  k++;
+  while(k<texte.length&&!texte[k].trim())k++;     // Leerzeilen überspringen
+  return {ende:k,datum:datum};
+}
+
 function _anschrZerlege(text){
   var zeilen=String(text||'').split('\n');
   var bi=-1;
   for(var i=0;i<zeilen.length;i++){ if(/^Betreff:\s*/.test(zeilen[i])){bi=i;break;} }
-  if(bi<0)return {ok:false,body:String(text||'')};
+  if(bi<0){
+    var kopf=_anschrKopfLaenge(zeilen);
+    if(kopf)return {ok:false,body:zeilen.slice(kopf.ende).join('\n'),datum:kopf.datum};
+    return {ok:false,body:String(text||'')};
+  }
   var betreff=zeilen[bi].replace(/^Betreff:\s*/,'').trim();
   // Datum = letzte nichtleere Zeile vor dem Betreff
   var datum='',kopfEnde=bi;
@@ -10368,6 +10641,41 @@ async function _anschrPdfAusTexten(briefe,fname,action){
   if(!_anschrLayoutGeladen&&typeof anschrLadeLayout==='function'){ try{anschrLadeLayout();}catch(e){} }
   if(_anschrLayoutModus()!=='einfach')return _anschrPdfDin(briefe,fname,action);
   return _anschrPdfEinfach(briefe,fname,action);
+}
+
+// Grußformel: Felder füllen, Vorschau, speichern
+function anschrGrussFelderFuellen(){
+  var sm=stammdaten||{};
+  var cb=document.getElementById('anschr-gruss-zeigen');
+  if(cb)cb.checked=sm.gruss_zeigen!==false;
+  var tf=document.getElementById('anschr-gruss-text');
+  if(tf){ tf.value=sm.gruss_text||''; tf.placeholder='Mit freundlichen Grüßen\n\n'+(sm.firma||'Ihre Hausverwaltung'); }
+  anschrGrussVorschau();
+}
+function anschrGrussVorschau(){
+  var box=document.getElementById('anschr-gruss-vorschau'); if(!box)return;
+  var cb=document.getElementById('anschr-gruss-zeigen');
+  if(cb&&!cb.checked){ box.textContent='Es wird keine Grußformel angehängt.'; return; }
+  var tf=document.getElementById('anschr-gruss-text');
+  var eigen=((tf&&tf.value)||'').trim();
+  var sm=stammdaten||{};
+  var zeilen=eigen?eigen.split(/\r\n|\r|\n/)
+    :['Mit freundlichen Grüßen','',(sm.firma||((sm.vname&&sm.nname)?(sm.vname+' '+sm.nname):'Ihre Hausverwaltung'))];
+  box.textContent='So endet der Brief:\n'+zeilen.join('\n');
+}
+async function anschrGrussSpeichern(){
+  var cb=document.getElementById('anschr-gruss-zeigen');
+  var tf=document.getElementById('anschr-gruss-text');
+  var d={gruss_zeigen:cb?!!cb.checked:true, gruss_text:((tf&&tf.value)||'').trim()||null};
+  stammdaten=stammdaten||{};
+  stammdaten.gruss_zeigen=d.gruss_zeigen; stammdaten.gruss_text=d.gruss_text;
+  anschrGrussVorschau();
+  if(!currentUser)return;
+  try{
+    var r=await sb.from('stammdaten').upsert(Object.assign({user_id:currentUser.id},d),{onConflict:'user_id'});
+    if(r.error)throw r.error;
+    showToast('✅ Grußformel gespeichert');
+  }catch(e){ showToast('⚠️ Fehler: '+(e.message||e)); }
 }
 
 // Wohnungsangabe in der Anschrift: speichern und Beispiel zeigen
@@ -10401,6 +10709,7 @@ function anschrRueckFelderFuellen(){
   if(em)em.value=_anschrEinheitModus();
   anschrRueckVorschau();
   anschrEinheitVorschau();
+  anschrGrussFelderFuellen();
 }
 function anschrRueckVorschau(){
   var box=document.getElementById('anschr-rueck-vorschau'); if(!box)return;
@@ -10458,7 +10767,8 @@ async function _anschrPdfDin(briefe,fname,action){
   var ADR_X=L+_o.adrX, TXT_X=L+_o.txtX;
   var RUECK_Y=_g.RUECK_Y+_o.adrY;                  // Rücksendeangabe (Zusatz-/Vermerkzone)
   var ADR_Y=_g.ADR_Y+_o.adrY;                      // erste Anschriftzeile
-  var INFO_Y=_g.INFO_Y+_o.adrY;                    // Informationsblock rechts
+  var DATUM_X=210-R+(_o.datX||0);                  // rechtsbündig, verschiebbar
+  var DATUM_Y=_g.DATUM_Y+(_o.datY||0);             // üblich kurz über dem Betreff
   var BETREFF_Y=_g.BETREFF_Y+_o.txtY;
   var TEXT_Y=_g.TEXT_Y+_o.txtY;                    // Betreff + Leerzeile → DIN: 107,7 mm
 
@@ -10509,9 +10819,10 @@ async function _anschrPdfDin(briefe,fname,action){
     adr.slice(0,6).forEach(function(z,i){ doc.text(String(z),ADR_X,ADR_Y+i*ZEILE,{maxWidth:85}); });
 
     // ── Informationsblock rechts (Ort, Datum) ──
-    if(teile.datum){
+    var datumText=(rTeile.datum||teile.datum||'');
+    if(datumText){
       doc.setFontSize(10);
-      doc.text(String(teile.datum),210-R,INFO_Y,{align:'right'});
+      doc.text(String(datumText),DATUM_X,DATUM_Y,{align:'right'});
       doc.setFontSize(11);
     }
 

@@ -2990,6 +2990,19 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                   <input type="text" id="anschr-rueck-text" oninput="anschrRueckVorschau()" onchange="anschrRueckSpeichern()" placeholder="">
                 </div>
                 <div id="anschr-rueck-vorschau" style="margin-top:.6rem;font-size:.72rem;color:var(--muted)"></div>
+
+                <div style="margin-top:1.1rem;border-top:1px solid var(--border);padding-top:1rem">
+                  <div style="font-size:.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem">Wohnung in der Anschrift</div>
+                  <div style="font-size:.8rem;color:var(--muted);margin-bottom:.7rem">Mehrere Mietparteien haben dieselbe Postanschrift – die Wohnungsbezeichnung macht den Empfänger eindeutig.</div>
+                  <div class="field" style="max-width:320px">
+                    <select id="anschr-einheit-modus" onchange="anschrEinheitModusSpeichern()">
+                      <option value="zeile">Eigene Zeile unter der Straße (empfohlen)</option>
+                      <option value="strasse">An die Straße angehängt</option>
+                      <option value="aus">Nicht anzeigen</option>
+                    </select>
+                  </div>
+                  <div id="anschr-einheit-vorschau" style="margin-top:.6rem;font-size:.74rem;color:var(--muted);white-space:pre-line;background:var(--bg);border-radius:8px;padding:.6rem .8rem"></div>
+                </div>
               </div>
 
               <!-- POSITION ANPASSEN: Blöcke per Maus verschieben -->
@@ -9176,6 +9189,26 @@ function _anschrAdressAnrede(p){
   if(a.indexOf('eheleute')===0)return 'Eheleute '+nm;
   return nm;
 }
+// Anschrift zusammenbauen. Bei Mietobjekten wohnen mehrere Parteien unter
+// derselben Postanschrift – die Einheit macht den Empfänger eindeutig.
+// Einstellbar: eigene Zeile (Standard), an die Straße angehängt oder weglassen.
+function _anschrEinheitModus(){
+  var m=(stammdaten&&stammdaten.anschrift_einheit)||'zeile';
+  return (m==='strasse'||m==='aus')?m:'zeile';
+}
+function _anschrAdressBlock(namen,strasse,plz,ort,einheit){
+  var zeilen=(namen||[]).slice();
+  var modus=_anschrEinheitModus();
+  einheit=(einheit||'').trim();
+  if(strasse&&einheit&&modus==='strasse')zeilen.push(strasse+', '+einheit);
+  else{
+    if(strasse)zeilen.push(strasse);
+    if(einheit&&modus==='zeile')zeilen.push(einheit);
+  }
+  var ortZeile=[plz,ort].filter(Boolean).join(' ');
+  if(ortZeile)zeilen.push(ortZeile);
+  return zeilen;
+}
 function _anschrNormName(s){return (s||'').toLowerCase().replace(/[^a-zäöüß0-9]/g,'');}
 
 // ── Objekte laden ───────────────────────────────────────────────────────
@@ -9242,7 +9275,7 @@ async function anschrLadeEmpfaenger(objektId){
       personen:personen,
       briefName:personen.map(_anschrPersonName).join(' und '),
       anredeText:_anschrAnredeText(personen),
-      adressZeilen:personen.map(_anschrAdressAnrede).concat([adrStr,[adrPlz,adrOrt].filter(Boolean).join(' ')].filter(Boolean)),
+      adressZeilen:_anschrAdressBlock(personen.map(_anschrAdressAnrede),adrStr,adrPlz,adrOrt,e.bezeichnung||''),
       strasse:adrStr, plz:adrPlz, ort:adrOrt,
       vollstaendig:!!(adrStr&&adrOrt)
     }));
@@ -9265,7 +9298,7 @@ async function anschrLadeEmpfaenger(objektId){
         personen:pers,
         briefName:nm,
         anredeText:_anschrAnredeText(pers),
-        adressZeilen:[_anschrAdressAnrede(pers[0]),basis.strasse,[basis.plz,basis.ort].filter(Boolean).join(' ')].filter(Boolean),
+        adressZeilen:_anschrAdressBlock([_anschrAdressAnrede(pers[0])],basis.strasse,basis.plz,basis.ort,m.wohneinheit||''),
         strasse:basis.strasse, plz:basis.plz, ort:basis.ort,
         vollstaendig:!!(basis.strasse&&basis.ort)
       }));
@@ -10337,6 +10370,26 @@ async function _anschrPdfAusTexten(briefe,fname,action){
   return _anschrPdfEinfach(briefe,fname,action);
 }
 
+// Wohnungsangabe in der Anschrift: speichern und Beispiel zeigen
+async function anschrEinheitModusSpeichern(){
+  var sel=document.getElementById('anschr-einheit-modus');
+  var wert=(sel&&sel.value)||'zeile';
+  stammdaten=stammdaten||{}; stammdaten.anschrift_einheit=wert;
+  anschrEinheitVorschau();
+  if(!currentUser)return;
+  try{
+    var r=await sb.from('stammdaten').upsert({user_id:currentUser.id,anschrift_einheit:wert},{onConflict:'user_id'});
+    if(r.error)throw r.error;
+    showToast('✅ Anschrift-Einstellung gespeichert');
+  }catch(e){ showToast('⚠️ Fehler: '+(e.message||e)); }
+}
+function anschrEinheitVorschau(){
+  var box=document.getElementById('anschr-einheit-vorschau'); if(!box)return;
+  var beispiel=_anschrAdressBlock(['Herrn Alfredo Pais','Frau Arminda Pais'],
+    'An der Vogelrute 6','53879','Euskirchen','EG links (Whg. 01)');
+  box.textContent='So sieht die Anschrift aus:\n'+beispiel.join('\n');
+}
+
 // Felder für die Rücksendeangabe füllen und speichern
 function anschrRueckFelderFuellen(){
   var sm=stammdaten||{};
@@ -10344,7 +10397,10 @@ function anschrRueckFelderFuellen(){
   if(cb)cb.checked=sm.rueckadresse_zeigen!==false;
   var tf=document.getElementById('anschr-rueck-text');
   if(tf){ tf.value=sm.rueckadresse||''; tf.placeholder=anschrRueckadresseAuto()||'z. B. Hausverwaltung Müller · Bahnhofstr. 1 · 53879 Euskirchen'; }
+  var em=document.getElementById('anschr-einheit-modus');
+  if(em)em.value=_anschrEinheitModus();
   anschrRueckVorschau();
+  anschrEinheitVorschau();
 }
 function anschrRueckVorschau(){
   var box=document.getElementById('anschr-rueck-vorschau'); if(!box)return;

@@ -3585,9 +3585,14 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
         <div style="display:flex;gap:.75rem;margin-bottom:1.5rem;flex-wrap:wrap">
           <div style="position:relative;flex:1;min-width:220px">
             <span class="mini-ic" data-icon="search" style="position:absolute;left:.7rem;top:50%;transform:translateY(-50%);color:#9ca3af"></span>
-            <input type="text" id="kontakte-search" placeholder="Kontakte durchsuchen..." oninput="renderKontakte()"
+            <input type="text" id="kontakte-search" placeholder="Name, E-Mail, Objekt oder Wohnung suchen..." oninput="renderKontakte()"
               style="width:100%;border:1px solid var(--border);border-radius:8px;padding:.55rem .75rem .55rem 2.2rem;font-size:.88rem;font-family:var(--ff);outline:none;background:var(--white);box-sizing:border-box">
           </div>
+          <!-- Objekt-Filter: Mietverhältnisse hängen an Objekten -->
+          <select id="kontakte-objekt" onchange="renderKontakte()"
+            style="border:1px solid var(--border);border-radius:8px;padding:.55rem .7rem;font-size:.86rem;font-family:var(--ff);background:var(--white);outline:none;min-width:180px">
+            <option value="">Alle Objekte</option>
+          </select>
           <!-- Typ Filter -->
           <div style="display:flex;gap:.4rem;align-items:center;background:var(--white);border:1px solid var(--border);border-radius:8px;padding:.25rem">
             <button type="button" id="ktyp-alle" onclick="setKontaktTypFilter('')" style="background:var(--p);color:#fff;border:none;border-radius:6px;padding:.35rem .75rem;cursor:pointer;font-size:.8rem;font-family:var(--ff)">Alle</button>
@@ -15751,15 +15756,59 @@ async function loadKontakte(){
   if(r.error){console.error('Kontakte:',r.error);alleKontakte=[];renderKontakte();return;}
   alleKontakte=r.data||[];
   try{
-    var mv=await sb.from('mietverhaeltnisse').select('kontakt_id,einheiten(bezeichnung)').eq('user_id',currentUser.id).eq('aktiv',true);
-    var mvMap={};
+    // Einheiten UND Objekte je Kontakt – inklusive Mitmieter desselben Mietvertrags
+    var mv=await sb.from('mietverhaeltnisse')
+      .select('kontakt_id,objekt_id,einheiten(bezeichnung),objekte(name),mietverhaeltnis_mieter(kontakt_id)')
+      .eq('user_id',currentUser.id).eq('aktiv',true);
+    var mvMap={},objMap={};
+    var eintragen=function(kid,einheit,objId,objName){
+      if(!kid)return;
+      if(!mvMap[kid])mvMap[kid]=[];
+      if(einheit&&mvMap[kid].indexOf(einheit)<0)mvMap[kid].push(einheit);
+      if(!objMap[kid])objMap[kid]=[];
+      if(objId&&!objMap[kid].some(function(o){return o.id===objId;}))objMap[kid].push({id:objId,name:objName||''});
+    };
     (mv.data||[]).forEach(function(m){
-      if(m.kontakt_id){if(!mvMap[m.kontakt_id])mvMap[m.kontakt_id]=[];
-      if(m.einheiten&&m.einheiten.bezeichnung)mvMap[m.kontakt_id].push(m.einheiten.bezeichnung);}
+      var einheit=m.einheiten&&m.einheiten.bezeichnung?m.einheiten.bezeichnung:'';
+      var objName=m.objekte&&m.objekte.name?m.objekte.name:'';
+      eintragen(m.kontakt_id,einheit,m.objekt_id,objName);
+      (m.mietverhaeltnis_mieter||[]).forEach(function(x){ eintragen(x.kontakt_id,einheit,m.objekt_id,objName); });
     });
-    alleKontakte=alleKontakte.map(function(k){k._einheiten=mvMap[k.id]||[];return k;});
-  }catch(e){alleKontakte=alleKontakte.map(function(k){k._einheiten=[];return k;});}
+    alleKontakte=alleKontakte.map(function(k){
+      k._einheiten=mvMap[k.id]||[];
+      k._objekte=objMap[k.id]||[];
+      return k;
+    });
+  }catch(e){ console.warn('Kontakt-Objekte:',e);
+    alleKontakte=alleKontakte.map(function(k){k._einheiten=[];k._objekte=[];return k;}); }
+  if(typeof kontaktObjektFilterFuellen==='function')kontaktObjektFilterFuellen();
   renderKontakte();
+}
+
+// Objektauswahl aus den tatsächlich zugeordneten Kontakten aufbauen
+function kontaktObjektFilterFuellen(){
+  var sel=document.getElementById('kontakte-objekt'); if(!sel)return;
+  var objekte={},ohne=0;
+  (alleKontakte||[]).forEach(function(k){
+    if(!(k._objekte||[]).length){ohne++;return;}
+    k._objekte.forEach(function(o){ if(o.id)objekte[o.id]=o.name||'(ohne Namen)'; });
+  });
+  var ids=Object.keys(objekte).sort(function(a,b){return objekte[a].localeCompare(objekte[b],'de');});
+  var anzahl=function(id){
+    return (alleKontakte||[]).filter(function(k){return (k._objekte||[]).some(function(o){return o.id===id;});}).length;
+  };
+  var cur=sel.value;
+  sel.innerHTML='<option value="">Alle Objekte</option>'
+    +ids.map(function(id){return '<option value="'+id+'">'+escapeHtml(objekte[id])+' ('+anzahl(id)+')</option>';}).join('')
+    +(ohne?'<option value="_ohne">Ohne Objektbezug ('+ohne+')</option>':'');
+  if(cur&&(cur==='_ohne'?ohne:objekte[cur]))sel.value=cur;
+}
+// Kurzform der Objektzuordnung für Karten und Liste
+function kontaktObjektText(k){
+  var o=(k&&k._objekte)||[];
+  if(!o.length)return '';
+  var namen=o.map(function(x){return x.name;}).filter(Boolean);
+  return namen.length>2?(namen.slice(0,2).join(', ')+' +'+(namen.length-2)):namen.join(', ');
 }
 
 var kontakteView='list';
@@ -15790,13 +15839,26 @@ function renderKontakte(){
   var countEl=document.getElementById('kontakte-count');
   var search=(document.getElementById('kontakte-search')||{value:''}).value.toLowerCase();
   var typFilter=window._kontaktTypFilter||'';
+  var objFilter=(document.getElementById('kontakte-objekt')||{value:''}).value||'';
   var filtered=alleKontakte.filter(function(k){
+    // Objekt, Einheit und Mietpartei sind mitdurchsuchbar
+    var objText=(k._objekte||[]).map(function(o){return o.name;}).join(' ');
+    var einhText=(k._einheiten||[]).join(' ');
     var matchSearch=!search||
       (k.nachname||'').toLowerCase().includes(search)||
       (k.vorname||'').toLowerCase().includes(search)||
       (k.email||'').toLowerCase().includes(search)||
-      (k.ort||'').toLowerCase().includes(search);
+      (k.ort||'').toLowerCase().includes(search)||
+      (k.strasse||'').toLowerCase().includes(search)||
+      (k.telefon||'').toLowerCase().includes(search)||
+      (k.mobil||'').toLowerCase().includes(search)||
+      objText.toLowerCase().includes(search)||
+      einhText.toLowerCase().includes(search);
     if(!matchSearch)return false;
+    if(objFilter){
+      if(objFilter==='_ohne'){ if((k._objekte||[]).length)return false; }
+      else if(!(k._objekte||[]).some(function(o){return o.id===objFilter;}))return false;
+    }
     if(!typFilter)return true;
     // Parse typ from notiz
     var rawNotiz=k.notiz||'';
@@ -15837,6 +15899,7 @@ function renderKontakte(){
           +'<div style="text-align:center;margin-bottom:.75rem">'
             +'<div style="font-weight:700;font-size:.95rem">'+k.anrede+' '+k.vorname+' '+k.nachname+'</div>'
             +(einheiten?'<div style="font-size:.72rem;color:var(--p);margin-top:2px;font-weight:600">'+einheiten+'</div>':'<div style="font-size:.72rem;color:var(--muted);margin-top:2px">Kein Mietverhältnis</div>')
+            +(kontaktObjektText(k)?'<div style="font-size:.7rem;color:var(--muted);margin-top:1px">🏠 '+escapeHtml(kontaktObjektText(k))+'</div>':'')
           +'</div>'
           +'<div style="border-top:1px solid var(--border);padding-top:.65rem;display:flex;flex-direction:column;gap:.3rem">'
             +(k.email?'<div style="display:flex;align-items:center;gap:.5rem;font-size:.78rem"><span style="color:var(--muted)">✉</span><span>'+k.email+'</span></div>':'')
@@ -15856,6 +15919,8 @@ function renderKontakte(){
     tbody.innerHTML=filtered.map(function(k,ri){
       var adresse=[k.strasse,(k.plz||'')+(k.ort?' '+k.ort:'')].filter(Boolean).join(', ');
       var einheiten=k._einheiten&&k._einheiten.length?k._einheiten.join('; '):'–';
+      var objTxt=kontaktObjektText(k);
+      if(objTxt)einheiten=(einheiten==='–'?'':einheiten+'<br>')+'<span style="font-size:.72rem;color:var(--muted)">🏠 '+escapeHtml(objTxt)+'</span>';
       var color=colors[ri%colors.length];
       var initials=((k.vorname?k.vorname[0]:'')+k.nachname[0]).toUpperCase();
       var bg=ri%2===0?'':'background:#faf8ff';

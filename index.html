@@ -2702,7 +2702,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
           <div style="font-size:.82rem;color:var(--muted);margin-bottom:1rem">Lade dein Briefpapier / deinen Briefkopf als Bild hoch (PNG oder JPG, am besten in Seitenbreite). Es wird oben auf jedem Anschreiben-PDF eingefügt.</div>
           <div style="display:flex;gap:1.25rem;align-items:flex-start;flex-wrap:wrap">
             <div style="flex:1;min-width:240px">
-              <input type="file" id="briefkopf-file" accept="image/png,image/jpeg" onchange="handleBriefkopfUpload(this)" style="font-size:.84rem;font-family:var(--ff)">
+              <input type="file" id="briefkopf-file" accept="image/png,image/jpeg,application/pdf,.pdf" onchange="handleBriefkopfUpload(this)" style="font-size:.84rem;font-family:var(--ff)">
               <div style="font-size:.74rem;color:var(--muted);margin-top:.5rem">Empfohlen: Breite ca. 1600 px, max. ~2 MB. Wird auf die Seitenbreite skaliert.</div>
               <div style="display:flex;gap:.5rem;margin-top:.85rem">
                 <button class="btn-secondary" onclick="entferneBriefkopf()" id="briefkopf-remove-btn" style="font-size:.8rem;display:none;color:#c0392b;border-color:#c0392b"><span class="btn-ic" data-icon="trash"></span> Briefkopf entfernen</button>
@@ -2978,6 +2978,20 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
               </div>
               <div style="font-size:.72rem;color:var(--muted);margin-bottom:1.2rem">💡 DIN 5008 setzt Anschrift, Datum und Betreff an die genormten Positionen – passend für Fensterumschläge (DIN lang). Form B lässt oben Platz für deinen Briefkopf.</div>
 
+              <!-- RÜCKSENDEANGABE über dem Anschriftfeld -->
+              <div style="border-top:1px solid var(--border);padding-top:1.1rem;margin-bottom:1.1rem">
+                <div style="font-size:.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem">Rücksendeangabe</div>
+                <div style="font-size:.8rem;color:var(--muted);margin-bottom:.8rem">Die kleine Zeile direkt über der Empfängeranschrift. Leer lassen, um sie automatisch aus den Stammdaten zu bilden.</div>
+                <label style="display:flex;align-items:center;gap:.5rem;font-size:.84rem;cursor:pointer;margin-bottom:.7rem">
+                  <input type="checkbox" id="anschr-rueck-zeigen" onchange="anschrRueckSpeichern()"> Rücksendeangabe anzeigen
+                </label>
+                <div class="field">
+                  <label>Eigener Text</label>
+                  <input type="text" id="anschr-rueck-text" oninput="anschrRueckVorschau()" onchange="anschrRueckSpeichern()" placeholder="">
+                </div>
+                <div id="anschr-rueck-vorschau" style="margin-top:.6rem;font-size:.72rem;color:var(--muted)"></div>
+              </div>
+
               <!-- POSITION ANPASSEN: Blöcke per Maus verschieben -->
               <div style="border-top:1px solid var(--border);padding-top:1.1rem;margin-bottom:1.1rem">
                 <div style="font-size:.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem">Position anpassen</div>
@@ -3014,7 +3028,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                 <div style="font-size:.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem">Briefbogen (ganzseitiges A4-Bild)</div>
                 <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-start">
                   <div style="flex:1;min-width:240px">
-                    <input type="file" id="briefbogen-file" accept="image/png,image/jpeg" onchange="handleBriefbogenUpload(this)" style="font-size:.84rem;font-family:var(--ff)">
+                    <input type="file" id="briefbogen-file" accept="image/png,image/jpeg,application/pdf,.pdf" onchange="handleBriefbogenUpload(this)" style="font-size:.84rem;font-family:var(--ff)">
                     <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.8rem">
                       <button class="btn-secondary" onclick="downloadBriefbogenBeispiel()" style="font-size:.8rem"><span class="btn-ic" data-icon="download"></span> NEKOSTA-Beispiel</button>
                       <button class="btn-secondary" onclick="entferneBriefbogen()" id="briefbogen-remove-btn" style="font-size:.8rem;display:none;color:#c0392b;border-color:#c0392b"><span class="btn-ic" data-icon="trash"></span> Entfernen</button>
@@ -3035,7 +3049,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                 <div style="font-size:.8rem;color:var(--muted);margin-bottom:.7rem">Wird oben auf der Seite eingefügt; die Anschrift bleibt an der DIN-Position darunter. Verwaltet unter <b>Stammdaten</b>.</div>
                 <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-start">
                   <div style="flex:1;min-width:240px">
-                    <input type="file" id="anschr-briefkopf-file" accept="image/png,image/jpeg" onchange="handleBriefkopfUpload(this)" style="font-size:.84rem;font-family:var(--ff)">
+                    <input type="file" id="anschr-briefkopf-file" accept="image/png,image/jpeg,application/pdf,.pdf" onchange="handleBriefkopfUpload(this)" style="font-size:.84rem;font-family:var(--ff)">
                     <div id="anschr-briefkopf-msg" style="display:none;margin-top:.7rem;font-size:.8rem;padding:.45rem .7rem;border-radius:6px"></div>
                   </div>
                   <div style="width:200px">
@@ -4466,6 +4480,7 @@ function showPage(name){
     if(typeof anschrLadeGespeicherte==='function')anschrLadeGespeicherte();
     if(typeof anschrLadeLayout==='function')anschrLadeLayout();
     if(typeof anschrLadeVorlagen==='function')anschrLadeVorlagen();
+    if(typeof anschrRueckFelderFuellen==='function')anschrRueckFelderFuellen();
     if(typeof renderBriefkopfPreview==='function')renderBriefkopfPreview();
     if(typeof anschrAktualisiereZaehler==='function')anschrAktualisiereZaehler();
   }
@@ -4704,12 +4719,36 @@ function renderBriefkopfPreview(){
   if(rm)rm.style.display=hat?'inline-block':'none';
   if(typeof anschrBriefpapierStatus==='function')anschrBriefpapierStatus();
 }
+// Gemeinsamer Speicherweg für Briefkopf aus Bild oder PDF
+async function _briefkopfUebernehmen(dataUrl,show){
+  try{
+    if(typeof sb==='undefined'||!currentUser){show('Bitte zuerst anmelden.',false);return;}
+    var r=await sb.from('stammdaten').upsert({user_id:currentUser.id,briefkopf:dataUrl},{onConflict:'user_id'});
+    if(r.error){show('Fehler: '+r.error.message,false);return;}
+    stammdaten=stammdaten||{}; stammdaten.briefkopf=dataUrl;
+    renderBriefkopfPreview();
+    if(typeof anschrRenderPosVorschau==='function')anschrRenderPosVorschau();
+    show('✅ Briefkopf gespeichert.',true);
+  }catch(e){show('Fehler: '+(e.message||e),false);}
+}
+
 function handleBriefkopfUpload(input){
   var file=input.files&&input.files[0]; if(!file)return;
   // Meldung in beiden Oberflächen anzeigen (Stammdaten + Anschreiben)
   var msgs=['briefkopf-msg','anschr-briefkopf-msg'].map(function(id){return document.getElementById(id);}).filter(Boolean);
   var show=function(t,ok){msgs.forEach(function(m){m.textContent=t;m.style.background=ok?'#eaf7ef':'#fdf0ef';m.style.color=ok?'#1a7a4a':'#c0392b';m.style.display='block';});};
   if(file.size>4*1024*1024){show('Datei zu groß (max. 4 MB).',false);return;}
+  // PDF: erste Seite rendern und wie ein Bild weiterverarbeiten
+  if(/pdf/i.test(file.type)||/\.pdf$/i.test(file.name||'')){
+    show('PDF wird verarbeitet …',true);
+    pdfErsteSeiteAlsBild(file,1600).then(function(r){
+      _briefkopfUebernehmen(r.dataUrl,show);
+    }).catch(function(e){
+      console.error('PDF-Briefkopf:',e);
+      show('PDF konnte nicht gelesen werden: '+(e.message||e),false);
+    });
+    return;
+  }
   var reader=new FileReader();
   reader.onload=function(ev){
     var img=new Image();
@@ -4722,11 +4761,7 @@ function handleBriefkopfUpload(input){
       if(/png/i.test(file.type)){ctx.clearRect(0,0,cw,ch);} else {ctx.fillStyle='#fff';ctx.fillRect(0,0,cw,ch);}
       ctx.drawImage(img,0,0,cw,ch);
       var dataUrl=/png/i.test(file.type)?cv.toDataURL('image/png'):cv.toDataURL('image/jpeg',0.85);
-      try{
-        var {error}=await sb.from('stammdaten').upsert({user_id:currentUser.id,briefkopf:dataUrl},{onConflict:'user_id'});
-        if(error){show('Fehler: '+error.message,false);return;}
-        stammdaten.briefkopf=dataUrl; renderBriefkopfPreview(); show('✅ Briefkopf gespeichert.',true);
-      }catch(e){show('Fehler: '+e.message,false);}
+      _briefkopfUebernehmen(dataUrl,show);
     };
     img.onerror=function(){show('Bild konnte nicht gelesen werden.',false);};
     img.src=ev.target.result;
@@ -4796,10 +4831,86 @@ function renderBriefbogenPreview(){
   if(bg){prev.innerHTML='<img src="'+bg+'" style="max-width:100%;max-height:100%;display:block">';if(rm)rm.style.display='inline-flex';}
   else{prev.innerHTML='<span style="font-size:.75rem;color:var(--muted);text-align:center;padding:.5rem">Kein Briefbogen<br>hinterlegt</span>';if(rm)rm.style.display='none';}
 }
+// pdf.js bei Bedarf nachladen – nur wenn wirklich ein PDF gewählt wurde,
+// damit der Programmstart nicht ausgebremst wird.
+var _pdfjsBereit=null;
+function ladePdfJs(){
+  if(_pdfjsBereit)return _pdfjsBereit;
+  _pdfjsBereit=new Promise(function(erfuellt,scheitert){
+    if(window.pdfjsLib){erfuellt(window.pdfjsLib);return;}
+    var s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    s.onload=function(){
+      try{
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc=
+          'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      }catch(e){}
+      erfuellt(window.pdfjsLib);
+    };
+    s.onerror=function(){ _pdfjsBereit=null; scheitert(new Error('PDF-Unterstützung konnte nicht geladen werden.')); };
+    document.head.appendChild(s);
+  });
+  return _pdfjsBereit;
+}
+// Erste Seite eines PDFs als Bild rendern (Breite in Pixeln)
+async function pdfErsteSeiteAlsBild(datei,zielBreite){
+  var lib=await ladePdfJs();
+  var puffer=await datei.arrayBuffer();
+  var pdf=await lib.getDocument({data:puffer}).promise;
+  var seite=await pdf.getPage(1);
+  var roh=seite.getViewport({scale:1});
+  var faktor=(zielBreite||1240)/roh.width;
+  var viewport=seite.getViewport({scale:faktor});
+  var c=document.createElement('canvas');
+  c.width=Math.round(viewport.width); c.height=Math.round(viewport.height);
+  var ctx=c.getContext('2d');
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,c.width,c.height);   // PDFs sind transparent
+  await seite.render({canvasContext:ctx,viewport:viewport}).promise;
+  return {dataUrl:c.toDataURL('image/jpeg',0.86),seiten:pdf.numPages};
+}
+
+// Gemeinsamer Speicherweg für Bild- und PDF-Briefpapier
+async function _briefbogenUebernehmen(dataUrl,show,meldung){
+  _briefbogenCache=dataUrl; _briefbogenLoaded=true; renderBriefbogenPreview();
+  if(typeof anschrRenderPosVorschau==='function')anschrRenderPosVorschau();
+  if(typeof sb==='undefined' || !currentUser){
+    try{localStorage.setItem(_briefbogenKey(),dataUrl);}catch(e){}
+    show((meldung||'✅ Briefbogen gespeichert')+' (lokal – nicht angemeldet).',true); return;
+  }
+  try{
+    var blob=_dataUrlToBlob(dataUrl);
+    var dir=_briefbogenDir();
+    // alte Versionen entfernen (eindeutige Dateinamen je Upload -> kein CDN-Stale)
+    try{var old=await sb.storage.from('dokumente').list(dir,{limit:100});
+      if(old.data&&old.data.length){await sb.storage.from('dokumente').remove(old.data.map(function(f){return dir+'/'+f.name;}));}
+    }catch(e){}
+    var fname=Date.now()+'_'+Math.random().toString(36).slice(2,8)+'.jpg';
+    var up=await sb.storage.from('dokumente').upload(dir+'/'+fname,blob,{contentType:'image/jpeg',cacheControl:'0'});
+    if(up.error)throw up.error;
+    try{localStorage.removeItem(_briefbogenKey());}catch(e){}
+    show(meldung||'✅ Briefbogen gespeichert (geräteübergreifend).',true);
+  }catch(e){
+    try{localStorage.setItem(_briefbogenKey(),dataUrl);}catch(e2){}
+    show('⚠️ Server-Speicherung fehlgeschlagen ('+(e.message||e)+') – vorerst lokal gesichert.',false);
+  }
+}
+
 function handleBriefbogenUpload(input){
   var file=input.files&&input.files[0];if(!file)return;
   var msg=document.getElementById('briefbogen-msg');
   var show=function(t,ok){if(msg){msg.textContent=t;msg.style.background=ok?'#e9f9f0':'#fdecea';msg.style.color=ok?'#1a7a4a':'#c0392b';msg.style.display='block';}};
+  // PDF: erste Seite in ein Bild wandeln und den normalen Weg weitergehen
+  if(/pdf/i.test(file.type)||/\.pdf$/i.test(file.name||'')){
+    show('PDF wird verarbeitet …',true);
+    pdfErsteSeiteAlsBild(file,1240).then(function(r){
+      _briefbogenUebernehmen(r.dataUrl,show,
+        r.seiten>1?'✅ Briefpapier aus PDF übernommen (Seite 1 von '+r.seiten+').':'✅ Briefpapier aus PDF übernommen.');
+    }).catch(function(e){
+      console.error('PDF-Briefbogen:',e);
+      show('PDF konnte nicht gelesen werden: '+(e.message||e),false);
+    });
+    return;
+  }
   var reader=new FileReader();
   reader.onload=function(ev){
     var img=new Image();
@@ -4809,24 +4920,7 @@ function handleBriefbogenUpload(input){
       var c=document.createElement('canvas');c.width=w;c.height=h;
       var ctx=c.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);ctx.drawImage(img,0,0,w,h);
       var dataUrl=c.toDataURL('image/jpeg',0.82);
-      _briefbogenCache=dataUrl; _briefbogenLoaded=true; renderBriefbogenPreview();
-      if(typeof sb==='undefined' || !currentUser){ try{localStorage.setItem(_briefbogenKey(),dataUrl);}catch(e){} show('✅ Briefbogen gespeichert (lokal – nicht angemeldet).',true); return; }
-      try{
-        var blob=_dataUrlToBlob(dataUrl);
-        var dir=_briefbogenDir();
-        // alte Versionen entfernen (eindeutige Dateinamen je Upload -> kein CDN-Stale)
-        try{var old=await sb.storage.from('dokumente').list(dir,{limit:100});
-          if(old.data&&old.data.length){await sb.storage.from('dokumente').remove(old.data.map(function(f){return dir+'/'+f.name;}));}
-        }catch(e){}
-        var fname=Date.now()+'_'+Math.random().toString(36).slice(2,8)+'.jpg';
-        var up=await sb.storage.from('dokumente').upload(dir+'/'+fname,blob,{contentType:'image/jpeg',cacheControl:'0'});
-        if(up.error)throw up.error;
-        try{localStorage.removeItem(_briefbogenKey());}catch(e){}
-        show('✅ Briefbogen gespeichert (Supabase Storage – geräteübergreifend).',true);
-      }catch(e){
-        try{localStorage.setItem(_briefbogenKey(),dataUrl);}catch(e2){}
-        show('⚠️ Server-Speicherung fehlgeschlagen ('+(e.message||e)+') – vorerst lokal gesichert.',false);
-      }
+      _briefbogenUebernehmen(dataUrl,show);
     };
     img.onerror=function(){show('Bild konnte nicht gelesen werden.',false);};
     img.src=ev.target.result;
@@ -4875,11 +4969,11 @@ function downloadBriefbogenBeispiel(){
 }
 async function saveStammdaten(){
   const d={user_id:currentUser.id};
-  ['vname','nname','firma','tel','email','steuernr','strasse','plz','ort','bank','iban','bic','datev_berater','datev_mandant'].forEach(k=>{const el=document.getElementById('s-'+k);if(el)d[k]=el.value.trim();});
+  ['vname','nname','firma','tel','email','steuernr','strasse','plz','ort','bank','iban','bic','datev_berater','datev_mandant','rueckadresse'].forEach(k=>{const el=document.getElementById('s-'+k);if(el)d[k]=el.value.trim();});
   const {error}=await sb.from('stammdaten').upsert(d,{onConflict:'user_id'});
   const msg=document.getElementById('stamm-msg');
   if(error){msg.style.background='#fdf0ef';msg.style.color='#c0392b';msg.textContent='Fehler: '+error.message;}
-  else{stammdaten=d;msg.style.background='#eaf7ef';msg.style.color='#1a7a4a';msg.textContent='✅ Stammdaten gespeichert!';checkStammdatenWarn();}
+  else{stammdaten=Object.assign({},stammdaten||{},d);msg.style.background='#eaf7ef';msg.style.color='#1a7a4a';msg.textContent='✅ Stammdaten gespeichert!';checkStammdatenWarn();}
   msg.style.display='block';setTimeout(()=>msg.style.display='none',3000);
 }
 function toggleHK(){document.getElementById('hk-content').style.display=document.getElementById('keine-hk').checked?'none':'block';}
@@ -10243,6 +10337,56 @@ async function _anschrPdfAusTexten(briefe,fname,action){
   return _anschrPdfEinfach(briefe,fname,action);
 }
 
+// Felder für die Rücksendeangabe füllen und speichern
+function anschrRueckFelderFuellen(){
+  var sm=stammdaten||{};
+  var cb=document.getElementById('anschr-rueck-zeigen');
+  if(cb)cb.checked=sm.rueckadresse_zeigen!==false;
+  var tf=document.getElementById('anschr-rueck-text');
+  if(tf){ tf.value=sm.rueckadresse||''; tf.placeholder=anschrRueckadresseAuto()||'z. B. Hausverwaltung Müller · Bahnhofstr. 1 · 53879 Euskirchen'; }
+  anschrRueckVorschau();
+}
+function anschrRueckVorschau(){
+  var box=document.getElementById('anschr-rueck-vorschau'); if(!box)return;
+  var cb=document.getElementById('anschr-rueck-zeigen');
+  var tf=document.getElementById('anschr-rueck-text');
+  if(cb&&!cb.checked){ box.textContent='Wird nicht gedruckt.'; return; }
+  var t=((tf&&tf.value)||'').trim()||anschrRueckadresseAuto();
+  box.textContent=t?('So erscheint es im Brief:  '+t):'Keine Angabe vorhanden – bitte Text eintragen oder Stammdaten ergänzen.';
+}
+async function anschrRueckSpeichern(){
+  anschrRueckVorschau();
+  if(!currentUser)return;
+  var cb=document.getElementById('anschr-rueck-zeigen');
+  var tf=document.getElementById('anschr-rueck-text');
+  var d={user_id:currentUser.id,
+    rueckadresse:((tf&&tf.value)||'').trim()||null,
+    rueckadresse_zeigen:cb?!!cb.checked:true};
+  try{
+    var r=await sb.from('stammdaten').upsert(d,{onConflict:'user_id'});
+    if(r.error)throw r.error;
+    stammdaten=stammdaten||{};
+    stammdaten.rueckadresse=d.rueckadresse;
+    stammdaten.rueckadresse_zeigen=d.rueckadresse_zeigen;
+    showToast('✅ Rücksendeangabe gespeichert');
+  }catch(e){ showToast('⚠️ Fehler: '+(e.message||e)); }
+}
+
+// Rücksendeangabe über dem Anschriftfeld – frei einstellbar.
+// Ohne eigene Angabe wird sie aus den Stammdaten gebildet; sie lässt sich
+// auch ganz abschalten (z. B. wenn der Briefbogen sie bereits enthält).
+function anschrRueckadresseAuto(){
+  var sm=stammdaten||{};
+  return [sm.firma||((sm.vname&&sm.nname)?(sm.vname+' '+sm.nname):''),sm.strasse,
+          [sm.plz,sm.ort].filter(Boolean).join(' ')].filter(Boolean).join(' · ');
+}
+function anschrRueckadresse(){
+  var sm=stammdaten||{};
+  if(sm.rueckadresse_zeigen===false)return '';
+  var eigen=(sm.rueckadresse||'').trim();
+  return eigen||anschrRueckadresseAuto();
+}
+
 async function _anschrPdfDin(briefe,fname,action){
   if(typeof loadBriefbogen==='function' && !_briefbogenLoaded){ try{await loadBriefbogen();}catch(e){} }
   var {jsPDF}=window.jspdf;
@@ -10282,8 +10426,7 @@ async function _anschrPdfDin(briefe,fname,action){
   };
 
   var sm=stammdaten||{};
-  var rueckZeile=[sm.firma||((sm.vname&&sm.nname)?sm.vname+' '+sm.nname:''),sm.strasse,
-                  [sm.plz,sm.ort].filter(Boolean).join(' ')].filter(Boolean).join(' · ');
+  var rueckZeile=anschrRueckadresse();
 
   briefe.forEach(function(b,bi){
     if(bi>0)doc.addPage();

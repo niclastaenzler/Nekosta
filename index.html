@@ -19816,6 +19816,7 @@ async function ladeVorjahresvergleich(ergebnis){
 var OBUCH_MODS=[
   {id:'dashboard',   label:'Übersicht',        icon:'home'},
   {id:'buchungen',   label:'Buchungen',        icon:'receipt'},
+  {id:'stapel',      label:'Buchungsstapel',   icon:'list'},
   {id:'kreditoren',  label:'Kreditoren',       icon:'alertcircle'},
   {id:'debitoren',   label:'Debitoren',        icon:'euro'},
   {id:'partner',     label:'Geschäftspartner', icon:'users'},
@@ -19824,6 +19825,7 @@ var OBUCH_MODS=[
 ];
 var _obuchCur=null, _obuchMod='dashboard', _obuchPartner=[], _obuchOp=[], _obuchBu=[], _obuchEinheiten=[];
 var _obuchOpFilter='offen';
+var _obuchStapel=[], _obuchStapelOffen=null, _obuchStapelZeilen=[];
 
 function _obDat(d){if(!d)return '–';var p=(''+d).slice(0,10).split('-');return p.length===3?p[2]+'.'+p[1]+'.'+p[0]:d;}
 function _obKontoTyp(nr){var k=(buha.konten||[]).filter(function(x){return x.nummer===nr;})[0];return k?k.typ:'';}
@@ -19919,6 +19921,7 @@ async function obuchGo(mod){
   await obuchLoad();
   blShow();
   if(_obuchMod==='buchungen')   return obuchRenderBuchungen(c);
+  if(_obuchMod==='stapel')      return obuchRenderStapel(c);
   if(_obuchMod==='kreditoren')  return obuchRenderOpos(c,'kreditor');
   if(_obuchMod==='debitoren')   return obuchRenderOpos(c,'debitor');
   if(_obuchMod==='partner')     return obuchRenderPartner(c);
@@ -19945,17 +19948,21 @@ async function renderObuchObjektliste(){
     if(r.error)throw r.error;
     var objs=r.data||[];
     if(!objs.length){c.innerHTML='<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:2.5rem;text-align:center;color:var(--muted);font-size:.88rem">Noch keine Objekte angelegt. Lege zuerst unter <strong>Objekte</strong> ein Objekt an.</div>';return;}
-    c.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:.9rem">'
+    // Kompakte Listenansicht (wie die Objekte-Tabelle) statt grosser Kacheln
+    c.innerHTML='<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow-x:auto">'
+      +'<table style="width:100%;border-collapse:collapse;font-size:.84rem"><thead><tr style="border-bottom:2px solid var(--border)">'
+      +['Objekt','Adresse','Art',''].map(function(t,i){return '<th style="text-align:'+(i===3?'right':'left')+';padding:.55rem .8rem;font-size:.62rem;text-transform:uppercase;color:var(--muted)">'+t+'</th>';}).join('')
+      +'</tr></thead><tbody>'
       +objs.map(function(o){
         var isWeg=o.kategorie==='weg';
         var adr=[o.strasse,o.plz&&o.ort?o.plz+' '+o.ort:o.ort].filter(Boolean).join(', ');
-        return '<div onclick="openObuchCockpit(\''+o.id+'\')" style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:1rem 1.1rem;cursor:pointer" onmouseover="this.style.borderColor=\'#0e7c7b\'" onmouseout="this.style.borderColor=\'var(--border)\'">'
-          +'<div style="margin-bottom:.35rem"><span style="font-size:.58rem;font-weight:700;padding:2px 7px;border-radius:7px;background:'+(isWeg?'#f3e8fd':'#e0f7f6')+';color:'+(isWeg?'#6a2d9f':'#0e7c7b')+'">'+(isWeg?'WEG':'Vermietung')+'</span></div>'
-          +'<div style="font-size:.95rem;font-weight:800;color:#111827">'+escapeHtml(o.name||'Objekt')+'</div>'
-          +'<div style="font-size:.76rem;color:var(--muted);margin-top:2px">'+escapeHtml(adr||'—')+'</div>'
-          +'<div style="margin-top:.7rem;font-size:.74rem;color:#0e7c7b;font-weight:700">Buchhaltung öffnen →</div>'
-        +'</div>';
-      }).join('')+'</div>';
+        return '<tr onclick="openObuchCockpit(\''+o.id+'\')" style="border-bottom:1px solid #f3f4f6;cursor:pointer" onmouseover="this.style.background=\'#f7fdfd\'" onmouseout="this.style.background=\'\'">'
+          +'<td style="padding:.55rem .8rem;font-weight:700;color:#111827">'+escapeHtml(o.name||'Objekt')+'</td>'
+          +'<td style="padding:.55rem .8rem;color:var(--muted)">'+escapeHtml(adr||'—')+'</td>'
+          +'<td style="padding:.55rem .8rem"><span style="font-size:.58rem;font-weight:700;padding:2px 7px;border-radius:7px;background:'+(isWeg?'#f3e8fd':'#e0f7f6')+';color:'+(isWeg?'#6a2d9f':'#0e7c7b')+'">'+(isWeg?'WEG':'Vermietung')+'</span></td>'
+          +'<td style="padding:.55rem .8rem;text-align:right;color:#0e7c7b;font-weight:700;white-space:nowrap">öffnen →</td>'
+        +'</tr>';
+      }).join('')+'</tbody></table></div>';
   }catch(e){c.innerHTML='<div style="color:#dc2626;font-size:.85rem">Fehler: '+escapeHtml(e.message||'')+'</div>';}
 }
 
@@ -19966,15 +19973,18 @@ function obuchRenderDashboard(c){
   var debOffen=deb.reduce(function(s,o){return s+_obOffen(o);},0);
   var kredOffen=kred.reduce(function(s,o){return s+_obOffen(o);},0);
   var ueber=_obuchOp.filter(_obUeberfaellig).reduce(function(s,o){return s+_obOffen(o);},0);
-  var kpi=function(lbl,val,col){return '<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:.85rem 1rem"><div style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--muted)">'+lbl+'</div><div style="font-size:1.25rem;font-weight:800;color:'+(col||'#111827')+';margin-top:2px">'+val+'</div></div>';};
+  // Kompakte Kennzahlenleiste (eine Zeile statt grosser Kacheln)
+  var kpi=function(lbl,val,col,sep){return '<div style="flex:1 1 140px;min-width:0;padding:.55rem .85rem;'+(sep?'border-left:1px solid #eef0f4':'')+'">'
+    +'<div style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+lbl+'</div>'
+    +'<div style="font-size:1.02rem;font-weight:800;color:'+(col||'#111827')+';white-space:nowrap">'+val+'</div></div>';};
   var h=_obuchHead('Übersicht',escapeHtml(_obuchCur.name||'Objekt'));
-  h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:.8rem;margin-bottom:1.4rem">'
+  h+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;display:flex;flex-wrap:wrap;margin-bottom:1.1rem">'
     +kpi('Einnahmen',buhaEuro(g.ein),'#157f3c')
-    +kpi('Ausgaben',buhaEuro(g.aus),'#b62923')
-    +kpi('Ergebnis',buhaEuro(g.erg),g.erg>=0?'#157f3c':'#b62923')
-    +kpi('Forderungen offen',buhaEuro(debOffen),'#0e7c7b')
-    +kpi('Verbindlichkeiten offen',buhaEuro(kredOffen),'#b45309')
-    +kpi('Überfällig (gesamt)',buhaEuro(ueber),ueber>0.005?'#c0392b':'#9ca3af')
+    +kpi('Ausgaben',buhaEuro(g.aus),'#b62923',true)
+    +kpi('Ergebnis',buhaEuro(g.erg),g.erg>=0?'#157f3c':'#b62923',true)
+    +kpi('Forderungen offen',buhaEuro(debOffen),'#0e7c7b',true)
+    +kpi('Verbindlichkeiten offen',buhaEuro(kredOffen),'#b45309',true)
+    +kpi('Überfällig (gesamt)',buhaEuro(ueber),ueber>0.005?'#c0392b':'#9ca3af',true)
   +'</div>';
   var faellig=_obuchOp.filter(function(o){return _obOffen(o)>0.005;}).sort(function(a,b){return (a.faellig_am||'9999')<(b.faellig_am||'9999')?-1:1;}).slice(0,8);
   h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1rem">';
@@ -20003,17 +20013,283 @@ function obuchRenderDashboard(c){
   c.innerHTML=h; applyIcons(c);
 }
 
-// ── Modul: Buchungen (bestehende Buchungsmaske einbetten – keine Duplizierung) ──
-async function obuchRenderBuchungen(c){
-  var node=document.getElementById('tab-content-buchhaltung');
-  c.innerHTML=_obuchHead('Buchungen',escapeHtml(_obuchCur.name||'Objekt')+' · Journal, Kontenrahmen, Auswertungen, DATEV-Import');
-  if(!node){c.innerHTML+='<div style="color:#dc2626;font-size:.85rem">Buchungsmodul nicht gefunden.</div>';return;}
-  if(!_buhaHomeParent)_buhaHomeParent=node.parentNode;
-  c.appendChild(node); node.style.display='block';
+// ── Modul: Buchungen – natives Journal (keine eingebettete Fremdmaske,
+//    die frueher die Buchungsleiste am unteren Rand verdeckt hat) ──
+var _obuchJournalSuche='';
+function obuchJournalSuche(v){_obuchJournalSuche=(v||'').toLowerCase();obuchRenderJournalTabelle();}
+function obuchRenderBuchungen(c){
+  var h=_obuchHead('Buchungen',escapeHtml(_obuchCur.name||'Objekt')+' · Journal '+buha.jahr);
+  h+='<div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-bottom:.8rem">'
+    +'<input id="ob-j-suche" type="text" placeholder="Suchen (Text, Beleg, Konto) …" oninput="obuchJournalSuche(this.value)" style="border:1px solid var(--border);border-radius:8px;padding:.45rem .7rem;font-size:.82rem;font-family:var(--ff);min-width:230px">'
+    +'<button class="btn-primary" style="padding:.45rem 1rem" onclick="blOpen()"><span class="btn-ic" data-icon="plus"></span> Buchen</button>'
+    +'<button class="btn-secondary" style="padding:.45rem 1rem" onclick="obuchGo(\'stapel\')"><span class="btn-ic" data-icon="list"></span> Buchungsstapel</button>'
+    +'<span style="flex:1"></span>'
+    +'<button class="btn-small" style="font-size:.72rem" onclick="obuchKlassischeMaske()" title="Kontenrahmen, DATEV-Import, Festschreibung, Hausgeld">Erweiterte Maske →</button>'
+    +'</div>'
+    +'<div id="ob-journal"></div>';
+  c.innerHTML=h; applyIcons(c);
+  obuchRenderJournalTabelle();
+}
+function obuchRenderJournalTabelle(){
+  var el=document.getElementById('ob-journal'); if(!el)return;
+  var q=_obuchJournalSuche;
+  var rows=(_obuchBu||[]).filter(function(b){
+    if(!q)return true;
+    return [b.text,b.belegnr,b.soll_konto,b.haben_konto].join(' ').toLowerCase().indexOf(q)>=0;
+  });
+  var sum=rows.filter(_obAktiv).reduce(function(s,b){return s+(parseFloat(b.betrag)||0);},0);
+  var h='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;overflow-x:auto">';
+  if(!rows.length){
+    h+='<div style="padding:2.2rem;text-align:center;color:var(--muted);font-size:.85rem">'
+      +(_obuchBu.length?'Keine Treffer für die Suche.':'Noch keine Buchungen in '+buha.jahr+'. Erfasse die erste über <strong>Buchen</strong> oder einen <strong>Buchungsstapel</strong>.')+'</div>';
+  }else{
+    h+='<table style="width:100%;border-collapse:collapse;font-size:.82rem;min-width:760px"><thead><tr style="border-bottom:2px solid var(--border)">'
+      +['Datum','Beleg','Buchungstext','Soll','Haben','BU','Betrag','',''].map(function(t,i){
+        return '<th style="text-align:'+(i===6?'right':'left')+';padding:.5rem .7rem;font-size:.62rem;text-transform:uppercase;color:var(--muted);white-space:nowrap">'+t+'</th>';}).join('')
+      +'</tr></thead><tbody>'
+      +rows.map(function(b){
+        var stor=b.storniert||b.ist_storno;
+        var badge=b.ist_storno?'<span style="font-size:.58rem;font-weight:700;padding:1px 6px;border-radius:6px;background:#fdecea;color:#c0392b">Storno</span>'
+          :(b.storniert?'<span style="font-size:.58rem;font-weight:700;padding:1px 6px;border-radius:6px;background:#fff3cd;color:#9a6700">storniert</span>':'');
+        if(b.festgeschrieben)badge+=' <span style="font-size:.58rem;font-weight:700;padding:1px 6px;border-radius:6px;background:#eef2ff;color:#1565c0">🔒</span>';
+        return '<tr style="border-bottom:1px solid #f3f4f6;'+(stor?'opacity:.55':'')+'">'
+          +'<td style="padding:.42rem .7rem;white-space:nowrap;color:#6b7280">'+_obDat(b.buchungsdatum)+'</td>'
+          +'<td style="padding:.42rem .7rem;color:#6b7280">'+escapeHtml(b.belegnr||'–')+'</td>'
+          +'<td style="padding:.42rem .7rem">'+escapeHtml(b.text||'–')+'</td>'
+          +'<td style="padding:.42rem .7rem;font-variant-numeric:tabular-nums" title="'+escapeHtml(kontoName(b.soll_konto)||'')+'">'+escapeHtml(b.soll_konto||'')+'</td>'
+          +'<td style="padding:.42rem .7rem;font-variant-numeric:tabular-nums" title="'+escapeHtml(kontoName(b.haben_konto)||'')+'">'+escapeHtml(b.haben_konto||'')+'</td>'
+          +'<td style="padding:.42rem .7rem;color:#9ca3af">'+escapeHtml((b.schluessel&&b.schluessel!=='0')?b.schluessel:'–')+'</td>'
+          +'<td style="padding:.42rem .7rem;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap">'+buhaEuro(parseFloat(b.betrag)||0)+'</td>'
+          +'<td style="padding:.42rem .5rem;white-space:nowrap">'+badge+'</td>'
+          +'<td style="padding:.42rem .7rem;text-align:right;white-space:nowrap">'
+            +((!stor&&!b.festgeschrieben&&typeof buhaStorno==='function')?'<button class="btn-small" style="font-size:.6rem;padding:2px 7px;background:#fff3cd;color:#856404" title="Stornieren" onclick="obuchStorno(\''+b.id+'\')">↺</button>':'')
+          +'</td></tr>';
+      }).join('')
+      +'<tr style="background:#fafafa;font-weight:800"><td colspan="6" style="padding:.5rem .7rem">Summe (ohne Storni)</td>'
+      +'<td style="padding:.5rem .7rem;text-align:right">'+buhaEuro(sum)+'</td><td colspan="2"></td></tr>'
+      +'</tbody></table>';
+  }
+  h+='</div>'
+   +'<div style="font-size:.72rem;color:#9ca3af;margin-top:.5rem">'+rows.length+' Buchung'+(rows.length===1?'':'en')+' · Stornopaare bleiben sichtbar, werden in den Auswertungen aber herausgerechnet.</div>';
+  el.innerHTML=h; applyIcons(el);
+}
+// Storno ueber die bestehende, revisionssichere Logik
+async function obuchStorno(id){
+  if(typeof buhaStorno!=='function'){showToast('Storno nicht verfügbar.');return;}
+  if(buha.objektId!==_obuchCur.id){try{await ladeBuchhaltung(_obuchCur.id);}catch(e){}}
+  buhaStorno(id);
+}
+// Klassische Maske (Kontenrahmen, DATEV-Import, Festschreibung) in ihrem eigenen Bereich oeffnen
+function obuchKlassischeMaske(){
   aktivesObjekt=_obuchCur;
-  try{ await ladeBuchhaltung(_obuchCur.id); }catch(e){ console.warn('buha load:',e); }
-  try{ buhaTab('buchen'); }catch(e){}
-  var tb=document.getElementById('buha-tabbar'); if(tb)tb.style.display='flex';
+  if(typeof openBuhaCockpit==='function')return openBuhaCockpit(_obuchCur.id);
+  showPage('objekt-detail');
+}
+
+// ── Modul: Buchungsstapel (erfassen → pruefen → gesammelt buchen) ─────────
+async function obuchStapelLaden(){
+  if(!_obuchCur||!currentUser)return;
+  try{
+    var r=await sb.from('weg_stapel').select('*').eq('user_id',currentUser.id)
+      .eq('objekt_id',_obuchCur.id).eq('jahr',buha.jahr).order('created_at',{ascending:false});
+    _obuchStapel=r.data||[];
+    if(_obuchStapelOffen&&!_obuchStapel.some(function(s){return s.id===_obuchStapelOffen;}))_obuchStapelOffen=null;
+    if(!_obuchStapelOffen){
+      var off=_obuchStapel.filter(function(s){return s.status==='offen';})[0];
+      _obuchStapelOffen=off?off.id:null;
+    }
+    _obuchStapelZeilen=[];
+    if(_obuchStapelOffen){
+      var z=await sb.from('weg_stapel_zeile').select('*').eq('user_id',currentUser.id)
+        .eq('stapel_id',_obuchStapelOffen).order('sortierung').order('created_at');
+      _obuchStapelZeilen=z.data||[];
+    }
+  }catch(e){showToast('❌ '+(e.message||e));}
+}
+function obuchStapelWahl(id){_obuchStapelOffen=id||null;obuchGo('stapel');}
+async function obuchRenderStapel(c){
+  await obuchStapelLaden();
+  var st=_obuchStapel.filter(function(s){return s.id===_obuchStapelOffen;})[0]||null;
+  var zeilen=_obuchStapelZeilen;
+  var summe=zeilen.reduce(function(s,z){return s+(parseFloat(z.betrag)||0);},0);
+  var fehler=zeilen.filter(function(z){
+    return !z.soll_konto||!z.haben_konto||!kontoExists(z.soll_konto)||!kontoExists(z.haben_konto)
+      ||z.soll_konto===z.haben_konto||!((parseFloat(z.betrag)||0)>0);
+  });
+  var h=_obuchHead('Buchungsstapel',escapeHtml(_obuchCur.name||'Objekt')+' · erfassen, prüfen und gesammelt buchen');
+  // Stapel-Auswahl
+  h+='<div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-bottom:1rem">';
+  if(_obuchStapel.length){
+    h+='<select onchange="obuchStapelWahl(this.value)" style="border:1px solid var(--border);border-radius:8px;padding:.45rem .7rem;font-size:.82rem;font-family:var(--ff);min-width:230px">'
+      +_obuchStapel.map(function(s){
+        var n=(s.status==='gebucht'?'✓ ':'✎ ')+s.name+' · '+_obDat(s.created_at);
+        return '<option value="'+s.id+'"'+(s.id===_obuchStapelOffen?' selected':'')+'>'+escapeHtml(n)+'</option>';
+      }).join('')+'</select>';
+  }
+  h+='<button class="btn-primary" style="padding:.45rem 1rem" onclick="obuchStapelNeu()"><span class="btn-ic" data-icon="plus"></span> Neuer Stapel</button>';
+  if(st&&st.status==='offen')h+='<button class="btn-small" style="font-size:.72rem;background:#fbe9e7;color:#c0392b" onclick="obuchStapelDel(\''+st.id+'\')">Stapel löschen</button>';
+  h+='</div>';
+  if(!st){
+    h+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:2.2rem;text-align:center;color:var(--muted);font-size:.86rem">'
+      +'Noch kein Buchungsstapel. Ein Stapel sammelt mehrere Buchungen, die du in Ruhe erfasst, prüfst und anschließend <strong>gemeinsam</strong> ins Journal übernimmst.</div>';
+    c.innerHTML=h; applyIcons(c); return;
+  }
+  var offen=st.status==='offen';
+  // Erfassungszeile
+  if(offen){
+    var inp='border:1px solid var(--border);border-radius:7px;padding:.4rem .5rem;font-size:.8rem;font-family:var(--ff);width:100%';
+    var fld=function(l,i,w){return '<div style="display:flex;flex-direction:column;gap:.15rem;'+(w?'flex:0 0 '+w:'flex:1 1 120px')+'"><label style="font-size:.6rem;font-weight:700;text-transform:uppercase;color:var(--muted)">'+l+'</label>'+i+'</div>';};
+    var kOpts=(buha.konten||[]).map(function(k){return '<option value="'+escapeHtml(k.nummer)+'">'+escapeHtml(k.nummer+' · '+k.name)+'</option>';}).join('');
+    var skOpts=buhaSchluesselListe().map(function(s){return '<option value="'+s.schluessel+'">'+s.schluessel+' · '+escapeHtml(s.bezeichnung)+'</option>';}).join('');
+    var pOpts='<option value="">– kein Partner –</option>'+(_obuchPartner||[]).map(function(p){return '<option value="'+p.id+'">'+escapeHtml(p.name)+'</option>';}).join('');
+    h+='<datalist id="ob-st-konten">'+kOpts+'</datalist>'
+      +'<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:.9rem 1rem;margin-bottom:1rem">'
+      +'<div style="font-size:.84rem;font-weight:700;margin-bottom:.6rem">Zeile hinzufügen</div>'
+      +'<div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:flex-end">'
+      +fld('Datum','<input id="ob-st-datum" type="date" value="'+(buha.jahr+'-01-01')+'" style="'+inp+'">','128px')
+      +fld('Beleg','<input id="ob-st-beleg" type="text" style="'+inp+'">','95px')
+      +fld('Soll','<input id="ob-st-soll" list="ob-st-konten" type="text" style="'+inp+'">','110px')
+      +fld('Haben','<input id="ob-st-haben" list="ob-st-konten" type="text" style="'+inp+'">','110px')
+      +fld('Betrag','<input id="ob-st-betrag" type="text" inputmode="decimal" onkeydown="if(event.key===\'Enter\')obuchStapelZeileAdd()" style="'+inp+'">','105px')
+      +fld('BU','<select id="ob-st-bu" style="'+inp+'">'+skOpts+'</select>','150px')
+      +fld('Partner','<select id="ob-st-partner" style="'+inp+'">'+pOpts+'</select>','160px')
+      +fld('Text','<input id="ob-st-text" type="text" onkeydown="if(event.key===\'Enter\')obuchStapelZeileAdd()" style="'+inp+'">')
+      +'<button class="btn-primary" style="padding:.45rem 1rem;white-space:nowrap" onclick="obuchStapelZeileAdd()">+ Zeile</button>'
+      +'</div><div style="font-size:.68rem;color:#9ca3af;margin-top:.45rem">Enter im Betrags- oder Textfeld übernimmt die Zeile.</div></div>';
+  }
+  // Zeilen
+  h+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;overflow-x:auto">';
+  if(!zeilen.length){
+    h+='<div style="padding:2rem;text-align:center;color:var(--muted);font-size:.85rem">Noch keine Zeilen in diesem Stapel.</div>';
+  }else{
+    h+='<table style="width:100%;border-collapse:collapse;font-size:.82rem;min-width:720px"><thead><tr style="border-bottom:2px solid var(--border)">'
+      +['#','Datum','Beleg','Text','Soll','Haben','BU','Betrag',''].map(function(t,i){
+        return '<th style="text-align:'+(i===7?'right':'left')+';padding:.5rem .7rem;font-size:.62rem;text-transform:uppercase;color:var(--muted);white-space:nowrap">'+t+'</th>';}).join('')
+      +'</tr></thead><tbody>'
+      +zeilen.map(function(z,i){
+        var bad=!z.soll_konto||!z.haben_konto||!kontoExists(z.soll_konto)||!kontoExists(z.haben_konto)||z.soll_konto===z.haben_konto||!((parseFloat(z.betrag)||0)>0);
+        return '<tr style="border-bottom:1px solid #f3f4f6;'+(bad?'background:#fdf0ef':'')+'">'
+          +'<td style="padding:.4rem .7rem;color:#9ca3af">'+(i+1)+'</td>'
+          +'<td style="padding:.4rem .7rem;white-space:nowrap;color:#6b7280">'+_obDat(z.buchungsdatum)+'</td>'
+          +'<td style="padding:.4rem .7rem;color:#6b7280">'+escapeHtml(z.belegnr||'–')+'</td>'
+          +'<td style="padding:.4rem .7rem">'+escapeHtml(z.text||'–')+'</td>'
+          +'<td style="padding:.4rem .7rem;font-variant-numeric:tabular-nums'+(bad&&!kontoExists(z.soll_konto)?';color:#c0392b;font-weight:700':'')+'">'+escapeHtml(z.soll_konto||'–')+'</td>'
+          +'<td style="padding:.4rem .7rem;font-variant-numeric:tabular-nums'+(bad&&!kontoExists(z.haben_konto)?';color:#c0392b;font-weight:700':'')+'">'+escapeHtml(z.haben_konto||'–')+'</td>'
+          +'<td style="padding:.4rem .7rem;color:#9ca3af">'+escapeHtml((z.schluessel&&z.schluessel!=='0')?z.schluessel:'–')+'</td>'
+          +'<td style="padding:.4rem .7rem;text-align:right;font-weight:700;font-variant-numeric:tabular-nums">'+buhaEuro(parseFloat(z.betrag)||0)+'</td>'
+          +'<td style="padding:.4rem .7rem;text-align:right">'+(offen?'<button class="btn-small" style="font-size:.6rem;background:#fbe9e7;color:#c0392b" onclick="obuchStapelZeileDel(\''+z.id+'\')"><span class="mini-ic" data-icon="trash"></span></button>':'')+'</td>'
+        +'</tr>';
+      }).join('')
+      +'<tr style="background:#fafafa;font-weight:800"><td colspan="7" style="padding:.5rem .7rem">Summe · '+zeilen.length+' Zeile'+(zeilen.length===1?'':'n')+'</td>'
+      +'<td style="padding:.5rem .7rem;text-align:right">'+buhaEuro(summe)+'</td><td></td></tr>'
+      +'</tbody></table>';
+  }
+  h+='</div>';
+  // Abschluss
+  if(offen){
+    h+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:1rem 1.1rem;margin-top:1rem;display:flex;gap:.7rem;align-items:center;flex-wrap:wrap">';
+    if(fehler.length)h+='<span style="font-size:.82rem;color:#c0392b;font-weight:600">'+fehler.length+' Zeile'+(fehler.length===1?'':'n')+' fehlerhaft (rot markiert) – bitte korrigieren.</span>';
+    else if(!zeilen.length)h+='<span style="font-size:.82rem;color:var(--muted)">Füge Zeilen hinzu, um den Stapel zu buchen.</span>';
+    else h+='<span style="font-size:.82rem;color:#157f3c;font-weight:600">✓ '+zeilen.length+' Zeile'+(zeilen.length===1?'':'n')+' geprüft · '+buhaEuro(summe)+'</span>';
+    var sperr=(!zeilen.length||fehler.length>0);
+    h+='<span style="flex:1"></span>'
+      +'<button class="btn-primary"'+(sperr?' disabled':'')
+      +' style="padding:.55rem 1.3rem;background:'+(sperr?'#cbd5e1':'#157f3c')+';border-color:'+(sperr?'#cbd5e1':'#157f3c')+';cursor:'+(sperr?'not-allowed':'pointer')+'"'
+      +' onclick="obuchStapelBuchen()"><span class="btn-ic" data-icon="check"></span> Stapel buchen</button>'
+      +'</div>';
+  }else{
+    h+='<div style="background:#e9f9f0;border:1px solid #bfe3cc;border-radius:12px;padding:.9rem 1.1rem;margin-top:1rem;font-size:.84rem;color:#157f3c;font-weight:600">'
+      +'✓ Dieser Stapel wurde am '+_obDat(st.gebucht_am)+' gebucht – die Zeilen stehen jetzt im Journal.</div>';
+  }
+  c.innerHTML=h; applyIcons(c);
+}
+async function obuchStapelNeu(){
+  if(!_obuchCur)return;
+  var nr=_obuchStapel.length+1;
+  var r=await sb.from('weg_stapel').insert({user_id:currentUser.id,objekt_id:_obuchCur.id,jahr:buha.jahr,
+    name:'Stapel '+nr+'/'+buha.jahr,status:'offen'}).select().single();
+  if(r.error){showToast('❌ '+r.error.message);return;}
+  _obuchStapelOffen=r.data.id;
+  showToast('✅ Stapel angelegt');
+  obuchGo('stapel');
+}
+async function obuchStapelZeileAdd(){
+  if(!_obuchStapelOffen){showToast('Bitte zuerst einen Stapel anlegen.');return;}
+  var g=function(id){return ((document.getElementById(id)||{}).value||'').trim();};
+  var soll=g('ob-st-soll'), haben=g('ob-st-haben'), betrag=parseNum(g('ob-st-betrag'));
+  if(!soll||!haben){showToast('Bitte Soll- und Haben-Konto angeben.');return;}
+  if(!(betrag>0)){showToast('Bitte einen Betrag > 0 eingeben.');return;}
+  if(soll===haben){showToast('Konto und Gegenkonto müssen verschieden sein.');return;}
+  var sk=g('ob-st-bu')||'0', def=buhaSchluesselDef(sk);
+  var netto=def.satz>0?betrag/(1+def.satz/100):betrag;
+  var row={user_id:currentUser.id,stapel_id:_obuchStapelOffen,
+    buchungsdatum:g('ob-st-datum')||todayStr(),belegnr:g('ob-st-beleg')||null,text:g('ob-st-text')||null,
+    soll_konto:soll,haben_konto:haben,betrag:betrag,schluessel:sk,ust_satz:def.satz||0,
+    netto:Math.round(netto*100)/100,steuer:Math.round((betrag-netto)*100)/100,
+    partner_id:g('ob-st-partner')||null,sortierung:_obuchStapelZeilen.length};
+  var r=await sb.from('weg_stapel_zeile').insert(row);
+  if(r.error){showToast('❌ '+r.error.message);return;}
+  ['ob-st-soll','ob-st-haben','ob-st-betrag','ob-st-text','ob-st-beleg'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
+  await obuchRenderStapel(document.getElementById('obuch-content'));
+  var f=document.getElementById('ob-st-soll'); if(f)f.focus();
+}
+async function obuchStapelZeileDel(id){
+  var r=await sb.from('weg_stapel_zeile').delete().eq('id',id);
+  if(r.error){showToast('❌ '+r.error.message);return;}
+  obuchGo('stapel');
+}
+function obuchStapelDel(id){
+  appConfirm({icon:'🗑',title:'Stapel löschen?',message:'Der Stapel und alle darin erfassten Zeilen werden entfernt. Bereits gebuchte Sätze im Journal bleiben unberührt.',buttons:[
+    {label:'Abbrechen',style:'background:#f3f4f6;color:#374151',onClick:appConfirmClose},
+    {label:'Löschen',style:'background:#dc2626;color:#fff',onClick:async function(){appConfirmClose();
+      var r=await sb.from('weg_stapel').delete().eq('id',id);
+      if(r.error){showToast('❌ '+r.error.message);return;}
+      _obuchStapelOffen=null; showToast('🗑 Stapel gelöscht'); obuchGo('stapel');
+    }}
+  ]});
+}
+function obuchStapelBuchen(){
+  var st=_obuchStapel.filter(function(s){return s.id===_obuchStapelOffen;})[0];
+  var zeilen=_obuchStapelZeilen;
+  if(!st||!zeilen.length)return;
+  if(st.status!=='offen'){showToast('Dieser Stapel wurde bereits gebucht.');return;}
+  // Sicherheitsnetz: fehlerhafte Zeilen duerfen nie ins Journal gelangen
+  var ungueltig=zeilen.filter(function(z){
+    return !z.soll_konto||!z.haben_konto||!kontoExists(z.soll_konto)||!kontoExists(z.haben_konto)
+      ||z.soll_konto===z.haben_konto||!((parseFloat(z.betrag)||0)>0);
+  });
+  if(ungueltig.length){showToast('❌ '+ungueltig.length+' Zeile(n) fehlerhaft – bitte zuerst korrigieren.');return;}
+  var summe=zeilen.reduce(function(s,z){return s+(parseFloat(z.betrag)||0);},0);
+  appConfirm({icon:'📘',title:'Stapel buchen?',
+    message:'<strong>'+zeilen.length+'</strong> Zeile'+(zeilen.length===1?'':'n')+' über <strong>'+buhaEuro(summe)+'</strong> werden ins Journal übernommen. Danach gelten sie als gebucht und sind nur noch per Storno korrigierbar.',
+    buttons:[
+      {label:'Abbrechen',style:'background:#f3f4f6;color:#374151',onClick:appConfirmClose},
+      {label:'📘 Jetzt buchen',style:'background:#157f3c;color:#fff',onClick:async function(){appConfirmClose();
+        try{
+          // GoBD: keine Zeile in einen festgeschriebenen Zeitraum
+          if(typeof buhaIstFestgeschrieben==='function'&&buha.objektId===_obuchCur.id){
+            var blockiert=zeilen.filter(function(z){return buhaIstFestgeschrieben(z.buchungsdatum);});
+            if(blockiert.length){showToast('🔒 '+blockiert.length+' Zeile(n) liegen in einem festgeschriebenen Zeitraum.');return;}
+          }
+          var rows=zeilen.map(function(z){
+            var wj=parseInt((''+(z.buchungsdatum||'')).slice(0,4))||buha.jahr;
+            return {user_id:currentUser.id,objekt_id:_obuchCur.id,wirtschaftsjahr:wj,
+              buchungsdatum:z.buchungsdatum,belegdatum:z.buchungsdatum,belegnr:z.belegnr,text:z.text,
+              soll_konto:z.soll_konto,haben_konto:z.haben_konto,betrag:z.betrag,
+              schluessel:z.schluessel,ust_satz:z.ust_satz,steuer_kz:z.schluessel,
+              netto:z.netto,steuer:z.steuer,partner_id:z.partner_id,
+              einheit_id:z.einheit_id,einheit_bez:z.einheit_bez,stapel_id:st.id};
+          });
+          var ins=await sb.from('weg_buchungen').insert(rows);
+          if(ins.error){showToast('❌ '+ins.error.message);return;}
+          await sb.from('weg_stapel').update({status:'gebucht',gebucht_am:new Date().toISOString()}).eq('id',st.id);
+          if(typeof logAudit==='function')await logAudit('buchung_erstellt','stapel',st.id,{anzahl:rows.length,summe:summe});
+          showToast('✅ '+rows.length+' Buchungen übernommen');
+          _obuchStapelOffen=null;
+          obuchGo('buchungen');
+        }catch(e){showToast('❌ '+e.message);}
+      }}
+    ]});
 }
 
 // ── Modul: Kreditoren / Debitoren (getrennte OPOS) ────────────────────────
@@ -20034,10 +20310,13 @@ function obuchRenderOpos(c,typ){
   var h=_obuchHead(istKred?'Kreditoren':'Debitoren',
     istKred?'Offene Verbindlichkeiten – Eingangsrechnungen je Lieferant/Dienstleister'
            :'Offene Forderungen – Sollstellungen je Mieter/Eigentümer');
-  h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.8rem;margin-bottom:1.1rem">'
-    +'<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:.8rem 1rem"><div style="font-size:.62rem;font-weight:700;text-transform:uppercase;color:var(--muted)">'+(istKred?'Offene Verbindlichkeiten':'Offene Forderungen')+'</div><div style="font-size:1.2rem;font-weight:800;color:'+(istKred?'#b45309':'#0e7c7b')+'">'+buhaEuro(sumOffen)+'</div></div>'
-    +'<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:.8rem 1rem"><div style="font-size:.62rem;font-weight:700;text-transform:uppercase;color:var(--muted)">davon überfällig</div><div style="font-size:1.2rem;font-weight:800;color:'+(sumUeber>0.005?'#c0392b':'#9ca3af')+'">'+buhaEuro(sumUeber)+'</div></div>'
-    +'<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:.8rem 1rem"><div style="font-size:.62rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Posten</div><div style="font-size:1.2rem;font-weight:800">'+alle.length+'</div></div>'
+  var _k=function(lbl,val,col,sep){return '<div style="flex:1 1 150px;min-width:0;padding:.55rem .85rem;'+(sep?'border-left:1px solid #eef0f4':'')+'">'
+    +'<div style="font-size:.6rem;font-weight:700;text-transform:uppercase;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+lbl+'</div>'
+    +'<div style="font-size:1.02rem;font-weight:800;color:'+(col||'#111827')+';white-space:nowrap">'+val+'</div></div>';};
+  h+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;display:flex;flex-wrap:wrap;margin-bottom:1rem">'
+    +_k(istKred?'Offene Verbindlichkeiten':'Offene Forderungen',buhaEuro(sumOffen),istKred?'#b45309':'#0e7c7b')
+    +_k('davon überfällig',buhaEuro(sumUeber),sumUeber>0.005?'#c0392b':'#9ca3af',true)
+    +_k('Posten',String(alle.length),'#111827',true)
   +'</div>';
   var fld=function(l,i){return '<div style="display:flex;flex-direction:column;gap:.2rem"><label style="font-size:.64rem;font-weight:700;text-transform:uppercase;color:var(--muted)">'+l+'</label>'+i+'</div>';};
   var inp='border:1px solid var(--border);border-radius:7px;padding:.4rem .55rem;font-size:.82rem;font-family:var(--ff)';
@@ -20121,20 +20400,60 @@ async function obuchOpSave(typ){
 function obuchOpZahlung(id){
   var o=_obuchOp.filter(function(x){return x.id===id;})[0]; if(!o)return;
   var offen=_obOffen(o);
+  var p=(_obuchPartner||[]).filter(function(x){return x.id===o.partner_id;})[0]||{};
+  var personenkonto=o.konto_nr||p.konto_nr||'';
+  // Geldkonten zur Auswahl (Aktivkonten, z. B. Bank/Kasse)
+  var geld=(buha.konten||[]).filter(function(k){return k.typ==='aktiv';});
+  var vor=geld.filter(function(k){return k.nummer==='1200';})[0]||geld[0];
+  var gOpts=geld.map(function(k){return '<option value="'+escapeHtml(k.nummer)+'"'+((vor&&k.nummer===vor.nummer)?' selected':'')+'>'+escapeHtml(k.nummer+' · '+k.name)+'</option>';}).join('');
+  var kannBuchen=!!personenkonto&&geld.length>0&&kontoExists(personenkonto);
+  var istKred=o.typ==='kreditor';
   appConfirm({icon:'💶',title:'Zahlung erfassen',
-    message:'Offener Betrag: <strong>'+buhaEuro(offen)+'</strong><br><br>Betrag der Zahlung:<br>'
-      +'<input id="ob-zahl-betrag" type="text" inputmode="decimal" value="'+offen.toFixed(2).replace('.',',')+'" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:.5rem;font-size:.9rem;font-family:var(--ff);margin-top:.4rem">',
+    message:'Offener Betrag: <strong>'+buhaEuro(offen)+'</strong>'
+      +'<div style="margin-top:.6rem;font-size:.78rem;font-weight:700;color:#6b7280">Betrag der Zahlung</div>'
+      +'<input id="ob-zahl-betrag" type="text" inputmode="decimal" value="'+offen.toFixed(2).replace('.',',')+'" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:.5rem;font-size:.9rem;font-family:var(--ff);margin-top:.25rem">'
+      +(kannBuchen
+        ? '<label style="display:flex;align-items:center;gap:.5rem;margin-top:.8rem;font-size:.84rem;cursor:pointer">'
+          +'<input type="checkbox" id="ob-zahl-buchen" checked> Zahlung zugleich <strong>buchen</strong></label>'
+          +'<div style="margin-top:.5rem;font-size:.78rem;font-weight:700;color:#6b7280">Geldkonto</div>'
+          +'<select id="ob-zahl-konto" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:.5rem;font-size:.86rem;font-family:var(--ff);margin-top:.25rem">'+gOpts+'</select>'
+          +'<div style="font-size:.72rem;color:#9ca3af;margin-top:.4rem">Buchungssatz: '
+          +(istKred?('<strong>'+escapeHtml(personenkonto)+'</strong> an Geldkonto'):('Geldkonto an <strong>'+escapeHtml(personenkonto)+'</strong>'))+'</div>'
+        : '<div style="font-size:.75rem;color:#9a6700;background:#fff7e6;border:1px solid #ffe2a8;border-radius:8px;padding:.5rem .7rem;margin-top:.8rem">'
+          +(personenkonto?'Das Personenkonto <strong>'+escapeHtml(personenkonto)+'</strong> fehlt im Kontenrahmen – es wird nur der offene Posten aktualisiert.'
+                         :'Für diesen Partner ist kein <strong>Personenkonto</strong> hinterlegt – es wird nur der offene Posten aktualisiert.')+'</div>'),
     buttons:[
       {label:'Abbrechen',style:'background:#f3f4f6;color:#374151',onClick:appConfirmClose},
       {label:'✓ Erfassen',style:'background:#157f3c;color:#fff',onClick:async function(){
         var v=parseNum((document.getElementById('ob-zahl-betrag')||{}).value||'');
+        var mitBuchung=kannBuchen&&!!(document.getElementById('ob-zahl-buchen')||{}).checked;
+        var geldKonto=((document.getElementById('ob-zahl-konto')||{}).value||'');
         appConfirmClose();
         if(!(v>0)){showToast('Bitte einen Betrag > 0 eingeben.');return;}
         var neu=Math.min((parseFloat(o.betrag)||0),(parseFloat(o.bezahlt_betrag)||0)+v);
         var voll=neu>=(parseFloat(o.betrag)||0)-0.005;
         var r=await sb.from('weg_op').update({bezahlt_betrag:neu,status:voll?'bezahlt':'teilbezahlt',bezahlt_am:voll?todayStr():null}).eq('id',id);
         if(r.error){showToast('❌ '+r.error.message);return;}
-        showToast(voll?'✅ Posten ausgeglichen':'✅ Teilzahlung erfasst');
+        if(mitBuchung&&geldKonto){
+          var dat=todayStr();
+          if(typeof buhaIstFestgeschrieben==='function'&&buha.objektId===_obuchCur.id&&buhaIstFestgeschrieben(dat)){
+            showToast('✅ Posten aktualisiert · 🔒 Buchung nicht möglich (Zeitraum festgeschrieben)');
+            obuchGo(_obuchMod); return;
+          }
+          try{
+            await _buchungSpeichern({user_id:currentUser.id,objekt_id:_obuchCur.id,
+              wirtschaftsjahr:parseInt(dat.slice(0,4)),buchungsdatum:dat,belegdatum:dat,
+              belegnr:o.rechnungsnr||o.belegnr||null,
+              text:'Zahlung '+(o.partner||_obPartnerName(o.partner_id)||'')+(o.rechnungsnr?' · '+o.rechnungsnr:''),
+              soll_konto:istKred?personenkonto:geldKonto,
+              haben_konto:istKred?geldKonto:personenkonto,
+              betrag:v,schluessel:'0',ust_satz:0,steuer_kz:'0',netto:v,steuer:0,
+              partner_id:o.partner_id||null,einheit_id:o.einheit_id||null});
+            showToast((voll?'✅ Posten ausgeglichen':'✅ Teilzahlung erfasst')+' · gebucht');
+          }catch(e){showToast('Posten aktualisiert, aber Buchung fehlgeschlagen: '+e.message);}
+        }else{
+          showToast(voll?'✅ Posten ausgeglichen':'✅ Teilzahlung erfasst');
+        }
         obuchGo(_obuchMod);
       }}
     ]});
@@ -20427,6 +20746,7 @@ function blHide(){
   var el=document.getElementById('buchleiste'); if(el)el.style.display='none';
   _bl.open=false; document.body.style.paddingBottom='';
 }
+function blOpen(){ blMount(); if(!_bl.open)blToggle(); else {var f=document.getElementById('bl-soll'); if(f)f.focus();} }
 function blToggle(){
   blMount();
   var ctx=blCtx(); if(!ctx){showToast('Bitte zuerst ein Objekt öffnen.');return;}

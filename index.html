@@ -1907,6 +1907,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                   <button class="btn-primary" onclick="openKontoModal()"><span class="btn-ic" data-icon="plus"></span> Konto anlegen</button>
                   <button class="btn-secondary" onclick="seedKontenrahmen('skr03')"><span class="btn-ic" data-icon="download"></span> SKR03-Vorlage</button>
                   <button class="btn-secondary" onclick="seedKontenrahmen('skr04')"><span class="btn-ic" data-icon="download"></span> SKR04-Vorlage</button>
+                  <button class="btn-secondary" onclick="seedKontenrahmen('vermietung')" title="Konten für Vermietung & Verpachtung (Anlage V): Mieterlöse, Nebenkosten, Grundsteuer, AfA …"><span class="btn-ic" data-icon="download"></span> Vermietungs-Vorlage</button>
                   <button class="btn-secondary" onclick="openBksModal()"><span class="btn-ic" data-icon="gear"></span> Buchungsschlüssel</button>
                   <span id="buha-konten-count" style="font-size:.78rem;color:var(--muted);margin-left:auto"></span>
                 </div>
@@ -11694,8 +11695,10 @@ function deleteKonto(id){
 }
 function seedKontenrahmen(skr){
   var tpl=KONTENRAHMEN_TPL[skr]||KONTENRAHMEN_TPL.skr03;
-  appConfirm({icon:'📥',title:(skr==='skr04'?'SKR04':'SKR03')+'-WEG-Vorlage laden?',
-    message:'Es werden '+tpl.length+' WEG-typische Konten angelegt (vorhandene Nummern werden übersprungen). Du kannst danach frei ergänzen.',
+  var _tl={vermietung:['Vermietungs-Vorlage','Konten für Vermietung & Verpachtung (Anlage V) – u. a. Mieterlöse, Nebenkosten, Grundsteuer, AfA'],
+           skr04:['SKR04-WEG-Vorlage','WEG-typische Konten'],skr03:['SKR03-WEG-Vorlage','WEG-typische Konten']}[skr]||['SKR03-WEG-Vorlage','WEG-typische Konten'];
+  appConfirm({icon:'📥',title:_tl[0]+' laden?',
+    message:'Es werden '+tpl.length+' Konten angelegt ('+_tl[1]+'). Vorhandene Nummern werden übersprungen – bestehende Konten bleiben unverändert.',
     buttons:[{label:'📥 Konten anlegen',style:'background:linear-gradient(135deg,#0e7c7b,#0a5f5e);color:#fff',onClick:async function(){
       var vorhanden={}; buha.konten.forEach(function(k){vorhanden[k.nummer]=true;});
       var neu=tpl.filter(function(t){return !vorhanden[t.nummer];}).map(function(t){return {user_id:currentUser.id,nummer:t.nummer,name:t.name,typ:t.typ,ust_satz:t.ust||0,umlagefaehig:t.uml!==false};});
@@ -11707,6 +11710,30 @@ function seedKontenrahmen(skr){
     }},{label:'Abbrechen',style:'background:var(--bg);color:var(--muted)',onClick:function(){}}]});
 }
 var KONTENRAHMEN_TPL={
+  // Vermietung & Verpachtung (Anlage V) – der WEG-Kontenrahmen kennt keine Mieterloese.
+  // Nummernkreise bewusst kollisionsfrei zum WEG-Rahmen gewaehlt (45xx Aufwand, 83xx Erloese).
+  vermietung:[
+    {nummer:'1000',name:'Kasse',typ:'aktiv'},{nummer:'1200',name:'Bank / Girokonto',typ:'aktiv'},
+    {nummer:'1410',name:'Forderungen aus Vermietung',typ:'aktiv'},
+    {nummer:'1571',name:'Vorsteuer 7 %',typ:'aktiv',uml:false},{nummer:'1576',name:'Vorsteuer 19 %',typ:'aktiv',uml:false},
+    {nummer:'1600',name:'Verbindlichkeiten',typ:'passiv'},{nummer:'1700',name:'Mietkautionen',typ:'passiv',uml:false},
+    {nummer:'1771',name:'Umsatzsteuer 7 %',typ:'passiv',uml:false},{nummer:'1776',name:'Umsatzsteuer 19 %',typ:'passiv',uml:false},
+    {nummer:'8300',name:'Mieterlöse (steuerfrei § 4 Nr. 12 UStG)',typ:'ertrag',uml:false},
+    {nummer:'8310',name:'Nebenkosten-Vorauszahlungen',typ:'ertrag'},
+    {nummer:'8320',name:'Erlöse Stellplatz / Garage',typ:'ertrag',ust:19,uml:false},
+    {nummer:'8330',name:'Sonstige Erlöse',typ:'ertrag',uml:false},
+    {nummer:'4500',name:'Instandhaltung / Reparatur',typ:'aufwand',ust:19,uml:false},
+    {nummer:'4510',name:'Grundsteuer',typ:'aufwand'},
+    {nummer:'4520',name:'Gebäudeversicherung',typ:'aufwand'},
+    {nummer:'4530',name:'Hausmeister / Reinigung',typ:'aufwand',ust:19},
+    {nummer:'4540',name:'Heizung / Brennstoffe',typ:'aufwand',ust:19},
+    {nummer:'4550',name:'Wasser / Abwasser',typ:'aufwand',ust:7},
+    {nummer:'4560',name:'Müllabfuhr',typ:'aufwand'},
+    {nummer:'4570',name:'Allgemeinstrom',typ:'aufwand',ust:19},
+    {nummer:'4580',name:'Verwaltungskosten',typ:'aufwand',ust:19,uml:false},
+    {nummer:'4590',name:'Abschreibung Gebäude (AfA)',typ:'aufwand',uml:false},
+    {nummer:'4595',name:'Schuldzinsen',typ:'aufwand',uml:false}
+  ],
   skr03:[
     {nummer:'1000',name:'Kasse',typ:'aktiv'},{nummer:'1200',name:'Bank / WEG-Girokonto',typ:'aktiv'},
     {nummer:'1210',name:'Rücklagenkonto (Bank)',typ:'aktiv'},{nummer:'1400',name:'Forderungen Hausgeld',typ:'aktiv'},
@@ -19800,15 +19827,25 @@ var _obuchOpFilter='offen';
 
 function _obDat(d){if(!d)return '–';var p=(''+d).slice(0,10).split('-');return p.length===3?p[2]+'.'+p[1]+'.'+p[0]:d;}
 function _obKontoTyp(nr){var k=(buha.konten||[]).filter(function(x){return x.nummer===nr;})[0];return k?k.typ:'';}
-function _obOffen(o){return Math.max(0,(parseFloat(o.betrag)||0)-(parseFloat(o.bezahlt_betrag)||0));}
+// Offener Rest eines Postens. Wichtig: Posten, die im alten Modul nur per Status
+// auf "bezahlt" gesetzt wurden (ohne bezahlt_betrag), gelten als ausgeglichen.
+function _obOffen(o){
+  if(o.status==='bezahlt')return 0;
+  return Math.max(0,(parseFloat(o.betrag)||0)-(parseFloat(o.bezahlt_betrag)||0));
+}
 function _obUeberfaellig(o){return _obOffen(o)>0.005&&o.faellig_am&&o.faellig_am<todayStr();}
 function _obPartnerName(id){var p=(_obuchPartner||[]).filter(function(x){return x.id===id;})[0];return p?p.name:'';}
+
+// Stornopaare zaehlen wirtschaftlich nicht: das stornierte Original (storniert)
+// UND die Gegenbuchung (ist_storno) werden aus allen Auswertungen ausgeblendet.
+// (Im DATEV-Export bleiben beide erhalten – revisionssicher.)
+function _obAktiv(b){return !(b.storniert||b.ist_storno);}
 
 // Einnahmen/Ausgaben aus den Buchungen ableiten (Ertrags-/Aufwandskonten des Kontenrahmens)
 function obuchGuv(rows){
   var ein=0,aus=0;
   (rows||[]).forEach(function(b){
-    if(b.storniert)return;
+    if(!_obAktiv(b))return;
     var n=parseFloat(b.netto); if(!(n>0))n=parseFloat(b.betrag)||0;
     if(_obKontoTyp(b.haben_konto)==='ertrag')ein+=n;
     if(_obKontoTyp(b.soll_konto)==='aufwand')aus+=n;
@@ -20186,16 +20223,34 @@ function obuchPartnerDel(id){
 }
 
 // ── Modul: Auswertungen (Rentabilität / BWA / SuSa je Objekt) ─────────────
+// Kontensalden fuer die Summen-/Saldenliste.
+// Steuer wird korrekt aufgeteilt: das Erfolgskonto (Aufwand/Ertrag) traegt netto,
+// das Gegenkonto (z. B. Bank) den Bruttobetrag, die Differenz laeuft auf das
+// Steuerkonto des Buchungsschluessels. Ohne Steuer bleibt es brutto/brutto.
 function _obuchAgg(){
   var agg={};
+  var add=function(nr,seite,betrag){
+    if(!nr||!(Math.abs(betrag)>0.0000001))return;
+    if(!agg[nr])agg[nr]={nr:nr,name:kontoName(nr)||'',typ:_obKontoTyp(nr),soll:0,haben:0};
+    agg[nr][seite]+=betrag;
+  };
   _obuchBu.forEach(function(b){
-    if(b.storniert)return;
-    var n=parseFloat(b.netto); if(!(n>0))n=parseFloat(b.betrag)||0;
-    [[b.soll_konto,'soll'],[b.haben_konto,'haben']].forEach(function(x){
-      if(!x[0])return;
-      if(!agg[x[0]])agg[x[0]]={nr:x[0],name:kontoName(x[0])||'',typ:_obKontoTyp(x[0]),soll:0,haben:0};
-      agg[x[0]][x[1]]+=n;
-    });
+    if(!_obAktiv(b))return;
+    var brutto=parseFloat(b.betrag)||0;
+    var netto=parseFloat(b.netto); if(!(netto>0))netto=brutto;
+    var steuer=Math.round((brutto-netto)*100)/100;
+    var def=(typeof buhaSchluesselDef==='function')?buhaSchluesselDef(b.schluessel||'0'):{steuerkonto:''};
+    var stk=def&&def.steuerkonto?def.steuerkonto:'';
+    var sollTyp=_obKontoTyp(b.soll_konto), habenTyp=_obKontoTyp(b.haben_konto);
+    if(steuer>0.004&&stk&&sollTyp==='aufwand'){
+      // Eingangsrechnung: Aufwand netto + Vorsteuer im Soll, Gegenkonto brutto im Haben
+      add(b.soll_konto,'soll',netto); add(stk,'soll',steuer); add(b.haben_konto,'haben',brutto);
+    }else if(steuer>0.004&&stk&&habenTyp==='ertrag'){
+      // Ausgangsrechnung: Ertrag netto + Umsatzsteuer im Haben, Gegenkonto brutto im Soll
+      add(b.haben_konto,'haben',netto); add(stk,'haben',steuer); add(b.soll_konto,'soll',brutto);
+    }else{
+      add(b.soll_konto,'soll',brutto); add(b.haben_konto,'haben',brutto);
+    }
   });
   return agg;
 }
@@ -20205,7 +20260,7 @@ function obuchRenderAusw(c){
   var aufwand=kk.map(function(k){return agg[k];}).filter(function(a){return a.typ==='aufwand';});
   var mon=[]; for(var m=0;m<12;m++)mon.push({ein:0,aus:0});
   _obuchBu.forEach(function(b){
-    if(b.storniert)return;
+    if(!_obAktiv(b))return;
     var d=(''+(b.buchungsdatum||'')).slice(0,10).split('-'); if(d.length<2)return;
     var mi=parseInt(d[1])-1; if(!(mi>=0&&mi<12))return;
     var n=parseFloat(b.netto); if(!(n>0))n=parseFloat(b.betrag)||0;
@@ -20214,6 +20269,16 @@ function obuchRenderAusw(c){
   });
   var mNames=['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
   var h=_obuchHead('Auswertungen',escapeHtml(_obuchCur.name||'Objekt')+' · Wirtschaftsjahr '+buha.jahr);
+  // Haeufige Ursache fuer "0 Einnahmen": im Kontenrahmen fehlen Erloeskonten (der
+  // WEG-Rahmen kennt nur Hausgeld/Rücklage/Zinsen, keine Mieterloese).
+  if(_obuchBu.length&&!ertrag.length){
+    var hatErtragKonto=(buha.konten||[]).some(function(k){return k.typ==='ertrag';});
+    h+='<div style="background:#fff7e6;border:1px solid #ffe2a8;border-radius:12px;padding:.85rem 1.1rem;margin-bottom:1.1rem;font-size:.82rem;color:#9a6700">'
+      +'<strong>Keine Einnahmen ausgewiesen.</strong> Es sind Buchungen vorhanden, aber keine davon läuft auf ein <strong>Ertragskonto</strong>. '
+      +(hatErtragKonto?'Prüfe, ob die Einnahmen auf dem richtigen Konto gebucht sind (Erlöskonto im Haben).'
+                      :'Im Kontenrahmen gibt es noch keine Erlöskonten – lade im Modul <strong>Buchungen → Kontenrahmen</strong> die <strong>Vermietungs-Vorlage</strong> (Mieterlöse, Nebenkosten, Grundsteuer, AfA).')
+      +'</div>';
+  }
   h+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;overflow:hidden;margin-bottom:1.2rem">'
     +'<div style="padding:.75rem 1rem;font-weight:700;font-size:.9rem;border-bottom:1px solid #eef0f4">Objekt-Rentabilität (Einnahmen-Überschuss)</div>'
     +'<table style="width:100%;border-collapse:collapse;font-size:.83rem">';
@@ -20251,7 +20316,17 @@ function obuchRenderAusw(c){
           +'<td style="padding:.4rem .8rem;text-align:right">'+buhaEuro(a.soll)+'</td>'
           +'<td style="padding:.4rem .8rem;text-align:right">'+buhaEuro(a.haben)+'</td>'
           +'<td style="padding:.4rem .8rem;text-align:right;font-weight:700;color:'+(sal>=0?'#374151':'#b62923')+'">'+buhaEuro(sal)+'</td></tr>';
-      }).join('')+'</tbody></table>';
+      }).join('')
+      +(function(){
+        var sS=kk.reduce(function(s,k){return s+agg[k].soll;},0), sH=kk.reduce(function(s,k){return s+agg[k].haben;},0);
+        var diff=Math.round((sS-sH)*100)/100, ok=Math.abs(diff)<0.005;
+        return '<tr style="border-top:2px solid var(--border);font-weight:800;background:#fafafa">'
+          +'<td colspan="2" style="padding:.5rem .8rem">Summe</td>'
+          +'<td style="padding:.5rem .8rem;text-align:right">'+buhaEuro(sS)+'</td>'
+          +'<td style="padding:.5rem .8rem;text-align:right">'+buhaEuro(sH)+'</td>'
+          +'<td style="padding:.5rem .8rem;text-align:right;color:'+(ok?'#157f3c':'#c0392b')+'">'+(ok?'✓ ausgeglichen':'Δ '+buhaEuro(diff))+'</td></tr>';
+      })()
+      +'</tbody></table>';
   h+='</div>';
   c.innerHTML=h; applyIcons(c);
 }
@@ -20272,18 +20347,15 @@ function _obuchDownload(text,fname){
 
 // ── Modul: DATEV-Export (EXTF-Buchungsstapel inkl. Personenkonten) ────────
 function obuchRenderExport(c){
+  var sm=(typeof stammdaten!=='undefined'&&stammdaten)||{};
   var h=_obuchHead('DATEV-Export','EXTF-Buchungsstapel für die Steuerberatung – Wirtschaftsjahr '+buha.jahr);
-  var fld=function(l,i){return '<div style="display:flex;flex-direction:column;gap:.2rem"><label style="font-size:.64rem;font-weight:700;text-transform:uppercase;color:var(--muted)">'+l+'</label>'+i+'</div>';};
-  var inp='border:1px solid var(--border);border-radius:7px;padding:.4rem .55rem;font-size:.82rem;font-family:var(--ff)';
   h+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:1.1rem 1.2rem;margin-bottom:1.1rem">'
-    +'<div style="display:flex;gap:.7rem;flex-wrap:wrap;align-items:flex-end">'
-    +fld('Berater-Nr.','<input id="ob-x-berater" type="text" value="1000" style="'+inp+';width:100px">')
-    +fld('Mandanten-Nr.','<input id="ob-x-mandant" type="text" value="1" style="'+inp+';width:100px">')
-    +fld('Von','<input id="ob-x-von" type="date" value="'+buha.jahr+'-01-01" style="'+inp+'">')
-    +fld('Bis','<input id="ob-x-bis" type="date" value="'+buha.jahr+'-12-31" style="'+inp+'">')
-    +'<button class="btn-primary" style="padding:.5rem 1.1rem" onclick="obuchExtfExport()"><span class="btn-ic" data-icon="download"></span> EXTF-Datei erzeugen</button>'
+    +'<div style="display:flex;gap:.7rem;flex-wrap:wrap;align-items:center">'
+    +'<button class="btn-primary" style="padding:.55rem 1.2rem" onclick="obuchExtfExport()"><span class="btn-ic" data-icon="download"></span> EXTF-Buchungsstapel erzeugen</button>'
+    +'<span style="font-size:.78rem;color:var(--muted)">Berater-Nr. <strong>'+escapeHtml(sm.datev_berater||'–')+'</strong> · Mandanten-Nr. <strong>'+escapeHtml(sm.datev_mandant||'–')+'</strong></span>'
     +'</div>'
-    +'<div style="font-size:.73rem;color:var(--muted);margin-top:.8rem;line-height:1.5">Der Export enthält Umsatz, Soll-/Haben-Kennzeichen, Konto und Gegenkonto (Personenkonten der Geschäftspartner werden wie Sachkonten über ihre Kontonummer ausgegeben), BU-Schlüssel, Belegdatum, Belegfeld 1, Buchungstext sowie <strong>Kostenstelle 1 = Objekt</strong> und <strong>Kostenstelle 2 = Einheit</strong>.</div>'
+    +'<div style="font-size:.73rem;color:var(--muted);margin-top:.8rem;line-height:1.5">Es wird der vollständige DATEV-Buchungsstapel (26 Spalten) erzeugt: Umsatz, Soll-/Haben-Kennzeichen, Konto und Gegenkonto (Personenkonten der Geschäftspartner erscheinen wie Sachkonten über ihre Kontonummer), BU-Schlüssel, Belegdatum, Belegfeld&nbsp;1, Buchungstext, <strong>KOST1/KOST2</strong> sowie das Kennzeichen <strong>Festschreibung</strong>. Stornobuchungen bleiben enthalten (revisionssicher) – in den Auswertungen werden sie dagegen herausgerechnet.</div>'
+    +(sm.datev_berater&&sm.datev_mandant?'':'<div style="font-size:.73rem;color:#9a6700;background:#fff7e6;border:1px solid #ffe2a8;border-radius:8px;padding:.6rem .8rem;margin-top:.7rem">ℹ️ Berater- und Mandantennummer werden aus deinen <strong>Stammdaten</strong> übernommen – dort bitte hinterlegen, sonst bleiben die Felder im Export leer.</div>')
     +'<div style="font-size:.73rem;color:#9a6700;background:#fff7e6;border:1px solid #ffe2a8;border-radius:8px;padding:.6rem .8rem;margin-top:.7rem">⚠️ Vor dem Produktiveinsatz die Feldbelegung einmalig gegen die aktuelle DATEV-Schnittstellenbeschreibung prüfen und einen Testimport durchführen.</div>'
     +'</div>';
   h+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:1rem 1.1rem">'
@@ -20291,31 +20363,21 @@ function obuchRenderExport(c){
     +'<div style="font-size:.82rem;color:#6b7280">'+_obuchBu.length+' Buchungssätze im Wirtschaftsjahr '+buha.jahr+' für <strong>'+escapeHtml(_obuchCur.name||'')+'</strong>.</div></div>';
   c.innerHTML=h; applyIcons(c);
 }
-function obuchExtfExport(){
-  var von=((document.getElementById('ob-x-von')||{}).value||(buha.jahr+'-01-01')).replace(/-/g,'');
-  var bis=((document.getElementById('ob-x-bis')||{}).value||(buha.jahr+'-12-31')).replace(/-/g,'');
-  var berater=((document.getElementById('ob-x-berater')||{}).value||'1000').trim();
-  var mandant=((document.getElementById('ob-x-mandant')||{}).value||'1').trim();
-  var now=new Date();
-  var ts=''+now.getFullYear()+('0'+(now.getMonth()+1)).slice(-2)+('0'+now.getDate()).slice(-2)+('0'+now.getHours()).slice(-2)+('0'+now.getMinutes()).slice(-2)+('0'+now.getSeconds()).slice(-2)+'000';
-  var q=function(s){return '"'+(''+(s==null?'':s)).replace(/"/g,'""')+'"';};
-  var head=['"EXTF"','700','21',q('Buchungsstapel'),'13',ts,'','""','""','""',berater,mandant,buha.jahr+'0101','4',von,bis,q('Objektbuchhaltung '+((_obuchCur&&_obuchCur.name)||'')),'""','1','0','""','""','""','""','""','""','""','""'].join(';');
-  var cols=['Umsatz (ohne Soll/Haben-Kz)','Soll/Haben-Kennzeichen','WKZ Umsatz','Kurs','Basis-Umsatz','WKZ Basis-Umsatz','Konto','Gegenkonto (ohne BU-Schlüssel)','BU-Schlüssel','Belegdatum','Belegfeld 1','Belegfeld 2','Skonto','Buchungstext','Kost1 - Kostenstelle','Kost2 - Kostenstelle'].map(q).join(';');
-  var dd=function(d){var p=(''+(d||'')).slice(0,10).split('-');return p.length===3?(p[2]+p[1]):'';};
-  var rows=_obuchBu.filter(function(b){
-    var d=(''+(b.buchungsdatum||'')).slice(0,10).replace(/-/g,'');
-    return d>=von&&d<=bis;
-  }).map(function(b){
-    var betrag=(parseFloat(b.betrag)||0).toFixed(2).replace('.',',');
-    var einh=(_obuchEinheiten.filter(function(e){return e.id===b.einheit_id;})[0]||{}).bez||b.einheit_bez||'';
-    return [betrag,q('S'),q('EUR'),'','','',q(b.soll_konto||''),q(b.haben_konto||''),
-      q((b.schluessel&&b.schluessel!=='0')?b.schluessel:''),
-      q(dd(b.belegdatum||b.buchungsdatum)),q(b.belegnr||''),'','',q((b.text||'').slice(0,60)),
-      q(((_obuchCur&&_obuchCur.name)||'').slice(0,36)),q((''+einh).slice(0,36))].join(';');
-  });
-  if(!rows.length){showToast('Keine Buchungen im gewählten Zeitraum.');return;}
-  _obuchDownload([head,cols].concat(rows).join('\r\n'),'EXTF_Buchungsstapel_'+((_obuchCur&&_obuchCur.name)||'Objekt').replace(/[^a-zA-Z0-9]+/g,'_')+'_'+buha.jahr+'.csv');
-  showToast('✅ '+rows.length+' Buchungssätze exportiert');
+// EXTF-Export: nutzt den bestehenden, vollstaendigen DATEV-Buchungsstapel
+// (buhaDatevExport, 26 Spalten inkl. KOST1/KOST2 und Festschreibung) – keine
+// zweite Export-Implementierung. Hier wird nur der Buchhaltungskontext auf das
+// gewaehlte Objekt/Wirtschaftsjahr gesetzt.
+async function obuchExtfExport(){
+  if(!_obuchCur){showToast('Bitte zuerst ein Objekt öffnen.');return;}
+  if(typeof buhaDatevExport!=='function'){showToast('DATEV-Export nicht verfügbar.');return;}
+  try{
+    aktivesObjekt=_obuchCur;
+    if(typeof _buhaCockpitObj!=='undefined')_buhaCockpitObj=_obuchCur;
+    if(buha.objektId!==_obuchCur.id||!buha.buchungen||!buha.buchungen.length){
+      await ladeBuchhaltung(_obuchCur.id);
+    }
+    buhaDatevExport();
+  }catch(e){showToast('❌ '+(e.message||e));}
 }
 
 // ═══ STICKY BUCHUNGSLEISTE (global, kontextsensitiv) ══════════════════════
@@ -20353,7 +20415,13 @@ function blShow(){
   el.style.display='block';
   var cx=document.getElementById('bl-ctx');
   if(cx)cx.textContent=ctx.name+' · WJ '+(buha.jahr||new Date().getFullYear())+(ctx.ug?' · Untergemeinschaft':'');
-  document.body.style.paddingBottom=_bl.open?'0':'56px';
+  blPad();
+}
+// Inhalt unter der Leiste freihalten – Padding entspricht der tatsaechlichen Leistenhoehe
+function blPad(){
+  var el=document.getElementById('buchleiste');
+  if(!el||el.style.display==='none'){document.body.style.paddingBottom='';return;}
+  document.body.style.paddingBottom=(el.offsetHeight||56)+'px';
 }
 function blHide(){
   var el=document.getElementById('buchleiste'); if(el)el.style.display='none';
@@ -20370,11 +20438,10 @@ function blToggle(){
     if(lbl)lbl.textContent='Schließen';
     applyIcons(f); blLive();
     var first=document.getElementById('bl-soll'); if(first)first.focus();
-    document.body.style.paddingBottom='0';
   }else{
     f.style.display='none'; if(lbl)lbl.textContent='Buchen';
-    document.body.style.paddingBottom='56px';
   }
+  blPad();
 }
 function blFormHtml(ctx){
   var inp='border:1px solid var(--border);border-radius:7px;padding:.42rem .55rem;font-size:.83rem;font-family:var(--ff);width:100%';
@@ -20416,6 +20483,8 @@ function blLive(){
     var def=buhaSchluesselDef(sk);
     var netto=def.satz>0?betrag/(1+def.satz/100):betrag;
     msgs.push(def.satz>0?('Netto '+buhaEuro(netto)+' · '+(def.art==='vorsteuer'?'Vorsteuer':'USt')+' '+def.satz+' % '+buhaEuro(betrag-netto)):'ohne Umsatzsteuer');
+    var dj=parseInt(((document.getElementById('bl-datum')||{}).value||'').slice(0,4));
+    if(dj&&buha.jahr&&dj!==parseInt(buha.jahr))msgs.push('⚠️ Datum liegt in '+dj+' – die Buchung erscheint im Wirtschaftsjahr '+dj);
   }
   if(info){info.textContent=msgs.join('  ·  ');info.style.color=ok?'#0e7c7b':'#c0392b';}
   if(btn){btn.disabled=!ok;btn.style.background=ok?'#0e7c7b':'#cbd5e1';btn.style.cursor=ok?'pointer':'not-allowed';}
@@ -20433,7 +20502,14 @@ async function blSave(){
   var eid=((document.getElementById('bl-einheit')||{}).value||'')||null;
   var ebez=eid?(((ctx.einheiten||[]).filter(function(e){return e.id===eid;})[0]||{}).bez||null):null;
   var dat=((document.getElementById('bl-datum')||{}).value||todayStr());
-  var row={user_id:currentUser.id,objekt_id:ctx.objektId,wirtschaftsjahr:buha.jahr||new Date().getFullYear(),
+  // GoBD: nicht in einen festgeschriebenen Zeitraum nachbuchen (wie in der Buchungsmaske)
+  if(typeof buhaIstFestgeschrieben==='function'&&buha.objektId===ctx.objektId&&buhaIstFestgeschrieben(dat)){
+    showToast('🔒 Der Zeitraum ist festgeschrieben – bitte ein späteres Buchungsdatum wählen oder per Storno korrigieren.');
+    return;
+  }
+  // Wirtschaftsjahr folgt dem Buchungsdatum, damit die Buchung dort erscheint, wo sie hingehört
+  var wj=parseInt((''+dat).slice(0,4))||buha.jahr||new Date().getFullYear();
+  var row={user_id:currentUser.id,objekt_id:ctx.objektId,wirtschaftsjahr:wj,
     untergemeinschaft_id:ctx.ug||null,buchungsdatum:dat,belegdatum:dat,
     belegnr:((document.getElementById('bl-belegnr')||{}).value||'').trim()||null,
     text:((document.getElementById('bl-text')||{}).value||'').trim()||null,

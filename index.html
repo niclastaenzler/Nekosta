@@ -564,6 +564,7 @@ body:not(.dash-edit) #dash-grid .dash-widget[data-empty="1"]{display:none}
 .entwurf-badge{background:#fff3cd;color:#856404;font-size:.65rem;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:.4rem}
 input.error{border-color:var(--danger)!important;background:#fff8f8!important}
 @media(max-width:700px){.wizard-bar{overflow-x:auto}.wizard-content,.ergebnis-section{padding:1rem}.btn-row{flex-direction:column}.mieter-header-row,.mieter-row{grid-template-columns:60px 1fr 1fr 80px 80px 40px 65px 65px 22px;font-size:.7rem}}
+@media(max-width:900px){#buhac-ue-grid{grid-template-columns:1fr!important}}
 </style>
 </head>
 <body>
@@ -1788,7 +1789,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
 
             <!-- ── WEG: BUCHHALTUNG (pro WEG + Untergemeinschaft) ── -->
             <div id="tab-content-buchhaltung" style="display:none;padding-bottom:4.5rem">
-              <div style="display:flex;justify-content:space-between;align-items:center;gap:.75rem;flex-wrap:wrap;margin-bottom:1rem">
+              <div id="buha-altkopf" style="display:flex;justify-content:space-between;align-items:center;gap:.75rem;flex-wrap:wrap;margin-bottom:1rem">
                 <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
                   <span style="font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)">Buchungskreis</span>
                   <select id="buha-ug" onchange="buhaReload()" style="border:1px solid var(--border);border-radius:8px;padding:.45rem .7rem;font-size:.84rem;font-family:var(--ff);background:var(--white);outline:none"></select>
@@ -1807,6 +1808,17 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                 <button type="button" id="buha-tab-gewinn" onclick="buhaTab('gewinn')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:var(--ff)">📈 Gewinn</button>
                 <button type="button" id="buha-tab-audit" onclick="buhaTab('audit')" style="background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:.55rem 1rem;cursor:pointer;font-size:.84rem;color:var(--muted);font-family:var(--ff)"><span class="btn-ic" data-icon="shield"></span> Audit</button>
               </div>
+              <!-- COCKPIT: ÜBERSICHT (nur im Objektbuchhaltungs-Cockpit) -->
+              <div id="buha-pane-uebersicht" style="display:none">
+                <div id="buhac-ue-hinweis"></div>
+                <div id="buhac-ue-kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.7rem;margin-bottom:1.1rem"></div>
+                <div id="buhac-ue-grid" style="display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:1rem;align-items:start">
+                  <div id="buhac-ue-links"></div>
+                  <div id="buhac-ue-rechts"></div>
+                </div>
+              </div>
+              <!-- COCKPIT: Platzhalter für Module, die in einer späteren Phase folgen -->
+              <div id="buha-pane-bald" style="display:none"></div>
               <!-- TAB: BUCHEN -->
               <div id="buha-pane-buchen">
                 <div id="buha-kpis" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.6rem;margin-bottom:1rem"></div>
@@ -3585,6 +3597,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
           <div><label style="font-size:.72rem;font-weight:700;color:var(--muted)">Typ</label><select id="konto-typ" style="border:1px solid var(--border);border-radius:7px;padding:.5rem;font-size:.88rem;font-family:var(--ff);width:100%;outline:none"><option value="aktiv">Aktiv (Bestand)</option><option value="passiv">Passiv (Bestand)</option><option value="aufwand">Aufwand (Kosten)</option><option value="ertrag">Ertrag (Einnahmen)</option></select></div>
           <div><label style="font-size:.72rem;font-weight:700;color:var(--muted)">USt %</label><select id="konto-ust" style="border:1px solid var(--border);border-radius:7px;padding:.5rem;font-size:.88rem;font-family:var(--ff);width:100%;outline:none"><option value="0">0 %</option><option value="7">7 %</option><option value="19">19 %</option></select></div>
         </div>
+        <div style="margin-bottom:.6rem"><label style="font-size:.72rem;font-weight:700;color:var(--muted)">Kategorie <span style="font-weight:400">(für Übersicht und Nebenkostenabrechnung)</span></label><select id="konto-kat" style="border:1px solid var(--border);border-radius:7px;padding:.5rem;font-size:.88rem;font-family:var(--ff);width:100%;outline:none"><option value="">automatisch (aus Name/Typ)</option></select></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.6rem">
           <div><label style="font-size:.72rem;font-weight:700;color:var(--muted)">Verteilerschlüssel</label><select id="konto-verteiler" style="border:1px solid var(--border);border-radius:7px;padding:.5rem;font-size:.88rem;font-family:var(--ff);width:100%;outline:none"><option value="mea">Eigentumsanteil (MEA)</option><option value="einheiten">Einheiten (gleich)</option><option value="pxt">Personen × Tage</option><option value="festbetrag">Festbetrag je Eigentümer</option></select></div>
           <div><label style="font-size:.72rem;font-weight:700;color:var(--muted)">Nur Haus</label><select id="konto-haus" style="border:1px solid var(--border);border-radius:7px;padding:.5rem;font-size:.88rem;font-family:var(--ff);width:100%;outline:none"><option value="">Gesamte WEG</option></select></div>
@@ -4010,16 +4023,44 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
 
     <!-- BUCHHALTUNGS-COCKPIT (Mietverwaltung) -->
     <div id="page-buha-cockpit" style="display:none">
-      <div style="padding:1.5rem 2rem 5.5rem">
-        <div onclick="closeBuhaCockpit()" style="font-size:.8rem;color:var(--muted);cursor:pointer;margin-bottom:.75rem;display:inline-block">← Zurück zum Objekt</div>
-        <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:.75rem;margin-bottom:1.25rem">
-          <div>
-            <h1 style="font-size:1.6rem;font-weight:800;letter-spacing:-.01em;display:flex;align-items:center;gap:.5rem">📒 Buchhaltung</h1>
-            <div id="buhac-objekt" style="font-size:.85rem;color:var(--muted);margin-top:.25rem"></div>
+      <div style="display:flex;min-height:calc(100vh - var(--header-h))">
+        <!-- Linke Navigation (nach DATEV-Vorbild: feste Modulleiste) -->
+        <div style="width:218px;flex-shrink:0;background:var(--white);border-right:1px solid var(--border);padding:.9rem .55rem 1rem;display:flex;flex-direction:column;gap:2px">
+          <button onclick="closeBuhaCockpit()" style="display:flex;align-items:center;gap:.4rem;background:none;border:none;cursor:pointer;font-family:var(--ff);font-size:.78rem;color:var(--muted);padding:.3rem .6rem .7rem;text-align:left">← Zurück zum Objekt</button>
+          <div style="padding:.2rem .6rem .9rem">
+            <div style="font-size:.6rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#0e7c7b">Objektbuchhaltung</div>
+            <div id="buhac-objekt" style="font-size:.84rem;font-weight:700;margin-top:.25rem;line-height:1.3"></div>
           </div>
-          <div id="buhac-kpis" style="display:flex;gap:.6rem;flex-wrap:wrap"></div>
+          <div id="buhac-nav"></div>
+          <div style="margin-top:auto;padding:.9rem .6rem 0;font-size:.6rem;color:var(--muted);line-height:1.5">Doppelte Buchführung · SKR03/SKR04 · Festschreibung nach GoBD</div>
         </div>
-        <div id="buhac-content"></div>
+        <!-- Inhalt -->
+        <div style="flex:1;min-width:0;padding:1.2rem 1.6rem 5rem">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem;margin-bottom:1.1rem">
+            <div>
+              <h1 id="buhac-titel" style="font-size:1.35rem;font-weight:800;letter-spacing:-.01em;margin:0">Übersicht</h1>
+              <div id="buhac-untertitel" style="font-size:.8rem;color:var(--muted);margin-top:.2rem"></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:.55rem;flex-wrap:wrap">
+              <div id="buhac-kreis-wrap" style="display:none;align-items:center;gap:.4rem">
+                <span style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)">Buchungskreis</span>
+                <select id="buhac-kreis" onchange="buhacKreisWechsel(this.value)" style="border:1px solid var(--border);border-radius:8px;padding:.4rem .6rem;font-size:.82rem;font-family:var(--ff);background:var(--white);outline:none"></select>
+              </div>
+              <!-- Wirtschaftsjahr: immer sichtbar, blätterbar -->
+              <div style="display:flex;align-items:center;gap:.15rem;background:var(--white);border:1px solid var(--border);border-radius:10px;padding:.2rem .3rem">
+                <button onclick="buhaWjSchritt(-1)" title="Vorheriges Wirtschaftsjahr" style="border:none;background:none;cursor:pointer;font-size:.85rem;padding:.25rem .45rem;color:var(--p)">◀</button>
+                <div style="text-align:center;min-width:118px">
+                  <div style="font-size:.56rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Wirtschaftsjahr</div>
+                  <select id="buhac-wj" onchange="buhaWjWechsel(this.value)" style="border:none;background:none;font-family:var(--ff);font-size:1.02rem;font-weight:800;color:var(--text);outline:none;cursor:pointer;text-align:center"></select>
+                </div>
+                <button onclick="buhaWjSchritt(1)" title="Nächstes Wirtschaftsjahr" style="border:none;background:none;cursor:pointer;font-size:.85rem;padding:.25rem .45rem;color:var(--p)">▶</button>
+                <button onclick="buhaWjDialog()" title="Wirtschaftsjahre verwalten" style="border:none;background:none;cursor:pointer;padding:.25rem .4rem;color:var(--muted)"><span class="mini-ic" data-icon="gear"></span></button>
+              </div>
+              <span id="buhac-wj-status"></span>
+            </div>
+          </div>
+          <div id="buhac-content"></div>
+        </div>
       </div>
     </div>
 
@@ -11301,14 +11342,84 @@ function renderObjektBuchhaltungKarte(){
   }
   if(typeof applyIcons==='function')applyIcons(box);
 }
-// Cockpit öffnen: Buchhaltungsknoten einbetten und Daten laden
-async function openBuhaCockpit(objId){
+// ══════════════════════════════════════════════════════════════════════════
+//  OBJEKTBUCHHALTUNGS-COCKPIT (Aufbau nach DATEV Rechnungswesen)
+//  Linke Modulleiste, Wirtschaftsjahr als eigene Entität (buha_wirtschaftsjahre),
+//  Übersicht mit Kaltmieten / Nebenkosten. Das bestehende Buchhaltungsmodul
+//  (tab-content-buchhaltung) wird als Inhaltsknoten eingebettet; alte Kopfzeile
+//  und Tableiste bleiben dabei ausgeblendet – navigiert wird über die Modulleiste.
+// ══════════════════════════════════════════════════════════════════════════
+var BUHAC_MODS=[
+  {id:'uebersicht',   label:'Übersicht',              icon:'home'},
+  {id:'buchen',       label:'Buchen',                 icon:'pencil'},
+  {id:'stapel',       label:'Buchungsstapel',         icon:'files',    soon:true},
+  {id:'primanota',    label:'Primanota',              icon:'list',     soon:true},
+  {id:'arbeitskonto', label:'Arbeitskonto',           icon:'bookopen', soon:true},
+  {id:'personen',     label:'Debitoren / Kreditoren', icon:'users'},
+  {id:'bank',         label:'Bank & Import',          icon:'landmark', soon:true},
+  {id:'ausw',         label:'Auswertungen',           icon:'barchart'},
+  {id:'gewinn',       label:'Gewinnermittlung',       icon:'euro'},
+  {id:'anlagen',      label:'Anlagen / AfA',          icon:'building'},
+  {id:'konten',       label:'Kontenrahmen',           icon:'grid'},
+  {id:'import',       label:'DATEV-Import',           icon:'upload'},
+  {id:'audit',        label:'Audit-Trail',            icon:'shield'}
+];
+var BUHAC_TITEL={
+  uebersicht:['Übersicht','Kennzahlen des Wirtschaftsjahres'],
+  buchen:['Buchen','Buchungserfassung mit Journal'],
+  stapel:['Buchungsstapel','Stapel je Zeitraum – festschreibbar nach GoBD'],
+  primanota:['Primanota','Buchungen in Erfassungsreihenfolge'],
+  arbeitskonto:['Arbeitskonto','Buchungen eines Kontos nachvollziehen'],
+  personen:['Debitoren / Kreditoren','Personenkonten und offene Posten'],
+  bank:['Bank & Import','Kontoumsätze aus MT940 / CSV verbuchen'],
+  ausw:['Auswertungen','Saldenliste, EÜR, Kontenblatt'],
+  gewinn:['Gewinnermittlung','Einnahmen-Überschuss-Rechnung'],
+  anlagen:['Anlagen / AfA','Anlagenverzeichnis und Abschreibungen'],
+  konten:['Kontenrahmen','SKR03 / SKR04 und eigene Konten'],
+  import:['DATEV-Import','Buchungsstapel aus DATEV einlesen'],
+  audit:['Audit-Trail','Änderungsprotokoll (GoBD)']
+};
+var _buhacMod='uebersicht';
+function renderBuhacNav(active){
+  var nav=document.getElementById('buhac-nav'); if(!nav)return;
+  nav.innerHTML=BUHAC_MODS.map(function(m){
+    var a=m.id===active;
+    return '<button onclick="buhacGo(\''+m.id+'\')" style="display:flex;align-items:center;gap:.55rem;width:100%;text-align:left;border:none;cursor:pointer;font-family:var(--ff);font-size:.83rem;padding:.48rem .6rem;border-radius:8px;background:'+(a?'#0e7c7b':'transparent')+';color:'+(a?'#fff':'#374151')+';font-weight:'+(a?'600':'500')+'">'
+      +'<span class="mini-ic" data-icon="'+m.icon+'" style="color:'+(a?'#fff':'#0e7c7b')+'"></span>'
+      +'<span style="flex:1">'+m.label+'</span>'
+      +(m.soon?'<span style="font-size:.56rem;font-weight:700;background:'+(a?'rgba(255,255,255,.25)':'#e0f2f1')+';color:'+(a?'#fff':'#0e7c7b')+';padding:1px 6px;border-radius:7px">Bald</span>':'')
+    +'</button>';
+  }).join('');
+  if(typeof applyIcons==='function')applyIcons(nav);
+}
+function buhacGo(mod){
+  var m=BUHAC_MODS.filter(function(x){return x.id===mod;})[0];
+  if(!m){mod='uebersicht';m=BUHAC_MODS[0];}
+  _buhacMod=mod;
+  renderBuhacNav(mod);
+  var t=BUHAC_TITEL[mod]||[m.label,''];
+  var h1=document.getElementById('buhac-titel'); if(h1)h1.textContent=t[0];
+  var u=document.getElementById('buhac-untertitel'); if(u)u.textContent=t[1];
+  var pane=({personen:'op'})[mod]||mod;
+  if(m.soon){
+    pane='bald';
+    var bald=document.getElementById('buha-pane-bald');
+    if(bald)bald.innerHTML='<div style="text-align:center;padding:3rem 1rem;color:var(--muted)"><div style="font-size:2rem">🚧</div>'
+      +'<div style="font-weight:700;color:var(--text);margin-top:.5rem">'+t[0]+' folgt in Kürze</div>'
+      +'<div style="font-size:.82rem;margin-top:.3rem">'+t[1]+'</div></div>';
+  }
+  buhaTab(pane);
+  try{window.scrollTo(0,0);}catch(e){}
+}
+// Cockpit öffnen: Buchhaltungsknoten einbetten, Wirtschaftsjahre + Daten laden
+async function openBuhaCockpit(objId,mod){
   var o=null;
   if(objId&&(!aktivesObjekt||aktivesObjekt.id!==objId)){
     try{ var r=await sb.from('objekte').select('*').eq('id',objId).maybeSingle(); o=r.data; }catch(e){}
   }
   o=o||aktivesObjekt;
   if(!o){showToast('Bitte zuerst ein Objekt öffnen.');return;}
+  if(buha.objektId&&buha.objektId!==o.id){buha.jahr=null;buha.ug='';}
   _buhaCockpitObj=o; aktivesObjekt=o;
   showPage('buha-cockpit');
   var titel=document.getElementById('buhac-objekt');
@@ -11318,32 +11429,290 @@ async function openBuhaCockpit(objId){
   if(!node){c.innerHTML='<div style="color:#c0392b;font-size:.85rem">Buchhaltungs-Modul nicht gefunden.</div>';return;}
   if(!_buhaHomeParent)_buhaHomeParent=node.parentNode;
   c.innerHTML=''; c.appendChild(node); node.style.display='block';
-  var tb=document.getElementById('buha-tabbar'); if(tb)tb.style.display='flex';
+  var tb=document.getElementById('buha-tabbar'); if(tb)tb.style.display='none';
+  var ak=document.getElementById('buha-altkopf'); if(ak)ak.style.display='none';
+  renderBuhacNav(mod||'uebersicht');
+  try{ await buhaWjLaden(o.id); }catch(e){ console.warn('wirtschaftsjahre:',e); }
   try{ await ladeBuchhaltung(o.id); }catch(e){ console.warn('buha load:',e); }
   try{ await ladeAnlagen(o.id); }catch(e){ console.warn('anlagen:',e); }
-  try{ buhaTab('buchen'); }catch(e){}
-  renderBuhaCockpitKpis();
+  buhaWjFuellen();
+  buhacKreisFuellen();
+  buhacGo(mod||'uebersicht');
 }
 function closeBuhaCockpit(){
   // Knoten an seinen ursprünglichen Platz zurückschieben, sonst fehlt er anderswo
   var node=document.getElementById('tab-content-buchhaltung');
   if(node&&_buhaHomeParent&&node.parentNode!==_buhaHomeParent){ _buhaHomeParent.appendChild(node); node.style.display='none'; }
+  var tb=document.getElementById('buha-tabbar'); if(tb)tb.style.display='flex';
+  var ak=document.getElementById('buha-altkopf'); if(ak)ak.style.display='flex';
   var o=_buhaCockpitObj;
   if(o&&typeof openObjektDetail==='function')openObjektDetail(o.id);
   else showPage('objekte');
 }
-// Kennzahlen im Cockpit-Kopf
+// Buchungskreis (Untergemeinschaften) im Cockpit-Kopf – nur wenn welche existieren
+function buhacKreisFuellen(){
+  var wrap=document.getElementById('buhac-kreis-wrap'), sel=document.getElementById('buhac-kreis');
+  if(!wrap||!sel)return;
+  var list=buha.ugListe||[];
+  if(!list.length){wrap.style.display='none';return;}
+  wrap.style.display='flex';
+  sel.innerHTML='<option value="">Gesamt</option>'+list.map(function(u){return '<option value="'+u.id+'">'+escapeHtml(u.name)+'</option>';}).join('');
+  sel.value=buha.ug||'';
+}
+async function buhacKreisWechsel(v){
+  var alt=document.getElementById('buha-ug'); if(alt)alt.value=v||'';
+  buha.ug=v||'';
+  await buhaReload();
+  buhacGo(_buhacMod);
+}
+
+// ── Wirtschaftsjahre (buha_wirtschaftsjahre) ─────────────────────────────
+buha.wjListe=[];
+function buhaWjAktuell(){
+  var j=parseInt(buha.jahr,10);
+  return (buha.wjListe||[]).filter(function(w){return parseInt(w.jahr,10)===j;})[0]||null;
+}
+function buhaWjGesperrt(){ var w=buhaWjAktuell(); return !!(w&&w.status==='abgeschlossen'); }
+// Aus der Liste das passende Jahr wählen: gewähltes Jahr, sonst laufendes offenes, sonst jüngstes offenes, sonst jüngstes
+function buhaWjWahl(list,gewaehlt,heute){
+  list=(list||[]).slice().sort(function(a,b){return a.jahr-b.jahr;});
+  if(!list.length)return null;
+  var g=parseInt(gewaehlt,10);
+  if(g&&list.some(function(w){return parseInt(w.jahr,10)===g;}))return g;
+  var offen=list.filter(function(w){return w.status!=='abgeschlossen';});
+  var lauf=offen.filter(function(w){return parseInt(w.jahr,10)===heute;})[0]||offen[offen.length-1]||list[list.length-1];
+  return parseInt(lauf.jahr,10);
+}
+async function buhaWjLaden(objId){
+  objId=objId||buha.objektId; if(!objId||!currentUser)return [];
+  var r=await sb.from('buha_wirtschaftsjahre').select('*').eq('user_id',currentUser.id).eq('objekt_id',objId).order('jahr');
+  if(r.error)throw r.error;
+  buha.wjListe=r.data||[];
+  if(!buha.wjListe.length){
+    // Erstes Wirtschaftsjahr automatisch anlegen (laufendes Kalenderjahr)
+    var wj=await buhaWjAnlegen(objId,new Date().getFullYear(),true);
+    if(wj)buha.wjListe=[wj];
+  }
+  buha.jahr=buhaWjWahl(buha.wjListe,buha.jahr,new Date().getFullYear())||new Date().getFullYear();
+  return buha.wjListe;
+}
+async function buhaWjAnlegen(objId,jahr,still){
+  jahr=parseInt(jahr,10); if(!jahr||!currentUser)return null;
+  var r=await sb.from('buha_wirtschaftsjahre').insert({user_id:currentUser.id,objekt_id:objId,jahr:jahr,von:jahr+'-01-01',bis:jahr+'-12-31',status:'offen'}).select().maybeSingle();
+  if(r.error){ if(!still)showToast('❌ '+r.error.message); return null; }
+  try{ await logAudit('wirtschaftsjahr_angelegt','wirtschaftsjahr',r.data&&r.data.id,{jahr:jahr}); }catch(e){}
+  if(!still)showToast('✅ Wirtschaftsjahr '+jahr+' angelegt');
+  return r.data;
+}
+function buhaWjFuellen(){
+  var sel=document.getElementById('buhac-wj'); var list=(buha.wjListe||[]).slice().sort(function(a,b){return b.jahr-a.jahr;});
+  if(sel){
+    sel.innerHTML=list.map(function(w){return '<option value="'+w.jahr+'">'+w.jahr+(w.status==='abgeschlossen'?' 🔒':'')+'</option>';}).join('');
+    sel.value=String(buha.jahr);
+  }
+  // Altes Jahr-Dropdown des Moduls synchron halten (buhaReload liest es)
+  var alt=document.getElementById('buha-jahr');
+  if(alt){
+    if(!alt.querySelector('option[value="'+buha.jahr+'"]'))alt.insertAdjacentHTML('afterbegin','<option value="'+buha.jahr+'">Wirtschaftsjahr '+buha.jahr+'</option>');
+    alt.value=String(buha.jahr);
+  }
+  buhaWjStatus();
+}
+function buhaWjStatus(){
+  var el=document.getElementById('buhac-wj-status'); if(!el)return;
+  var w=buhaWjAktuell();
+  if(!w){el.innerHTML='';return;}
+  var zu=w.status==='abgeschlossen';
+  el.innerHTML='<span title="'+fmtDatum(w.von||'')+' – '+fmtDatum(w.bis||'')+'" style="font-size:.66rem;font-weight:700;padding:.22rem .6rem;border-radius:20px;background:'+(zu?'#fdecea':'#e6f4ea')+';color:'+(zu?'#c0392b':'#1a7a4a')+'">'+(zu?'🔒 abgeschlossen':'● offen')+'</span>';
+}
+async function buhaWjWechsel(jahr){
+  jahr=parseInt(jahr,10); if(!jahr)return;
+  buha.jahr=jahr;
+  buhaWjFuellen();
+  await buhaReload();
+  buhacGo(_buhacMod);
+}
+function buhaWjSchritt(d){
+  var ziel=parseInt(buha.jahr,10)+d;
+  if((buha.wjListe||[]).some(function(w){return parseInt(w.jahr,10)===ziel;})){ buhaWjWechsel(ziel); return; }
+  appConfirm({icon:'📅',title:'Wirtschaftsjahr '+ziel+' anlegen?',
+    message:'Für '+ziel+' gibt es noch kein Wirtschaftsjahr. Soll es jetzt angelegt werden (01.01.–31.12.'+ziel+')?',
+    buttons:[{label:'📅 Anlegen',style:'background:linear-gradient(135deg,#0e7c7b,#0a5f5e);color:#fff',onClick:async function(){
+      var wj=await buhaWjAnlegen(buha.objektId,ziel); if(!wj)return;
+      buha.wjListe.push(wj);
+      await buhaWjWechsel(ziel);
+    }},{label:'Abbrechen',style:'background:var(--bg);color:var(--muted)',onClick:function(){}}]});
+}
+function buhaWjDialog(){
+  var list=(buha.wjListe||[]).slice().sort(function(a,b){return b.jahr-a.jahr;});
+  var cur=parseInt(buha.jahr,10);
+  var rows=list.map(function(w){
+    var zu=w.status==='abgeschlossen';
+    return '<div style="display:flex;align-items:center;gap:.6rem;padding:.5rem .1rem;border-bottom:1px solid var(--border)">'
+      +'<div style="flex:1;min-width:0"><b style="color:var(--text)">'+w.jahr+'</b>'+(w.jahr===cur?' <span style="font-size:.6rem;color:#0e7c7b;font-weight:800">AKTUELL</span>':'')
+      +'<div style="font-size:.7rem">'+fmtDatum(w.von||'')+' – '+fmtDatum(w.bis||'')+'</div></div>'
+      +'<span style="font-size:.64rem;font-weight:700;padding:.15rem .5rem;border-radius:20px;background:'+(zu?'#fdecea':'#e6f4ea')+';color:'+(zu?'#c0392b':'#1a7a4a')+'">'+(zu?'abgeschlossen':'offen')+'</span>'
+      +'<button class="btn-small" onclick="buhaWjStatusSetzen(\''+w.id+'\',\''+(zu?'offen':'abgeschlossen')+'\')" style="font-size:.68rem">'+(zu?'Wieder öffnen':'Abschließen')+'</button>'
+      +'</div>';
+  }).join('');
+  var neu=list.length?list[0].jahr+1:new Date().getFullYear();
+  var alt=list.length?list[list.length-1].jahr-1:new Date().getFullYear()-1;
+  appConfirm({icon:'📅',title:'Wirtschaftsjahre',
+    message:'<div style="text-align:left">'+(rows||'<div style="padding:.5rem 0">Noch kein Wirtschaftsjahr angelegt.</div>')
+      +'<div style="display:flex;gap:.5rem;margin-top:.8rem;flex-wrap:wrap">'
+      +'<button class="btn-small" onclick="buhaWjNeu('+neu+')" style="font-size:.72rem">+ '+neu+' anlegen</button>'
+      +'<button class="btn-small grau" onclick="buhaWjNeu('+alt+')" style="font-size:.72rem">+ Vorjahr '+alt+'</button></div>'
+      +'<div style="font-size:.7rem;margin-top:.7rem">Abschließen sperrt das Jahr für neue Buchungen und schreibt alle Buchungen fest (GoBD). Ein abgeschlossenes Jahr lässt sich wieder öffnen, festgeschriebene Buchungen bleiben jedoch unveränderlich.</div></div>',
+    buttons:[{label:'Schließen',style:'background:var(--bg);color:var(--text)',onClick:function(){}}]});
+}
+async function buhaWjNeu(jahr){
+  appConfirmClose();
+  var wj=await buhaWjAnlegen(buha.objektId,jahr); if(!wj)return;
+  buha.wjListe.push(wj);
+  await buhaWjWechsel(jahr);
+}
+async function buhaWjStatusSetzen(id,status){
+  var w=(buha.wjListe||[]).filter(function(x){return x.id===id;})[0]; if(!w)return;
+  appConfirmClose();
+  var patch={status:status,abgeschlossen_am:status==='abgeschlossen'?new Date().toISOString():null};
+  var r=await sb.from('buha_wirtschaftsjahre').update(patch).eq('id',id);
+  if(r.error){showToast('❌ '+r.error.message);return;}
+  if(status==='abgeschlossen'){
+    // Jahresabschluss: alle Buchungen des Jahres festschreiben
+    try{ await sb.from('weg_buchungen').update({festgeschrieben:true}).eq('user_id',currentUser.id).eq('objekt_id',buha.objektId).eq('wirtschaftsjahr',w.jahr).eq('festgeschrieben',false); }catch(e){}
+  }
+  Object.assign(w,patch);
+  try{ await logAudit('wirtschaftsjahr_'+status,'wirtschaftsjahr',id,{jahr:w.jahr}); }catch(e){}
+  showToast(status==='abgeschlossen'?'🔒 Wirtschaftsjahr '+w.jahr+' abgeschlossen':'🔓 Wirtschaftsjahr '+w.jahr+' wieder geöffnet');
+  buhaWjFuellen();
+  await buhaReload();
+  buhacGo(_buhacMod);
+}
+
+// ── Konto-Kategorien ─────────────────────────────────────────────────────
+var BUHA_KAT={miete:'Kaltmiete',nebenkosten:'Nebenkosten (umlagefähig)',hausgeld:'Hausgeld / Rücklage (WEG)',sonstig:'Sonstiges',
+  bank:'Bank',kasse:'Kasse',forderung:'Forderungen',verbindlichkeit:'Verbindlichkeiten',kaution:'Kautionen',darlehen:'Darlehen',
+  steuer:'Steuerkonto',transit:'Geldtransit / durchlaufend',anlage:'Anlagevermögen',ruecklage:'Rücklage (WEG)',afa:'Abschreibung (AfA)',
+  debitor:'Debitor (Mieter)',kreditor:'Kreditor (Lieferant)'};
+// Kategorie eines Kontos: gespeichert (weg_konten.kategorie) oder aus Nummer/Name/Typ abgeleitet
+function buhaKontoKat(k){
+  if(!k)return '';
+  if(typeof k!=='object'){var nr=String(k);k=(buha.konten||[]).filter(function(x){return String(x.nummer)===nr;})[0];if(!k)return '';}
+  if(k.kategorie)return k.kategorie;
+  var n=(k.name||'').toLowerCase(), t=k.typ, num=parseInt(k.nummer,10);
+  if(num>=10000&&num<=69999)return 'debitor';
+  if(num>=70000&&num<=99999)return 'kreditor';
+  if(t==='ertrag'){
+    if(/hausgeld|rücklage|ruecklage/.test(n))return 'hausgeld';
+    if(/nebenkosten|betriebskosten|umlage|vorausz|nachzahl|heizkosten/.test(n))return 'nebenkosten';
+    if(/miet|garage|stellplatz|pacht|erlös|erloes/.test(n))return 'miete';
+    return 'sonstig';
+  }
+  if(t==='aufwand'){
+    if(/afa|abschreib/.test(n))return 'afa';
+    if(/instandhalt|reparatur|verwalt|bank|geldverkehr|zins|steuerberat|porto|telefon|büro|buero|leerstand/.test(n))return 'sonstig';
+    return k.umlagefaehig!==false?'nebenkosten':'sonstig';
+  }
+  if(/kaution/.test(n))return 'kaution';
+  if(/darlehen|kredit/.test(n))return 'darlehen';
+  if(/rücklage|ruecklage/.test(n)&&t==='passiv')return 'ruecklage';
+  if(/vorsteuer|umsatzsteuer/.test(n))return 'steuer';
+  if(/transit|durchlaufend/.test(n))return 'transit';
+  if(/forderung/.test(n))return 'forderung';
+  if(/verbindlichkeit/.test(n))return 'verbindlichkeit';
+  if(/kasse/.test(n))return 'kasse';
+  if(/bank|giro|sparkasse|volksbank|konto/.test(n))return 'bank';
+  if(/grund und boden|gebäude|gebaeude|ausstattung/.test(n))return 'anlage';
+  return '';
+}
+
+// ── Übersicht: Summen des Wirtschaftsjahres (reine Rechenfunktion, testbar) ──
+function buhaUebersichtSummen(jahr){
+  var kat={},typ={};
+  (buha.konten||[]).forEach(function(k){kat[k.nummer]=buhaKontoKat(k);typ[k.nummer]=k.typ;});
+  var s={miete:0,nebenkosten:0,sonstErtrag:0,hausgeld:0,aufwand:0,aufwandUml:0,geld:0,anzahl:0,storno:0,aufwandKonten:{},offen:0};
+  (buha.buchungen||[]).forEach(function(b){
+    if(jahr&&b.wirtschaftsjahr&&parseInt(b.wirtschaftsjahr,10)!==parseInt(jahr,10))return;
+    if(b.ist_storno||b.storniert){s.storno++;return;}
+    s.anzahl++; if(!b.festgeschrieben)s.offen++;
+    var bt=parseFloat(b.betrag)||0;
+    [[b.soll_konto,1],[b.haben_konto,-1]].forEach(function(p){
+      var nr=p[0]; if(!nr)return; var v=bt*p[1]; // Soll positiv, Haben negativ
+      if(typ[nr]==='ertrag'){ var e=-v; if(kat[nr]==='miete')s.miete+=e; else if(kat[nr]==='nebenkosten')s.nebenkosten+=e; else if(kat[nr]==='hausgeld')s.hausgeld+=e; else s.sonstErtrag+=e; }
+      else if(typ[nr]==='aufwand'){ s.aufwand+=v; if(kat[nr]==='nebenkosten')s.aufwandUml+=v; s.aufwandKonten[nr]=(s.aufwandKonten[nr]||0)+v; }
+      else if(kat[nr]==='bank'||kat[nr]==='kasse'){ s.geld+=v; }
+    });
+  });
+  return s;
+}
+function renderBuhacUebersicht(){
+  var kp=document.getElementById('buhac-ue-kpis'); if(!kp)return;
+  var li=document.getElementById('buhac-ue-links'), re=document.getElementById('buhac-ue-rechts'), hw=document.getElementById('buhac-ue-hinweis');
+  var jahr=parseInt(buha.jahr,10);
+  var s=buhaUebersichtSummen(jahr);
+  var g=gewinnBerechnen(jahr);
+  var w=buhaWjAktuell();
+  var name={}; (buha.konten||[]).forEach(function(k){name[k.nummer]=k.name;});
+  var card=function(lbl,val,col,sub){return '<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:.85rem 1rem">'
+    +'<div style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">'+lbl+'</div>'
+    +'<div style="font-size:1.22rem;font-weight:800;margin-top:.3rem;color:'+col+';font-variant-numeric:tabular-nums">'+val+'</div>'
+    +(sub?'<div style="font-size:.7rem;color:var(--muted);margin-top:.15rem">'+sub+'</div>':'')+'</div>';};
+  // Hinweise: ohne Kontenrahmen bzw. ohne Buchungen den Einstieg zeigen
+  if(hw){
+    if(!(buha.konten||[]).length){
+      hw.innerHTML='<div style="background:#e0f2f1;border:1px solid #b2dfdb;border-radius:12px;padding:.9rem 1.1rem;margin-bottom:1rem;display:flex;gap:.8rem;align-items:center;flex-wrap:wrap">'
+        +'<div style="flex:1;min-width:220px"><div style="font-weight:700;font-size:.9rem">Erster Schritt: Kontenrahmen laden</div><div style="font-size:.78rem;color:var(--muted)">SKR03 ist der in Deutschland verbreitetste Rahmen – dein Steuerberater kennt ihn. SKR04 ist gleichwertig und nach Bilanzgliederung sortiert.</div></div>'
+        +'<button class="btn-primary" style="font-size:.8rem" onclick="seedKontenrahmen(\'skr03\')">SKR03 laden (empfohlen)</button>'
+        +'<button class="btn-secondary" style="font-size:.8rem" onclick="seedKontenrahmen(\'skr04\')">SKR04 laden</button></div>';
+    } else if(!s.anzahl){
+      hw.innerHTML='<div style="background:var(--white);border:1px dashed var(--border);border-radius:12px;padding:.9rem 1.1rem;margin-bottom:1rem;display:flex;gap:.8rem;align-items:center;flex-wrap:wrap">'
+        +'<div style="flex:1;min-width:220px"><div style="font-weight:700;font-size:.9rem">Noch keine Buchungen in '+jahr+'</div><div style="font-size:.78rem;color:var(--muted)">Erfasse Mieteingänge und Rechnungen unter „Buchen" – die Übersicht, Auswertungen und Gewinnermittlung entstehen daraus automatisch.</div></div>'
+        +'<button class="btn-primary" style="font-size:.8rem" onclick="buhacGo(\'buchen\')">Jetzt buchen</button></div>';
+    } else hw.innerHTML='';
+  }
+  var erg=g.ergebnis;
+  kp.innerHTML=card('Kaltmieten vereinnahmt',buhaEuro(s.miete),'#1a7a4a')
+    +card('Nebenkosten vereinnahmt',buhaEuro(s.nebenkosten),'#1a7a4a','Vorauszahlungen + Nachzahlungen')
+    +(s.hausgeld?card('Hausgeld (WEG)',buhaEuro(s.hausgeld),'#1a7a4a'):card('Sonstige Erträge',buhaEuro(s.sonstErtrag),'#1a7a4a'))
+    +card('Ausgaben gesamt',buhaEuro(s.aufwand),'#c0392b','davon umlagefähig '+buhaEuro(s.aufwandUml))
+    +card('Ergebnis '+jahr,buhaEuro(erg),erg>=0?'#1a7a4a':'#c0392b',g.afa>0.004?'inkl. AfA '+buhaEuro(g.afa):'Einnahmen − Ausgaben')
+    +card('Buchungen',String(s.anzahl),'var(--text)',(s.storno?s.storno+' storniert · ':'')+(s.offen?s.offen+' nicht festgeschrieben':'alle festgeschrieben'));
+  // Links: letzte Buchungen
+  if(li){
+    var letzte=(buha.buchungen||[]).filter(function(b){return !b.ist_storno&&!b.storniert;}).slice().sort(function(a,b){return String(b.buchungsdatum).localeCompare(String(a.buchungsdatum))||String(b.created_at||'').localeCompare(String(a.created_at||''));}).slice(0,8);
+    li.innerHTML='<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;padding:.7rem 1rem;border-bottom:1px solid var(--border)"><span style="font-size:.84rem;font-weight:700">Letzte Buchungen</span><button class="btn-small" onclick="buhacGo(\'buchen\')" style="font-size:.7rem">Alle anzeigen →</button></div>'
+      +(letzte.length?'<table style="width:100%;border-collapse:collapse;font-size:.8rem">'+letzte.map(function(b){
+        return '<tr style="border-bottom:1px solid var(--border)"><td style="padding:.45rem 1rem;white-space:nowrap;color:var(--muted)">'+fmtDatum(String(b.buchungsdatum||'').slice(0,10))+'</td>'
+          +'<td style="padding:.45rem .5rem;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escapeHtml(b.text||'—')+'</td>'
+          +'<td style="padding:.45rem .5rem;white-space:nowrap;font-size:.72rem;color:var(--muted)">'+escapeHtml(b.soll_konto)+' / '+escapeHtml(b.haben_konto)+'</td>'
+          +'<td style="padding:.45rem 1rem;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap">'+buhaEuro(b.betrag)+'</td></tr>';
+      }).join('')+'</table>':'<div style="padding:1.4rem;text-align:center;color:var(--muted);font-size:.82rem">Noch keine Buchungen.</div>')+'</div>';
+  }
+  // Rechts: Wirtschaftsjahr-Karte + Aufwand nach Konto
+  if(re){
+    var zu=w&&w.status==='abgeschlossen';
+    var wjCard='<div style="background:linear-gradient(135deg,#0e7c7b,#0a5f5e);color:#fff;border-radius:12px;padding:1rem 1.1rem;margin-bottom:1rem">'
+      +'<div style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;opacity:.85">Aktuelles Wirtschaftsjahr</div>'
+      +'<div style="font-size:1.9rem;font-weight:800;line-height:1.1;margin-top:.2rem">'+jahr+'</div>'
+      +'<div style="font-size:.78rem;opacity:.9;margin-top:.3rem">'+(w?fmtDatum(w.von||'')+' – '+fmtDatum(w.bis||''):'01.01. – 31.12.')+' · '+(zu?'🔒 abgeschlossen':'offen')+'</div>'
+      +'<div style="display:flex;gap:.4rem;margin-top:.7rem;flex-wrap:wrap"><button onclick="buhaWjDialog()" style="border:1px solid rgba(255,255,255,.5);background:rgba(255,255,255,.12);color:#fff;border-radius:8px;padding:.3rem .7rem;font-size:.72rem;cursor:pointer;font-family:var(--ff)">Wirtschaftsjahre verwalten</button>'
+      +'<button onclick="buhaWjSchritt(1)" style="border:1px solid rgba(255,255,255,.5);background:rgba(255,255,255,.12);color:#fff;border-radius:8px;padding:.3rem .7rem;font-size:.72rem;cursor:pointer;font-family:var(--ff)">Nächstes Jahr ▶</button></div></div>';
+    var top=Object.keys(s.aufwandKonten).map(function(nr){return {nr:nr,v:s.aufwandKonten[nr]};}).filter(function(x){return x.v>0.004;}).sort(function(a,b){return b.v-a.v;}).slice(0,8);
+    var max=top.length?top[0].v:1;
+    var aufw='<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:.8rem 1rem">'
+      +'<div style="font-size:.84rem;font-weight:700;margin-bottom:.5rem">Ausgaben nach Konto</div>'
+      +(top.length?top.map(function(x){var kt=buhaKontoKat(x.nr);
+        return '<div style="margin-bottom:.45rem"><div style="display:flex;justify-content:space-between;font-size:.76rem"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:70%">'+escapeHtml(x.nr)+' '+escapeHtml(name[x.nr]||'')+(kt==='nebenkosten'?' <span title="umlagefähig" style="font-size:.6rem;color:#0e7c7b;font-weight:700">UML</span>':'')+'</span><b style="font-variant-numeric:tabular-nums">'+buhaEuro(x.v)+'</b></div>'
+          +'<div style="height:5px;background:var(--bg);border-radius:3px;margin-top:2px"><div style="height:5px;width:'+Math.round(x.v/max*100)+'%;background:'+(kt==='nebenkosten'?'#0e7c7b':'#c0392b')+';border-radius:3px"></div></div></div>';
+      }).join(''):'<div style="font-size:.78rem;color:var(--muted)">Noch keine Ausgaben gebucht.</div>')+'</div>';
+    re.innerHTML=wjCard+aufw;
+  }
+}
+// Kennzahlen-Hook aus Gewinn/Anlagen: im Cockpit die Übersicht aktualisieren, wenn sie sichtbar ist
 function renderBuhaCockpitKpis(){
-  var box=document.getElementById('buhac-kpis'); if(!box)return;
-  var g=gewinnBerechnen(buha.jahr);
-  var kpi=function(label,wert,farbe){
-    return '<div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:.5rem .9rem;text-align:right;min-width:120px">'
-      +'<div style="font-size:.64rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">'+label+'</div>'
-      +'<div style="font-size:1rem;font-weight:800;color:'+(farbe||'var(--text)')+'">'+buhaEuro(wert)+'</div></div>';
-  };
-  box.innerHTML=kpi('Einnahmen '+(buha.jahr||''),g.sumEin,'#1a7a4a')
-    +kpi('Ausgaben',g.sumAus,'#c0392b')
-    +kpi('Ergebnis',g.ergebnis,g.ergebnis>=0?'#1a7a4a':'#c0392b');
+  var p=document.getElementById('buha-pane-uebersicht');
+  if(p&&p.style.display!=='none')renderBuhacUebersicht();
 }
 
 // ── Gewinnermittlung (EÜR) ──────────────────────────────────────────────
@@ -11548,6 +11917,9 @@ async function ladeBuchhaltung(objId){
     var jahrNow=new Date().getFullYear();
     if(!buha.jahr)buha.jahr=jahrNow;
     var jahre=[]; for(var y=jahrNow+1;y>=jahrNow-4;y--)jahre.push(y);
+    (buha.wjListe||[]).forEach(function(w){if(jahre.indexOf(w.jahr)<0)jahre.push(w.jahr);});
+    if(jahre.indexOf(parseInt(buha.jahr,10))<0)jahre.push(parseInt(buha.jahr,10));
+    jahre.sort(function(a,b){return b-a;});
     jsel.innerHTML=jahre.map(function(y){return '<option value="'+y+'">Wirtschaftsjahr '+y+'</option>';}).join('');
     jsel.value=buha.jahr;
     await buhaReload();
@@ -11581,11 +11953,12 @@ async function buhaReload(){
 }
 
 function buhaTab(t){
-  ['buchen','hausgeld','op','konten','ausw','anlagen','gewinn','import','audit'].forEach(function(x){
+  ['uebersicht','bald','buchen','hausgeld','op','konten','ausw','anlagen','gewinn','import','audit'].forEach(function(x){
     var pane=document.getElementById('buha-pane-'+x); if(pane)pane.style.display=(x===t?'block':'none');
     var btn=document.getElementById('buha-tab-'+x);
     if(btn){var on=x===t;btn.style.color=on?'var(--p)':'var(--muted)';btn.style.fontWeight=on?'700':'400';btn.style.borderBottomColor=on?'var(--p)':'transparent';}
   });
+  if(t==='uebersicht')renderBuhacUebersicht();
   if(t==='audit')renderBuhaAudit();
   if(t==='ausw')renderAuswertungen();
   if(t==='anlagen')renderAnlagen();
@@ -11638,14 +12011,16 @@ function renderKonten(){
     +'<th style="text-align:left;padding:.5rem .7rem;font-size:.66rem;text-transform:uppercase;color:var(--muted)">Typ</th>'
     +'<th style="text-align:center;padding:.5rem .7rem;font-size:.66rem;text-transform:uppercase;color:var(--muted)">USt</th>'
     +'<th style="text-align:center;padding:.5rem .7rem;font-size:.66rem;text-transform:uppercase;color:var(--muted)">Umlage</th>'
+    +'<th style="text-align:left;padding:.5rem .7rem;font-size:.66rem;text-transform:uppercase;color:var(--muted)">Kategorie</th>'
     +'<th style="padding:.5rem .7rem"></th></tr></thead><tbody>'
-    +buha.konten.map(function(k){var col=kontoTypColor(k.typ);
+    +buha.konten.map(function(k){var col=kontoTypColor(k.typ);var kat=buhaKontoKat(k);
       return '<tr style="border-bottom:1px solid var(--border)">'
         +'<td style="padding:.45rem .7rem;font-weight:700;font-variant-numeric:tabular-nums">'+escapeHtml(k.nummer)+'</td>'
         +'<td style="padding:.45rem .7rem">'+escapeHtml(k.name)+'</td>'
         +'<td style="padding:.45rem .7rem"><span style="font-size:.66rem;font-weight:700;padding:2px 8px;border-radius:7px;background:'+col[0]+';color:'+col[1]+'">'+kontoTypLabel(k.typ)+'</span></td>'
         +'<td style="padding:.45rem .7rem;text-align:center;color:var(--muted)">'+(k.ust_satz>0?k.ust_satz+' %':'–')+'</td>'
         +'<td style="padding:.45rem .7rem;text-align:center">'+(k.typ==='aufwand'?(k.umlagefaehig?'✅':'—'):'')+'</td>'
+        +'<td style="padding:.45rem .7rem;font-size:.74rem;color:'+(k.kategorie?'var(--text)':'var(--muted)')+'">'+(kat?escapeHtml(BUHA_KAT[kat]||kat):'')+(kat&&!k.kategorie?' <span title="automatisch erkannt" style="opacity:.6">·auto</span>':'')+'</td>'
         +'<td style="padding:.45rem .7rem;text-align:right;white-space:nowrap">'
           +'<button class="btn-small" style="font-size:.64rem;padding:2px 7px" onclick="openKontoModal(\''+k.id+'\')">✏️</button> '
           +'<button class="btn-small" style="font-size:.64rem;padding:2px 7px;background:#fbe9e7;color:#c0392b" onclick="deleteKonto(\''+k.id+'\')">🗑</button>'
@@ -11660,6 +12035,8 @@ function openKontoModal(id){
   document.getElementById('konto-name').value=k?k.name:'';
   document.getElementById('konto-typ').value=k?k.typ:'aufwand';
   document.getElementById('konto-ust').value=k?(k.ust_satz||0):'0';
+  var kat=document.getElementById('konto-kat');
+  if(kat){kat.innerHTML='<option value="">automatisch (aus Name/Typ)</option>'+Object.keys(BUHA_KAT).map(function(c){return '<option value="'+c+'">'+BUHA_KAT[c]+'</option>';}).join('');kat.value=k&&k.kategorie?k.kategorie:'';}
   document.getElementById('konto-umlage').checked=k?(k.umlagefaehig!==false):true;
   document.getElementById('konto-verteiler').value=k&&k.verteiler?k.verteiler:'mea';
   var hSel=document.getElementById('konto-haus');
@@ -11675,6 +12052,7 @@ async function saveKonto(){
   var row={nummer:nummer,name:name,typ:document.getElementById('konto-typ').value,
     ust_satz:parseFloat(document.getElementById('konto-ust').value)||0,
     umlagefaehig:document.getElementById('konto-umlage').checked,
+    kategorie:(document.getElementById('konto-kat')||{}).value||null,
     verteiler:document.getElementById('konto-verteiler').value||'mea',
     haus_id:document.getElementById('konto-haus').value||null};
   var res = id ? await sb.from('weg_konten').update(row).eq('id',id) : await sb.from('weg_konten').insert(Object.assign({user_id:currentUser.id},row));
@@ -11695,13 +12073,11 @@ function deleteKonto(id){
 }
 function seedKontenrahmen(skr){
   var tpl=KONTENRAHMEN_TPL[skr]||KONTENRAHMEN_TPL.skr03;
-  var _tl={vermietung:['Vermietungs-Vorlage','Konten für Vermietung & Verpachtung (Anlage V) – u. a. Mieterlöse, Nebenkosten, Grundsteuer, AfA'],
-           skr04:['SKR04-WEG-Vorlage','WEG-typische Konten'],skr03:['SKR03-WEG-Vorlage','WEG-typische Konten']}[skr]||['SKR03-WEG-Vorlage','WEG-typische Konten'];
-  appConfirm({icon:'📥',title:_tl[0]+' laden?',
-    message:'Es werden '+tpl.length+' Konten angelegt ('+_tl[1]+'). Vorhandene Nummern werden übersprungen – bestehende Konten bleiben unverändert.',
+  appConfirm({icon:'📥',title:(skr==='skr04'?'SKR04':'SKR03')+'-Kontenrahmen laden?',
+    message:'Es werden '+tpl.length+' Konten für die Immobilienbuchhaltung angelegt: Mieterlöse, umlagefähige Betriebskosten nach § 2 BetrKV, nicht umlagefähige Kosten, Bank, Kautionen sowie die WEG-Konten (Hausgeld, Rücklage). Vorhandene Nummern werden übersprungen – du kannst danach frei ergänzen.',
     buttons:[{label:'📥 Konten anlegen',style:'background:linear-gradient(135deg,#0e7c7b,#0a5f5e);color:#fff',onClick:async function(){
       var vorhanden={}; buha.konten.forEach(function(k){vorhanden[k.nummer]=true;});
-      var neu=tpl.filter(function(t){return !vorhanden[t.nummer];}).map(function(t){return {user_id:currentUser.id,nummer:t.nummer,name:t.name,typ:t.typ,ust_satz:t.ust||0,umlagefaehig:t.uml!==false};});
+      var neu=tpl.filter(function(t){return !vorhanden[t.nummer];}).map(function(t){return {user_id:currentUser.id,nummer:t.nummer,name:t.name,typ:t.typ,ust_satz:t.ust||0,umlagefaehig:t.uml!==false,kategorie:t.kat||null,skr:skr};});
       if(!neu.length){showToast('Alle Konten bereits vorhanden.');return;}
       var {error}=await sb.from('weg_konten').insert(neu);
       if(error){showToast('❌ '+error.message);return;}
@@ -11709,6 +12085,9 @@ function seedKontenrahmen(skr){
       showToast('✅ '+neu.length+' Konten angelegt'); await buhaReload();
     }},{label:'Abbrechen',style:'background:var(--bg);color:var(--muted)',onClick:function(){}}]});
 }
+// Kontenrahmen-Vorlagen für die Immobilienbuchhaltung (Vermieter + WEG), angelehnt an DATEV SKR03/SKR04.
+// kat = Kategorie (miete, nebenkosten, hausgeld, sonstig, bank, kasse, forderung, verbindlichkeit,
+// kaution, darlehen, steuer, transit, anlage, ruecklage, afa); uml = umlagefähig (Betriebskosten nach § 2 BetrKV).
 var KONTENRAHMEN_TPL={
   // Vermietung & Verpachtung (Anlage V) – der WEG-Kontenrahmen kennt keine Mieterloese.
   // Nummernkreise bewusst kollisionsfrei zum WEG-Rahmen gewaehlt (45xx Aufwand, 83xx Erloese).
@@ -11735,30 +12114,83 @@ var KONTENRAHMEN_TPL={
     {nummer:'4595',name:'Schuldzinsen',typ:'aufwand',uml:false}
   ],
   skr03:[
-    {nummer:'1000',name:'Kasse',typ:'aktiv'},{nummer:'1200',name:'Bank / WEG-Girokonto',typ:'aktiv'},
-    {nummer:'1210',name:'Rücklagenkonto (Bank)',typ:'aktiv'},{nummer:'1400',name:'Forderungen Hausgeld',typ:'aktiv'},
-    {nummer:'1600',name:'Verbindlichkeiten',typ:'passiv'},{nummer:'1900',name:'Instandhaltungsrücklage',typ:'passiv'},
-    {nummer:'8000',name:'Hausgeld-Vorauszahlungen',typ:'ertrag'},{nummer:'8100',name:'Zuführung Rücklage',typ:'ertrag'},{nummer:'8200',name:'Zinserträge',typ:'ertrag',uml:false},
-    {nummer:'4030',name:'Heizung / Brennstoffe',typ:'aufwand',ust:19},{nummer:'4040',name:'Wasser / Abwasser',typ:'aufwand',ust:7},
-    {nummer:'4050',name:'Müllabfuhr',typ:'aufwand'},{nummer:'4060',name:'Gebäudeversicherung',typ:'aufwand'},
-    {nummer:'4070',name:'Hausmeister',typ:'aufwand',ust:19},{nummer:'4080',name:'Allgemeinstrom',typ:'aufwand',ust:19},
-    {nummer:'4090',name:'Gartenpflege',typ:'aufwand',ust:19},{nummer:'4100',name:'Aufzug (Wartung)',typ:'aufwand',ust:19},
-    {nummer:'4110',name:'Schornsteinfeger',typ:'aufwand',ust:19},
-    {nummer:'4200',name:'Verwaltervergütung',typ:'aufwand',ust:19,uml:false},{nummer:'4210',name:'Instandhaltung / Reparatur',typ:'aufwand',ust:19,uml:false},
-    {nummer:'4300',name:'Bankgebühren / Kontoführung',typ:'aufwand',uml:false}
+    // Anlagevermögen / Bestand
+    {nummer:'0085',name:'Grund und Boden',typ:'aktiv',kat:'anlage'},{nummer:'0090',name:'Gebäude',typ:'aktiv',kat:'anlage'},
+    {nummer:'0400',name:'Betriebsausstattung',typ:'aktiv',kat:'anlage'},
+    {nummer:'1000',name:'Kasse',typ:'aktiv',kat:'kasse'},{nummer:'1200',name:'Bank (Girokonto)',typ:'aktiv',kat:'bank'},
+    {nummer:'1210',name:'Bank Rücklagenkonto (WEG)',typ:'aktiv',kat:'bank'},{nummer:'1360',name:'Geldtransit',typ:'aktiv',kat:'transit'},
+    {nummer:'1400',name:'Forderungen aus Vermietung',typ:'aktiv',kat:'forderung'},{nummer:'1410',name:'Forderungen Hausgeld (WEG)',typ:'aktiv',kat:'forderung'},
+    {nummer:'1571',name:'Abziehbare Vorsteuer 7 %',typ:'aktiv',kat:'steuer'},{nummer:'1576',name:'Abziehbare Vorsteuer 19 %',typ:'aktiv',kat:'steuer'},
+    {nummer:'1590',name:'Durchlaufende Posten',typ:'aktiv',kat:'transit'},
+    // Verbindlichkeiten / Passiva
+    {nummer:'0630',name:'Darlehen Kreditinstitute',typ:'passiv',kat:'darlehen'},
+    {nummer:'1600',name:'Verbindlichkeiten aus Lieferungen und Leistungen',typ:'passiv',kat:'verbindlichkeit'},
+    {nummer:'1700',name:'Sonstige Verbindlichkeiten',typ:'passiv',kat:'verbindlichkeit'},{nummer:'1730',name:'Erhaltene Kautionen',typ:'passiv',kat:'kaution'},
+    {nummer:'1771',name:'Umsatzsteuer 7 %',typ:'passiv',kat:'steuer'},{nummer:'1776',name:'Umsatzsteuer 19 %',typ:'passiv',kat:'steuer'},
+    {nummer:'1900',name:'Instandhaltungsrücklage (WEG)',typ:'passiv',kat:'ruecklage'},
+    // Erträge
+    {nummer:'8100',name:'Mieterlöse Wohnungen (steuerfrei § 4 Nr. 12 UStG)',typ:'ertrag',kat:'miete',uml:false},
+    {nummer:'8110',name:'Nebenkosten-Vorauszahlungen',typ:'ertrag',kat:'nebenkosten'},{nummer:'8115',name:'Heizkosten-Vorauszahlungen',typ:'ertrag',kat:'nebenkosten'},
+    {nummer:'8120',name:'Erlöse Garagen / Stellplätze',typ:'ertrag',kat:'miete',uml:false},{nummer:'8130',name:'Nachzahlungen aus Nebenkostenabrechnung',typ:'ertrag',kat:'nebenkosten'},
+    {nummer:'8400',name:'Erlöse gewerbliche Vermietung 19 % USt',typ:'ertrag',kat:'miete',ust:19,uml:false},
+    {nummer:'8000',name:'Hausgeld-Vorauszahlungen (WEG)',typ:'ertrag',kat:'hausgeld'},{nummer:'8020',name:'Zuführung Instandhaltungsrücklage (WEG)',typ:'ertrag',kat:'hausgeld'},
+    {nummer:'2650',name:'Zinserträge',typ:'ertrag',kat:'sonstig',uml:false},{nummer:'2700',name:'Sonstige Erträge',typ:'ertrag',kat:'sonstig',uml:false},
+    // Umlagefähige Betriebskosten (§ 2 BetrKV)
+    {nummer:'4381',name:'Grundsteuer',typ:'aufwand',kat:'nebenkosten'},
+    {nummer:'4240',name:'Wasserversorgung',typ:'aufwand',kat:'nebenkosten',ust:7},{nummer:'4241',name:'Entwässerung / Abwasser',typ:'aufwand',kat:'nebenkosten'},
+    {nummer:'4230',name:'Heizung / Brennstoffe',typ:'aufwand',kat:'nebenkosten',ust:19},{nummer:'4235',name:'Warmwasser',typ:'aufwand',kat:'nebenkosten',ust:19},
+    {nummer:'4256',name:'Aufzug (Betrieb / Wartung)',typ:'aufwand',kat:'nebenkosten',ust:19},
+    {nummer:'4258',name:'Straßenreinigung / Winterdienst',typ:'aufwand',kat:'nebenkosten',ust:19},{nummer:'4244',name:'Müllabfuhr',typ:'aufwand',kat:'nebenkosten'},
+    {nummer:'4250',name:'Hausreinigung / Ungezieferbekämpfung',typ:'aufwand',kat:'nebenkosten',ust:19},{nummer:'4252',name:'Gartenpflege',typ:'aufwand',kat:'nebenkosten',ust:19},
+    {nummer:'4242',name:'Allgemeinstrom / Beleuchtung',typ:'aufwand',kat:'nebenkosten',ust:19},{nummer:'4254',name:'Schornsteinfeger',typ:'aufwand',kat:'nebenkosten',ust:19},
+    {nummer:'4361',name:'Gebäudeversicherung',typ:'aufwand',kat:'nebenkosten'},{nummer:'4362',name:'Haftpflichtversicherung',typ:'aufwand',kat:'nebenkosten'},
+    {nummer:'4780',name:'Hausmeister',typ:'aufwand',kat:'nebenkosten',ust:19},{nummer:'4785',name:'Sonstige Betriebskosten (§ 2 Nr. 17 BetrKV)',typ:'aufwand',kat:'nebenkosten',ust:19},
+    // Nicht umlagefähig
+    {nummer:'4805',name:'Reparaturen und Instandhaltung',typ:'aufwand',kat:'sonstig',ust:19,uml:false},
+    {nummer:'4790',name:'Verwaltervergütung / Hausverwaltung',typ:'aufwand',kat:'sonstig',ust:19,uml:false},
+    {nummer:'4985',name:'Leerstandskosten (Vermieteranteil)',typ:'aufwand',kat:'sonstig',ust:19,uml:false},
+    {nummer:'4822',name:'Abschreibungen Gebäude (AfA)',typ:'aufwand',kat:'afa',uml:false},{nummer:'4830',name:'Abschreibungen Sachanlagen',typ:'aufwand',kat:'afa',uml:false},
+    {nummer:'2120',name:'Darlehenszinsen',typ:'aufwand',kat:'sonstig',uml:false},{nummer:'4970',name:'Nebenkosten des Geldverkehrs',typ:'aufwand',kat:'sonstig',uml:false},
+    {nummer:'4955',name:'Steuerberatung / Buchführung',typ:'aufwand',kat:'sonstig',ust:19,uml:false},
+    {nummer:'4910',name:'Porto',typ:'aufwand',kat:'sonstig',uml:false},{nummer:'4920',name:'Telefon / Internet',typ:'aufwand',kat:'sonstig',ust:19,uml:false},
+    {nummer:'4930',name:'Bürobedarf',typ:'aufwand',kat:'sonstig',ust:19,uml:false},{nummer:'4900',name:'Sonstige betriebliche Aufwendungen',typ:'aufwand',kat:'sonstig',ust:19,uml:false}
   ],
   skr04:[
-    {nummer:'1600',name:'Kasse',typ:'aktiv'},{nummer:'1800',name:'Bank / WEG-Girokonto',typ:'aktiv'},
-    {nummer:'1810',name:'Rücklagenkonto (Bank)',typ:'aktiv'},{nummer:'1200',name:'Forderungen Hausgeld',typ:'aktiv'},
-    {nummer:'3300',name:'Verbindlichkeiten',typ:'passiv'},{nummer:'2900',name:'Instandhaltungsrücklage',typ:'passiv'},
-    {nummer:'4000',name:'Hausgeld-Vorauszahlungen',typ:'ertrag'},{nummer:'4100',name:'Zuführung Rücklage',typ:'ertrag'},{nummer:'4150',name:'Zinserträge',typ:'ertrag',uml:false},
-    {nummer:'6030',name:'Heizung / Brennstoffe',typ:'aufwand',ust:19},{nummer:'6040',name:'Wasser / Abwasser',typ:'aufwand',ust:7},
-    {nummer:'6050',name:'Müllabfuhr',typ:'aufwand'},{nummer:'6060',name:'Gebäudeversicherung',typ:'aufwand'},
-    {nummer:'6070',name:'Hausmeister',typ:'aufwand',ust:19},{nummer:'6080',name:'Allgemeinstrom',typ:'aufwand',ust:19},
-    {nummer:'6090',name:'Gartenpflege',typ:'aufwand',ust:19},{nummer:'6100',name:'Aufzug (Wartung)',typ:'aufwand',ust:19},
-    {nummer:'6110',name:'Schornsteinfeger',typ:'aufwand',ust:19},
-    {nummer:'6200',name:'Verwaltervergütung',typ:'aufwand',ust:19,uml:false},{nummer:'6210',name:'Instandhaltung / Reparatur',typ:'aufwand',ust:19,uml:false},
-    {nummer:'6300',name:'Bankgebühren / Kontoführung',typ:'aufwand',uml:false}
+    {nummer:'0215',name:'Grund und Boden',typ:'aktiv',kat:'anlage'},{nummer:'0240',name:'Gebäude',typ:'aktiv',kat:'anlage'},
+    {nummer:'0650',name:'Betriebsausstattung',typ:'aktiv',kat:'anlage'},
+    {nummer:'1600',name:'Kasse',typ:'aktiv',kat:'kasse'},{nummer:'1800',name:'Bank (Girokonto)',typ:'aktiv',kat:'bank'},
+    {nummer:'1810',name:'Bank Rücklagenkonto (WEG)',typ:'aktiv',kat:'bank'},{nummer:'1460',name:'Geldtransit',typ:'aktiv',kat:'transit'},
+    {nummer:'1200',name:'Forderungen aus Vermietung',typ:'aktiv',kat:'forderung'},{nummer:'1210',name:'Forderungen Hausgeld (WEG)',typ:'aktiv',kat:'forderung'},
+    {nummer:'1401',name:'Abziehbare Vorsteuer 7 %',typ:'aktiv',kat:'steuer'},{nummer:'1406',name:'Abziehbare Vorsteuer 19 %',typ:'aktiv',kat:'steuer'},
+    {nummer:'1590',name:'Durchlaufende Posten',typ:'aktiv',kat:'transit'},
+    {nummer:'3150',name:'Darlehen Kreditinstitute',typ:'passiv',kat:'darlehen'},
+    {nummer:'3300',name:'Verbindlichkeiten aus Lieferungen und Leistungen',typ:'passiv',kat:'verbindlichkeit'},
+    {nummer:'3500',name:'Sonstige Verbindlichkeiten',typ:'passiv',kat:'verbindlichkeit'},{nummer:'3520',name:'Erhaltene Kautionen',typ:'passiv',kat:'kaution'},
+    {nummer:'3801',name:'Umsatzsteuer 7 %',typ:'passiv',kat:'steuer'},{nummer:'3806',name:'Umsatzsteuer 19 %',typ:'passiv',kat:'steuer'},
+    {nummer:'2900',name:'Instandhaltungsrücklage (WEG)',typ:'passiv',kat:'ruecklage'},
+    {nummer:'4100',name:'Mieterlöse Wohnungen (steuerfrei § 4 Nr. 12 UStG)',typ:'ertrag',kat:'miete',uml:false},
+    {nummer:'4110',name:'Nebenkosten-Vorauszahlungen',typ:'ertrag',kat:'nebenkosten'},{nummer:'4115',name:'Heizkosten-Vorauszahlungen',typ:'ertrag',kat:'nebenkosten'},
+    {nummer:'4120',name:'Erlöse Garagen / Stellplätze',typ:'ertrag',kat:'miete',uml:false},{nummer:'4130',name:'Nachzahlungen aus Nebenkostenabrechnung',typ:'ertrag',kat:'nebenkosten'},
+    {nummer:'4400',name:'Erlöse gewerbliche Vermietung 19 % USt',typ:'ertrag',kat:'miete',ust:19,uml:false},
+    {nummer:'4000',name:'Hausgeld-Vorauszahlungen (WEG)',typ:'ertrag',kat:'hausgeld'},{nummer:'4020',name:'Zuführung Instandhaltungsrücklage (WEG)',typ:'ertrag',kat:'hausgeld'},
+    {nummer:'7100',name:'Zinserträge',typ:'ertrag',kat:'sonstig',uml:false},{nummer:'4830',name:'Sonstige Erträge',typ:'ertrag',kat:'sonstig',uml:false},
+    {nummer:'7680',name:'Grundsteuer',typ:'aufwand',kat:'nebenkosten'},
+    {nummer:'6325',name:'Wasserversorgung',typ:'aufwand',kat:'nebenkosten',ust:7},{nummer:'6326',name:'Entwässerung / Abwasser',typ:'aufwand',kat:'nebenkosten'},
+    {nummer:'6320',name:'Heizung / Brennstoffe',typ:'aufwand',kat:'nebenkosten',ust:19},{nummer:'6322',name:'Warmwasser',typ:'aufwand',kat:'nebenkosten',ust:19},
+    {nummer:'6336',name:'Aufzug (Betrieb / Wartung)',typ:'aufwand',kat:'nebenkosten',ust:19},
+    {nummer:'6338',name:'Straßenreinigung / Winterdienst',typ:'aufwand',kat:'nebenkosten',ust:19},{nummer:'6328',name:'Müllabfuhr',typ:'aufwand',kat:'nebenkosten'},
+    {nummer:'6330',name:'Hausreinigung / Ungezieferbekämpfung',typ:'aufwand',kat:'nebenkosten',ust:19},{nummer:'6332',name:'Gartenpflege',typ:'aufwand',kat:'nebenkosten',ust:19},
+    {nummer:'6327',name:'Allgemeinstrom / Beleuchtung',typ:'aufwand',kat:'nebenkosten',ust:19},{nummer:'6334',name:'Schornsteinfeger',typ:'aufwand',kat:'nebenkosten',ust:19},
+    {nummer:'6400',name:'Gebäudeversicherung',typ:'aufwand',kat:'nebenkosten'},{nummer:'6402',name:'Haftpflichtversicherung',typ:'aufwand',kat:'nebenkosten'},
+    {nummer:'6780',name:'Hausmeister',typ:'aufwand',kat:'nebenkosten',ust:19},{nummer:'6785',name:'Sonstige Betriebskosten (§ 2 Nr. 17 BetrKV)',typ:'aufwand',kat:'nebenkosten',ust:19},
+    {nummer:'6335',name:'Reparaturen und Instandhaltung',typ:'aufwand',kat:'sonstig',ust:19,uml:false},
+    {nummer:'6795',name:'Verwaltervergütung / Hausverwaltung',typ:'aufwand',kat:'sonstig',ust:19,uml:false},
+    {nummer:'6345',name:'Leerstandskosten (Vermieteranteil)',typ:'aufwand',kat:'sonstig',ust:19,uml:false},
+    {nummer:'6221',name:'Abschreibungen Gebäude (AfA)',typ:'aufwand',kat:'afa',uml:false},{nummer:'6220',name:'Abschreibungen Sachanlagen',typ:'aufwand',kat:'afa',uml:false},
+    {nummer:'7310',name:'Darlehenszinsen',typ:'aufwand',kat:'sonstig',uml:false},{nummer:'6855',name:'Nebenkosten des Geldverkehrs',typ:'aufwand',kat:'sonstig',uml:false},
+    {nummer:'6827',name:'Steuerberatung / Buchführung',typ:'aufwand',kat:'sonstig',ust:19,uml:false},
+    {nummer:'6800',name:'Porto',typ:'aufwand',kat:'sonstig',uml:false},{nummer:'6805',name:'Telefon / Internet',typ:'aufwand',kat:'sonstig',ust:19,uml:false},
+    {nummer:'6815',name:'Bürobedarf',typ:'aufwand',kat:'sonstig',ust:19,uml:false},{nummer:'6300',name:'Sonstige betriebliche Aufwendungen',typ:'aufwand',kat:'sonstig',ust:19,uml:false}
   ]
 };
 
@@ -11805,6 +12237,7 @@ async function buhaSaveBuchung(){
   if(!kontoExists(haben)){showToast('Gegenkonto „'+haben+'" gibt es nicht im Kontenrahmen.');document.getElementById('bu-haben').classList.add('err');return;}
   if(soll===haben){showToast('Konto und Gegenkonto müssen verschieden sein.');return;}
   if(!(brutto>0)){showToast('Bitte einen Betrag > 0 eingeben.');return;}
+  if(buhaWjGesperrt()){showToast('🔒 Das Wirtschaftsjahr '+buha.jahr+' ist abgeschlossen – über ⚙ Wirtschaftsjahre kannst du es wieder öffnen.');return;}
   // GoBD: in einen festgeschriebenen Zeitraum darf nicht nachgebucht werden
   var _bd=buhaVal('bu-datum')||todayStr();
   if(typeof buhaIstFestgeschrieben==='function' && buhaIstFestgeschrieben(_bd)){
@@ -15601,7 +16034,18 @@ function _wegcRestoreEmbedsExcept(keepId){
     });
   }catch(e){}
 }
-function _wegcRestoreBuha(){_wegcRestoreEmbedsExcept(null);} // externer Hook (showPage/openObjektDetail) – stellt ALLES wieder her
+function _wegcRestoreBuha(){ // externer Hook (showPage/openObjektDetail) – stellt ALLES wieder her
+  _wegcRestoreEmbedsExcept(null);
+  // Auch aus dem Objektbuchhaltungs-Cockpit zurückholen (Verlassen über die Sidebar statt „Zurück")
+  try{
+    var bc=document.getElementById('buhac-content'), n=document.getElementById('tab-content-buchhaltung');
+    if(bc&&n&&_buhaHomeParent&&n.parentNode===bc){
+      n.style.display='none'; _buhaHomeParent.appendChild(n);
+      var tb=document.getElementById('buha-tabbar'); if(tb)tb.style.display='flex';
+      var ak=document.getElementById('buha-altkopf'); if(ak)ak.style.display='flex';
+    }
+  }catch(e){}
+}
 async function wegcRenderBuchhaltung(c,subtab){
   if(!_wegcCur)return;
   if(!c)c=document.getElementById('wegc-content'); if(!c)return;

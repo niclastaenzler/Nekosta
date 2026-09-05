@@ -1824,6 +1824,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
               <div id="buha-pane-primanota" style="display:none"></div>
               <div id="buha-pane-arbeitskonto" style="display:none"></div>
               <div id="buha-pane-personen" style="display:none"></div>
+              <div id="buha-pane-auswertungen" style="display:none"></div>
               <!-- TAB: BUCHEN -->
               <div id="buha-pane-buchen">
                 <div id="buha-kpis" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.6rem;margin-bottom:1rem"></div>
@@ -11361,7 +11362,7 @@ var BUHAC_TITEL={
   arbeitskonto:['Arbeitskonto','Alle Buchungen eines Kontos mit laufendem Saldo'],
   personen:['Debitoren / Kreditoren','Personenkonten, offene Posten und Ausziffern'],
   bank:['Bank & Import','Kontoumsätze aus MT940 / CSV verbuchen'],
-  ausw:['Auswertungen','Saldenliste, EÜR, Kontenblatt'],
+  ausw:['Auswertungen','Saldenliste, EÜR, Umsatzsteuer, Nebenkosten – jede als PDF und CSV'],
   gewinn:['Gewinnermittlung','Einnahmen-Überschuss-Rechnung'],
   anlagen:['Anlagen / AfA','Anlagenverzeichnis und Abschreibungen'],
   konten:['Kontenrahmen','SKR03 / SKR04 und eigene Konten'],
@@ -11389,7 +11390,7 @@ function buhacGo(mod){
   var t=BUHAC_TITEL[mod]||[m.label,''];
   var h1=document.getElementById('buhac-titel'); if(h1)h1.textContent=t[0];
   var u=document.getElementById('buhac-untertitel'); if(u)u.textContent=t[1];
-  var pane=({buchen:'erfassen'})[mod]||mod;
+  var pane=({buchen:'erfassen',ausw:'auswertungen'})[mod]||mod;
   if(m.soon){
     pane='bald';
     var bald=document.getElementById('buha-pane-bald');
@@ -11622,21 +11623,29 @@ function buhaKontoKat(k){
 }
 
 // ── Übersicht: Summen des Wirtschaftsjahres (reine Rechenfunktion, testbar) ──
+// Kennzahlen der Übersicht. Erträge und Aufwendungen kommen aus derselben Aggregation
+// wie Saldenliste und EÜR (netto bei Buchungsschlüssel), die Geldbewegung bleibt brutto.
 function buhaUebersichtSummen(jahr){
   var kat={},typ={};
   (buha.konten||[]).forEach(function(k){kat[k.nummer]=buhaKontoKat(k);typ[k.nummer]=k.typ;});
   var s={miete:0,nebenkosten:0,sonstErtrag:0,hausgeld:0,aufwand:0,aufwandUml:0,geld:0,anzahl:0,storno:0,aufwandKonten:{},offen:0};
-  (buha.buchungen||[]).forEach(function(b){
-    if(jahr&&b.wirtschaftsjahr&&parseInt(b.wirtschaftsjahr,10)!==parseInt(jahr,10))return;
+  var liste=(buha.buchungen||[]).filter(function(b){
+    return !(jahr&&b.wirtschaftsjahr&&parseInt(b.wirtschaftsjahr,10)!==parseInt(jahr,10));
+  });
+  liste.forEach(function(b){
     if(b.ist_storno||b.storniert){s.storno++;return;}
     s.anzahl++; if(!b.festgeschrieben)s.offen++;
-    var bt=parseFloat(b.betrag)||0;
-    [[b.soll_konto,1],[b.haben_konto,-1]].forEach(function(p){
-      var nr=p[0]; if(!nr)return; var v=bt*p[1]; // Soll positiv, Haben negativ
-      if(typ[nr]==='ertrag'){ var e=-v; if(kat[nr]==='miete')s.miete+=e; else if(kat[nr]==='nebenkosten')s.nebenkosten+=e; else if(kat[nr]==='hausgeld')s.hausgeld+=e; else s.sonstErtrag+=e; }
-      else if(typ[nr]==='aufwand'){ s.aufwand+=v; if(kat[nr]==='nebenkosten')s.aufwandUml+=v; s.aufwandKonten[nr]=(s.aufwandKonten[nr]||0)+v; }
-      else if(kat[nr]==='bank'||kat[nr]==='kasse'){ s.geld+=v; }
-    });
+  });
+  var agg=buhaKontoAgg(liste);
+  Object.keys(agg).forEach(function(nr){
+    var a=agg[nr];
+    if(typ[nr]==='ertrag'){ var e=a.haben-a.soll;
+      if(kat[nr]==='miete')s.miete+=e; else if(kat[nr]==='nebenkosten')s.nebenkosten+=e;
+      else if(kat[nr]==='hausgeld')s.hausgeld+=e; else s.sonstErtrag+=e; }
+    else if(typ[nr]==='aufwand'){ var v=a.soll-a.haben;
+      s.aufwand+=v; if(kat[nr]==='nebenkosten')s.aufwandUml+=v;
+      if(Math.abs(v)>0.004)s.aufwandKonten[nr]=v; }
+    else if(kat[nr]==='bank'||kat[nr]==='kasse'){ s.geld+=a.soll-a.haben; }
   });
   return s;
 }
@@ -11712,20 +11721,16 @@ function renderBuhaCockpitKpis(){
 
 // ── Gewinnermittlung (EÜR) ──────────────────────────────────────────────
 // Erträge minus Aufwendungen des Wirtschaftsjahres, je Konto aufgeschlüsselt.
+// Einnahmen-Überschuss-Rechnung. Nutzt dieselbe Aggregation wie die Saldenliste:
+// Erfolgskonten tragen den Nettobetrag, die Umsatzsteuer läuft auf das Steuerkonto des
+// Buchungsschlüssels. Ohne Buchungsschlüssel ist netto gleich brutto – dann ändert sich nichts.
 function gewinnBerechnen(jahr){
   var typByNr={},nameByNr={};
   (buha.konten||[]).forEach(function(k){typByNr[k.nummer]=k.typ;nameByNr[k.nummer]=k.name;});
-  var agg={};
-  (buha.buchungen||[]).forEach(function(b){
-    if(b.storniert||b.ist_storno)return;
-    if(jahr&&b.wirtschaftsjahr&&parseInt(b.wirtschaftsjahr,10)!==parseInt(jahr,10))return;
-    var betrag=parseFloat(b.betrag)||0;
-    [[b.soll_konto,'soll'],[b.haben_konto,'haben']].forEach(function(p){
-      if(!p[0])return;
-      if(!agg[p[0]])agg[p[0]]={soll:0,haben:0};
-      agg[p[0]][p[1]]+=betrag;
-    });
+  var liste=(buha.buchungen||[]).filter(function(b){
+    return !(jahr&&b.wirtschaftsjahr&&parseInt(b.wirtschaftsjahr,10)!==parseInt(jahr,10));
   });
+  var agg=buhaKontoAgg(liste);
   var ein=[],aus=[],sumEin=0,sumAus=0;
   Object.keys(agg).sort(function(a,b){return String(a).localeCompare(String(b),undefined,{numeric:true});}).forEach(function(nr){
     var a=agg[nr],t=typByNr[nr];
@@ -11944,6 +11949,11 @@ async function buhaReload(){
     q = buha.ug ? q.eq('untergemeinschaft_id',buha.ug) : q.is('untergemeinschaft_id',null);
     var br=await q.order('buchungsdatum',{ascending:false}).order('created_at',{ascending:false});
     buha.buchungen=br.data||[];
+    // Für die Kostenstellen-Auswertung zusätzlich alle Buchungskreise des Jahres
+    if((buha.ugListe||[]).length){
+      var ar=await sb.from('weg_buchungen').select('*').eq('user_id',currentUser.id).eq('objekt_id',buha.objektId).eq('wirtschaftsjahr',buha.jahr);
+      buha.buchungenAlle=ar.data||buha.buchungen;
+    } else buha.buchungenAlle=buha.buchungen;
     await buhaStapelLaden();
   }catch(e){showToast('❌ '+(e.message||e));}
   fillKontoControls();
@@ -11956,13 +11966,14 @@ async function buhaReload(){
   if(_sicht('buha-pane-primanota'))renderBuhaPrimanota();
   if(_sicht('buha-pane-arbeitskonto'))renderBuhaArbeitskonto();
   if(_sicht('buha-pane-personen'))renderBuhaPersonen();
+  if(_sicht('buha-pane-auswertungen'))renderBuhaAuswertungen();
   var d=document.getElementById('bu-datum'); if(d&&!d.value)d.value=todayStr();
   var bd=document.getElementById('bu-belegdatum'); if(bd&&!bd.value)bd.value=todayStr();
   buhaCalcSteuer();
 }
 
 function buhaTab(t){
-  ['uebersicht','bald','erfassen','stapel','primanota','arbeitskonto','personen','buchen','hausgeld','op','konten','ausw','anlagen','gewinn','import','audit'].forEach(function(x){
+  ['uebersicht','bald','erfassen','stapel','primanota','arbeitskonto','personen','auswertungen','buchen','hausgeld','op','konten','ausw','anlagen','gewinn','import','audit'].forEach(function(x){
     var pane=document.getElementById('buha-pane-'+x); if(pane)pane.style.display=(x===t?'block':'none');
     var btn=document.getElementById('buha-tab-'+x);
     if(btn){var on=x===t;btn.style.color=on?'var(--p)':'var(--muted)';btn.style.fontWeight=on?'700':'400';btn.style.borderBottomColor=on?'var(--p)':'transparent';}
@@ -11973,6 +11984,7 @@ function buhaTab(t){
   if(t==='primanota')renderBuhaPrimanota();
   if(t==='arbeitskonto')renderBuhaArbeitskonto();
   if(t==='personen')renderBuhaPersonen();
+  if(t==='auswertungen')renderBuhaAuswertungen();
   if(t==='audit')renderBuhaAudit();
   if(t==='ausw')renderAuswertungen();
   if(t==='anlagen')renderAnlagen();
@@ -21471,6 +21483,337 @@ function buhaPersonenCsv(){
   buhaDownloadText(lines.join('\r\n'),x.titel.replace(/\s+/g,'_')+'_'+buha.jahr+'.csv');
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// AUSWERTUNGEN
+// Jede Auswertung liefert dieselbe Struktur {titel, spalten, zeilen, fuss, …}.
+// Daraus entstehen ohne Sonderfall die Bildschirmansicht, die CSV-Datei und
+// das PDF – und der Gesamtexport, der alle Auswertungen in ein PDF legt.
+// ═══════════════════════════════════════════════════════════════════════════
+var BUHA_AUSWERTUNGEN=[
+  {id:'susa',        label:'Summen- und Saldenliste', kurz:'Alle Konten mit Soll, Haben und Saldo – muss ausgeglichen sein'},
+  {id:'euer',        label:'Einnahmen-Überschuss-Rechnung', kurz:'Erträge minus Aufwendungen inklusive Abschreibungen'},
+  {id:'nebenkosten', label:'Nebenkosten-Übersicht',   kurz:'Umlagefähige Kosten gegen vereinnahmte Vorauszahlungen'},
+  {id:'ust',         label:'Umsatzsteuer',            kurz:'Vorsteuer und Umsatzsteuer je Buchungsschlüssel'},
+  {id:'journal',     label:'Journal',                 kurz:'Alle Buchungen des Wirtschaftsjahres in Datumsfolge'},
+  {id:'konten',      label:'Kontenblätter',           kurz:'Jedes bebuchte Konto mit laufendem Saldo'},
+  {id:'debitoren',   label:'Debitorenliste',          kurz:'Forderungen je Mieter, offene Posten'},
+  {id:'kreditoren',  label:'Kreditorenliste',         kurz:'Verbindlichkeiten je Lieferant, offene Posten'},
+  {id:'anlagen',     label:'Anlagenspiegel',          kurz:'Anschaffung, Abschreibung und Restwert je Anlage'},
+  {id:'kostenstellen',label:'Kostenstellen',          kurz:'Aufwand und Ertrag je Untergemeinschaft', nurWeg:true}
+];
+var _auswId='susa';
+function buhaAuswVerfuegbar(){
+  return BUHA_AUSWERTUNGEN.filter(function(a){ return !a.nurWeg||(buha.ugListe||[]).length>0; });
+}
+function buhaAuswKopf(){
+  var obj=(_buhaCockpitObj&&_buhaCockpitObj.name)||(aktivesObjekt&&aktivesObjekt.name)||'Objekt';
+  var kreis=(buha.ugListe||[]).length?buhaScopeLabel():'';
+  return {obj:obj,unter:obj+' · Wirtschaftsjahr '+buha.jahr+kreis};
+}
+// ── Summen- und Saldenliste ──
+function buhaAuswSusa(){
+  var agg=buhaKontoAgg();
+  var nm={},typ={}; (buha.konten||[]).forEach(function(k){nm[k.nummer]=k.name;typ[k.nummer]=k.typ;});
+  var nums=Object.keys(agg).sort(function(a,b){return String(a).localeCompare(String(b),undefined,{numeric:true});});
+  var sS=0,sH=0;
+  var zeilen=nums.map(function(nr){var a=agg[nr];sS+=a.soll;sH+=a.haben;
+    return [nr,nm[nr]||'(nicht im Kontenrahmen)',kontoTypLabel(typ[nr]||'')||'–',buhaEuro(a.soll),buhaEuro(a.haben),buhaEuro(a.soll-a.haben)];});
+  var diff=buhaSplitRund(sS-sH);
+  return {titel:'Summen- und Saldenliste',
+    spalten:[{label:'Konto',w:20},{label:'Bezeichnung',w:0},{label:'Typ',w:22},{label:'Soll',w:28,align:'right'},{label:'Haben',w:28,align:'right'},{label:'Saldo',w:28,align:'right'}],
+    zeilen:zeilen,fuss:['','Summe · '+nums.length+' Konten','',buhaEuro(sS),buhaEuro(sH),Math.abs(diff)<0.005?'ausgeglichen ✓':buhaEuro(diff)],
+    warnung:Math.abs(diff)>=0.005?'Soll und Haben weichen um '+buhaEuro(diff)+' voneinander ab – bitte die Buchungen prüfen.':'',
+    hinweis:'Erfolgskonten netto, Gegenkonten brutto, die Umsatzsteuer auf dem Steuerkonto des Buchungsschlüssels. Stornopaare sind herausgerechnet.'};
+}
+// ── Einnahmen-Überschuss-Rechnung ──
+function buhaAuswEuer(){
+  var g=gewinnBerechnen(buha.jahr);
+  var zeilen=g.ein.map(function(x){return ['Einnahme',x.nr,x.name||'',buhaEuro(x.betrag)];});
+  zeilen.push(['Summe','','Einnahmen',buhaEuro(g.sumEin)]);
+  g.aus.forEach(function(x){ zeilen.push(['Ausgabe',x.nr,x.name||'',buhaEuro(x.betrag)]); });
+  zeilen.push(['Summe','','Ausgaben',buhaEuro(g.sumAus)]);
+  return {titel:'Einnahmen-Überschuss-Rechnung',
+    spalten:[{label:'Art',w:24},{label:'Konto',w:20},{label:'Bezeichnung',w:0},{label:'Betrag',w:32,align:'right'}],
+    zeilen:zeilen,fuss:['','','Ergebnis '+buha.jahr,buhaEuro(g.ergebnis)],
+    hinweis:'Ermittlung nach § 4 Abs. 3 EStG aus den gebuchten Erlös- und Aufwandskonten'+(g.afa>0.004?', inklusive '+buhaEuro(g.afa)+' Abschreibungen aus dem Anlagenverzeichnis':'')+'. Private Anteile und periodenfremde Abgrenzungen sind nicht automatisch berücksichtigt.'};
+}
+// ── Nebenkosten-Übersicht: umlagefähige Kosten gegen vereinnahmte Vorauszahlungen ──
+function buhaAuswNebenkosten(){
+  var agg=buhaKontoAgg();
+  var nm={},typ={}; (buha.konten||[]).forEach(function(k){nm[k.nummer]=k.name;typ[k.nummer]=k.typ;});
+  var uml=[],nichtUml=[],ein=[],sumU=0,sumN=0,sumE=0;
+  Object.keys(agg).sort(function(a,b){return String(a).localeCompare(String(b),undefined,{numeric:true});}).forEach(function(nr){
+    var a=agg[nr],kat=buhaKontoKat(nr);
+    if(typ[nr]==='aufwand'){
+      var v=buhaSplitRund(a.soll-a.haben); if(Math.abs(v)<0.005)return;
+      if(kat==='nebenkosten'){uml.push([nr,nm[nr]||'',v]);sumU+=v;} else {nichtUml.push([nr,nm[nr]||'',v]);sumN+=v;}
+    } else if(typ[nr]==='ertrag'&&kat==='nebenkosten'){
+      var e=buhaSplitRund(a.haben-a.soll); if(Math.abs(e)<0.005)return;
+      ein.push([nr,nm[nr]||'',e]); sumE+=e;
+    }
+  });
+  sumU=buhaSplitRund(sumU); sumN=buhaSplitRund(sumN); sumE=buhaSplitRund(sumE);
+  var zeilen=uml.map(function(r){return ['umlagefähig',r[0],r[1],buhaEuro(r[2])];});
+  zeilen.push(['Summe','','umlagefähige Kosten',buhaEuro(sumU)]);
+  ein.forEach(function(r){ zeilen.push(['vereinnahmt',r[0],r[1],buhaEuro(r[2])]); });
+  zeilen.push(['Summe','','vereinnahmte Nebenkosten',buhaEuro(sumE)]);
+  nichtUml.forEach(function(r){ zeilen.push(['nicht umlagefähig',r[0],r[1],buhaEuro(r[2])]); });
+  zeilen.push(['Summe','','nicht umlagefähige Kosten',buhaEuro(sumN)]);
+  var diff=buhaSplitRund(sumE-sumU);
+  var warn='';
+  if(!uml.length&&!ein.length)warn='Es sind weder umlagefähige Kosten noch Nebenkosten-Vorauszahlungen gebucht.';
+  else if(!uml.length)warn='Es sind Vorauszahlungen vereinnahmt, aber keine umlagefähigen Kosten gebucht.';
+  else if(!ein.length)warn='Es sind umlagefähige Kosten gebucht, aber keine Nebenkosten-Vorauszahlungen vereinnahmt.';
+  return {titel:'Nebenkosten-Übersicht',
+    spalten:[{label:'Bereich',w:34},{label:'Konto',w:20},{label:'Bezeichnung',w:0},{label:'Betrag',w:32,align:'right'}],
+    zeilen:zeilen,
+    fuss:['','','Vereinnahmt minus umlagefähige Kosten',buhaEuro(diff)],
+    warnung:warn,
+    kennzahlen:{umlagefaehig:sumU,vereinnahmt:sumE,nichtUmlagefaehig:sumN,differenz:diff},
+    hinweis:'Ein positiver Betrag bedeutet, dass mehr Vorauszahlungen vereinnahmt als umlagefähige Kosten gebucht wurden (Guthaben der Mieter), ein negativer Betrag deutet auf eine Nachzahlung hin. Die endgültige Verteilung erfolgt in der Nebenkostenabrechnung.'};
+}
+// ── Umsatzsteuer je Buchungsschlüssel ──
+function buhaAuswUst(){
+  var defs={}; buhaSchluesselListe().forEach(function(s){defs[s.schluessel]=s;});
+  var agg={};
+  (buha.buchungen||[]).forEach(function(b){
+    if(b.storniert||b.ist_storno)return;
+    var sk=String(b.schluessel||b.steuer_kz||'0');
+    var def=defs[sk]||buhaSchluesselDef(sk);
+    if(!def||!(def.satz>0))return;
+    var brutto=parseFloat(b.betrag)||0;
+    var netto=parseFloat(b.netto); if(!(netto>0))netto=def.satz>0?brutto/(1+def.satz/100):brutto;
+    var steuer=parseFloat(b.steuer); if(!(steuer>0))steuer=brutto-netto;
+    var o=agg[sk]=agg[sk]||{def:def,netto:0,steuer:0,brutto:0,anzahl:0};
+    o.netto+=netto; o.steuer+=steuer; o.brutto+=brutto; o.anzahl++;
+  });
+  var keys=Object.keys(agg).sort();
+  var vor=0,ust=0;
+  var zeilen=keys.map(function(sk){var o=agg[sk];
+    if(o.def.art==='vorsteuer')vor+=o.steuer; else if(o.def.art==='umsatzsteuer')ust+=o.steuer;
+    return [sk,o.def.bezeichnung,o.def.satz+' %',o.def.steuerkonto||'–',String(o.anzahl),buhaEuro(o.netto),buhaEuro(o.steuer),buhaEuro(o.brutto)];});
+  vor=buhaSplitRund(vor); ust=buhaSplitRund(ust);
+  var zahllast=buhaSplitRund(ust-vor);
+  return {titel:'Umsatzsteuer',
+    spalten:[{label:'BU',w:12},{label:'Bezeichnung',w:0},{label:'Satz',w:16,align:'right'},{label:'Steuerkonto',w:24},{label:'Anzahl',w:18,align:'right'},{label:'Netto',w:27,align:'right'},{label:'Steuer',w:27,align:'right'},{label:'Brutto',w:27,align:'right'}],
+    zeilen:zeilen,
+    fuss:['','Umsatzsteuer '+buhaEuro(ust)+' abzüglich Vorsteuer '+buhaEuro(vor),'','','','',(zahllast>=0?'Zahllast':'Erstattung'),buhaEuro(Math.abs(zahllast))],
+    kennzahlen:{vorsteuer:vor,umsatzsteuer:ust,zahllast:zahllast},
+    hinweis:'Nur Buchungen mit einem Buchungsschlüssel größer 0. Bei steuerfreier Vermietung nach § 4 Nr. 12 UStG bleibt diese Auswertung leer.'};
+}
+// ── Journal ──
+function buhaAuswJournal(){
+  var nm={}; (buha.konten||[]).forEach(function(k){nm[k.nummer]=k.name;});
+  var list=(buha.buchungen||[]).slice().sort(function(a,b){
+    return String(a.buchungsdatum||'').localeCompare(String(b.buchungsdatum||''))||(parseInt(a.primanota_nr,10)||0)-(parseInt(b.primanota_nr,10)||0);});
+  var sum=0,n=0;
+  var zeilen=list.map(function(b){
+    var stor=b.storniert||b.ist_storno; if(!stor){sum+=parseFloat(b.betrag)||0;n++;}
+    return [String(b.primanota_nr||''),fmtDatum(String(b.buchungsdatum||'').slice(0,10)),b.belegnr||'',
+      (b.text||'')+buhaSplitLabel(b),(b.soll_konto||''),(b.haben_konto||''),
+      (b.schluessel&&b.schluessel!=='0')?b.schluessel:'',buhaEuro(b.betrag),
+      b.ist_storno?'Storno':b.storniert?'storniert':(b.festgeschrieben?'festgeschr.':'')];});
+  return {titel:'Journal',quer:true,
+    spalten:[{label:'PN',w:11},{label:'Datum',w:20},{label:'Beleg',w:22},{label:'Buchungstext',w:0},{label:'Soll',w:18},{label:'Haben',w:18},{label:'BU',w:10},{label:'Betrag',w:26,align:'right'},{label:'Status',w:22}],
+    zeilen:zeilen,fuss:['','','',n+' Buchungen ohne Storni','','','',buhaEuro(sum),''],
+    hinweis:'Alle Buchungen des Wirtschaftsjahres in Datumsfolge. Stornierte Buchungen und Gegenbuchungen bleiben enthalten, sind aber gekennzeichnet und in der Summe nicht berücksichtigt.'};
+}
+// ── Kontenblätter: jedes bebuchte Konto nacheinander ──
+function buhaAuswKontenblaetter(){
+  var konten=buhaBebuchteKonten();
+  var zeilen=[],sS=0,sH=0;
+  konten.forEach(function(nr){
+    var d=buhaKontoZeilen(nr);
+    zeilen.push(['— '+nr+' '+(kontoName(nr)||''),'','','','','']);
+    d.zeilen.forEach(function(z){
+      zeilen.push(['',fmtDatum(String(z.b.buchungsdatum||'').slice(0,10)),(z.b.text||'')+(z.storniert?' [storniert]':''),
+        (z.gegen||''),z.soll?buhaEuro(z.soll):'',z.haben?buhaEuro(z.haben):'']);
+    });
+    zeilen.push(['','','Saldo '+nr,'',buhaEuro(d.soll),buhaEuro(d.haben)]);
+    sS+=d.soll; sH+=d.haben;
+  });
+  return {titel:'Kontenblätter',
+    spalten:[{label:'Konto',w:34},{label:'Datum',w:20},{label:'Buchungstext',w:0},{label:'Gegenkonto',w:22},{label:'Soll',w:26,align:'right'},{label:'Haben',w:26,align:'right'}],
+    zeilen:zeilen,fuss:['','',konten.length+' Konten','',buhaEuro(sS),buhaEuro(sH)],
+    hinweis:'Alle im Wirtschaftsjahr bebuchten Konten mit ihren Bewegungen. Einzelne Konten mit laufendem Saldo findest du im Modul Arbeitskonto.'};
+}
+// ── Anlagenspiegel ──
+function buhaAuswAnlagen(){
+  var liste=(typeof anlagenListe!=='undefined'?anlagenListe:[])||[];
+  var jahr=parseInt(buha.jahr,10);
+  var sAk=0,sAfa=0,sRest=0;
+  var zeilen=liste.filter(function(a){return a.aktiv!==false;}).map(function(a){
+    var r=anlageJahresAfa(a,jahr);
+    var ak=parseFloat(a.anschaffungswert)||0;
+    sAk+=ak; sAfa+=r.afa; sRest+=r.rest;
+    return [a.bezeichnung||'',a.anschaffungsdatum?fmtDatum(String(a.anschaffungsdatum).slice(0,10)):'',
+      buhaEuro(ak),buhaEuro(parseFloat(a.grundstuecksanteil)||0),buhaEuro(r.basis||0),
+      (parseFloat(a.afa_satz)||0)?((parseFloat(a.afa_satz)||0)+' %'):((a.nutzungsdauer?a.nutzungsdauer+' J.':'–')),
+      buhaEuro(r.afa),buhaEuro(r.kumuliert||0),buhaEuro(r.rest)];});
+  return {titel:'Anlagenspiegel',quer:true,
+    spalten:[{label:'Anlage',w:0},{label:'Anschaffung',w:24},{label:'Anschaffungswert',w:28,align:'right'},{label:'Grund und Boden',w:28,align:'right'},{label:'AfA-Basis',w:26,align:'right'},{label:'Satz / ND',w:20,align:'right'},{label:'AfA '+jahr,w:26,align:'right'},{label:'kumuliert',w:26,align:'right'},{label:'Restwert',w:26,align:'right'}],
+    zeilen:zeilen,fuss:[zeilen.length+' Anlagen','',buhaEuro(sAk),'','','',buhaEuro(sAfa),'',buhaEuro(sRest)],
+    hinweis:'Lineare Abschreibung, im Anschaffungsjahr monatsgenau (§ 7 EStG). Der Grundstücksanteil wird nicht abgeschrieben.'};
+}
+// ── Kostenstellen je Untergemeinschaft ──
+function buhaAuswKostenstellen(){
+  var typ={}; (buha.konten||[]).forEach(function(k){typ[k.nummer]=k.typ;});
+  var byUg={};
+  (buha.buchungenAlle||buha.buchungen||[]).forEach(function(b){
+    if(b.storniert||b.ist_storno)return;
+    var key=b.untergemeinschaft_id||'__gesamt__';
+    var o=byUg[key]=byUg[key]||{aufwand:0,ertrag:0,anzahl:0};
+    var bt=parseFloat(b.betrag)||0; o.anzahl++;
+    if(typ[b.soll_konto]==='aufwand')o.aufwand+=bt;
+    if(typ[b.haben_konto]==='aufwand')o.aufwand-=bt;
+    if(typ[b.haben_konto]==='ertrag')o.ertrag+=bt;
+    if(typ[b.soll_konto]==='ertrag')o.ertrag-=bt;
+  });
+  var nameOf=function(key){ if(key==='__gesamt__')return 'Gesamt (gemeinschaftlich)';
+    var u=(buha.ugListe||[]).filter(function(x){return x.id===key;})[0]; return u?u.name:'(gelöschte Untergemeinschaft)'; };
+  var keys=[]; if(byUg['__gesamt__'])keys.push('__gesamt__');
+  (buha.ugListe||[]).forEach(function(u){ if(byUg[u.id])keys.push(u.id); });
+  Object.keys(byUg).forEach(function(k){ if(keys.indexOf(k)<0)keys.push(k); });
+  var tA=0,tE=0;
+  var zeilen=keys.map(function(k){var o=byUg[k];tA+=o.aufwand;tE+=o.ertrag;
+    return [nameOf(k),String(o.anzahl),buhaEuro(o.aufwand),buhaEuro(o.ertrag),buhaEuro(o.ertrag-o.aufwand)];});
+  return {titel:'Kostenstellen je Untergemeinschaft',
+    spalten:[{label:'Untergemeinschaft',w:0},{label:'Buchungen',w:24,align:'right'},{label:'Aufwand',w:30,align:'right'},{label:'Ertrag',w:30,align:'right'},{label:'Saldo',w:30,align:'right'}],
+    zeilen:zeilen,fuss:['Gesamt','',buhaEuro(tA),buhaEuro(tE),buhaEuro(tE-tA)],
+    hinweis:'Über alle Buchungskreise des Wirtschaftsjahres, unabhängig vom oben gewählten Buchungskreis.'};
+}
+// ── Debitoren / Kreditoren als Auswertung ──
+function buhaAuswPersonen(typ){
+  var alt=_pkTyp; _pkTyp=typ;
+  var x=buhaPersonenDaten();
+  _pkTyp=alt;
+  var istK=typ==='kreditor';
+  return {titel:x.titel,
+    spalten:[{label:'Konto',w:20},{label:'Name',w:0},{label:'Soll',w:27,align:'right'},{label:'Haben',w:27,align:'right'},{label:'Offen',w:27,align:'right'},{label:'davon NK',w:25,align:'right'},{label:'Ältester',w:23}],
+    zeilen:x.rows,fuss:['','Summe · '+x.stats.length+' Konten','','',buhaEuro(x.summeOffen),buhaEuro(x.summeNk),''],
+    warnung:x.stats.length?'':'Es sind noch keine '+(istK?'Kreditoren':'Debitoren')+' angelegt.',
+    hinweis:'Offen = Summe der noch nicht ausgezifferten Buchungen auf dem Personenkonto.'};
+}
+// Zentrale Datenbeschaffung: liefert für jede Auswertung dieselbe Struktur
+function buhaAuswDaten(id){
+  var d;
+  if(id==='susa')d=buhaAuswSusa();
+  else if(id==='euer')d=buhaAuswEuer();
+  else if(id==='nebenkosten')d=buhaAuswNebenkosten();
+  else if(id==='ust')d=buhaAuswUst();
+  else if(id==='journal')d=buhaAuswJournal();
+  else if(id==='konten')d=buhaAuswKontenblaetter();
+  else if(id==='anlagen')d=buhaAuswAnlagen();
+  else if(id==='kostenstellen')d=buhaAuswKostenstellen();
+  else if(id==='debitoren')d=buhaAuswPersonen('debitor');
+  else if(id==='kreditoren')d=buhaAuswPersonen('kreditor');
+  else d=buhaAuswSusa();
+  var k=buhaAuswKopf();
+  d.id=id; d.obj=k.obj; d.unter=k.unter;
+  return d;
+}
+function buhaAuswertungWahl(id){ _auswId=id; renderBuhaAuswertungen(); }
+function buhaAuswTabelleHtml(d){
+  if(!d.zeilen.length)return '<div style="padding:2.2rem;text-align:center;color:var(--muted);font-size:.85rem">Für diese Auswertung liegen im Wirtschaftsjahr '+buha.jahr+' keine Daten vor.</div>';
+  var ar=function(c){return c&&c.align==='right';};
+  return '<table style="width:100%;border-collapse:collapse;font-size:.8rem;min-width:'+Math.max(560,d.spalten.length*115)+'px"><thead><tr style="border-bottom:2px solid var(--border)">'
+    +d.spalten.map(function(c){return '<th style="text-align:'+(ar(c)?'right':'left')+';padding:.45rem .6rem;font-size:.62rem;text-transform:uppercase;color:var(--muted);white-space:nowrap">'+escapeHtml(c.label)+'</th>';}).join('')
+    +'</tr></thead><tbody>'
+    +d.zeilen.map(function(z){
+      var gruppe=/^—/.test(String(z[0]||'')), summe=String(z[0]||'')==='Summe';
+      return '<tr style="border-bottom:1px solid var(--border);'+(gruppe?'background:#f3f4f6;font-weight:700':(summe?'font-weight:700;background:#fafafa':''))+'">'
+        +z.map(function(v,i){var c=d.spalten[i];
+          return '<td style="padding:.35rem .6rem;'+(ar(c)?'text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap':'')+'">'+escapeHtml(v==null?'':v)+'</td>';}).join('')
+      +'</tr>';}).join('')
+    +(d.fuss?'<tr style="background:var(--p-light);font-weight:800"><td colspan="'+d.spalten.length+'" style="padding:0"><table style="width:100%;border-collapse:collapse"><tr>'
+      +d.fuss.map(function(v,i){var c=d.spalten[i];
+        return '<td style="padding:.5rem .6rem;'+(ar(c)?'text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap':'')+'">'+escapeHtml(v==null?'':v)+'</td>';}).join('')
+      +'</tr></table></td></tr>':'')
+    +'</tbody></table>';
+}
+function renderBuhaAuswertungen(){
+  var c=document.getElementById('buha-pane-auswertungen'); if(!c)return;
+  var liste=buhaAuswVerfuegbar();
+  if(!liste.some(function(a){return a.id===_auswId;}))_auswId=liste[0].id;
+  var d=buhaAuswDaten(_auswId);
+  var h='<div style="display:grid;grid-template-columns:minmax(0,240px) minmax(0,1fr);gap:1.1rem;align-items:start">';
+  // Katalog
+  h+='<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:.5rem;position:sticky;top:.5rem">'
+    +liste.map(function(a){var on=a.id===_auswId;
+      return '<button onclick="buhaAuswertungWahl(\''+a.id+'\')" title="'+escapeHtml(a.kurz)+'" style="display:block;width:100%;text-align:left;border:none;cursor:pointer;font-family:var(--ff);font-size:.82rem;padding:.45rem .6rem;border-radius:8px;background:'+(on?'#0e7c7b':'transparent')+';color:'+(on?'#fff':'#374151')+';font-weight:'+(on?'700':'500')+';margin-bottom:1px">'+escapeHtml(a.label)+'</button>';}).join('')
+    +'<div style="border-top:1px solid var(--border);margin-top:.5rem;padding-top:.5rem">'
+    +'<button class="btn-small" style="width:100%;font-size:.74rem" onclick="buhaAuswGesamtPdf()">📚 Gesamtexport als PDF</button>'
+    +'<button class="btn-small" style="width:100%;font-size:.74rem;margin-top:.35rem" onclick="buhaAuswGesamtCsv()">📦 Alle als CSV</button></div>'
+    +'</div>';
+  // Inhalt
+  h+='<div style="min-width:0">'
+    +'<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:.8rem;flex-wrap:wrap;margin-bottom:.7rem">'
+    +'<div><div style="font-size:1.05rem;font-weight:800">'+escapeHtml(d.titel)+'</div>'
+    +'<div style="font-size:.78rem;color:var(--muted)">'+escapeHtml(d.unter)+'</div></div>'
+    +'<span style="display:inline-flex;gap:.4rem;white-space:nowrap">'
+    +'<button class="btn-small" onclick="buhaAuswertungCsv()"><span class="btn-ic" data-icon="download"></span> CSV</button>'
+    +'<button class="btn-primary" style="font-size:.8rem;padding:.4rem .9rem" onclick="buhaAuswertungPdf()"><span class="btn-ic" data-icon="printer"></span> PDF</button></span>'
+    +'</div>';
+  if(d.warnung)h+='<div style="background:#fff8e6;border:1px solid #f0d9a8;border-radius:10px;padding:.7rem .9rem;margin-bottom:.7rem;font-size:.82rem;color:#9a6700">⚠️ '+escapeHtml(d.warnung)+'</div>';
+  if(d.id==='nebenkosten'&&d.kennzahlen){
+    var kk=d.kennzahlen;
+    var kar=function(l,v,col){return '<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:.65rem .9rem"><div style="font-size:.6rem;font-weight:700;text-transform:uppercase;color:var(--muted)">'+l+'</div><div style="font-size:1.02rem;font-weight:800;color:'+(col||'var(--text)')+'">'+buhaEuro(v)+'</div></div>';};
+    h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.6rem;margin-bottom:.8rem">'
+      +kar('Umlagefähige Kosten',kk.umlagefaehig,'#c0392b')+kar('Vereinnahmt',kk.vereinnahmt,'#1a7a4a')
+      +kar('Differenz',kk.differenz,kk.differenz>=0?'#1a7a4a':'#c0392b')+kar('Nicht umlagefähig',kk.nichtUmlagefaehig,'var(--muted)')+'</div>';
+  }
+  h+='<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow-x:auto">'+buhaAuswTabelleHtml(d)+'</div>'
+    +(d.hinweis?'<div style="font-size:.72rem;color:var(--muted);margin-top:.6rem;line-height:1.55">'+escapeHtml(d.hinweis)+'</div>':'')
+    +'</div></div>';
+  c.innerHTML=h; applyIcons(c);
+}
+function _auswDateiname(d,endung){
+  return String(d.titel).replace(/[^a-zA-Z0-9äöüÄÖÜß]+/g,'_')+'_'+String(d.obj).replace(/[^a-zA-Z0-9]+/g,'_')+'_'+buha.jahr+'.'+endung;
+}
+function buhaAuswertungPdf(id,action){
+  var d=buhaAuswDaten(id||_auswId);
+  if(!d.zeilen.length){showToast('Für diese Auswertung liegen keine Daten vor.');return;}
+  var doc=buhaPdfTabelle({titel:d.titel,untertitel:d.unter,quer:!!d.quer,spalten:d.spalten,zeilen:d.zeilen,fuss:d.fuss,
+    hinweis:(d.warnung?'Hinweis: '+d.warnung+' ':'')+(d.hinweis||'')});
+  if(!doc)return;
+  showDoc(doc,_auswDateiname(d,'pdf'),action||'vorschau');
+}
+function buhaAuswertungCsv(id){
+  var d=buhaAuswDaten(id||_auswId);
+  if(!d.zeilen.length){showToast('Für diese Auswertung liegen keine Daten vor.');return;}
+  buhaDownloadText(buhaAuswCsvText(d),_auswDateiname(d,'csv'));
+}
+function buhaAuswCsvText(d){
+  var esc=function(v){v=(v==null?'':''+v); return /[";\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
+  var zeilen=[d.spalten.map(function(c){return esc(c.label);}).join(';')];
+  d.zeilen.forEach(function(z){ zeilen.push(z.map(esc).join(';')); });
+  if(d.fuss)zeilen.push(d.fuss.map(esc).join(';'));
+  return zeilen.join('\r\n');
+}
+// Gesamtexport: alle Auswertungen mit Daten in einem PDF, jede auf eigener Seite
+function buhaAuswGesamtPdf(action){
+  var liste=buhaAuswVerfuegbar().map(function(a){return buhaAuswDaten(a.id);}).filter(function(d){return d.zeilen.length;});
+  if(!liste.length){showToast('Es liegen noch keine Daten für einen Gesamtexport vor.');return;}
+  var doc=null;
+  for(var i=0;i<liste.length;i++){
+    var d=liste[i];
+    doc=buhaPdfTabelle({doc:doc,titel:d.titel,untertitel:d.unter,quer:true,spalten:d.spalten,zeilen:d.zeilen,fuss:d.fuss,
+      hinweis:(d.warnung?'Hinweis: '+d.warnung+' ':'')+(d.hinweis||'')});
+    if(!doc)return;
+  }
+  var k=buhaAuswKopf();
+  showDoc(doc,'Auswertungen_'+String(k.obj).replace(/[^a-zA-Z0-9]+/g,'_')+'_'+buha.jahr+'.pdf',action||'vorschau');
+  showToast('📚 '+liste.length+' Auswertungen exportiert');
+}
+function buhaAuswGesamtCsv(){
+  var liste=buhaAuswVerfuegbar().map(function(a){return buhaAuswDaten(a.id);}).filter(function(d){return d.zeilen.length;});
+  if(!liste.length){showToast('Es liegen noch keine Daten für einen Gesamtexport vor.');return;}
+  var k=buhaAuswKopf();
+  var text=liste.map(function(d){return '# '+d.titel+'\r\n# '+d.unter+'\r\n'+buhaAuswCsvText(d);}).join('\r\n\r\n');
+  buhaDownloadText(text,'Auswertungen_'+String(k.obj).replace(/[^a-zA-Z0-9]+/g,'_')+'_'+buha.jahr+'.csv');
+  showToast('📦 '+liste.length+' Auswertungen exportiert');
+}
+
 // ── Primanota: Buchungen eines Stapels in Erfassungsreihenfolge ───────────
 function buhaPrimanotaZeilen(stapelId){
   return (buha.buchungen||[]).filter(function(b){return (b.stapel_id||null)===(stapelId||null);})
@@ -21559,7 +21902,10 @@ function buhaDownloadText(text,fname,mime){
 function buhaPdfTabelle(opts){
   try{
     var jsPDF=window.jspdf.jsPDF;
-    var doc=new jsPDF({orientation:opts.quer?'landscape':'portrait',unit:'mm',format:'a4'});
+    // opts.doc hängt die Tabelle als neue Seite an ein bestehendes Dokument an (Gesamtexport)
+    var doc=opts.doc;
+    if(doc)doc.addPage('a4',opts.quer?'landscape':'portrait');
+    else doc=new jsPDF({orientation:opts.quer?'landscape':'portrait',unit:'mm',format:'a4'});
     var W=opts.quer?297:210, H=opts.quer?210:297, L=14, R=14, y=16;
     var sm=(typeof stammdaten!=='undefined'&&stammdaten)||{};
     var sf=function(sz,st,g){doc.setFontSize(sz);doc.setFont('helvetica',st||'normal');doc.setTextColor(g==null?35:g,g==null?35:g,g==null?40:g);};

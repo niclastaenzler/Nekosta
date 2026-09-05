@@ -1924,6 +1924,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
               <div id="buha-pane-konten" style="display:none">
                 <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.8rem">
                   <button class="btn-primary" onclick="openKontoModal()"><span class="btn-ic" data-icon="plus"></span> Konto anlegen</button>
+                  <button class="btn-secondary" id="buha-kat-btn" onclick="buhaKategorienDialog()" title="Konten ohne hinterlegte Kategorie automatisch einordnen"><span class="btn-ic" data-icon="check"></span> Kategorien zuordnen</button>
                   <button class="btn-secondary" onclick="seedKontenrahmen('skr03')"><span class="btn-ic" data-icon="download"></span> SKR03-Vorlage</button>
                   <button class="btn-secondary" onclick="seedKontenrahmen('skr04')"><span class="btn-ic" data-icon="download"></span> SKR04-Vorlage</button>
                   <button class="btn-secondary" onclick="openBksModal()"><span class="btn-ic" data-icon="gear"></span> Buchungsschlüssel</button>
@@ -9073,9 +9074,12 @@ function buhaNkGegentests(erg,stand){
       text:eur(vzAbr)+' angesetzt, '+eur(stand.summeVereinnahmt)+' gebucht.'});
   }
   // 6) Konten, deren Kategorie nur automatisch bestimmt wurde
-  if(stand.kontenOhneKategorie)out.push({level:'warn',titel:'Konten ohne hinterlegte Kategorie',
-    text:stand.ohneKategorie.map(function(k){return k.nr+' '+k.name+' → '+(k.uml?'umlagefähig':'nicht umlagefähig');}).join(', ')
-      +' – hier ist im Kontenrahmen nicht hinterlegt, ob die Kosten umlagefähig sind. NEKOSTA hat anhand von Bezeichnung und Umlage-Häkchen automatisch eingestuft. Bitte im Kontenrahmen bestätigen, sonst legst du womöglich Kosten um, die dem Mieter nicht zustehen.'});
+  if(stand.kontenOhneKategorie){
+    var liste=stand.ohneKategorie.map(function(k){return k.nr+' '+k.name+' → '+(k.uml?'umlagefähig':'nicht umlagefähig');});
+    var gezeigt=liste.slice(0,6).join(', ')+(liste.length>6?' und '+(liste.length-6)+' weitere':'');
+    out.push({level:'warn',titel:'Konten ohne hinterlegte Kategorie',
+      text:gezeigt+' – hier ist im Kontenrahmen nicht hinterlegt, ob die Kosten umlagefähig sind. NEKOSTA hat anhand von Bezeichnung und Umlage-Häkchen automatisch eingestuft. Im Kontenrahmen ordnet „Kategorien zuordnen" alle auf einmal zu; sonst legst du womöglich Kosten um, die dem Mieter nicht zustehen.'});
+  }
   // 7) Buchungen außerhalb des Abrechnungsjahres
   if(stand.ausserhalb)out.push({level:'warn',titel:'Buchungen außerhalb des Abrechnungsjahres',
     text:stand.ausserhalb+' Buchung'+(stand.ausserhalb===1?'':'en')+' auf umlagefähigen Konten liegt außerhalb von '+stand.jahr+'. Nach dem Leistungsprinzip gehören nur Kosten des Abrechnungszeitraums in die Abrechnung.'});
@@ -11905,6 +11909,57 @@ var BUHA_KAT={miete:'Kaltmiete',nebenkosten:'Nebenkosten (umlagefähig)',hausgel
   steuer:'Steuerkonto',transit:'Geldtransit / durchlaufend',anlage:'Anlagevermögen',ruecklage:'Rücklage (WEG)',afa:'Abschreibung (AfA)',
   debitor:'Debitor (Mieter)',kreditor:'Kreditor (Lieferant)'};
 // Kategorie eines Kontos: gespeichert (weg_konten.kategorie) oder aus Nummer/Name/Typ abgeleitet
+// ── Kategorien für bestehende Konten in einem Zug zuordnen ────────────────
+// Ältere Kontenrahmen haben keine Kategorie. Sie steuert die Übersicht, die
+// Nebenkosten-Auswertung und die Gegentests der Abrechnung – deshalb wird sie
+// hier einmal vorgeschlagen und nach Bestätigung gespeichert.
+function buhaKategorienVorschlag(konten){
+  return (konten||buha.konten||[]).filter(function(k){return !k.kategorie;})
+    .map(function(k){return {id:k.id,nummer:k.nummer,name:k.name,typ:k.typ,kategorie:buhaKontoKat(k)};})
+    .filter(function(x){return !!x.kategorie;})
+    .sort(function(a,b){return String(a.nummer).localeCompare(String(b.nummer),undefined,{numeric:true});});
+}
+function buhaKategorienDialog(){
+  var liste=buhaKategorienVorschlag();
+  if(!liste.length){showToast('Alle Konten haben bereits eine Kategorie.');return;}
+  var nachKat={};
+  liste.forEach(function(x){(nachKat[x.kategorie]=nachKat[x.kategorie]||[]).push(x);});
+  var reihen=Object.keys(nachKat).sort().map(function(kat){
+    return '<div style="padding:.45rem 0;border-bottom:1px solid var(--border)">'
+      +'<div style="font-size:.78rem;font-weight:700">'+escapeHtml(BUHA_KAT[kat]||kat)+' <span style="font-weight:400;color:var(--muted)">('+nachKat[kat].length+')</span></div>'
+      +'<div style="font-size:.72rem;color:var(--muted);line-height:1.5">'+nachKat[kat].map(function(x){return escapeHtml(x.nummer+' '+x.name);}).join(' · ')+'</div></div>';
+  }).join('');
+  var uml=(nachKat.nebenkosten||[]).length;
+  appConfirm({icon:'🏷',title:'Kategorien zuordnen',
+    message:'<div style="text-align:left"><div style="font-size:.82rem;margin-bottom:.6rem">'
+      +'<b>'+liste.length+' Konten</b> ohne feste Kategorie werden anhand von Bezeichnung, Kontoart und Umlage-Häkchen eingeordnet.'
+      +(uml?' Davon '+uml+' als <b>umlagefähige Nebenkosten</b> – diese Konten landen später in der Nebenkostenabrechnung.':'')
+      +'</div><div style="max-height:280px;overflow:auto">'+reihen+'</div>'
+      +'<div style="font-size:.72rem;color:var(--muted);margin-top:.6rem">Jede Zuordnung lässt sich im Konto einzeln ändern. Buchungen bleiben unverändert.</div></div>',
+    buttons:[{label:'🏷 '+liste.length+' Konten zuordnen',style:'background:linear-gradient(135deg,#0e7c7b,#0a5f5e);color:#fff',onClick:function(){buhaKategorienZuordnen(liste);}},
+             {label:'Abbrechen',style:'background:var(--bg);color:var(--muted)',onClick:function(){}}]});
+}
+async function buhaKategorienZuordnen(liste){
+  if(!liste||!liste.length||!currentUser)return;
+  var n=0;
+  try{
+    for(var i=0;i<liste.length;i++){
+      var r=await sb.from('weg_konten').update({kategorie:liste[i].kategorie}).eq('id',liste[i].id);
+      if(r.error)throw new Error(r.error.message);
+      var k=(buha.konten||[]).filter(function(x){return x.id===liste[i].id;})[0];
+      if(k)k.kategorie=liste[i].kategorie;
+      n++;
+    }
+    await logAudit('kategorien_zugeordnet','kontenrahmen',null,{anzahl:n});
+    showToast('✅ '+n+' Konten eingeordnet');
+  }catch(e){ showToast('❌ '+(e.message||e)+(n?' · '+n+' bereits gespeichert':'')); }
+  renderKonten();
+  if(typeof renderBuhacUebersicht==='function'){
+    var p=document.getElementById('buha-pane-uebersicht');
+    if(p&&p.style.display!=='none')renderBuhacUebersicht();
+  }
+}
+
 function buhaKontoKat(k){
   if(!k)return '';
   if(typeof k!=='object'){var nr=String(k);k=(buha.konten||[]).filter(function(x){return String(x.nummer)===nr;})[0];if(!k)return '';}
@@ -12351,7 +12406,12 @@ function kontoTypLabel(t){return {aktiv:'Aktiv',passiv:'Passiv',aufwand:'Aufwand
 function kontoTypColor(t){return {aktiv:['#e3f2fd','#1565c0'],passiv:['#f3e8fd','#6a2d9f'],aufwand:['#fdecea','#c0392b'],ertrag:['#e9f9f0','#1a7a4a']}[t]||['#eee','#666'];}
 function renderKonten(){
   var c=document.getElementById('buha-konten'); if(!c)return;
-  document.getElementById('buha-konten-count').textContent=buha.konten.length+' Konten';
+  var ohneKat=(buha.konten||[]).filter(function(k){return !k.kategorie&&buhaKontoKat(k);}).length;
+  var zaehler=document.getElementById('buha-konten-count');
+  if(zaehler)zaehler.innerHTML=buha.konten.length+' Konten'
+    +(ohneKat?' · <span style="color:#9a6700;font-weight:700">'+ohneKat+' ohne feste Kategorie</span>':'');
+  var katBtn=document.getElementById('buha-kat-btn');
+  if(katBtn)katBtn.style.display=ohneKat?'':'none';
   if(!buha.konten.length){c.innerHTML='<div style="padding:2rem;text-align:center;color:var(--muted)">Noch kein Kontenrahmen. Lade eine SKR-Vorlage oder lege Konten an.</div>';return;}
   c.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:.84rem"><thead><tr style="border-bottom:2px solid var(--border)">'
     +'<th style="text-align:left;padding:.5rem .7rem;font-size:.66rem;text-transform:uppercase;color:var(--muted)">Nr.</th>'

@@ -11670,7 +11670,7 @@ var BUHAC_TITEL={
   arbeitskonto:['Arbeitskonto','Alle Buchungen eines Kontos mit laufendem Saldo'],
   personen:['Debitoren / Kreditoren','Personenkonten, offene Posten und Ausziffern'],
   bank:['Bank & Import','Kontoumsätze aus MT940 oder CSV einlesen und verbuchen'],
-  ausw:['Auswertungen','Saldenliste, EÜR, Umsatzsteuer, Nebenkosten – jede als PDF und CSV'],
+  ausw:['Auswertungen','Vermieterübersicht, Saldenliste, EÜR, Umsatzsteuer, Nebenkosten – jede als PDF und CSV'],
   gewinn:['Gewinnermittlung','Einnahmen-Überschuss-Rechnung'],
   anlagen:['Anlagen / AfA','Anlagenverzeichnis und Abschreibungen'],
   konten:['Kontenrahmen','SKR03 / SKR04 und eigene Konten'],
@@ -11712,7 +11712,7 @@ function buhacGo(mod){
 // Ansichtszustand der Module: beim Wechsel von Objekt oder Jahr zurücksetzen,
 // damit keine Auswahl aus dem vorherigen Zusammenhang stehen bleibt.
 function buhaModulZustandZuruecksetzen(auchKonto){
-  if(auchKonto){ _akKonto=''; _bankKonto=''; _auswId='susa'; _pkTyp='debitor'; }
+  if(auchKonto){ _akKonto=''; _bankKonto=''; _auswId='vermieter'; _pkTyp='debitor'; }
   _akSuche=''; _akStapel='';
   _pkOffen={}; _pkAuswahl={};
   _bankVorschau=null; _bankText=''; _bankDatei=''; _bankFilter='offen'; _bankRegelnOffen=false;
@@ -21999,6 +21999,8 @@ function buhaPersonenCsv(){
 // das PDF – und der Gesamtexport, der alle Auswertungen in ein PDF legt.
 // ═══════════════════════════════════════════════════════════════════════════
 var BUHA_AUSWERTUNGEN=[
+  {id:'vermieter',   label:'Vermieterübersicht',      kurz:'Einnahmen gegen umlagefähige und nicht umlagefähige Kosten'},
+  {id:'umlage',      label:'Kosten nach Umlagefähigkeit', kurz:'Was auf die Mieter umlegbar ist und was der Vermieter trägt'},
   {id:'susa',        label:'Summen- und Saldenliste', kurz:'Alle Konten mit Soll, Haben und Saldo – muss ausgeglichen sein'},
   {id:'euer',        label:'Einnahmen-Überschuss-Rechnung', kurz:'Erträge minus Aufwendungen inklusive Abschreibungen'},
   {id:'nebenkosten', label:'Nebenkosten-Übersicht',   kurz:'Umlagefähige Kosten gegen vereinnahmte Vorauszahlungen'},
@@ -22010,7 +22012,7 @@ var BUHA_AUSWERTUNGEN=[
   {id:'anlagen',     label:'Anlagenspiegel',          kurz:'Anschaffung, Abschreibung und Restwert je Anlage'},
   {id:'kostenstellen',label:'Kostenstellen',          kurz:'Aufwand und Ertrag je Untergemeinschaft', nurWeg:true}
 ];
-var _auswId='susa';
+var _auswId='vermieter';
 function buhaAuswVerfuegbar(){
   return BUHA_AUSWERTUNGEN.filter(function(a){ return !a.nurWeg||(buha.ugListe||[]).length>0; });
 }
@@ -22018,6 +22020,109 @@ function buhaAuswKopf(){
   var obj=(_buhaCockpitObj&&_buhaCockpitObj.name)||(aktivesObjekt&&aktivesObjekt.name)||'Objekt';
   var kreis=(buha.ugListe||[]).length?buhaScopeLabel():'';
   return {obj:obj,unter:obj+' · Wirtschaftsjahr '+buha.jahr+kreis};
+}
+// Erträge und Aufwendungen des Wirtschaftsjahres, getrennt nach dem, was auf die
+// Mieter umlegbar ist (Kategorie „Nebenkosten") und was der Vermieter selbst trägt.
+function buhaVermieterZahlen(){
+  var agg=buhaKontoAgg();
+  var nm={},typ={}; (buha.konten||[]).forEach(function(k){nm[k.nummer]=k.name;typ[k.nummer]=k.typ;});
+  var miete=[],nkEin=[],sonstEin=[],uml=[],nicht=[];
+  var sMiete=0,sNk=0,sSonst=0,sUml=0,sNicht=0;
+  Object.keys(agg).sort(function(a,b){return String(a).localeCompare(String(b),undefined,{numeric:true});}).forEach(function(nr){
+    var a=agg[nr],kat=buhaKontoKat(nr);
+    if(typ[nr]==='ertrag'){
+      var e=buhaSplitRund(a.haben-a.soll); if(Math.abs(e)<0.005)return;
+      if(kat==='miete'){miete.push([nr,nm[nr]||'',e]);sMiete+=e;}
+      else if(kat==='nebenkosten'){nkEin.push([nr,nm[nr]||'',e]);sNk+=e;}
+      else {sonstEin.push([nr,nm[nr]||'',e]);sSonst+=e;}
+    } else if(typ[nr]==='aufwand'){
+      var v=buhaSplitRund(a.soll-a.haben); if(Math.abs(v)<0.005)return;
+      if(kat==='nebenkosten'){uml.push([nr,nm[nr]||'',v]);sUml+=v;}
+      else {nicht.push([nr,nm[nr]||'',v]);sNicht+=v;}
+    }
+  });
+  // Abschreibungen trägt immer der Vermieter
+  var afa=(typeof anlagenAfaSumme==='function')?anlagenAfaSumme(buha.jahr):0;
+  if(afa>0.004){ nicht.push(['AfA','Abschreibungen (Anlagenverzeichnis)',afa]); sNicht+=afa; }
+  var flaeche=parseFloat((_buhaCockpitObj&&_buhaCockpitObj.gesamtflaeche)||(aktivesObjekt&&aktivesObjekt.gesamtflaeche)||0)||0;
+  return {miete:miete,nkEin:nkEin,sonstEin:sonstEin,uml:uml,nicht:nicht,
+    sMiete:buhaSplitRund(sMiete), sNk:buhaSplitRund(sNk), sSonst:buhaSplitRund(sSonst),
+    sUml:buhaSplitRund(sUml), sNicht:buhaSplitRund(sNicht),
+    einnahmen:buhaSplitRund(sMiete+sNk+sSonst), kosten:buhaSplitRund(sUml+sNicht),
+    ergebnis:buhaSplitRund(sMiete+sNk+sSonst-sUml-sNicht),
+    deckung:buhaSplitRund(sNk-sUml), afa:afa, flaeche:flaeche};
+}
+function _proz(teil,ganz){ return (ganz>0.005?((teil/ganz)*100).toFixed(1).replace('.',','):'0,0')+' %'; }
+function _jeQm(betrag,flaeche){ return flaeche>0.5?buhaEuro(betrag/flaeche):''; }
+// ── Vermieterübersicht ──
+function buhaAuswVermieter(){
+  var z=buhaVermieterZahlen();
+  var zeilen=[];
+  var block=function(titel,liste,summeTitel,summe){
+    zeilen.push({art:'gruppe',z:['— '+titel,'','']});
+    if(liste.length)liste.forEach(function(r){ zeilen.push([r[0],r[1],buhaEuro(r[2])]); });
+    else zeilen.push(['','nichts gebucht','']);
+    zeilen.push({art:'summe',z:['',summeTitel,buhaEuro(summe)]});
+  };
+  var einnahmen=z.miete.concat(z.nkEin).concat(z.sonstEin);
+  block('Einnahmen',einnahmen,'Summe Einnahmen',z.einnahmen);
+  block('Umlagefähige Kosten – auf die Mieter umlegbar (§ 2 BetrKV)',z.uml,'Summe umlagefähige Kosten',z.sUml);
+  block('Nicht umlagefähige Kosten – trägt der Vermieter',z.nicht,'Summe nicht umlagefähige Kosten',z.sNicht);
+  var karten=[
+    {label:'Einnahmen',wert:buhaEuro(z.einnahmen),farbe:'#1a7a4a',zusatz:'davon Kaltmiete '+buhaEuro(z.sMiete)},
+    {label:'Umlagefähige Kosten',wert:buhaEuro(z.sUml),farbe:'var(--text)',zusatz:'auf die Mieter umlegbar'},
+    {label:'Trägt der Vermieter',wert:buhaEuro(z.sNicht),farbe:'#c0392b',zusatz:'nicht umlagefähig'+(z.afa>0.004?' inkl. AfA':'')},
+    {label:'Ergebnis '+buha.jahr,wert:buhaEuro(z.ergebnis),farbe:z.ergebnis>=0?'#1a7a4a':'#c0392b',zusatz:'Einnahmen minus alle Kosten'}
+  ];
+  if(z.flaeche>0.5)karten.push({label:'Je m² und Jahr',wert:buhaEuro(z.ergebnis/z.flaeche),
+    farbe:z.ergebnis>=0?'#1a7a4a':'#c0392b',zusatz:z.flaeche.toLocaleString('de-DE')+' m² Gesamtfläche'});
+  var deckung=z.deckung>=0
+    ? 'Die Nebenkosten-Vorauszahlungen decken die umlagefähigen Kosten und liegen '+buhaEuro(z.deckung)+' darüber.'
+    : 'Die Nebenkosten-Vorauszahlungen decken die umlagefähigen Kosten um '+buhaEuro(-z.deckung)+' nicht – das deutet auf eine Nachzahlung hin.';
+  return {titel:'Vermieterübersicht',
+    spalten:[{label:'Konto',w:22},{label:'Bezeichnung',w:0},{label:'Betrag',w:34,align:'right'}],
+    zeilen:zeilen, fuss:['','Ergebnis '+buha.jahr,buhaEuro(z.ergebnis)],
+    karten:karten, kennzahlen:z,
+    warnung:(!z.uml.length&&!z.nicht.length)?'Für '+buha.jahr+' sind noch keine Kosten gebucht.':'',
+    hinweis:deckung+' Umlagefähig sind Konten mit der Kategorie „Nebenkosten"; alles andere trägt der Vermieter. '
+      +'Diese Übersicht ist eine Wirtschaftlichkeitsrechnung des Objekts, keine Steuererklärung.'};
+}
+// ── Kosten nach Umlagefähigkeit ──
+function buhaAuswUmlage(){
+  var z=buhaVermieterZahlen();
+  var mitQm=z.flaeche>0.5;
+  var gesamt=z.kosten;
+  var zeilen=[];
+  // Die Abschnittszeile trägt bereits die Gruppensumme – eine zusätzliche Summenzeile wäre doppelt.
+  var block=function(titel,liste,summe){
+    zeilen.push({art:'gruppe',z:['— '+titel,'',buhaEuro(summe),_proz(summe,gesamt),mitQm?_jeQm(summe,z.flaeche):''].slice(0,mitQm?5:4)});
+    if(liste.length)liste.slice().sort(function(a,b){return b[2]-a[2];}).forEach(function(r){
+      var reihe=[r[0],r[1],buhaEuro(r[2]),_proz(r[2],summe)];
+      if(mitQm)reihe.push(_jeQm(r[2],z.flaeche));
+      zeilen.push(reihe);
+    });
+    else zeilen.push(mitQm?['','nichts gebucht','','','']:['','nichts gebucht','','']);
+  };
+  block('Umlagefähig – auf die Mieter umlegbar',z.uml,z.sUml);
+  block('Nicht umlagefähig – trägt der Vermieter',z.nicht,z.sNicht);
+  var spalten=[{label:'Konto',w:22},{label:'Kostenart',w:0},{label:'Betrag',w:30,align:'right'},{label:'Anteil',w:22,align:'right'}];
+  if(mitQm)spalten.push({label:'je m²',w:24,align:'right'});
+  var fuss=['','Gesamtkosten '+buha.jahr,buhaEuro(gesamt),'100,0 %'];
+  if(mitQm)fuss.push(_jeQm(gesamt,z.flaeche));
+  return {titel:'Kosten nach Umlagefähigkeit',
+    spalten:spalten, zeilen:zeilen, fuss:fuss,
+    karten:[
+      {label:'Umlagefähig',wert:buhaEuro(z.sUml),farbe:'var(--text)',zusatz:_proz(z.sUml,gesamt)+' der Kosten'},
+      {label:'Nicht umlagefähig',wert:buhaEuro(z.sNicht),farbe:'#c0392b',zusatz:_proz(z.sNicht,gesamt)+' der Kosten'},
+      {label:'Vereinnahmte Nebenkosten',wert:buhaEuro(z.sNk),farbe:'#1a7a4a',zusatz:'Vorauszahlungen und Nachzahlungen'},
+      {label:z.deckung>=0?'Überdeckung':'Unterdeckung',wert:buhaEuro(Math.abs(z.deckung)),
+       farbe:z.deckung>=0?'#1a7a4a':'#c0392b',zusatz:'Vorauszahlungen gegen umlagefähige Kosten'}
+    ],
+    kennzahlen:z,
+    warnung:gesamt<0.005?'Für '+buha.jahr+' sind noch keine Kosten gebucht.':'',
+    hinweis:'Anteil bezogen auf die jeweilige Gruppe, in der Fußzeile auf die Gesamtkosten.'
+      +(mitQm?' Werte je m² auf Grundlage von '+z.flaeche.toLocaleString('de-DE')+' m² Gesamtfläche.':' Für Werte je m² die Gesamtfläche im Objekt hinterlegen.')
+      +' Ob ein Konto umlagefähig ist, steht als Kategorie im Kontenrahmen.'};
 }
 // ── Summen- und Saldenliste ──
 function buhaAuswSusa(){
@@ -22079,6 +22184,10 @@ function buhaAuswNebenkosten(){
     fuss:['','','Vereinnahmt minus umlagefähige Kosten',buhaEuro(diff)],
     warnung:warn,
     kennzahlen:{umlagefaehig:sumU,vereinnahmt:sumE,nichtUmlagefaehig:sumN,differenz:diff},
+    karten:[{label:'Umlagefähige Kosten',wert:buhaEuro(sumU),farbe:'#c0392b'},
+            {label:'Vereinnahmt',wert:buhaEuro(sumE),farbe:'#1a7a4a'},
+            {label:'Differenz',wert:buhaEuro(diff),farbe:diff>=0?'#1a7a4a':'#c0392b'},
+            {label:'Nicht umlagefähig',wert:buhaEuro(sumN),farbe:'var(--muted)'}],
     hinweis:'Ein positiver Betrag bedeutet, dass mehr Vorauszahlungen vereinnahmt als umlagefähige Kosten gebucht wurden (Guthaben der Mieter), ein negativer Betrag deutet auf eine Nachzahlung hin. Die endgültige Verteilung erfolgt in der Nebenkostenabrechnung.'};
 }
 // ── Umsatzsteuer je Buchungsschlüssel ──
@@ -22206,7 +22315,9 @@ function buhaAuswPersonen(typ){
 // Zentrale Datenbeschaffung: liefert für jede Auswertung dieselbe Struktur
 function buhaAuswDaten(id){
   var d;
-  if(id==='susa')d=buhaAuswSusa();
+  if(id==='vermieter')d=buhaAuswVermieter();
+  else if(id==='umlage')d=buhaAuswUmlage();
+  else if(id==='susa')d=buhaAuswSusa();
   else if(id==='euer')d=buhaAuswEuer();
   else if(id==='nebenkosten')d=buhaAuswNebenkosten();
   else if(id==='ust')d=buhaAuswUst();
@@ -22228,14 +22339,22 @@ function buhaAuswTabelleHtml(d){
   return '<table style="width:100%;border-collapse:collapse;font-size:.8rem;min-width:'+Math.max(560,d.spalten.length*115)+'px"><thead><tr style="border-bottom:2px solid var(--border)">'
     +d.spalten.map(function(c){return '<th style="text-align:'+(ar(c)?'right':'left')+';padding:.45rem .6rem;font-size:.62rem;text-transform:uppercase;color:var(--muted);white-space:nowrap">'+escapeHtml(c.label)+'</th>';}).join('')
     +'</tr></thead><tbody>'
-    +d.zeilen.map(function(z){
-      var gruppe=/^—/.test(String(z[0]||'')), summe=String(z[0]||'')==='Summe';
-      return '<tr style="border-bottom:1px solid var(--border);'+(gruppe?'background:#f3f4f6;font-weight:700':(summe?'font-weight:700;background:#fafafa':''))+'">'
-        +z.map(function(v,i){var c=d.spalten[i];
+    +d.zeilen.map(function(z0){
+      var vals=Array.isArray(z0)?z0:((z0&&z0.z)||[]);
+      var art=(!Array.isArray(z0)&&z0&&z0.art)?z0.art:(/^—/.test(String(vals[0]||''))?'gruppe':(String(vals[0]||'')==='Summe'?'summe':'zeile'));
+      if(art==='gruppe'){
+        // Werte der Abschnittszeile bleiben in der Reihenfolge der Spalten stehen
+        var rest=vals.map(function(v,i){return (i>0&&ar(d.spalten[i])&&String(v||'').trim())?'<span style="font-variant-numeric:tabular-nums;white-space:nowrap">'+escapeHtml(v)+'</span>':'';}).join('');
+        return '<tr><td colspan="'+d.spalten.length+'" style="padding:.5rem .6rem;background:#eef0f3;border-left:3px solid #444851;font-weight:700;font-size:.82rem">'
+          +'<span style="display:flex;align-items:baseline;gap:1.2rem"><span style="flex:1">'
+          +escapeHtml(String(vals[0]||'').replace(/^—\s*/,''))+'</span>'+rest+'</span></td></tr>';
+      }
+      return '<tr style="border-bottom:1px solid var(--border);'+(art==='summe'?'font-weight:700;background:#f6f7f9':'')+'">'
+        +vals.map(function(v,i){var c=d.spalten[i];
           return '<td style="padding:.35rem .6rem;'+(ar(c)?'text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap':'')+'">'+escapeHtml(v==null?'':v)+'</td>';}).join('')
       +'</tr>';}).join('')
-    +(d.fuss?'<tr style="background:var(--p-light);font-weight:800"><td colspan="'+d.spalten.length+'" style="padding:0"><table style="width:100%;border-collapse:collapse"><tr>'
-      +d.fuss.map(function(v,i){var c=d.spalten[i];
+    +(d.fuss?'<tr style="background:#21242a;color:#fff;font-weight:800"><td colspan="'+d.spalten.length+'" style="padding:0"><table style="width:100%;border-collapse:collapse"><tr>'
+      +(Array.isArray(d.fuss)?d.fuss:(d.fuss.z||[])).map(function(v,i){var c=d.spalten[i];
         return '<td style="padding:.5rem .6rem;'+(ar(c)?'text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap':'')+'">'+escapeHtml(v==null?'':v)+'</td>';}).join('')
       +'</tr></table></td></tr>':'')
     +'</tbody></table>';
@@ -22264,20 +22383,28 @@ function renderBuhaAuswertungen(){
     +'<button class="btn-primary" style="font-size:.8rem;padding:.4rem .9rem" onclick="buhaAuswertungPdf()"><span class="btn-ic" data-icon="printer"></span> PDF</button></span>'
     +'</div>';
   if(d.warnung)h+='<div style="background:#fff8e6;border:1px solid #f0d9a8;border-radius:10px;padding:.7rem .9rem;margin-bottom:.7rem;font-size:.82rem;color:#9a6700">⚠️ '+escapeHtml(d.warnung)+'</div>';
-  if(d.id==='nebenkosten'&&d.kennzahlen){
-    var kk=d.kennzahlen;
-    var kar=function(l,v,col){return '<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:.65rem .9rem"><div style="font-size:.6rem;font-weight:700;text-transform:uppercase;color:var(--muted)">'+l+'</div><div style="font-size:1.02rem;font-weight:800;color:'+(col||'var(--text)')+'">'+buhaEuro(v)+'</div></div>';};
-    h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.6rem;margin-bottom:.8rem">'
-      +kar('Umlagefähige Kosten',kk.umlagefaehig,'#c0392b')+kar('Vereinnahmt',kk.vereinnahmt,'#1a7a4a')
-      +kar('Differenz',kk.differenz,kk.differenz>=0?'#1a7a4a':'#c0392b')+kar('Nicht umlagefähig',kk.nichtUmlagefaehig,'var(--muted)')+'</div>';
+  if(d.karten&&d.karten.length){
+    h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(172px,1fr));gap:.6rem;margin-bottom:.8rem">'
+      +d.karten.map(function(k){
+        return '<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:.65rem .9rem">'
+          +'<div style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)">'+escapeHtml(k.label)+'</div>'
+          +'<div style="font-size:1.02rem;font-weight:800;color:'+(k.farbe||'var(--text)')+'">'+escapeHtml(k.wert)+'</div>'
+          +(k.zusatz?'<div style="font-size:.68rem;color:var(--muted)">'+escapeHtml(k.zusatz)+'</div>':'')+'</div>';
+      }).join('')+'</div>';
   }
   h+='<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow-x:auto">'+buhaAuswTabelleHtml(d)+'</div>'
     +(d.hinweis?'<div style="font-size:.72rem;color:var(--muted);margin-top:.6rem;line-height:1.55">'+escapeHtml(d.hinweis)+'</div>':'')
     +'</div></div>';
   c.innerHTML=h; applyIcons(c);
 }
+// Umlaute werden umschrieben, damit die Datei auf jedem System und in jedem Archiv gleich heißt.
+function _dateiTeil(s){
+  return String(s==null?'':s).replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue')
+    .replace(/Ä/g,'Ae').replace(/Ö/g,'Oe').replace(/Ü/g,'Ue').replace(/ß/g,'ss')
+    .replace(/[^a-zA-Z0-9]+/g,'_').replace(/^_+|_+$/g,'');
+}
 function _auswDateiname(d,endung){
-  return String(d.titel).replace(/[^a-zA-Z0-9äöüÄÖÜß]+/g,'_')+'_'+String(d.obj).replace(/[^a-zA-Z0-9]+/g,'_')+'_'+buha.jahr+'.'+endung;
+  return _dateiTeil(d.titel)+'_'+_dateiTeil(d.obj)+'_'+buha.jahr+'.'+endung;
 }
 function buhaAuswertungPdf(id,action){
   var d=buhaAuswDaten(id||_auswId);
@@ -22295,8 +22422,11 @@ function buhaAuswertungCsv(id){
 function buhaAuswCsvText(d){
   var esc=function(v){v=(v==null?'':''+v); return /[";\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
   var zeilen=[d.spalten.map(function(c){return esc(c.label);}).join(';')];
-  d.zeilen.forEach(function(z){ zeilen.push(z.map(esc).join(';')); });
-  if(d.fuss)zeilen.push(d.fuss.map(esc).join(';'));
+  d.zeilen.forEach(function(z0){
+    var vals=Array.isArray(z0)?z0:((z0&&z0.z)||[]);
+    zeilen.push(vals.map(esc).join(';'));
+  });
+  if(d.fuss)zeilen.push((Array.isArray(d.fuss)?d.fuss:(d.fuss.z||[])).map(esc).join(';'));
   return zeilen.join('\r\n');
 }
 // Gesamtexport: alle Auswertungen mit Daten in einem PDF, jede auf eigener Seite
@@ -23003,10 +23133,11 @@ function buhaDownloadText(text,fname,mime){
 // Alle Auswertungen teilen sich dasselbe Layout: Briefkopf oder Markenband,
 // Titelblock, Tabelle mit farbigem Kopf und Zebrastreifen, hinterlegte
 // Summenzeile und ein Seitenfuß mit Absender und Seitenzahl.
+// Zurückhaltendes Grau: gut lesbar am Bildschirm, sauber im Schwarzweißdruck.
 var BUHA_PDF_STIL={
-  marke:[124,58,237], markeHell:[237,233,254], markeDunkel:[91,33,182],
-  tinte:[26,26,31], grau:[107,101,112], linie:[221,216,232], zebra:[250,248,252],
-  gruppe:[243,241,248]
+  marke:[68,72,79], markeHell:[238,240,243], markeDunkel:[33,36,41],
+  tinte:[28,30,34], grau:[112,116,124], linie:[219,222,227], zebra:[249,250,251],
+  gruppe:[233,236,240]
 };
 // Die eingebauten PDF-Schriften kennen nur den Westeuropa-Zeichensatz.
 // Symbole aus der Oberfläche werden darum vor dem Druck übersetzt, sonst
@@ -23053,6 +23184,15 @@ function buhaPdfTabelle(opts){
     ws=ws.map(function(w){return w*breite/summeW;});
     var rechts=function(i2){var c=cols[i2];return !!(c&&c.align==='right');};
 
+    // Eine Zeile ist entweder ein Array oder {z:[…],art:'gruppe'|'summe'|'zeile'}
+    var zeilenWerte=function(z){ return Array.isArray(z)?z:(z&&z.z)||[]; };
+    var zeilenArt=function(z){
+      if(!Array.isArray(z)&&z&&z.art)return z.art;
+      var erste=String(zeilenWerte(z)[0]==null?'':zeilenWerte(z)[0]);
+      if(/^—/.test(erste))return 'gruppe';
+      if(erste==='Summe')return 'summe';
+      return 'zeile';
+    };
     // Zelltext: passt er nicht, wird er behutsam verkleinert und erst dann umbrochen
     var zelle=function(wert,platz,basis,stil){
       var t=buhaPdfText(wert);
@@ -23092,14 +23232,16 @@ function buhaPdfTabelle(opts){
       if(opts.untertitel){ y+=5.5; schrift(9,'normal',S.grau); doc.text(buhaPdfText(opts.untertitel),L,y); }
       y+=7;
       // Tabellenkopf
-      farbeFuell(S.marke); doc.rect(L,y-4.2,breite,6.4,'F');
-      schrift(7.5,'bold',[255,255,255]);
+      farbeFuell(S.marke); doc.rect(L,y-4.4,breite,7,'F');
+      schrift(7.2,'bold',[255,255,255]);
+      try{doc.setCharSpace(0.25);}catch(e){}
       var x=L;
       cols.forEach(function(c,i2){
-        doc.text(buhaPdfText(c.label),rechts(i2)?x+ws[i2]-1.6:x+1.6,y,{align:rechts(i2)?'right':'left'});
+        doc.text(buhaPdfText(String(c.label||'').toUpperCase()),rechts(i2)?x+ws[i2]-2:x+2,y,{align:rechts(i2)?'right':'left'});
         x+=ws[i2];
       });
-      y+=5.4;
+      try{doc.setCharSpace(0);}catch(e){}
+      y+=6.2;
       ersteSeite=false;
     };
     kopf();
@@ -23108,37 +23250,58 @@ function buhaPdfTabelle(opts){
     var zeilenHoehe=function(vals,basis,stil){
       var n=1;
       vals.forEach(function(v,i2){ var z=zelle(v,ws[i2],basis,stil); if(z.zeilen.length>n)n=z.zeilen.length; });
-      return n*3.6+2.2;
+      return n*4+2.6;
     };
     var zeichne=function(vals,art,index){
-      var basis=art==='fuss'?8:7.9;
+      var basis=art==='fuss'?8.4:8.2;
       var stil=(art==='fuss'||art==='gruppe'||art==='summe')?'bold':'normal';
+      // Abschnittsüberschrift läuft über die ganze Breite, nicht in die erste Spalte gequetscht
+      if(art==='gruppe'){
+        var titelText=String(vals[0]==null?'':vals[0]).replace(/^—\s*/,'');
+        var hg=8.4;
+        if(y+hg>H-18){ doc.addPage('a4',opts.quer?'landscape':'portrait'); kopf(); }
+        farbeFuell(S.gruppe); doc.rect(L,y-3.8,breite,hg,'F');
+        farbeFuell(S.marke);  doc.rect(L,y-3.8,1.4,hg,'F');
+        schrift(8.4,'bold',S.markeDunkel);
+        doc.text(buhaPdfText(titelText),L+4,y+0.6);
+        // Beträge einer Abschnittszeile bleiben rechts stehen, falls vorhanden
+        var xg=L;
+        vals.forEach(function(v,i2){
+          if(i2===0||!rechts(i2)||!String(v||'').trim()){ xg+=ws[i2]; return; }
+          var zg=zelle(v,ws[i2],8.4,'bold'); doc.setFontSize(zg.groesse);
+          doc.text(zg.zeilen,xg+ws[i2]-2,y+0.6,{align:'right'}); xg+=ws[i2];
+        });
+        y+=hg+0.8;
+        return;
+      }
       var hh=zeilenHoehe(vals,basis,stil);
       if(y+hh>H-18){ doc.addPage('a4',opts.quer?'landscape':'portrait'); kopf(); }
-      // Hintergrund
-      if(art==='fuss'){ farbeFuell(S.markeHell); doc.rect(L,y-3.6,breite,hh,'F'); }
-      else if(art==='gruppe'){ farbeFuell(S.gruppe); doc.rect(L,y-3.6,breite,hh,'F'); }
-      else if(index%2===1){ farbeFuell(S.zebra); doc.rect(L,y-3.6,breite,hh,'F'); }
+      // Die Schlusszeile bekommt ein dunkles Band – als Gegenstück zum Tabellenkopf
+      if(art==='fuss'){ farbeFuell(S.markeDunkel); doc.rect(L,y-3.8,breite,hh,'F'); }
+      else if(art==='summe'){ farbeFuell(S.markeHell); doc.rect(L,y-3.8,breite,hh,'F'); }
+      else if(index%2===1){ farbeFuell(S.zebra); doc.rect(L,y-3.8,breite,hh,'F'); }
       var x=L;
       vals.forEach(function(v,i2){
         var z=zelle(v,ws[i2],basis,stil);
         doc.setFontSize(z.groesse);
         doc.setFont('helvetica',stil);
-        farbeText(art==='fuss'?S.markeDunkel:S.tinte);
-        doc.text(z.zeilen,rechts(i2)?x+ws[i2]-1.6:x+1.6,y,{align:rechts(i2)?'right':'left'});
+        farbeText(art==='fuss'?[255,255,255]:(art==='zeile'?S.tinte:S.markeDunkel));
+        doc.text(z.zeilen,rechts(i2)?x+ws[i2]-2:x+2,y,{align:rechts(i2)?'right':'left'});
         x+=ws[i2];
       });
       y+=hh;
-      if(art!=='fuss'){ farbeLinie(S.linie); doc.setLineWidth(.15); doc.line(L,y-2.4,W-R,y-2.4); }
+      if(art==='zeile'){ farbeLinie(S.linie); doc.setLineWidth(.12); doc.line(L,y-2.6,W-R,y-2.6); }
     };
-    (opts.zeilen||[]).forEach(function(z,idx){
-      var erste=String(z[0]==null?'':z[0]);
-      zeichne(z,/^—/.test(erste)?'gruppe':(erste==='Summe'?'summe':'zeile'),idx);
+    var lfd=0;
+    (opts.zeilen||[]).forEach(function(z){
+      var art=zeilenArt(z);
+      if(art==='zeile')lfd++; else lfd=0;
+      zeichne(zeilenWerte(z),art,lfd);
     });
     if(opts.fuss){
       if(y+10>H-18){ doc.addPage('a4',opts.quer?'landscape':'portrait'); kopf(); }
-      farbeLinie(S.marke); doc.setLineWidth(.4); doc.line(L,y-3.6,W-R,y-3.6);
-      zeichne(opts.fuss,'fuss',0);
+      y+=1.2;
+      zeichne(zeilenWerte(opts.fuss),'fuss',0);
     }
     if(opts.hinweis){
       y+=4;

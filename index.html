@@ -1822,6 +1822,8 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
               <div id="buha-pane-erfassen" style="display:none"></div>
               <div id="buha-pane-stapel" style="display:none"></div>
               <div id="buha-pane-primanota" style="display:none"></div>
+              <div id="buha-pane-arbeitskonto" style="display:none"></div>
+              <div id="buha-pane-personen" style="display:none"></div>
               <!-- TAB: BUCHEN -->
               <div id="buha-pane-buchen">
                 <div id="buha-kpis" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.6rem;margin-bottom:1rem"></div>
@@ -11341,7 +11343,7 @@ var BUHAC_MODS=[
   {id:'buchen',       label:'Buchen',                 icon:'pencil'},
   {id:'stapel',       label:'Buchungsstapel',         icon:'files'},
   {id:'primanota',    label:'Primanota',              icon:'list'},
-  {id:'arbeitskonto', label:'Arbeitskonto',           icon:'bookopen', soon:true},
+  {id:'arbeitskonto', label:'Arbeitskonto',           icon:'bookopen'},
   {id:'personen',     label:'Debitoren / Kreditoren', icon:'users'},
   {id:'bank',         label:'Bank & Import',          icon:'landmark', soon:true},
   {id:'ausw',         label:'Auswertungen',           icon:'barchart'},
@@ -11356,8 +11358,8 @@ var BUHAC_TITEL={
   buchen:['Buchen','Erfassung in den Buchungsstapel – Konto, Gegenkonto, Personenkonten'],
   stapel:['Buchungsstapel','Stapel je Zeitraum – festschreibbar nach GoBD'],
   primanota:['Primanota','Buchungen in Erfassungsreihenfolge'],
-  arbeitskonto:['Arbeitskonto','Buchungen eines Kontos nachvollziehen'],
-  personen:['Debitoren / Kreditoren','Personenkonten und offene Posten'],
+  arbeitskonto:['Arbeitskonto','Alle Buchungen eines Kontos mit laufendem Saldo'],
+  personen:['Debitoren / Kreditoren','Personenkonten, offene Posten und Ausziffern'],
   bank:['Bank & Import','Kontoumsätze aus MT940 / CSV verbuchen'],
   ausw:['Auswertungen','Saldenliste, EÜR, Kontenblatt'],
   gewinn:['Gewinnermittlung','Einnahmen-Überschuss-Rechnung'],
@@ -11387,7 +11389,7 @@ function buhacGo(mod){
   var t=BUHAC_TITEL[mod]||[m.label,''];
   var h1=document.getElementById('buhac-titel'); if(h1)h1.textContent=t[0];
   var u=document.getElementById('buhac-untertitel'); if(u)u.textContent=t[1];
-  var pane=({personen:'op',buchen:'erfassen'})[mod]||mod;
+  var pane=({buchen:'erfassen'})[mod]||mod;
   if(m.soon){
     pane='bald';
     var bald=document.getElementById('buha-pane-bald');
@@ -11696,7 +11698,7 @@ function renderBuhacUebersicht(){
     var aufw='<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:.8rem 1rem">'
       +'<div style="font-size:.84rem;font-weight:700;margin-bottom:.5rem">Ausgaben nach Konto</div>'
       +(top.length?top.map(function(x){var kt=buhaKontoKat(x.nr);
-        return '<div style="margin-bottom:.45rem"><div style="display:flex;justify-content:space-between;font-size:.76rem"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:70%">'+escapeHtml(x.nr)+' '+escapeHtml(name[x.nr]||'')+(kt==='nebenkosten'?' <span title="umlagefähig" style="font-size:.6rem;color:#0e7c7b;font-weight:700">UML</span>':'')+'</span><b style="font-variant-numeric:tabular-nums">'+buhaEuro(x.v)+'</b></div>'
+        return '<div style="margin-bottom:.45rem;cursor:pointer" title="Buchungen dieses Kontos ansehen" onclick="buhaArbeitskontoOeffnen(\''+x.nr+'\')"><div style="display:flex;justify-content:space-between;font-size:.76rem"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:70%">'+escapeHtml(x.nr)+' '+escapeHtml(name[x.nr]||'')+(kt==='nebenkosten'?' <span title="umlagefähig" style="font-size:.6rem;color:#0e7c7b;font-weight:700">UML</span>':'')+'</span><b style="font-variant-numeric:tabular-nums">'+buhaEuro(x.v)+'</b></div>'
           +'<div style="height:5px;background:var(--bg);border-radius:3px;margin-top:2px"><div style="height:5px;width:'+Math.round(x.v/max*100)+'%;background:'+(kt==='nebenkosten'?'#0e7c7b':'#c0392b')+';border-radius:3px"></div></div></div>';
       }).join(''):'<div style="font-size:.78rem;color:var(--muted)">Noch keine Ausgaben gebucht.</div>')+'</div>';
     re.innerHTML=wjCard+aufw;
@@ -11952,13 +11954,15 @@ async function buhaReload(){
   if(_sicht('buha-pane-erfassen'))renderBuhaErfassen();
   if(_sicht('buha-pane-stapel'))renderBuhaStapel();
   if(_sicht('buha-pane-primanota'))renderBuhaPrimanota();
+  if(_sicht('buha-pane-arbeitskonto'))renderBuhaArbeitskonto();
+  if(_sicht('buha-pane-personen'))renderBuhaPersonen();
   var d=document.getElementById('bu-datum'); if(d&&!d.value)d.value=todayStr();
   var bd=document.getElementById('bu-belegdatum'); if(bd&&!bd.value)bd.value=todayStr();
   buhaCalcSteuer();
 }
 
 function buhaTab(t){
-  ['uebersicht','bald','erfassen','stapel','primanota','buchen','hausgeld','op','konten','ausw','anlagen','gewinn','import','audit'].forEach(function(x){
+  ['uebersicht','bald','erfassen','stapel','primanota','arbeitskonto','personen','buchen','hausgeld','op','konten','ausw','anlagen','gewinn','import','audit'].forEach(function(x){
     var pane=document.getElementById('buha-pane-'+x); if(pane)pane.style.display=(x===t?'block':'none');
     var btn=document.getElementById('buha-tab-'+x);
     if(btn){var on=x===t;btn.style.color=on?'var(--p)':'var(--muted)';btn.style.fontWeight=on?'700':'400';btn.style.borderBottomColor=on?'var(--p)':'transparent';}
@@ -11967,6 +11971,8 @@ function buhaTab(t){
   if(t==='erfassen')renderBuhaErfassen();
   if(t==='stapel')renderBuhaStapel();
   if(t==='primanota')renderBuhaPrimanota();
+  if(t==='arbeitskonto')renderBuhaArbeitskonto();
+  if(t==='personen')renderBuhaPersonen();
   if(t==='audit')renderBuhaAudit();
   if(t==='ausw')renderAuswertungen();
   if(t==='anlagen')renderAnlagen();
@@ -13065,7 +13071,7 @@ function buhaSaldenlisteHtml(){
   if(!nums.length)return _auswEmpty();
   var sumS=0,sumH=0;
   var body=nums.map(function(nr){var a=agg[nr];sumS+=a.soll;sumH+=a.haben;var saldo=a.soll-a.haben;
-    return '<tr style="border-bottom:1px solid var(--border)">'
+    return '<tr style="border-bottom:1px solid var(--border);cursor:pointer" title="Kontoblatt im Arbeitskonto öffnen" onclick="buhaArbeitskontoOeffnen(\''+nr+'\')">'
       +'<td style="padding:.4rem .7rem;font-weight:700;font-variant-numeric:tabular-nums">'+escapeHtml(nr)+'</td>'
       +'<td style="padding:.4rem .7rem">'+escapeHtml(nmName[nr]||'(unbekannt)')+'</td>'
       +'<td style="padding:.4rem .7rem;text-align:right;font-variant-numeric:tabular-nums">'+buhaEuro(a.soll)+'</td>'
@@ -21019,6 +21025,450 @@ async function buhaSplitBuchen(){
     if(ausMaske){ ['be-betrag','be-soll','be-haben','be-text','be-kst'].forEach(function(id){var e=document.getElementById(id);if(e){e.value='';e.classList.remove('err');}}); }
     await buhaReload();
   }catch(e){ showToast('❌ '+(e.message||e)); if(btn)btn.disabled=false; }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ARBEITSKONTO · alle Buchungen eines Kontos mit laufendem Saldo
+// Entspricht dem Kontoblatt in DATEV: Konto wählen, Bewegungen prüfen,
+// per Doppelklick in die einzelne Buchung springen.
+// ═══════════════════════════════════════════════════════════════════════════
+var _akKonto='', _akSuche='', _akStapel='';
+// Bewegungen eines Kontos in Datumsreihenfolge mit fortgeschriebenem Saldo.
+// storniert/ist_storno bleiben sichtbar (Nachvollziehbarkeit), zählen aber nicht in den Saldo.
+function buhaKontoZeilen(nr,opt){
+  opt=opt||{};
+  var q=(opt.suche||'').toLowerCase();
+  var nm={}; (buha.konten||[]).forEach(function(k){nm[k.nummer]=k.name;});
+  var list=(buha.buchungen||[]).filter(function(b){
+    if(b.soll_konto!==nr&&b.haben_konto!==nr)return false;
+    if(opt.stapel&&(b.stapel_id||'')!==opt.stapel)return false;
+    if(!q)return true;
+    var gegen=b.soll_konto===nr?b.haben_konto:b.soll_konto;
+    return [b.text,b.belegnr,gegen,nm[gegen],b.primanota_nr].filter(Boolean).join(' ').toLowerCase().indexOf(q)>-1;
+  }).sort(function(a,b){
+    return String(a.buchungsdatum||'').localeCompare(String(b.buchungsdatum||''))
+      ||(parseInt(a.primanota_nr,10)||0)-(parseInt(b.primanota_nr,10)||0)
+      ||String(a.created_at||'').localeCompare(String(b.created_at||''));
+  });
+  var saldo=0,soll=0,haben=0,aktiv=0;
+  var zeilen=list.map(function(b){
+    var bt=parseFloat(b.betrag)||0, stor=!!(b.storniert||b.ist_storno);
+    var s=(!stor&&b.soll_konto===nr)?bt:0, hb=(!stor&&b.haben_konto===nr)?bt:0;
+    soll+=s; haben+=hb; saldo+=s-hb; if(!stor)aktiv++;
+    return {b:b,gegen:b.soll_konto===nr?b.haben_konto:b.soll_konto,soll:s,haben:hb,saldo:saldo,storniert:stor};
+  });
+  return {zeilen:zeilen,soll:soll,haben:haben,saldo:saldo,anzahl:list.length,aktiv:aktiv};
+}
+// Konten, auf denen im Wirtschaftsjahr etwas gebucht wurde (für die Schnellauswahl)
+function buhaBebuchteKonten(){
+  var m={};
+  (buha.buchungen||[]).forEach(function(b){ if(b.soll_konto)m[b.soll_konto]=1; if(b.haben_konto)m[b.haben_konto]=1; });
+  return Object.keys(m).sort(function(a,b){return String(a).localeCompare(String(b),undefined,{numeric:true});});
+}
+function buhaArbeitskontoOeffnen(nr){ _akKonto=nr||''; _akSuche=''; buhacGo('arbeitskonto'); }
+function buhaArbeitskontoWahl(nr){ _akKonto=nr||''; renderBuhaArbeitskonto(); }
+function buhaArbeitskontoSuche(v){ _akSuche=v||''; renderBuhaArbeitskonto(); }
+function buhaArbeitskontoStapel(v){ _akStapel=v||''; renderBuhaArbeitskonto(); }
+function renderBuhaArbeitskonto(){
+  var c=document.getElementById('buha-pane-arbeitskonto'); if(!c)return;
+  var bebucht=buhaBebuchteKonten();
+  var alle=(buha.konten||[]).slice().sort(function(a,b){return String(a.nummer).localeCompare(String(b.nummer),undefined,{numeric:true});});
+  if(_akKonto&&!kontoExists(_akKonto))_akKonto='';
+  if(!_akKonto)_akKonto=bebucht[0]||(alle[0]&&alle[0].nummer)||'';
+  var d=_akKonto?buhaKontoZeilen(_akKonto,{suche:_akSuche,stapel:_akStapel}):null;
+  var k=(buha.konten||[]).filter(function(x){return x.nummer===_akKonto;})[0];
+  var kat=k?buhaKontoKat(k):'';
+  var h='<div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.9rem">'
+    +'<span style="font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)">Konto</span>'
+    +'<select onchange="buhaArbeitskontoWahl(this.value)" style="border:1px solid var(--border);border-radius:8px;padding:.42rem .6rem;font-size:.84rem;font-family:var(--ff);background:var(--white);min-width:240px;max-width:340px">'
+      +(bebucht.length?'<optgroup label="Bebucht in '+buha.jahr+'">'+bebucht.map(function(nr){return '<option value="'+escapeHtml(nr)+'"'+(nr===_akKonto?' selected':'')+'>'+escapeHtml(nr+' · '+(kontoName(nr)||'(nicht im Kontenrahmen)'))+'</option>';}).join('')+'</optgroup>':'')
+      +'<optgroup label="Alle Konten">'+alle.map(function(x){return '<option value="'+escapeHtml(x.nummer)+'"'+(x.nummer===_akKonto?' selected':'')+'>'+escapeHtml(x.nummer+' · '+x.name)+'</option>';}).join('')+'</optgroup>'
+    +'</select>'
+    +'<input type="text" value="'+escapeHtml(_akSuche)+'" oninput="buhaArbeitskontoSuche(this.value)" placeholder="🔍 In den Buchungen suchen …" style="border:1px solid var(--border);border-radius:8px;padding:.38rem .6rem;font-size:.8rem;font-family:var(--ff);outline:none;flex:1;min-width:170px;max-width:300px">'
+    +'<select onchange="buhaArbeitskontoStapel(this.value)" style="border:1px solid var(--border);border-radius:8px;padding:.42rem .6rem;font-size:.8rem;font-family:var(--ff);background:var(--white)">'
+      +'<option value=""'+(!_akStapel?' selected':'')+'>Ganzes Wirtschaftsjahr</option>'
+      +(buha.stapel||[]).map(function(s){return '<option value="'+s.id+'"'+(s.id===_akStapel?' selected':'')+'>'+escapeHtml((s.nummer?s.nummer+' · ':'')+s.name)+'</option>';}).join('')
+    +'</select>'
+    +'<span style="flex:1"></span>'
+    +'<span style="display:inline-flex;gap:.4rem;white-space:nowrap"><button class="btn-small" onclick="buhaArbeitskontoCsv()"><span class="btn-ic" data-icon="download"></span> CSV</button>'
+    +'<button class="btn-primary" style="font-size:.8rem;padding:.4rem .9rem" onclick="buhaArbeitskontoPdf()"><span class="btn-ic" data-icon="printer"></span> PDF</button></span>'
+    +'</div>';
+  if(!_akKonto||!d){ c.innerHTML=h+'<div style="background:var(--white);border:1px dashed var(--border);border-radius:12px;padding:2rem;text-align:center;color:var(--muted);font-size:.85rem">Noch kein Kontenrahmen – lade zuerst SKR03 oder SKR04.</div>'; applyIcons(c); return; }
+  // Kennzahlen des Kontos
+  var karte=function(lbl,val,col){return '<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:.7rem 1rem"><div style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)">'+lbl+'</div><div style="font-size:1.05rem;font-weight:800;margin-top:.2rem;color:'+(col||'var(--text)')+';font-variant-numeric:tabular-nums">'+val+'</div></div>';};
+  h+='<div style="display:flex;align-items:baseline;gap:.6rem;flex-wrap:wrap;margin-bottom:.7rem">'
+    +'<span style="font-size:1.05rem;font-weight:800">'+escapeHtml(_akKonto)+' · '+escapeHtml(k?k.name:'(nicht im Kontenrahmen)')+'</span>'
+    +(k?'<span style="font-size:.66rem;font-weight:700;padding:2px 8px;border-radius:7px;background:'+kontoTypColor(k.typ)[0]+';color:'+kontoTypColor(k.typ)[1]+'">'+kontoTypLabel(k.typ)+'</span>':'')
+    +(kat?'<span style="font-size:.72rem;color:var(--muted)">'+escapeHtml(BUHA_KAT[kat]||kat)+'</span>':'')
+    +'</div>';
+  h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.6rem;margin-bottom:1rem">'
+    +karte('Summe Soll',buhaEuro(d.soll))+karte('Summe Haben',buhaEuro(d.haben))
+    +karte('Saldo',buhaEuro(d.saldo),d.saldo>=0?'#1a7a4a':'#c0392b')
+    +karte('Buchungen',String(d.aktiv)+(d.anzahl>d.aktiv?' (+'+(d.anzahl-d.aktiv)+' Storno)':''))
+    +'</div>';
+  h+='<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow-x:auto">';
+  if(!d.zeilen.length){
+    h+='<div style="padding:2.2rem;text-align:center;color:var(--muted);font-size:.85rem">'+(_akSuche?'Keine Treffer für die Suche.':'Auf diesem Konto wurde in '+buha.jahr+' nichts gebucht.')+'</div>';
+  }else{
+    h+='<table style="width:100%;border-collapse:collapse;font-size:.8rem;min-width:900px"><thead><tr style="border-bottom:2px solid var(--border)">'
+      +['PN','Datum','Beleg','Buchungstext','Gegenkonto','Soll','Haben','Saldo',''].map(function(t,i){
+        return '<th style="text-align:'+(i>=5&&i<=7?'right':'left')+';padding:.45rem .6rem;font-size:.62rem;text-transform:uppercase;color:var(--muted);white-space:nowrap">'+t+'</th>';}).join('')
+      +'</tr></thead><tbody>'
+      +d.zeilen.map(function(z){var b=z.b;
+        return '<tr ondblclick="buhaRowDetail(\''+b.id+'\')" title="Doppelklick: Details" style="border-bottom:1px solid var(--border);cursor:pointer;'+(z.storniert?'opacity:.55':'')+'">'
+          +'<td style="padding:.38rem .6rem;color:var(--muted);font-variant-numeric:tabular-nums">'+(b.primanota_nr||'–')+'</td>'
+          +'<td style="padding:.38rem .6rem;white-space:nowrap">'+fmtDatum(String(b.buchungsdatum||'').slice(0,10))+'</td>'
+          +'<td style="padding:.38rem .6rem;color:var(--muted)">'+escapeHtml(b.belegnr||'–')+'</td>'
+          +'<td style="padding:.38rem .6rem">'+escapeHtml(b.text||'')+buhaSplitBadge(b)+(b.einheit_bez?'<div style="font-size:.66rem;color:var(--muted)">'+escapeHtml(b.einheit_bez)+'</div>':'')+'</td>'
+          +'<td style="padding:.38rem .6rem"><a onclick="event.stopPropagation();buhaArbeitskontoWahl(\''+escapeHtml(z.gegen||'')+'\')" style="color:#0e7c7b;cursor:pointer;font-weight:600">'+escapeHtml(z.gegen||'–')+'</a> <span style="color:var(--muted);font-size:.7rem">'+escapeHtml(kontoName(z.gegen)||'')+'</span></td>'
+          +'<td style="padding:.38rem .6rem;text-align:right;font-variant-numeric:tabular-nums">'+(z.soll?buhaEuro(z.soll):'')+'</td>'
+          +'<td style="padding:.38rem .6rem;text-align:right;font-variant-numeric:tabular-nums">'+(z.haben?buhaEuro(z.haben):'')+'</td>'
+          +'<td style="padding:.38rem .6rem;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;color:'+(z.saldo>=0?'#1a7a4a':'#c0392b')+'">'+buhaEuro(z.saldo)+'</td>'
+          +'<td style="padding:.38rem .6rem;font-size:.68rem;color:var(--muted);white-space:nowrap">'+(b.ist_storno?'Storno':b.storniert?'storniert':(b.ausziffer_gruppe?'ausgeziffert':(b.festgeschrieben?'🔒':'')))+'</td>'
+        +'</tr>';
+      }).join('')
+      +'<tr style="background:#fafafa;font-weight:800"><td colspan="5" style="padding:.45rem .6rem">Summe '+escapeHtml(_akKonto)+(_akStapel?' · nur gewählter Stapel':'')+'</td>'
+      +'<td style="padding:.45rem .6rem;text-align:right;white-space:nowrap">'+buhaEuro(d.soll)+'</td>'
+      +'<td style="padding:.45rem .6rem;text-align:right;white-space:nowrap">'+buhaEuro(d.haben)+'</td>'
+      +'<td style="padding:.45rem .6rem;text-align:right;white-space:nowrap">'+buhaEuro(d.saldo)+'</td><td></td></tr>'
+      +'</tbody></table>';
+  }
+  h+='</div><div style="font-size:.72rem;color:var(--muted);margin-top:.6rem">Doppelklick auf eine Zeile öffnet die Buchung · Klick auf das Gegenkonto wechselt dorthin · Stornierte Buchungen bleiben sichtbar, zählen aber nicht in den Saldo.</div>';
+  c.innerHTML=h; applyIcons(c);
+}
+function buhaArbeitskontoDaten(){
+  var d=buhaKontoZeilen(_akKonto,{suche:_akSuche,stapel:_akStapel});
+  var st=(buha.stapel||[]).filter(function(s){return s.id===_akStapel;})[0];
+  var obj=(_buhaCockpitObj&&_buhaCockpitObj.name)||(aktivesObjekt&&aktivesObjekt.name)||'Objekt';
+  return {d:d,obj:obj,
+    titel:'Kontoblatt '+_akKonto+' · '+(kontoName(_akKonto)||''),
+    unter:obj+' · Wirtschaftsjahr '+buha.jahr+(st?' · '+st.name:'')+(_akSuche?' · Filter "'+_akSuche+'"':''),
+    rows:d.zeilen.map(function(z){return [String(z.b.primanota_nr||''),fmtDatum(String(z.b.buchungsdatum||'').slice(0,10)),z.b.belegnr||'',
+      (z.b.text||'')+(z.storniert?(z.b.ist_storno?' [Storno]':' [storniert]'):''),(z.gegen||'')+(kontoName(z.gegen)?' '+kontoName(z.gegen):''),
+      z.soll?buhaEuro(z.soll):'',z.haben?buhaEuro(z.haben):'',buhaEuro(z.saldo)];})};
+}
+function buhaArbeitskontoPdf(action){
+  if(!_akKonto)return;
+  var x=buhaArbeitskontoDaten();
+  if(!x.rows.length){showToast('Auf diesem Konto gibt es keine Buchungen.');return;}
+  var doc=buhaPdfTabelle({titel:x.titel,untertitel:x.unter,quer:true,
+    spalten:[{label:'PN',w:11},{label:'Datum',w:20},{label:'Beleg',w:22},{label:'Buchungstext',w:0},{label:'Gegenkonto',w:56},{label:'Soll',w:25,align:'right'},{label:'Haben',w:25,align:'right'},{label:'Saldo',w:27,align:'right'}],
+    zeilen:x.rows,fuss:['','','','Summe · '+x.d.aktiv+' Buchungen','',buhaEuro(x.d.soll),buhaEuro(x.d.haben),buhaEuro(x.d.saldo)],
+    hinweis:'Laufender Saldo in Buchungsreihenfolge. Stornierte Buchungen sind gekennzeichnet und im Saldo nicht enthalten.'});
+  if(!doc)return;
+  showDoc(doc,'Kontoblatt_'+String(_akKonto)+'_'+String(x.obj).replace(/[^a-zA-Z0-9]+/g,'_')+'_'+buha.jahr+'.pdf',action||'vorschau');
+}
+function buhaArbeitskontoCsv(){
+  if(!_akKonto)return;
+  var x=buhaArbeitskontoDaten();
+  if(!x.rows.length){showToast('Auf diesem Konto gibt es keine Buchungen.');return;}
+  var lines=['PN;Datum;Beleg;Buchungstext;Gegenkonto;Soll;Haben;Saldo'].concat(x.d.zeilen.map(function(z){
+    return [z.b.primanota_nr||'',String(z.b.buchungsdatum||'').slice(0,10),z.b.belegnr||'',(z.b.text||'').replace(/;/g,','),z.gegen||'',
+      z.soll.toFixed(2).replace('.',','),z.haben.toFixed(2).replace('.',','),z.saldo.toFixed(2).replace('.',',')].join(';');}));
+  buhaDownloadText(lines.join('\r\n'),'Kontoblatt_'+_akKonto+'_'+buha.jahr+'.csv');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DEBITOREN / KREDITOREN mit AUSZIFFERN
+// Ein Personenkonto führt Forderung bzw. Verbindlichkeit je Mieter oder
+// Lieferant. Rechnung und Zahlung werden „ausgeziffert": beide Buchungen
+// bekommen dieselbe ausziffer_gruppe und gelten damit als ausgeglichen.
+// Was übrig bleibt, ist der offene Posten – das ist die ganze Logik.
+// ═══════════════════════════════════════════════════════════════════════════
+var _pkTyp='debitor', _pkOffen={}, _pkAuswahl={};
+function buhaIstPersonenkonto(k,typ){
+  var kat=buhaKontoKat(k);
+  if(typ)return kat===typ;
+  return kat==='debitor'||kat==='kreditor';
+}
+function buhaPersonenkonten(typ){
+  return (buha.konten||[]).filter(function(k){return buhaIstPersonenkonto(k,typ);})
+    .sort(function(a,b){return String(a.nummer).localeCompare(String(b.nummer),undefined,{numeric:true});});
+}
+// Alle wirksamen Buchungen eines Personenkontos (ohne Stornopaare)
+function buhaPersonBuchungen(nr){
+  return (buha.buchungen||[]).filter(function(b){
+    if(b.storniert||b.ist_storno)return false;
+    return b.soll_konto===nr||b.haben_konto===nr;
+  }).sort(function(a,b){return String(a.buchungsdatum||'').localeCompare(String(b.buchungsdatum||''))||(parseInt(a.primanota_nr,10)||0)-(parseInt(b.primanota_nr,10)||0);});
+}
+// Kennzahlen je Person. Vorzeichen aus Sicht des Verwalters:
+// Debitor -> Soll minus Haben (offene Forderung), Kreditor -> Haben minus Soll (offene Verbindlichkeit).
+function buhaPersonStat(nr,typ){
+  var kat=typ||buhaKontoKat(nr)||'debitor';
+  var vz=kat==='kreditor'?-1:1;
+  var s={nr:nr,name:kontoName(nr)||'',typ:kat,soll:0,haben:0,saldo:0,offen:0,offenAnzahl:0,anzahl:0,
+    ausgeziffert:0,aeltester:null,nebenkosten:0,gruppen:{}};
+  buhaPersonBuchungen(nr).forEach(function(b){
+    var bt=parseFloat(b.betrag)||0;
+    var wirkung=(b.soll_konto===nr?bt:0)-(b.haben_konto===nr?bt:0);
+    s.soll+=b.soll_konto===nr?bt:0; s.haben+=b.haben_konto===nr?bt:0;
+    s.saldo+=wirkung*vz; s.anzahl++;
+    var gegen=b.soll_konto===nr?b.haben_konto:b.soll_konto;
+    if(buhaKontoKat(gegen)==='nebenkosten')s.nebenkosten+=bt;
+    if(b.ausziffer_gruppe){ s.ausgeziffert++; s.gruppen[b.ausziffer_gruppe]=(s.gruppen[b.ausziffer_gruppe]||0)+1; }
+    else{
+      s.offen+=wirkung*vz; s.offenAnzahl++;
+      var d=String(b.buchungsdatum||'').slice(0,10);
+      if(d&&(!s.aeltester||d<s.aeltester))s.aeltester=d;
+    }
+  });
+  s.soll=buhaSplitRund(s.soll); s.haben=buhaSplitRund(s.haben);
+  s.saldo=buhaSplitRund(s.saldo); s.offen=buhaSplitRund(s.offen);
+  s.nebenkosten=buhaSplitRund(s.nebenkosten);
+  return s;
+}
+// Tage seit dem ältesten offenen Posten (nur zur Einordnung, keine Mahnstufe)
+function buhaTageSeit(datum,heute){
+  if(!datum)return 0;
+  var a=Date.parse(datum+'T00:00:00Z'), b=Date.parse((heute||todayStr())+'T00:00:00Z');
+  if(isNaN(a)||isNaN(b))return 0;
+  return Math.round((b-a)/86400000);
+}
+// Auswahl prüfen: ausziffern geht nur, wenn sich die gewählten Buchungen auf 0 ausgleichen
+function buhaAusziffernPruefen(nr,ids){
+  var byId={}; buhaPersonBuchungen(nr).forEach(function(b){byId[b.id]=b;});
+  var netto=0,anzahl=0,schon=0;
+  (ids||[]).forEach(function(id){
+    var b=byId[id]; if(!b)return;
+    anzahl++; if(b.ausziffer_gruppe)schon++;
+    var bt=parseFloat(b.betrag)||0;
+    netto+=(b.soll_konto===nr?bt:0)-(b.haben_konto===nr?bt:0);
+  });
+  netto=buhaSplitRund(netto);
+  var fehler='';
+  if(anzahl<2)fehler='Bitte mindestens zwei Buchungen auswählen (Rechnung und Zahlung).';
+  else if(schon)fehler=schon+' der gewählten Buchungen sind bereits ausgeziffert.';
+  else if(Math.abs(netto)>=0.005)fehler='Die Auswahl gleicht sich nicht aus – Differenz '+buhaEuro(netto)+'.';
+  return {ok:!fehler,fehler:fehler,differenz:netto,anzahl:anzahl};
+}
+// Automatik: offene Buchungen mit gleichem Betrag auf Gegenseiten paaren (älteste zuerst)
+function buhaAutoAusziffernPaare(nr){
+  var offen=buhaPersonBuchungen(nr).filter(function(b){return !b.ausziffer_gruppe;});
+  var soll=offen.filter(function(b){return b.soll_konto===nr;});
+  var haben=offen.filter(function(b){return b.haben_konto===nr;});
+  var benutzt={}, paare=[];
+  soll.forEach(function(a){
+    var bt=buhaSplitRund(parseFloat(a.betrag)||0);
+    for(var i=0;i<haben.length;i++){
+      var b=haben[i];
+      if(benutzt[b.id])continue;
+      if(Math.abs(buhaSplitRund(parseFloat(b.betrag)||0)-bt)>=0.005)continue;
+      benutzt[b.id]=true; paare.push([a.id,b.id]); return;
+    }
+  });
+  return paare;
+}
+function buhaPersonenTyp(t){ _pkTyp=(t==='kreditor')?'kreditor':'debitor'; _pkAuswahl={}; renderBuhaPersonen(); }
+function buhaPersonToggle(nr){ _pkOffen[nr]=!_pkOffen[nr]; renderBuhaPersonen(); }
+function buhaPersonAuswahl(nr,id,an){
+  _pkAuswahl[nr]=_pkAuswahl[nr]||{};
+  if(an)_pkAuswahl[nr][id]=true; else delete _pkAuswahl[nr][id];
+  buhaPersonFuss(nr);
+}
+function buhaPersonAuswahlIds(nr){ return Object.keys(_pkAuswahl[nr]||{}); }
+function buhaPersonFuss(nr){
+  var f=document.getElementById('pk-fuss-'+nr); if(!f)return;
+  var ids=buhaPersonAuswahlIds(nr);
+  if(!ids.length){ f.innerHTML='<span style="font-size:.74rem;color:var(--muted)">Buchungen anhaken, um sie auszuziffern.</span>'; return; }
+  var p=buhaAusziffernPruefen(nr,ids);
+  f.innerHTML='<span style="font-size:.76rem;color:'+(p.ok?'#1a7a4a':'#c0392b')+';font-weight:600">'
+    +ids.length+' ausgewählt · '+(p.ok?'gleicht sich aus ✓':escapeHtml(p.fehler))+'</span>'
+    +'<span style="flex:1"></span>'
+    +'<button class="btn-primary" style="font-size:.76rem;padding:.35rem .8rem;'+(p.ok?'':'opacity:.55;cursor:not-allowed')+'" '+(p.ok?'':'disabled ')+'onclick="buhaAusziffern(\''+nr+'\')">✓ Ausziffern</button>';
+}
+function renderBuhaPersonen(){
+  var c=document.getElementById('buha-pane-personen'); if(!c)return;
+  var konten=buhaPersonenkonten(_pkTyp);
+  var stats=konten.map(function(k){return buhaPersonStat(k.nummer,_pkTyp);});
+  var istK=_pkTyp==='kreditor';
+  var summeOffen=stats.reduce(function(s,x){return s+x.offen;},0);
+  var summeNk=stats.reduce(function(s,x){return s+x.nebenkosten;},0);
+  var mitOffen=stats.filter(function(x){return Math.abs(x.offen)>=0.005;}).length;
+  var tab=function(t,lbl,n){var on=_pkTyp===t;
+    return '<button onclick="buhaPersonenTyp(\''+t+'\')" style="border:1px solid '+(on?'#0e7c7b':'var(--border)')+';background:'+(on?'#0e7c7b':'var(--white)')+';color:'+(on?'#fff':'var(--muted)')+';border-radius:9px;padding:.4rem 1rem;font-size:.84rem;font-weight:'+(on?'700':'500')+';cursor:pointer;font-family:var(--ff)">'+lbl+' <span style="opacity:.75">('+n+')</span></button>';};
+  var h='<div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-bottom:.9rem">'
+    +tab('debitor','Debitoren (Mieter)',buhaPersonenkonten('debitor').length)
+    +tab('kreditor','Kreditoren (Lieferanten)',buhaPersonenkonten('kreditor').length)
+    +'<span style="flex:1"></span>'
+    +'<button class="btn-small" onclick="buhaPersonenkontoDialog(\''+_pkTyp+'\')">+ '+(istK?'Kreditor':'Debitor')+'</button>'
+    +'<button class="btn-small" onclick="buhaPersonenCsv()"><span class="btn-ic" data-icon="download"></span> CSV</button>'
+    +'<button class="btn-primary" style="font-size:.8rem;padding:.4rem .9rem" onclick="buhaPersonenPdf()"><span class="btn-ic" data-icon="printer"></span> Liste als PDF</button>'
+    +'</div>';
+  var karte=function(lbl,val,col,sub){return '<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:.7rem 1rem"><div style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)">'+lbl+'</div><div style="font-size:1.05rem;font-weight:800;margin-top:.2rem;color:'+(col||'var(--text)')+';font-variant-numeric:tabular-nums">'+val+'</div>'+(sub?'<div style="font-size:.68rem;color:var(--muted)">'+sub+'</div>':'')+'</div>';};
+  h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.6rem;margin-bottom:1rem">'
+    +karte(istK?'Offene Verbindlichkeiten':'Offene Forderungen',buhaEuro(summeOffen),summeOffen>0.005?(istK?'#b45309':'#0e7c7b'):'#1a7a4a',mitOffen+' von '+stats.length+' Konten')
+    +karte('davon Nebenkosten',buhaEuro(summeNk),'var(--text)','über NK-Konten gebucht')
+    +karte('Personenkonten',String(stats.length),'var(--text)',istK?'Kreditoren 70000–99999':'Debitoren 10000–69999')
+    +'</div>';
+  if(!konten.length){
+    h+='<div style="background:var(--white);border:1px dashed var(--border);border-radius:12px;padding:2.2rem;text-align:center;color:var(--muted);font-size:.86rem">'
+      +'Noch keine '+(istK?'Kreditoren':'Debitoren')+' angelegt.<br><span style="font-size:.8rem">Ein Personenkonto legst du direkt beim Buchen an („+ '+(istK?'Kreditor':'Debitor')+'") – es erscheint dann im Kontenrahmen und kann als Konto oder Gegenkonto gebucht werden.</span></div>';
+    c.innerHTML=h; applyIcons(c); return;
+  }
+  h+='<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow-x:auto">'
+    +'<table style="width:100%;border-collapse:collapse;font-size:.82rem;min-width:860px"><thead><tr style="border-bottom:2px solid var(--border)">'
+    +['','Konto','Name','Umsatz Soll','Umsatz Haben',(istK?'Offen (wir schulden)':'Offen (Forderung)'),'davon NK','Ältester offener Posten',''].map(function(t,i){
+      return '<th style="text-align:'+(i>=3&&i<=6?'right':'left')+';padding:.5rem .6rem;font-size:.62rem;text-transform:uppercase;color:var(--muted);white-space:nowrap">'+t+'</th>';}).join('')
+    +'</tr></thead><tbody>';
+  stats.forEach(function(s){
+    var auf=!!_pkOffen[s.nr];
+    var tage=s.aeltester?buhaTageSeit(s.aeltester):0;
+    // Offene Posten sind normal – erst ab 30 Tagen wird die Farbe zur Warnung
+    var offenFarbe=s.offen<-0.005?'#1a7a4a':(tage>30?'#c0392b':'#b45309');
+    var offenTxt=Math.abs(s.offen)<0.005?'<span style="color:#1a7a4a;font-weight:700">ausgeglichen ✓</span>':'<span style="font-weight:800;color:'+offenFarbe+'" title="'+(tage>30?'Ältester offener Posten liegt '+tage+' Tage zurück':'offen')+'">'+buhaEuro(s.offen)+'</span>';
+    h+='<tr style="border-bottom:1px solid var(--border);cursor:pointer;'+(auf?'background:#f2fbfa':'')+'" onclick="buhaPersonToggle(\''+s.nr+'\')">'
+      +'<td style="padding:.45rem .6rem;color:var(--muted);width:22px">'+(auf?'▾':'▸')+'</td>'
+      +'<td style="padding:.45rem .6rem;font-weight:700;font-variant-numeric:tabular-nums">'+escapeHtml(s.nr)+'</td>'
+      +'<td style="padding:.45rem .6rem">'+escapeHtml(s.name)+'<div style="font-size:.66rem;color:var(--muted)">'+s.anzahl+' Buchung'+(s.anzahl===1?'':'en')+(s.ausgeziffert?' · '+s.ausgeziffert+' ausgeziffert':'')+'</div></td>'
+      +'<td style="padding:.45rem .6rem;text-align:right;font-variant-numeric:tabular-nums">'+buhaEuro(s.soll)+'</td>'
+      +'<td style="padding:.45rem .6rem;text-align:right;font-variant-numeric:tabular-nums">'+buhaEuro(s.haben)+'</td>'
+      +'<td style="padding:.45rem .6rem;text-align:right;white-space:nowrap">'+offenTxt+'</td>'
+      +'<td style="padding:.45rem .6rem;text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)">'+(s.nebenkosten?buhaEuro(s.nebenkosten):'–')+'</td>'
+      +'<td style="padding:.45rem .6rem;white-space:nowrap;color:'+(tage>30?'#c0392b':'var(--muted)')+'">'+(s.aeltester?fmtDatum(s.aeltester)+' <span style="font-size:.68rem">('+tage+' Tage)</span>':'–')+'</td>'
+      +'<td style="padding:.45rem .6rem;text-align:right;white-space:nowrap"><button class="btn-small" style="font-size:.64rem;padding:2px 8px" onclick="event.stopPropagation();buhaArbeitskontoOeffnen(\''+s.nr+'\')" title="Im Arbeitskonto ansehen">Kontoblatt</button></td>'
+      +'</tr>';
+    if(auf)h+='<tr><td colspan="9" style="padding:0 .6rem .8rem">'+buhaPersonDetailHtml(s)+'</td></tr>';
+  });
+  var sSoll=stats.reduce(function(a,x){return a+x.soll;},0), sHaben=stats.reduce(function(a,x){return a+x.haben;},0);
+  h+='<tr style="background:#fafafa;font-weight:800"><td colspan="3" style="padding:.5rem .6rem">Summe · '+stats.length+' Konten</td>'
+    +'<td style="padding:.5rem .6rem;text-align:right;white-space:nowrap">'+buhaEuro(sSoll)+'</td>'
+    +'<td style="padding:.5rem .6rem;text-align:right;white-space:nowrap">'+buhaEuro(sHaben)+'</td>'
+    +'<td style="padding:.5rem .6rem;text-align:right;white-space:nowrap">'+buhaEuro(summeOffen)+'</td>'
+    +'<td style="padding:.5rem .6rem;text-align:right;white-space:nowrap">'+buhaEuro(summeNk)+'</td><td colspan="2"></td></tr>'
+    +'</tbody></table></div>';
+  h+='<div style="font-size:.72rem;color:var(--muted);margin-top:.6rem;line-height:1.6">'
+    +'<strong>Ausziffern</strong> heißt: Rechnung und Zahlung werden einander zugeordnet und verschwinden aus den offenen Posten. '
+    +'Zeile aufklappen, die zusammengehörenden Buchungen anhaken und „Ausziffern" wählen – oder „Automatisch ausziffern" für alle Paare mit gleichem Betrag. '
+    +'Was danach übrig bleibt, ist der tatsächlich offene Posten.</div>';
+  c.innerHTML=h; applyIcons(c);
+  Object.keys(_pkOffen).forEach(function(nr){ if(_pkOffen[nr])buhaPersonFuss(nr); });
+}
+function buhaPersonDetailHtml(s){
+  var list=buhaPersonBuchungen(s.nr);
+  var auswahl=_pkAuswahl[s.nr]||{};
+  var paare=buhaAutoAusziffernPaare(s.nr);
+  var gruppenFarbe={}, i=0;
+  var farben=['#eef2ff','#e6f4ea','#fff7e6','#fdecea','#f3e8fd'];
+  Object.keys(s.gruppen).forEach(function(g){ gruppenFarbe[g]=farben[(i++)%farben.length]; });
+  var h='<div style="background:var(--white);border:1px solid var(--border);border-radius:10px;overflow-x:auto">'
+    +'<div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;padding:.6rem .8rem;border-bottom:1px solid var(--border)">'
+    +'<b style="font-size:.82rem">'+escapeHtml(s.nr+' · '+s.name)+'</b>'
+    +'<span style="flex:1"></span>'
+    +(paare.length?'<button class="btn-small gruen" style="font-size:.72rem" onclick="buhaAutoAusziffern(\''+s.nr+'\')">⚡ Automatisch ausziffern ('+paare.length+' Paar'+(paare.length===1?'':'e')+')</button>':'')
+    +(s.ausgeziffert?'<button class="btn-small grau" style="font-size:.72rem" onclick="buhaAusziffernAlleAufheben(\''+s.nr+'\')">Ausziffern aufheben</button>':'')
+    +'</div>';
+  if(!list.length){ return h+'<div style="padding:1.4rem;text-align:center;color:var(--muted);font-size:.82rem">Noch keine Buchungen auf diesem Konto.</div></div>'; }
+  h+='<table style="width:100%;border-collapse:collapse;font-size:.78rem;min-width:780px"><thead><tr style="border-bottom:1px solid var(--border)">'
+    +['','Datum','Beleg','Buchungstext','Gegenkonto','Soll','Haben','Status'].map(function(t,i2){
+      return '<th style="text-align:'+(i2===5||i2===6?'right':'left')+';padding:.35rem .6rem;font-size:.6rem;text-transform:uppercase;color:var(--muted);white-space:nowrap">'+t+'</th>';}).join('')
+    +'</tr></thead><tbody>'
+    +list.map(function(b){
+      var bt=parseFloat(b.betrag)||0;
+      var soll=b.soll_konto===s.nr?bt:0, haben=b.haben_konto===s.nr?bt:0;
+      var gegen=b.soll_konto===s.nr?b.haben_konto:b.soll_konto;
+      var g=b.ausziffer_gruppe;
+      return '<tr style="border-bottom:1px solid #f3f4f6;'+(g?'background:'+(gruppenFarbe[g]||'#eef2ff'):'')+'">'
+        +'<td style="padding:.3rem .6rem">'+(g?'':'<input type="checkbox" '+(auswahl[b.id]?'checked ':'')+'onclick="event.stopPropagation();buhaPersonAuswahl(\''+s.nr+'\',\''+b.id+'\',this.checked)">')+'</td>'
+        +'<td style="padding:.3rem .6rem;white-space:nowrap">'+fmtDatum(String(b.buchungsdatum||'').slice(0,10))+'</td>'
+        +'<td style="padding:.3rem .6rem;color:var(--muted)">'+escapeHtml(b.belegnr||'–')+'</td>'
+        +'<td style="padding:.3rem .6rem">'+escapeHtml(b.text||'')+'</td>'
+        +'<td style="padding:.3rem .6rem;color:var(--muted)">'+escapeHtml(gegen||'')+' '+escapeHtml(kontoName(gegen)||'')+'</td>'
+        +'<td style="padding:.3rem .6rem;text-align:right;font-variant-numeric:tabular-nums">'+(soll?buhaEuro(soll):'')+'</td>'
+        +'<td style="padding:.3rem .6rem;text-align:right;font-variant-numeric:tabular-nums">'+(haben?buhaEuro(haben):'')+'</td>'
+        +'<td style="padding:.3rem .6rem;white-space:nowrap">'+(g
+          ?'<span style="font-size:.6rem;font-weight:700;padding:1px 6px;border-radius:6px;background:#e6f4ea;color:#1a7a4a">ausgeziffert</span> <button class="btn-small" style="font-size:.58rem;padding:1px 6px" title="Zuordnung aufheben" onclick="buhaAusziffernAufheben(\''+g+'\')">✕</button>'
+          :'<span style="font-size:.6rem;font-weight:700;padding:1px 6px;border-radius:6px;background:#fff3cd;color:#9a6700">offen</span>')+'</td>'
+      +'</tr>';
+    }).join('')+'</tbody></table>'
+    +'<div id="pk-fuss-'+s.nr+'" style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;padding:.55rem .8rem;border-top:1px solid var(--border);background:#fafafa"></div></div>';
+  return h;
+}
+async function buhaAusziffern(nr){
+  var ids=buhaPersonAuswahlIds(nr);
+  var p=buhaAusziffernPruefen(nr,ids);
+  if(!p.ok){showToast('❌ '+p.fehler);return;}
+  var gruppe=buhaUuid(), now=new Date().toISOString();
+  try{
+    var r=await sb.from('weg_buchungen').update({ausziffer_gruppe:gruppe,ausgeziffert_am:now}).in('id',ids);
+    if(r.error)throw new Error(r.error.message);
+    (buha.buchungen||[]).forEach(function(b){ if(ids.indexOf(b.id)>=0){b.ausziffer_gruppe=gruppe;b.ausgeziffert_am=now;} });
+    await logAudit('ausgeziffert','buchung',null,{konto:nr,anzahl:ids.length,gruppe:gruppe});
+    showToast('✅ '+ids.length+' Buchungen ausgeziffert');
+    _pkAuswahl[nr]={};
+    renderBuhaPersonen();
+  }catch(e){showToast('❌ '+(e.message||e));}
+}
+async function buhaAutoAusziffern(nr){
+  var paare=buhaAutoAusziffernPaare(nr);
+  if(!paare.length){showToast('Keine passenden Paare gefunden.');return;}
+  appConfirm({icon:'⚡',title:'Automatisch ausziffern?',
+    message:'<b>'+paare.length+' Paar'+(paare.length===1?'':'e')+'</b> mit übereinstimmendem Betrag werden einander zugeordnet und gelten danach als ausgeglichen. Das lässt sich jederzeit wieder aufheben.',
+    buttons:[{label:'⚡ Ausziffern',style:'background:linear-gradient(135deg,#0e7c7b,#0a5f5e);color:#fff',onClick:async function(){
+      var now=new Date().toISOString(), n=0;
+      try{
+        for(var i=0;i<paare.length;i++){
+          var gruppe=buhaUuid();
+          var r=await sb.from('weg_buchungen').update({ausziffer_gruppe:gruppe,ausgeziffert_am:now}).in('id',paare[i]);
+          if(r.error)throw new Error(r.error.message);
+          (buha.buchungen||[]).forEach(function(b){ if(paare[i].indexOf(b.id)>=0){b.ausziffer_gruppe=gruppe;b.ausgeziffert_am=now;} });
+          n++;
+        }
+        await logAudit('ausgeziffert','buchung',null,{konto:nr,paare:n,automatisch:true});
+        showToast('✅ '+n+' Paare ausgeziffert');
+      }catch(e){showToast('❌ '+(e.message||e));}
+      renderBuhaPersonen();
+    }},{label:'Abbrechen',style:'background:var(--bg);color:var(--muted)',onClick:function(){}}]});
+}
+async function buhaAusziffernAufheben(gruppe){
+  try{
+    var r=await sb.from('weg_buchungen').update({ausziffer_gruppe:null,ausgeziffert_am:null}).eq('ausziffer_gruppe',gruppe);
+    if(r.error)throw new Error(r.error.message);
+    (buha.buchungen||[]).forEach(function(b){ if(b.ausziffer_gruppe===gruppe){b.ausziffer_gruppe=null;b.ausgeziffert_am=null;} });
+    await logAudit('ausziffern_aufgehoben','buchung',null,{gruppe:gruppe});
+    showToast('Zuordnung aufgehoben');
+    renderBuhaPersonen();
+  }catch(e){showToast('❌ '+(e.message||e));}
+}
+function buhaAusziffernAlleAufheben(nr){
+  var gruppen=Object.keys(buhaPersonStat(nr,_pkTyp).gruppen);
+  if(!gruppen.length)return;
+  appConfirm({icon:'↺',title:'Alle Zuordnungen aufheben?',
+    message:'Für dieses Konto werden <b>'+gruppen.length+'</b> Ausziffer-Zuordnungen aufgehoben. Die Buchungen bleiben unverändert und erscheinen wieder als offene Posten.',
+    buttons:[{label:'↺ Aufheben',style:'background:#9a6700;color:#fff',onClick:async function(){
+      for(var i=0;i<gruppen.length;i++){ await buhaAusziffernAufheben(gruppen[i]); }
+    }},{label:'Abbrechen',style:'background:var(--bg);color:var(--muted)',onClick:function(){}}]});
+}
+function buhaPersonenDaten(){
+  var istK=_pkTyp==='kreditor';
+  var stats=buhaPersonenkonten(_pkTyp).map(function(k){return buhaPersonStat(k.nummer,_pkTyp);});
+  var obj=(_buhaCockpitObj&&_buhaCockpitObj.name)||(aktivesObjekt&&aktivesObjekt.name)||'Objekt';
+  return {stats:stats,istK:istK,obj:obj,
+    titel:(istK?'Kreditorenliste':'Debitorenliste'),
+    unter:obj+' · Wirtschaftsjahr '+buha.jahr+' · Stand '+fmtDatum(todayStr()),
+    summeOffen:buhaSplitRund(stats.reduce(function(s,x){return s+x.offen;},0)),
+    summeNk:buhaSplitRund(stats.reduce(function(s,x){return s+x.nebenkosten;},0)),
+    rows:stats.map(function(s){return [s.nr,s.name,buhaEuro(s.soll),buhaEuro(s.haben),buhaEuro(s.offen),
+      s.nebenkosten?buhaEuro(s.nebenkosten):'–',s.aeltester?fmtDatum(s.aeltester):'–'];})};
+}
+function buhaPersonenPdf(action){
+  var x=buhaPersonenDaten();
+  if(!x.rows.length){showToast('Keine Personenkonten vorhanden.');return;}
+  var doc=buhaPdfTabelle({titel:x.titel,untertitel:x.unter,
+    spalten:[{label:'Konto',w:20},{label:'Name',w:0},{label:'Soll',w:26,align:'right'},{label:'Haben',w:26,align:'right'},
+             {label:x.istK?'Offen':'Offen',w:26,align:'right'},{label:'davon NK',w:24,align:'right'},{label:'Ältester',w:22}],
+    zeilen:x.rows,fuss:['','Summe · '+x.stats.length+' Konten','','',buhaEuro(x.summeOffen),buhaEuro(x.summeNk),''],
+    hinweis:'Offen = Summe der noch nicht ausgezifferten Buchungen auf dem Personenkonto. „davon NK" zeigt die über Nebenkosten-Konten gebuchten Beträge.'});
+  if(!doc)return;
+  showDoc(doc,x.titel.replace(/\s+/g,'_')+'_'+String(x.obj).replace(/[^a-zA-Z0-9]+/g,'_')+'_'+buha.jahr+'.pdf',action||'vorschau');
+}
+function buhaPersonenCsv(){
+  var x=buhaPersonenDaten();
+  if(!x.rows.length){showToast('Keine Personenkonten vorhanden.');return;}
+  var lines=['Konto;Name;Soll;Haben;Offen;davon Nebenkosten;Aeltester offener Posten'].concat(x.stats.map(function(s){
+    return [s.nr,(s.name||'').replace(/;/g,','),s.soll.toFixed(2).replace('.',','),s.haben.toFixed(2).replace('.',','),
+      s.offen.toFixed(2).replace('.',','),s.nebenkosten.toFixed(2).replace('.',','),s.aeltester||''].join(';');}));
+  buhaDownloadText(lines.join('\r\n'),x.titel.replace(/\s+/g,'_')+'_'+buha.jahr+'.csv');
 }
 
 // ── Primanota: Buchungen eines Stapels in Erfassungsreihenfolge ───────────

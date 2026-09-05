@@ -1925,6 +1925,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
                 <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.8rem">
                   <button class="btn-primary" onclick="openKontoModal()"><span class="btn-ic" data-icon="plus"></span> Konto anlegen</button>
                   <button class="btn-secondary" id="buha-kat-btn" onclick="buhaKategorienDialog()" title="Konten ohne hinterlegte Kategorie automatisch einordnen"><span class="btn-ic" data-icon="check"></span> Kategorien zuordnen</button>
+                  <button class="btn-secondary" id="buha-dub-btn" onclick="buhaKontenDublettenDialog()" title="Konten mit gleicher Bezeichnung finden und ungenutzte entfernen"><span class="btn-ic" data-icon="copy"></span> Dubletten prüfen</button>
                   <button class="btn-secondary" onclick="seedKontenrahmen('skr03')"><span class="btn-ic" data-icon="download"></span> SKR03-Vorlage</button>
                   <button class="btn-secondary" onclick="seedKontenrahmen('skr04')"><span class="btn-ic" data-icon="download"></span> SKR04-Vorlage</button>
                   <button class="btn-secondary" onclick="openBksModal()"><span class="btn-ic" data-icon="gear"></span> Buchungsschlüssel</button>
@@ -12412,6 +12413,10 @@ function renderKonten(){
     +(ohneKat?' · <span style="color:#9a6700;font-weight:700">'+ohneKat+' ohne feste Kategorie</span>':'');
   var katBtn=document.getElementById('buha-kat-btn');
   if(katBtn)katBtn.style.display=ohneKat?'':'none';
+  var dub=buhaKontenDubletten();
+  var dubBtn=document.getElementById('buha-dub-btn');
+  if(dubBtn)dubBtn.style.display=dub.length?'':'none';
+  if(zaehler&&dub.length)zaehler.innerHTML+=' · <span style="color:#c0392b;font-weight:700">'+dub.length+' doppelte Bezeichnung'+(dub.length===1?'':'en')+'</span>';
   if(!buha.konten.length){c.innerHTML='<div style="padding:2rem;text-align:center;color:var(--muted)">Noch kein Kontenrahmen. Lade eine SKR-Vorlage oder lege Konten an.</div>';return;}
   c.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:.84rem"><thead><tr style="border-bottom:2px solid var(--border)">'
     +'<th style="text-align:left;padding:.5rem .7rem;font-size:.66rem;text-transform:uppercase;color:var(--muted)">Nr.</th>'
@@ -12479,19 +12484,119 @@ function deleteKonto(id){
       await logAudit('konto_geloescht','konto',id,{nummer:k.nummer}); showToast('🗑 Konto gelöscht'); await buhaReload();
     }},{label:'Abbrechen',style:'background:var(--bg);color:var(--muted)',onClick:function(){}}]});
 }
+// Vorlage gegen den bestehenden Kontenrahmen prüfen, bevor sie geladen wird.
+// Drei Fälle: anlegbar, Nummer schon belegt (Vorlage wird nicht angelegt) und
+// Bezeichnung schon vorhanden (würde eine Dublette erzeugen).
+function buhaKontenrahmenAnalyse(tpl,konten){
+  konten=konten||[];
+  var nachNummer={},nachName={};
+  konten.forEach(function(k){
+    nachNummer[String(k.nummer)]=k;
+    var n=buhaBankNorm(k.name); if(n)(nachName[n]=nachName[n]||[]).push(k);
+  });
+  var neu=[],nummerBelegt=[],nameBelegt=[];
+  (tpl||[]).forEach(function(t){
+    var vorhandenNr=nachNummer[String(t.nummer)];
+    if(vorhandenNr){
+      nummerBelegt.push({tpl:t,vorhanden:vorhandenNr,
+        gleich:buhaBankNorm(vorhandenNr.name)===buhaBankNorm(t.name)});
+      return;
+    }
+    var gleicherName=(nachName[buhaBankNorm(t.name)]||[])[0];
+    if(gleicherName){ nameBelegt.push({tpl:t,vorhanden:gleicherName}); return; }
+    neu.push(t);
+  });
+  return {neu:neu,nummerBelegt:nummerBelegt,nameBelegt:nameBelegt,
+    kollisionen:nummerBelegt.filter(function(x){return !x.gleich;})};
+}
 function seedKontenrahmen(skr){
   var tpl=KONTENRAHMEN_TPL[skr]||KONTENRAHMEN_TPL.skr03;
-  appConfirm({icon:'📥',title:(skr==='skr04'?'SKR04':'SKR03')+'-Kontenrahmen laden?',
-    message:'Es werden '+tpl.length+' Konten für die Immobilienbuchhaltung angelegt: Mieterlöse, umlagefähige Betriebskosten nach § 2 BetrKV, nicht umlagefähige Kosten, Bank, Kautionen sowie die WEG-Konten (Hausgeld, Rücklage). Vorhandene Nummern werden übersprungen – du kannst danach frei ergänzen.',
-    buttons:[{label:'📥 Konten anlegen',style:'background:linear-gradient(135deg,#0e7c7b,#0a5f5e);color:#fff',onClick:async function(){
-      var vorhanden={}; buha.konten.forEach(function(k){vorhanden[k.nummer]=true;});
-      var neu=tpl.filter(function(t){return !vorhanden[t.nummer];}).map(function(t){return {user_id:currentUser.id,nummer:t.nummer,name:t.name,typ:t.typ,ust_satz:t.ust||0,umlagefaehig:t.uml!==false,kategorie:t.kat||null,skr:skr};});
-      if(!neu.length){showToast('Alle Konten bereits vorhanden.');return;}
+  var a=buhaKontenrahmenAnalyse(tpl,buha.konten);
+  var titel=(skr==='skr04'?'SKR04':'SKR03')+'-Kontenrahmen laden?';
+  if(!a.neu.length){
+    appConfirm({icon:'📥',title:titel,
+      message:'Alle '+tpl.length+' Konten der Vorlage sind bereits vorhanden – es gibt nichts anzulegen.',
+      buttons:[{label:'Schließen',style:'background:var(--bg);color:var(--text)',onClick:function(){}}]});
+    return;
+  }
+  var block=function(titelText,farbe,zeilen){
+    if(!zeilen.length)return '';
+    return '<div style="margin-top:.7rem"><div style="font-size:.74rem;font-weight:700;color:'+farbe+'">'+titelText+'</div>'
+      +'<div style="font-size:.72rem;color:var(--muted);line-height:1.6">'+zeilen.join('<br>')+'</div></div>';
+  };
+  var msg='<div style="text-align:left"><b>'+a.neu.length+' Konten</b> werden angelegt: Mieterlöse, umlagefähige Betriebskosten nach § 2 BetrKV, '
+    +'nicht umlagefähige Kosten, Bank, Kautionen sowie die WEG-Konten.'
+    +block('Nummer bereits anders belegt – diese Konten der Vorlage entstehen nicht:','#c0392b',
+        a.kollisionen.slice(0,8).map(function(x){return escapeHtml(x.tpl.nummer+' „'+x.tpl.name+'" – belegt durch „'+x.vorhanden.name+'"');})
+        .concat(a.kollisionen.length>8?['und '+(a.kollisionen.length-8)+' weitere']:[]))
+    +block('Gleiche Bezeichnung schon vorhanden – wird übersprungen, damit keine Dublette entsteht:','#9a6700',
+        a.nameBelegt.slice(0,6).map(function(x){return escapeHtml(x.tpl.nummer+' „'+x.tpl.name+'" – vorhanden als '+x.vorhanden.nummer);})
+        .concat(a.nameBelegt.length>6?['und '+(a.nameBelegt.length-6)+' weitere']:[]))
+    +(a.kollisionen.length?'<div style="font-size:.72rem;color:var(--muted);margin-top:.6rem">Bei einer Nummernkollision behältst du dein bestehendes Konto. Wenn du stattdessen das Konto der Vorlage möchtest, benenne das bestehende erst um oder lösche es, sofern nichts darauf gebucht ist.</div>':'')
+    +'</div>';
+  appConfirm({icon:'📥',title:titel,message:msg,
+    buttons:[{label:'📥 '+a.neu.length+' Konten anlegen',style:'background:linear-gradient(135deg,#0e7c7b,#0a5f5e);color:#fff',onClick:async function(){
+      var neu=a.neu.map(function(t){return {user_id:currentUser.id,nummer:t.nummer,name:t.name,typ:t.typ,
+        ust_satz:t.ust||0,umlagefaehig:t.uml!==false,kategorie:t.kat||null,skr:skr};});
       var {error}=await sb.from('weg_konten').insert(neu);
       if(error){showToast('❌ '+error.message);return;}
-      await logAudit('kontenrahmen_geladen','kontenrahmen',null,{vorlage:skr,anzahl:neu.length});
+      await logAudit('kontenrahmen_geladen','kontenrahmen',null,
+        {vorlage:skr,anzahl:neu.length,nummer_belegt:a.nummerBelegt.length,name_belegt:a.nameBelegt.length});
       showToast('✅ '+neu.length+' Konten angelegt'); await buhaReload();
     }},{label:'Abbrechen',style:'background:var(--bg);color:var(--muted)',onClick:function(){}}]});
+}
+// ── Doppelte Bezeichnungen im Kontenrahmen ────────────────────────────────
+// Zwei Konten mit derselben Bezeichnung führen später zu falschen Summen in der
+// Abrechnung. Bebuchte Konten bleiben unangetastet – entfernt wird nur, worauf
+// nichts gebucht ist.
+function buhaKontenDubletten(konten,buchungen){
+  konten=konten||buha.konten||[]; buchungen=buchungen||buha.buchungen||[];
+  var benutzt={};
+  buchungen.forEach(function(b){ if(b.soll_konto)benutzt[b.soll_konto]=true; if(b.haben_konto)benutzt[b.haben_konto]=true; });
+  var nachName={};
+  konten.forEach(function(k){ var n=buhaBankNorm(k.name); if(n)(nachName[n]=nachName[n]||[]).push(k); });
+  return Object.keys(nachName).filter(function(n){return nachName[n].length>1;}).map(function(n){
+    var gruppe=nachName[n].slice().sort(function(a,b){return String(a.nummer).localeCompare(String(b.nummer),undefined,{numeric:true});});
+    var mitBuchung=gruppe.filter(function(k){return benutzt[k.nummer];});
+    var ohneBuchung=gruppe.filter(function(k){return !benutzt[k.nummer];});
+    // Behalten wird ein bebuchtes Konto, sonst das erste der Gruppe
+    var behalten=mitBuchung[0]||gruppe[0];
+    return {name:gruppe[0].name,gruppe:gruppe,behalten:behalten,
+      entfernbar:ohneBuchung.filter(function(k){return k.id!==behalten.id;})};
+  }).sort(function(a,b){return a.name.localeCompare(b.name);});
+}
+function buhaKontenDublettenDialog(){
+  var d=buhaKontenDubletten();
+  if(!d.length){showToast('Keine doppelten Bezeichnungen im Kontenrahmen.');return;}
+  var entfernbar=d.reduce(function(s,x){return s+x.entfernbar.length;},0);
+  var zeilen=d.map(function(x){
+    return '<div style="padding:.45rem 0;border-bottom:1px solid var(--border)">'
+      +'<div style="font-size:.8rem;font-weight:700">'+escapeHtml(x.name)+'</div>'
+      +'<div style="font-size:.72rem;color:var(--muted);line-height:1.6">'
+      +x.gruppe.map(function(k){
+        var rolle=k.id===x.behalten.id?'bleibt':(x.entfernbar.some(function(e){return e.id===k.id;})?'wird entfernt':'bleibt (bebucht)');
+        return escapeHtml(k.nummer)+' · '+rolle;
+      }).join('<br>')+'</div></div>';
+  }).join('');
+  appConfirm({icon:'🧹',title:'Doppelte Bezeichnungen',
+    message:'<div style="text-align:left"><div style="font-size:.82rem;margin-bottom:.5rem">'
+      +'<b>'+d.length+'</b> Bezeichnung'+(d.length===1?'':'en')+' kommt mehrfach vor. '
+      +(entfernbar?'Davon lassen sich <b>'+entfernbar+' Konten</b> entfernen – auf sie ist nichts gebucht.'
+                 :'Auf allen betroffenen Konten ist bereits gebucht, deshalb wird nichts entfernt. Benenne sie im Konto um, damit die Abrechnung sie auseinanderhalten kann.')
+      +'</div><div style="max-height:260px;overflow:auto">'+zeilen+'</div></div>',
+    buttons:(entfernbar?[{label:'🧹 '+entfernbar+' entfernen',style:'background:#c0392b;color:#fff',onClick:function(){buhaKontenDublettenEntfernen(d);}}]:[])
+      .concat([{label:entfernbar?'Abbrechen':'Schließen',style:'background:var(--bg);color:var(--muted)',onClick:function(){}}])});
+}
+async function buhaKontenDublettenEntfernen(d){
+  var ids=[]; (d||[]).forEach(function(x){ x.entfernbar.forEach(function(k){ids.push(k.id);}); });
+  if(!ids.length)return;
+  try{
+    var r=await sb.from('weg_konten').delete().in('id',ids);
+    if(r.error)throw new Error(r.error.message);
+    await logAudit('konto_geloescht','kontenrahmen',null,{anzahl:ids.length,grund:'doppelte Bezeichnung'});
+    showToast('🧹 '+ids.length+' doppelte Konten entfernt');
+    await buhaReload();
+  }catch(e){ showToast('❌ '+(e.message||e)); }
 }
 // Kontenrahmen-Vorlagen für die Immobilienbuchhaltung (Vermieter + WEG), angelehnt an DATEV SKR03/SKR04.
 // kat = Kategorie (miete, nebenkosten, hausgeld, sonstig, bank, kasse, forderung, verbindlichkeit,

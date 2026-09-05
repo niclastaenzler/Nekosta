@@ -2402,6 +2402,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
             <span class="kosten-summe">Summe: <strong id="hk-summe-live" style="color:#ea580c">0,00 €</strong></span>
             <div style="flex:1"></div>
             <label class="hk-toggle" style="margin:0;font-size:.72rem"><input type="checkbox" id="keine-hk" onchange="toggleHK()"> Keine Heizkosten</label>
+            <button type="button" onclick="buhaNkUebernahmeDialog('hk')" class="kosten-head-btn" title="Heiz- und Warmwasserkosten aus der Objektbuchhaltung übernehmen"><span class="btn-ic" data-icon="inbox"></span> Aus Buchhaltung</button>
             <button type="button" onclick="importKostenVorlage('hk')" class="kosten-head-btn"><span class="btn-ic" data-icon="folder"></span> Vorlage</button>
             <button type="button" onclick="saveKostenVorlage('hk')" class="kosten-head-btn"><span class="btn-ic" data-icon="save"></span> Speichern</button>
             <button type="button" onclick="addKostenRow('hkRows')" class="kosten-add-btn orange">+ Hinzufügen</button>
@@ -2422,6 +2423,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
             <span class="wz-seclabel">Betriebskosten</span>
             <span class="kosten-summe">Summe: <strong id="bk-summe-live" style="color:var(--p)">0,00 €</strong></span>
             <div style="flex:1"></div>
+            <button type="button" onclick="buhaNkUebernahmeDialog('bk')" class="kosten-head-btn" title="Umlagefähige Kosten aus der Objektbuchhaltung übernehmen"><span class="btn-ic" data-icon="inbox"></span> Aus Buchhaltung</button>
             <button type="button" onclick="importKostenVorlage('bk')" class="kosten-head-btn"><span class="btn-ic" data-icon="folder"></span> Vorlage</button>
             <button type="button" onclick="saveKostenVorlage('bk')" class="kosten-head-btn"><span class="btn-ic" data-icon="save"></span> Speichern</button>
             <button type="button" onclick="addKostenRow('bkRows')" class="kosten-add-btn">+ Hinzufügen</button>
@@ -3611,6 +3613,13 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
         <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;margin-bottom:1rem;cursor:pointer"><input type="checkbox" id="konto-umlage" checked> umlagefähig (auf Eigentümer/Mieter umlegbar)</label>
         <div style="font-size:.7rem;color:var(--muted);margin:-.6rem 0 1rem">Steuert die Hausgeldabrechnung: nicht-umlagefähige Konten erscheinen im Block „Nicht zur Umlage", umlagefähige im Block „Zur Umlage auf Bewohner". „Nur Haus" verteilt die Kosten ausschließlich innerhalb dieses Hauses.</div>
         <div style="display:flex;gap:.65rem"><button class="btn-primary" style="flex:1" onclick="saveKonto()"><span class="btn-ic" data-icon="check"></span> Speichern</button><button class="btn-secondary" style="flex:1" onclick="closeKontoModal()">Abbrechen</button></div>
+      </div>
+    </div>
+
+    <!-- KOSTEN AUS DER BUCHHALTUNG ÜBERNEHMEN -->
+    <div id="buha-nk-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:715;align-items:flex-start;justify-content:center;padding:1.5rem;overflow-y:auto">
+      <div style="background:#fff;border-radius:14px;padding:1.3rem 1.5rem;width:100%;max-width:880px;margin:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)">
+        <div id="buha-nk-inhalt"></div>
       </div>
     </div>
 
@@ -8940,6 +8949,298 @@ function checkUnsavedBeforeLeave(callback){
 }
 
 // ── DOUBLE CONFIRM ABRECHNEN ──
+// ═══════════════════════════════════════════════════════════════════════════
+// NEBENKOSTENABRECHNUNG AUS DER BUCHHALTUNG
+// Umlagefähige Kosten aus der Objektbuchhaltung in die Abrechnung übernehmen
+// und anschließend gegenrechnen: Was ist gebucht, was steht in der Abrechnung,
+// wo weichen die Zahlen ab? Die Hinweise erscheinen im Prüf-Assistenten.
+// ═══════════════════════════════════════════════════════════════════════════
+var _abrBuhaStand=null;   // Stand der Buchhaltung, aus dem übernommen wurde
+
+// Vorschlag für den Verteilerschlüssel anhand der Kostenart
+function buhaNkSchluessel(name){
+  var n=buhaBankNorm(name);
+  if(/heiz|brennstoff|warmwasser|fernwaerme|heizung/.test(n))return 'hkv';
+  if(/wasser|abwasser|entwaesserung|muell|abfall|entsorgung/.test(n))return 'person';
+  return 'flaeche';
+}
+// Heiz- und Warmwasserkosten gehören in die Heizkostenkarte
+function buhaNkIstHeizkosten(name){
+  return /heiz|brennstoff|warmwasser|fernwaerme/.test(buhaBankNorm(name));
+}
+// Stand der Buchhaltung für ein Objekt und Jahr: Kosten, Erträge und alles,
+// was für die Gegentests gebraucht wird. Reine Aufbereitung der geladenen Daten.
+function buhaNkStand(objektId,jahr,konten,buchungen){
+  konten=konten||[]; buchungen=buchungen||[];
+  var nm={},typ={},kat={};
+  konten.forEach(function(k){nm[k.nummer]=k.name;typ[k.nummer]=k.typ;kat[k.nummer]=buhaKontoKat(k);});
+  var wirksam=buchungen.filter(function(b){
+    if(b.storniert||b.ist_storno)return false;
+    return !(jahr&&b.wirtschaftsjahr&&parseInt(b.wirtschaftsjahr,10)!==parseInt(jahr,10));
+  });
+  var agg=buhaKontoAgg(wirksam);
+  var umlagefaehig=[],nichtUmlagefaehig=[],vereinnahmt=[],ohneKategorie=[];
+  Object.keys(agg).sort(function(a,b){return String(a).localeCompare(String(b),undefined,{numeric:true});}).forEach(function(nr){
+    var a=agg[nr];
+    if(typ[nr]==='aufwand'){
+      var v=buhaSplitRund(a.soll-a.haben); if(Math.abs(v)<0.005)return;
+      var uml=kat[nr]==='nebenkosten';
+      var eintrag={nr:nr,name:nm[nr]||'',betrag:v,schluessel:buhaNkSchluessel(nm[nr]||''),
+        heiz:buhaNkIstHeizkosten(nm[nr]||''),uml:uml,automatisch:!konten.filter(function(k){return k.nummer===nr;})[0]||!konten.filter(function(k){return k.nummer===nr;})[0].kategorie};
+      if(uml)umlagefaehig.push(eintrag); else nichtUmlagefaehig.push(eintrag);
+      // Ohne ausdrücklich hinterlegte Kategorie wurde nur automatisch eingestuft
+      if(eintrag.automatisch)ohneKategorie.push(eintrag);
+    } else if(typ[nr]==='ertrag'&&kat[nr]==='nebenkosten'){
+      var e=buhaSplitRund(a.haben-a.soll); if(Math.abs(e)<0.005)return;
+      vereinnahmt.push({nr:nr,name:nm[nr]||'',betrag:e});
+    }
+  });
+  var sS=0,sH=0; Object.keys(agg).forEach(function(nr){sS+=agg[nr].soll;sH+=agg[nr].haben;});
+  // Buchungen auf umlagefähigen Konten außerhalb des Kalenderjahres
+  var umlNummern={}; umlagefaehig.forEach(function(x){umlNummern[x.nr]=true;});
+  var ausserhalb=wirksam.filter(function(b){
+    if(!umlNummern[b.soll_konto]&&!umlNummern[b.haben_konto])return false;
+    var d=String(b.buchungsdatum||'').slice(0,4);
+    return d&&jahr&&d!==String(jahr);
+  }).length;
+  return {objektId:objektId,jahr:parseInt(jahr,10),
+    umlagefaehig:umlagefaehig,nichtUmlagefaehig:nichtUmlagefaehig,vereinnahmt:vereinnahmt,ohneKategorie:ohneKategorie,
+    summeUml:buhaSplitRund(umlagefaehig.reduce(function(s,x){return s+x.betrag;},0)),
+    summeVereinnahmt:buhaSplitRund(vereinnahmt.reduce(function(s,x){return s+x.betrag;},0)),
+    summeNichtUml:buhaSplitRund(nichtUmlagefaehig.reduce(function(s,x){return s+x.betrag;},0)),
+    susaDifferenz:buhaSplitRund(sS-sH),anzahl:wirksam.length,ausserhalb:ausserhalb,
+    kontenOhneKategorie:ohneKategorie.length,erstellt:null};
+}
+// ── Gegentests: Abrechnung gegen die Buchhaltung ──────────────────────────
+// Liefert Hinweise im Format des Prüf-Assistenten {level,titel,text}.
+function buhaNkGegentests(erg,stand){
+  var out=[];
+  if(!erg)return out;
+  if(!stand||!stand.umlagefaehig)return out;
+  if(stand.jahr&&erg.jahr&&parseInt(stand.jahr,10)!==parseInt(erg.jahr,10)){
+    out.push({level:'warn',titel:'Buchhaltung aus einem anderen Jahr',
+      text:'Die übernommenen Zahlen stammen aus dem Wirtschaftsjahr '+stand.jahr+', abgerechnet wird '+erg.jahr+'. Bitte die Kosten erneut aus dem richtigen Jahr übernehmen.'});
+    return out;
+  }
+  var pos=(erg.bkKosten||[]).concat(erg.hkKosten||[]);
+  var eur=function(n){return buhaEuro(n);};
+  var norm=function(s){return buhaBankNorm(s);};
+  // Zuordnung Abrechnungsposition -> Konto (über die Nummer im Text oder den Namen)
+  var kontoZuPos={};
+  pos.forEach(function(p){
+    var t=norm(p.name+' '+(p.notiz||''));
+    var treffer=stand.umlagefaehig.concat(stand.nichtUmlagefaehig).filter(function(k){
+      return t.indexOf(norm(k.nr))>=0||norm(k.name)&&t.indexOf(norm(k.name))>=0;
+    })[0];
+    if(treffer)kontoZuPos[treffer.nr]=(kontoZuPos[treffer.nr]||0)+(parseFloat(p.betrag)||0);
+  });
+  // 1) Gebuchte umlagefähige Kosten, die in der Abrechnung fehlen
+  var fehlend=stand.umlagefaehig.filter(function(k){return kontoZuPos[k.nr]==null;});
+  if(fehlend.length)out.push({level:'warn',titel:'Umlagefähige Kosten fehlen in der Abrechnung',
+    text:fehlend.map(function(k){return k.nr+' '+k.name+' ('+eur(k.betrag)+')';}).join(', ')
+      +' – diese Kosten sind gebucht, tauchen aber in der Abrechnung nicht auf. Über „Aus Buchhaltung" lassen sie sich übernehmen.'});
+  // 2) Beträge, die von der Buchhaltung abweichen
+  var abweichung=stand.umlagefaehig.filter(function(k){
+    return kontoZuPos[k.nr]!=null&&Math.abs(kontoZuPos[k.nr]-k.betrag)>0.05;});
+  if(abweichung.length)out.push({level:'warn',titel:'Beträge weichen von der Buchhaltung ab',
+    text:abweichung.map(function(k){return k.name+': Abrechnung '+eur(kontoZuPos[k.nr])+', gebucht '+eur(k.betrag);}).join('; ')
+      +'. Bitte prüfen, welcher Wert stimmt.'});
+  // 3) Summenabgleich
+  var summeAbr=pos.reduce(function(s,p){return s+(parseFloat(p.betrag)||0);},0);
+  var diff=buhaSplitRund(summeAbr-stand.summeUml);
+  if(Math.abs(diff)>0.05)out.push({level:'warn',titel:'Summe weicht von der Buchhaltung ab',
+    text:'Abrechnung '+eur(summeAbr)+' gegenüber '+eur(stand.summeUml)+' umlagefähigen Kosten in der Buchhaltung – Differenz '+eur(diff)+'.'});
+  else out.push({level:'ok',titel:'Summe stimmt mit der Buchhaltung überein',
+    text:'Die umgelegten Kosten entsprechen den gebuchten umlagefähigen Kosten ('+eur(stand.summeUml)+').'});
+  // 4) Nicht umlagefähige Kosten in der Abrechnung
+  var nichtUml=stand.nichtUmlagefaehig.filter(function(k){return kontoZuPos[k.nr]!=null;});
+  if(nichtUml.length)out.push({level:'warn',titel:'Nicht umlagefähige Kosten in der Abrechnung',
+    text:nichtUml.map(function(k){return k.nr+' '+k.name;}).join(', ')
+      +' – diese Konten sind in der Buchhaltung nicht als umlagefähig gekennzeichnet (z. B. Instandhaltung, Verwaltung). Auf Mieter umgelegt sind sie angreifbar.'});
+  // 5) Vorauszahlungen gegen die vereinnahmten Nebenkosten
+  var vzAbr=0;
+  (erg.ergebnisse||[]).forEach(function(we){ (we.perioden||[]).forEach(function(pe){
+    if(pe.periode&&pe.periode.isLeerstand)return;
+    vzAbr+=(pe.periode&&pe.periode.vorauszBK||0)+(erg.hasHK?(pe.periode&&pe.periode.vorauszHK||0):0);
+  });});
+  vzAbr=buhaSplitRund(vzAbr);
+  if(stand.summeVereinnahmt>0.005||vzAbr>0.005){
+    var vzDiff=buhaSplitRund(vzAbr-stand.summeVereinnahmt);
+    if(Math.abs(vzDiff)>1)out.push({level:'warn',titel:'Vorauszahlungen weichen von der Buchhaltung ab',
+      text:'In der Abrechnung sind '+eur(vzAbr)+' Vorauszahlungen angesetzt, gebucht sind '+eur(stand.summeVereinnahmt)+' – Differenz '+eur(vzDiff)+'. Häufige Ursache: ein Mieter hat nicht alle Monate gezahlt oder eine Zahlung fehlt in der Buchhaltung.'});
+    else out.push({level:'ok',titel:'Vorauszahlungen stimmen mit der Buchhaltung überein',
+      text:eur(vzAbr)+' angesetzt, '+eur(stand.summeVereinnahmt)+' gebucht.'});
+  }
+  // 6) Konten, deren Kategorie nur automatisch bestimmt wurde
+  if(stand.kontenOhneKategorie)out.push({level:'warn',titel:'Konten ohne hinterlegte Kategorie',
+    text:stand.ohneKategorie.map(function(k){return k.nr+' '+k.name+' → '+(k.uml?'umlagefähig':'nicht umlagefähig');}).join(', ')
+      +' – hier ist im Kontenrahmen nicht hinterlegt, ob die Kosten umlagefähig sind. NEKOSTA hat anhand von Bezeichnung und Umlage-Häkchen automatisch eingestuft. Bitte im Kontenrahmen bestätigen, sonst legst du womöglich Kosten um, die dem Mieter nicht zustehen.'});
+  // 7) Buchungen außerhalb des Abrechnungsjahres
+  if(stand.ausserhalb)out.push({level:'warn',titel:'Buchungen außerhalb des Abrechnungsjahres',
+    text:stand.ausserhalb+' Buchung'+(stand.ausserhalb===1?'':'en')+' auf umlagefähigen Konten liegt außerhalb von '+stand.jahr+'. Nach dem Leistungsprinzip gehören nur Kosten des Abrechnungszeitraums in die Abrechnung.'});
+  // 8) Buchhaltung selbst nicht ausgeglichen
+  if(Math.abs(stand.susaDifferenz)>0.05)out.push({level:'warn',titel:'Buchhaltung ist nicht ausgeglichen',
+    text:'Soll und Haben weichen um '+eur(stand.susaDifferenz)+' voneinander ab. Solange das so ist, sind auch die Kosten in der Abrechnung nicht verlässlich.'});
+  return out;
+}
+// ── Übernahme-Dialog ──────────────────────────────────────────────────────
+var _nkUeb={ziel:'bk',objektId:'',jahr:0,stand:null,auswahl:{}};
+async function buhaNkUebernahmeDialog(ziel){
+  if(!currentUser){showToast('Bitte zuerst anmelden.');return;}
+  _nkUeb={ziel:ziel==='hk'?'hk':'bk',objektId:currentAbrObjektId||'',jahr:parseInt((document.getElementById('jahr')||{}).value,10)||new Date().getFullYear(),stand:null,auswahl:{}};
+  var m=document.getElementById('buha-nk-modal'), c=document.getElementById('buha-nk-inhalt');
+  if(!m||!c)return;
+  c.innerHTML='<div style="padding:1.5rem;text-align:center;color:var(--muted);font-size:.86rem">Buchhaltung wird geladen …</div>';
+  m.style.display='flex';
+  try{
+    var or=await sb.from('objekte').select('id,name,strasse,plz,ort,buchhaltung_aktiv').eq('user_id',currentUser.id).order('name');
+    _nkUeb.objekte=(or.data||[]);
+    if(!_nkUeb.objektId&&_nkUeb.objekte.length){
+      var aktiv=_nkUeb.objekte.filter(function(o){return o.buchhaltung_aktiv;})[0];
+      _nkUeb.objektId=(aktiv||_nkUeb.objekte[0]).id;
+    }
+    await buhaNkStandLaden();
+  }catch(e){ c.innerHTML='<div style="padding:1.5rem;color:#c0392b;font-size:.86rem">Fehler: '+escapeHtml(e.message||e)+'</div>'; }
+}
+async function buhaNkStandLaden(){
+  var c=document.getElementById('buha-nk-inhalt'); if(!c)return;
+  if(!_nkUeb.objektId){ buhaNkUebRender(); return; }
+  c.innerHTML='<div style="padding:1.5rem;text-align:center;color:var(--muted);font-size:.86rem">Buchungen werden geladen …</div>';
+  try{
+    var kr=await sb.from('weg_konten').select('*').eq('user_id',currentUser.id).order('nummer');
+    var br=await sb.from('weg_buchungen').select('*').eq('user_id',currentUser.id)
+      .eq('objekt_id',_nkUeb.objektId).eq('wirtschaftsjahr',_nkUeb.jahr);
+    // buhaKontoKat und buhaKontoAgg arbeiten auf buha.konten – Stand dorthin spiegeln
+    var sicher=buha.konten;
+    buha.konten=kr.data||[];
+    _nkUeb.stand=buhaNkStand(_nkUeb.objektId,_nkUeb.jahr,kr.data||[],br.data||[]);
+    buha.konten=sicher&&sicher.length?sicher:(kr.data||[]);
+    _nkUeb.auswahl={};
+    var liste=buhaNkUebListe();
+    liste.forEach(function(k){_nkUeb.auswahl[k.nr]=true;});
+    buhaNkUebRender();
+  }catch(e){ c.innerHTML='<div style="padding:1.5rem;color:#c0392b;font-size:.86rem">Fehler: '+escapeHtml(e.message||e)+'</div>'; }
+}
+// Für die Heizkostenkarte nur Heiz- und Warmwasserkosten, sonst alle übrigen
+function buhaNkUebListe(){
+  var s=_nkUeb.stand; if(!s)return [];
+  return s.umlagefaehig.filter(function(k){return _nkUeb.ziel==='hk'?k.heiz:!k.heiz;});
+}
+function buhaNkUebObjekt(v){ _nkUeb.objektId=v; buhaNkStandLaden(); }
+function buhaNkUebJahr(v){ _nkUeb.jahr=parseInt(v,10)||_nkUeb.jahr; buhaNkStandLaden(); }
+function buhaNkUebWahl(nr,an){ _nkUeb.auswahl[nr]=!!an; buhaNkUebFuss(); }
+function buhaNkUebAlle(an){ buhaNkUebListe().forEach(function(k){_nkUeb.auswahl[k.nr]=an;}); buhaNkUebRender(); }
+function buhaNkUebSumme(){
+  return buhaSplitRund(buhaNkUebListe().filter(function(k){return _nkUeb.auswahl[k.nr];})
+    .reduce(function(s,k){return s+k.betrag;},0));
+}
+function buhaNkUebFuss(){
+  var f=document.getElementById('nkueb-fuss'); if(!f)return;
+  var n=buhaNkUebListe().filter(function(k){return _nkUeb.auswahl[k.nr];}).length;
+  f.innerHTML='<span style="font-size:.82rem;font-weight:700">'+n+' Kostenart'+(n===1?'':'en')+' · '+buhaEuro(buhaNkUebSumme())+'</span>';
+  var b=document.getElementById('nkueb-btn'); if(b){b.disabled=!n;b.style.opacity=n?'1':'.55';b.style.cursor=n?'pointer':'not-allowed';}
+}
+function buhaNkUebSchliessen(){ var m=document.getElementById('buha-nk-modal'); if(m)m.style.display='none'; }
+function buhaNkUebRender(){
+  var c=document.getElementById('buha-nk-inhalt'); if(!c)return;
+  var s=_nkUeb.stand, liste=buhaNkUebListe();
+  var jahrNow=new Date().getFullYear(), jahre=[];
+  for(var y=jahrNow+1;y>=jahrNow-6;y--)jahre.push(y);
+  if(jahre.indexOf(_nkUeb.jahr)<0)jahre.push(_nkUeb.jahr);
+  var h='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;margin-bottom:.9rem">'
+    +'<div><h3 style="font-size:1.05rem;font-weight:800;margin:0">📒 Kosten aus der Buchhaltung übernehmen</h3>'
+    +'<div style="font-size:.78rem;color:var(--muted);margin-top:.2rem">'
+    +(_nkUeb.ziel==='hk'?'Heiz- und Warmwasserkosten für die Heizkostenkarte':'Umlagefähige Betriebskosten nach § 2 BetrKV')
+    +'</div></div></div>';
+  h+='<div style="display:flex;gap:.6rem;flex-wrap:wrap;align-items:end;margin-bottom:.9rem">'
+    +'<div style="flex:1;min-width:220px"><label style="font-size:.66rem;font-weight:700;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:2px">Objekt</label>'
+    +'<select onchange="buhaNkUebObjekt(this.value)" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:.45rem .6rem;font-size:.86rem;font-family:var(--ff);background:var(--white)">'
+    +(_nkUeb.objekte||[]).map(function(o){return '<option value="'+o.id+'"'+(o.id===_nkUeb.objektId?' selected':'')+'>'+escapeHtml(o.name||'Objekt')+(o.buchhaltung_aktiv?'':' (Buchhaltung nicht aktiv)')+'</option>';}).join('')
+    +'</select></div>'
+    +'<div><label style="font-size:.66rem;font-weight:700;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:2px">Wirtschaftsjahr</label>'
+    +'<select onchange="buhaNkUebJahr(this.value)" style="border:1px solid var(--border);border-radius:8px;padding:.45rem .6rem;font-size:.86rem;font-family:var(--ff);background:var(--white)">'
+    +jahre.sort(function(a,b){return b-a;}).map(function(y){return '<option value="'+y+'"'+(y===_nkUeb.jahr?' selected':'')+'>'+y+'</option>';}).join('')
+    +'</select></div></div>';
+  if(!s||!s.anzahl){
+    h+='<div style="background:#fff8e6;border:1px solid #f0d9a8;border-radius:10px;padding:.9rem 1.1rem;font-size:.84rem;color:#9a6700">'
+      +'Für dieses Objekt sind im Wirtschaftsjahr '+_nkUeb.jahr+' keine Buchungen vorhanden. '
+      +'Erfasse die Kosten zuerst in der Objektbuchhaltung – danach lassen sie sich hier mit einem Klick übernehmen.</div>';
+  } else if(!liste.length){
+    h+='<div style="background:#fff8e6;border:1px solid #f0d9a8;border-radius:10px;padding:.9rem 1.1rem;font-size:.84rem;color:#9a6700">'
+      +(_nkUeb.ziel==='hk'?'Es sind keine Heiz- oder Warmwasserkosten gebucht.':'Es sind keine umlagefähigen Betriebskosten gebucht.')
+      +' Umlagefähig sind Konten mit der Kategorie „Nebenkosten" – die Kategorie lässt sich im Kontenrahmen setzen.'
+      +(s.nichtUmlagefaehig.length?'<br><br>Nicht umlagefähig gebucht: '+s.nichtUmlagefaehig.map(function(k){return escapeHtml(k.nr+' '+k.name);}).join(', ')+'.':'')+'</div>';
+  } else {
+    h+='<div style="display:flex;gap:.5rem;margin-bottom:.5rem"><button class="btn-small" onclick="buhaNkUebAlle(true)" style="font-size:.72rem">Alle</button>'
+      +'<button class="btn-small grau" onclick="buhaNkUebAlle(false)" style="font-size:.72rem">Keine</button></div>'
+      +'<div style="border:1px solid var(--border);border-radius:10px;overflow:hidden">'
+      +'<table style="width:100%;border-collapse:collapse;font-size:.82rem"><thead><tr style="border-bottom:1px solid var(--border);background:var(--bg)">'
+      +['','Konto','Kostenart','Betrag','Verteilerschlüssel'].map(function(t,i){
+        return '<th style="text-align:'+(i===3?'right':'left')+';padding:.4rem .6rem;font-size:.6rem;text-transform:uppercase;color:var(--muted)">'+t+'</th>';}).join('')
+      +'</tr></thead><tbody>'
+      +liste.map(function(k){
+        var sl={flaeche:'Nach Wohnfläche',person:'Nach Personenanzahl',hkv:'Heizkosten nach Verordnung',einheiten:'Nach Einheiten',mea:'Nach MEA'}[k.schluessel]||'Nach Wohnfläche';
+        return '<tr style="border-bottom:1px solid #f3f4f6">'
+          +'<td style="padding:.35rem .6rem"><input type="checkbox" '+(_nkUeb.auswahl[k.nr]?'checked ':'')+'onclick="buhaNkUebWahl(\''+k.nr+'\',this.checked)"></td>'
+          +'<td style="padding:.35rem .6rem;font-variant-numeric:tabular-nums;color:var(--muted)">'+escapeHtml(k.nr)+'</td>'
+          +'<td style="padding:.35rem .6rem;font-weight:600">'+escapeHtml(k.name)+'</td>'
+          +'<td style="padding:.35rem .6rem;text-align:right;font-weight:700;font-variant-numeric:tabular-nums">'+buhaEuro(k.betrag)+'</td>'
+          +'<td style="padding:.35rem .6rem;color:var(--muted)">'+sl+'</td></tr>';
+      }).join('')+'</tbody></table></div>';
+    // Was nicht übernommen wird, gehört trotzdem erklärt
+    var rest=[];
+    if(_nkUeb.ziel==='bk'&&s.umlagefaehig.some(function(k){return k.heiz;}))
+      rest.push('Heiz- und Warmwasserkosten erscheinen in der Heizkostenkarte.');
+    if(_nkUeb.ziel==='hk'&&s.umlagefaehig.some(function(k){return !k.heiz;}))
+      rest.push('Die übrigen Betriebskosten erscheinen in der Betriebskostenkarte.');
+    if(s.nichtUmlagefaehig.length)
+      rest.push('Nicht umlagefähig und daher nicht in der Liste: '+s.nichtUmlagefaehig.map(function(k){return k.nr+' '+k.name;}).join(', ')+'.');
+    if(s.summeVereinnahmt>0.005)
+      rest.push('Vereinnahmte Nebenkosten laut Buchhaltung: '+buhaEuro(s.summeVereinnahmt)+' – sie werden als Vorauszahlungen der Mieter gegengerechnet.');
+    h+='<div id="nkueb-fuss" style="margin-top:.7rem"></div>'
+      +(rest.length?'<div style="font-size:.74rem;color:var(--muted);margin-top:.5rem;line-height:1.6">'+rest.map(escapeHtml).join('<br>')+'</div>':'');
+  }
+  h+='<div style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:1rem">'
+    +'<button class="btn-secondary" onclick="buhaNkUebSchliessen()">Abbrechen</button>'
+    +(liste.length?'<button class="btn-primary" id="nkueb-btn" onclick="buhaNkUebernehmen()">Kosten übernehmen</button>':'')
+    +'</div>';
+  c.innerHTML=h; applyIcons(c);
+  buhaNkUebFuss();
+}
+function buhaNkUebernehmen(){
+  var liste=buhaNkUebListe().filter(function(k){return _nkUeb.auswahl[k.nr];});
+  if(!liste.length)return;
+  var tbodyId=_nkUeb.ziel==='hk'?'hkRows':'bkRows';
+  var vorhanden={};
+  Array.prototype.slice.call(document.querySelectorAll('#'+tbodyId+' tr')).forEach(function(tr){
+    var n=(tr.querySelector('.k-name')||{value:''}).value.trim();
+    if(n)vorhanden[buhaBankNorm(n)]=tr;
+  });
+  var neu=0,aktualisiert=0;
+  liste.forEach(function(k){
+    var tr=vorhanden[buhaBankNorm(k.name)];
+    if(tr){
+      var bf=tr.querySelector('.k-betrag'); if(bf){bf.value=k.betrag.toFixed(2).replace('.',',');}
+      aktualisiert++;
+    } else {
+      addKostenRow(tbodyId,k.name,k.schluessel,'Konto '+k.nr+' · Buchhaltung '+_nkUeb.jahr);
+      var rows=document.querySelectorAll('#'+tbodyId+' tr');
+      var letzte=rows[rows.length-1];
+      var bf2=letzte&&letzte.querySelector('.k-betrag');
+      if(bf2)bf2.value=k.betrag.toFixed(2).replace('.',',');
+      neu++;
+    }
+  });
+  _abrBuhaStand=_nkUeb.stand;
+  if(typeof updateKostenSumme==='function'){
+    var erste=document.querySelector('#'+tbodyId+' .k-betrag');
+    if(erste)try{updateKostenSumme(erste);}catch(e){}
+  }
+  if(typeof markUnsaved==='function')markUnsaved();
+  buhaNkUebSchliessen();
+  showToast('✅ '+neu+' Kostenart'+(neu===1?'':'en')+' übernommen'+(aktualisiert?' · '+aktualisiert+' aktualisiert':''));
+}
+
 // ── PRÜF-ASSISTENT (Plausibilitätsprüfung vor dem Abschließen) ──
 function pruefeAbrechnung(){
   var out=[]; var e=lastErgebnis; if(!e)return out;
@@ -8977,6 +9278,8 @@ function pruefeAbrechnung(){
   // 6) Leerstand-Hinweis
   if(e.ergebnisse.some(function(we){return we.perioden.some(function(p){return p.periode.isLeerstand;});}))
     out.push({level:'info',titel:'Leerstand vorhanden',text:'Leerstandszeiten gehen zu Lasten des Eigentümers und werden nicht auf Mieter umgelegt.'});
+  // 7) Abgleich mit der Objektbuchhaltung (nur wenn Zahlen von dort übernommen wurden)
+  try{ out=out.concat(buhaNkGegentests(e,_abrBuhaStand)); }catch(err){ console.warn('Gegentests:',err); }
   if(!out.length)out.push({level:'ok',titel:'Keine Auffälligkeiten',text:'Die Abrechnung sieht plausibel aus. Bitte trotzdem inhaltlich prüfen.'});
   return out;
 }

@@ -6237,8 +6237,8 @@ function getPdfTheme(){
   var L=currentPdfLayout||'modern';
   // Theme definitions: accent[r,g,b], headerBg[r,g,b], headerText[r,g,b], style
   var themes={
-    // Modern = das bewährte bisherige Standard-Design (lila Akzente, cleane Grautöne, mit Kostenbalken-Infografik)
-    modern:{accent:[106,45,159],headerBg:[235,228,255],headerText:[60,20,120],secBg:[235,228,255],secText:[60,20,120],band:false,clean:true,bar:true,font:'helvetica',title:'Nebenkostenabrechnung'},
+    // Modern = Standard-Design in derselben grauen Linie wie die Auswertungen, mit Kostenbalken-Infografik
+    modern:{accent:[68,72,79],headerBg:[238,240,243],headerText:[33,36,41],secBg:[238,240,243],secText:[33,36,41],band:false,clean:true,bar:true,font:'helvetica',title:'Nebenkostenabrechnung'},
     // Hausgeld-Stil: eigener Aufbau, fast identisch mit der WEG-Hausgeldabrechnung (hausgeld:true -> eigener Render-Pfad)
     hausgeld:{accent:[88,88,92],headerBg:[246,246,248],headerText:[45,45,52],secBg:[246,246,248],secText:[80,80,86],band:false,clean:true,hausgeld:true,font:'helvetica',title:'Nebenkostenabrechnung'},
     // Minimal: puristisch schwarz-weiß – schwarzes Kopfband, schwarze Abschnittsbänder, graue Zebra-Zeilen
@@ -6344,11 +6344,14 @@ function buildPeriodContent(doc,we,pe,withWatermark,isFirstPage){
       return '';
     };
     var hgx={pos:L+1,vn:L+52,gr:L+88,geur:L+142,aeur:W-R-1};
+    // Spaltenkopf wie in den Auswertungen und der Hausgeldabrechnung
     var hgColHead=function(){
-      setFont(6,'bold',120,120,125);
-      doc.text('Kostenart',hgx.pos,y);doc.text('Verteilt nach',hgx.vn,y);doc.text('Grundlage',hgx.gr,y);
-      doc.text('Gesamt',hgx.geur,y,{align:'right'});doc.text('Ihr Anteil',hgx.aeur,y,{align:'right'});
-      y+=2;hLine(L,W-R,y,150,150,155,0.4);y+=3.5;
+      var _S=BUHA_PDF_STIL;
+      fillR(L,y-3.4,C,5.2,_S.marke[0],_S.marke[1],_S.marke[2]);
+      setFont(6,'bold',255,255,255);
+      doc.text('KOSTENART',hgx.pos,y);doc.text('VERTEILT NACH',hgx.vn,y);doc.text('GRUNDLAGE',hgx.gr,y);
+      doc.text('GESAMT',hgx.geur,y,{align:'right'});doc.text('IHR ANTEIL',hgx.aeur-1,y,{align:'right'});
+      y+=5.5;
     };
     // Kopf (wie Hausgeldabrechnung: dezente Kopfzeile, Name, Titel + graues Jahr)
     y=18;
@@ -6848,7 +6851,7 @@ function applyFooter(doc,vNameLine,withWatermark){
     if(withWatermark){
       doc.saveGraphicsState();
       try{doc.setGState(new doc.GState({opacity:0.10}));}catch(e){}
-      doc.setTextColor(106,45,159);
+      doc.setTextColor(BUHA_PDF_STIL.marke[0],BUHA_PDF_STIL.marke[1],BUHA_PDF_STIL.marke[2]);
       doc.setFont('helvetica','bold');
       doc.setFontSize(58);
       doc.text('NEKOSTA',W/2,165,{align:'center',angle:45});
@@ -6857,11 +6860,12 @@ function applyFooter(doc,vNameLine,withWatermark){
       try{doc.setGState(new doc.GState({opacity:1}));}catch(e){}
       doc.restoreGraphicsState();
     }
-    // Footer-Linie + Text
-    doc.setDrawColor(200,200,200);doc.setLineWidth(0.3);doc.line(L,283,W-R,283);
-    doc.setFontSize(7.5);doc.setFont('helvetica','normal');doc.setTextColor(150,150,150);
-    doc.text(vNameLine,W/2,288,{align:'center',maxWidth:W-L-R});
-    doc.text('Seite '+i+' von '+pages,W-R,288,{align:'right'});
+    // Footer-Linie + Text – in derselben Linie wie das gemeinsame Dokumentgerüst
+    var S=BUHA_PDF_STIL;
+    doc.setDrawColor(S.linie[0],S.linie[1],S.linie[2]);doc.setLineWidth(0.25);doc.line(L,286,W-R,286);
+    doc.setFontSize(6.8);doc.setFont('helvetica','normal');doc.setTextColor(S.grau[0],S.grau[1],S.grau[2]);
+    doc.text(vNameLine,L,289.6,{maxWidth:W-L-R-40});
+    doc.text('Seite '+i+' von '+pages,W-R,289.6,{align:'right'});
   }
 }
 
@@ -12195,51 +12199,34 @@ function gewinnCsv(){
   a.download='Gewinnermittlung_'+String((_buhaCockpitObj&&_buhaCockpitObj.name)||'Objekt').replace(/[^a-zA-Z0-9]+/g,'_')+'_'+d.jahr+'.csv';
   a.click(); URL.revokeObjectURL(a.href);
 }
+// Die Gewinnermittlung läuft über dasselbe Dokumentgerüst wie die Auswertungen.
+function gewinnPdfZeilen(d){
+  var zeilen=[];
+  var block=function(titel,rows,summe,summeTitel){
+    zeilen.push({art:'gruppe',z:['— '+titel,'','']});
+    if(rows&&rows.length)rows.forEach(function(x){ zeilen.push([String(x.nr),String(x.name||''),buhaEuro(x.betrag)]); });
+    else zeilen.push(['','nichts gebucht','']);
+    zeilen.push({art:'summe',z:['',summeTitel,buhaEuro(summe)]});
+  };
+  block('Einnahmen',d.g.ein,d.g.sumEin,'Summe Einnahmen');
+  block('Ausgaben',d.g.aus,d.g.sumAus,'Summe Ausgaben');
+  return zeilen;
+}
 function gewinnPdf(action){
   var d=buha._gewLetzte; if(!d){showToast('Bitte zuerst die Gewinnermittlung öffnen.');return;}
-  try{
-    var {jsPDF}=window.jspdf;
-    var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-    var W=210,L=18,R=18,y=22;
-    var sm=stammdaten||{};
-    var eur=function(n){return (n||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' EUR';};
-    var sf=function(sz,st,r,g2,b){doc.setFontSize(sz);doc.setFont('helvetica',st||'normal');doc.setTextColor(r==null?35:r,g2==null?35:g2,b==null?40:b);};
-    sf(8,'normal',130,130,135);
-    doc.text([sm.firma||((sm.vname&&sm.nname)?sm.vname+' '+sm.nname:'')].filter(Boolean).join(''),L,y);
-    doc.text(new Date().toLocaleDateString('de-DE'),W-R,y,{align:'right'});
-    y+=10; sf(15,'bold',25,25,30); doc.text('Einnahmen-Überschuss-Rechnung',L,y);
-    y+=7; sf(10,'normal',80,80,85);
-    doc.text('Wirtschaftsjahr '+d.jahr+((_buhaCockpitObj&&_buhaCockpitObj.name)?' · '+_buhaCockpitObj.name:''),L,y);
-    y+=10;
-    var block=function(titel,rows,summe,farbe){
-      if(y>255){doc.addPage();y=22;}
-      sf(10,'bold',farbe[0],farbe[1],farbe[2]); doc.text(titel,L,y); y+=5;
-      sf(9,'normal',60,60,65);
-      rows.forEach(function(x){
-        if(y>272){doc.addPage();y=22;}
-        doc.text(String(x.nr),L,y);
-        doc.text(String(x.name||''),L+18,y,{maxWidth:110});
-        doc.text(eur(x.betrag),W-R,y,{align:'right'});
-        y+=5;
-      });
-      doc.setDrawColor(210,210,214); doc.setLineWidth(.3); doc.line(L,y-1.5,W-R,y-1.5);
-      sf(10,'bold',35,35,40); doc.text('Summe '+titel,L,y+2.5); doc.text(eur(summe),W-R,y+2.5,{align:'right'});
-      y+=11;
-    };
-    block('Einnahmen',d.g.ein,d.g.sumEin,[26,122,74]);
-    block('Ausgaben',d.g.aus,d.g.sumAus,[192,57,43]);
-    if(y>258){doc.addPage();y=22;}
-    doc.setDrawColor(120,120,125); doc.setLineWidth(.6); doc.line(L,y-2,W-R,y-2);
-    sf(12,'bold',35,35,40);
-    doc.text(d.g.ergebnis>=0?'Überschuss':'Fehlbetrag',L,y+5);
-    doc.text(eur(d.g.ergebnis),W-R,y+5,{align:'right'});
-    y+=16; sf(7.5,'normal',130,130,135);
-    var hinweis='Ermittlung nach § 4 Abs. 3 EStG auf Grundlage der gebuchten Erlös- und Aufwandskonten. '
-      +'Abschreibungen, private Anteile und periodenfremde Abgrenzungen sind nicht automatisch berücksichtigt. Ohne Gewähr.';
-    doc.text(doc.splitTextToSize(hinweis,W-L-R),L,y);
-    var fname='Gewinnermittlung_'+String((_buhaCockpitObj&&_buhaCockpitObj.name)||'Objekt').replace(/[^a-zA-Z0-9]+/g,'_')+'_'+d.jahr+'.pdf';
-    if(typeof showDoc==='function')showDoc(doc,fname,action||'vorschau'); else doc.save(fname);
-  }catch(e){ console.error('gewinnPdf:',e); showToast('⚠️ PDF-Fehler: '+(e.message||e)); }
+  var objName=(_buhaCockpitObj&&_buhaCockpitObj.name)||'Objekt';
+  var doc=buhaPdfTabelle({
+    titel:'Einnahmen-Überschuss-Rechnung',
+    untertitel:objName+' · Wirtschaftsjahr '+d.jahr,
+    spalten:[{label:'Konto',w:22},{label:'Bezeichnung',w:0},{label:'Betrag',w:34,align:'right'}],
+    zeilen:gewinnPdfZeilen(d),
+    fuss:['',d.g.ergebnis>=0?'Überschuss '+d.jahr:'Fehlbetrag '+d.jahr,buhaEuro(d.g.ergebnis)],
+    hinweis:'Ermittlung nach § 4 Abs. 3 EStG auf Grundlage der gebuchten Erlös- und Aufwandskonten. '
+      +'Abschreibungen, private Anteile und periodenfremde Abgrenzungen sind nicht automatisch berücksichtigt. Ohne Gewähr.'
+  });
+  if(!doc)return;
+  var fname='Gewinnermittlung_'+_dateiTeil(objName)+'_'+d.jahr+'.pdf';
+  if(typeof showDoc==='function')showDoc(doc,fname,action||'vorschau'); else doc.save(fname);
 }
 
 async function ladeBuchhaltung(objId){
@@ -15994,7 +15981,7 @@ async function wegcAbrFestSplit(posId,mode){
 }
 // Gemeinsamer Kontext (Layout-Konstanten, Formatierer) fuer die Einzelabrechnungs-Seiten
 function _wegcAbrPdfCtx(doc,d){
-  var W=210,L=16,R=12,AC=[88,88,92];
+  var W=210,L=16,R=12,AC=BUHA_PDF_STIL.marke;
   var sm=stammdaten||{}, weg=d.weg||{};
   var vName=([sm.firma,sm.vname&&sm.nname?sm.vname+' '+sm.nname:'']).filter(Boolean).join(' / ')||'NEKOSTA';
   var adr=[weg.strasse,weg.plz&&weg.ort?weg.plz+' '+weg.ort:weg.ort].filter(Boolean).join(', ');
@@ -16016,16 +16003,22 @@ function _wegcAbrRenderOwner(doc,o,d,ctx){
     var W=ctx.W,L=ctx.L,R=ctx.R,AC=ctx.AC,weg=ctx.weg,adr=ctx.adr,datStr=ctx.datStr;
     var fmt=ctx.fmt,sf=ctx.sf,line=ctx.line,cx=ctx.cx,blkA=ctx.blkA,blkB=ctx.blkB,baseDisp=ctx.baseDisp;
     var y=20;
+    // Spaltenkopf in derselben Linie wie die Auswertungen: dunkles Band, weiße Versalien
     var colHead=function(){
-      sf(6,'bold',120,120,125);
-      doc.text('Abrechnungsposition',cx.pos,y); doc.text('Verteilt nach',cx.vn,y);
-      doc.text('Gesamt',cx.gb,y,{align:'right'}); doc.text('Ihr Anteil',cx.ab,y,{align:'right'});
-      doc.text('Einh.',cx.einh,y); doc.text('Gesamt EUR',cx.geur,y,{align:'right'}); doc.text('Ihr Anteil EUR',cx.aeur,y,{align:'right'});
-      y+=2; line(L,W-R,y,null,0.4); y+=3.5;
+      var _S=BUHA_PDF_STIL;
+      doc.setFillColor(_S.marke[0],_S.marke[1],_S.marke[2]); doc.rect(L,y-3.4,W-L-R,5.2,'F');
+      sf(6,'bold',255,255,255);
+      doc.text('ABRECHNUNGSPOSITION',cx.pos+1,y); doc.text('VERTEILT NACH',cx.vn,y);
+      doc.text('GESAMT',cx.gb,y,{align:'right'}); doc.text('IHR ANTEIL',cx.ab,y,{align:'right'});
+      doc.text('EINH.',cx.einh,y); doc.text('GESAMT EUR',cx.geur,y,{align:'right'}); doc.text('IHR ANTEIL EUR',cx.aeur-1,y,{align:'right'});
+      y+=5.5;
     };
     {
+      // Markenband wie in den Auswertungen, damit alle Dokumente gleich beginnen
+      var _S=BUHA_PDF_STIL;
+      doc.setFillColor(_S.marke[0],_S.marke[1],_S.marke[2]); doc.rect(L,13,W-L-R,1.2,'F');
       y=18;
-      sf(7.5,'normal',135,135,140);
+      sf(7,'normal',_S.grau[0],_S.grau[1],_S.grau[2]);
       if(ctx.cfg&&ctx.cfg.zeige_verwalter)doc.text(ctx.vName,L,y);
       if(ctx.cfg&&ctx.cfg.zeige_ortdatum)doc.text(datStr,W-R,y,{align:'right'});
       y=29; sf(8.5,'bold',45,45,50);doc.text(o.name||_wegcEigName(o),L,y); y+=9;
@@ -16139,12 +16132,14 @@ function _wegcAbrRender35aPage(doc,o,d,ctx){
   var lines=doc.splitTextToSize(hinweis,W-L-R); doc.text(lines,L,y); y+=lines.length*4+4;
 }
 // Fusszeile (Objekt-Adresse + Seitenzahl) auf allen Seiten von doc ergaenzen
+// Seitenfuß in derselben Linie wie das gemeinsame Dokumentgerüst
 function _wegcAbrPdfFooter(doc,ctx){
+  var S=BUHA_PDF_STIL;
   var pages=doc.internal.getNumberOfPages();
   var ft=(ctx.fussTxt!=null)?ctx.fussTxt:ctx.adr;
-  for(var i=1;i<=pages;i++){doc.setPage(i);ctx.line(ctx.L,ctx.W-ctx.R,287,[200,200,200],0.3);ctx.sf(7,'normal',150,150,150);
-    if(ft)doc.text(ft,ctx.W/2,291,{align:'center',maxWidth:ctx.W-ctx.L-ctx.R});
-    doc.text('Seite '+i+' von '+pages,ctx.W-ctx.R,291,{align:'right'});}
+  for(var i=1;i<=pages;i++){doc.setPage(i);ctx.line(ctx.L,ctx.W-ctx.R,286,S.linie,0.25);ctx.sf(6.8,'normal',S.grau[0],S.grau[1],S.grau[2]);
+    if(ft)doc.text(ft,ctx.L,289.6,{maxWidth:ctx.W-ctx.L-ctx.R-40});
+    doc.text('Seite '+i+' von '+pages,ctx.W-ctx.R,289.6,{align:'right'});}
 }
 function wegcAbrechnungPdf(onlyEigId){
   var d=_wegcAbrData;
@@ -16374,33 +16369,37 @@ function wegcWplanSoll(){
     }}
   ]});
 }
+// Wirtschaftsplan im gemeinsamen Dokumentgerüst: Gesamtplan und Einzelpläne als zwei Blöcke.
+function wegcWplanBloecke(d){
+  var mj=0,mg=0;
+  (d.einzel||[]).forEach(function(e){ mj+=e.jahr; mg+=e.monat; });
+  return [
+    {titel:'Gesamt-Wirtschaftsplan',
+     spalten:[{label:'Position',w:0},{label:'Verteilt nach',w:48},{label:'Betrag / Jahr',w:34,align:'right'}],
+     zeilen:(d.P||[]).map(function(x){return [x.name,x.vn,buhaEuro(x.gesamtEUR)];}),
+     fuss:['Summe geplante Kosten','',buhaEuro(d.gesamt)]},
+    {titel:'Einzelwirtschaftspläne · monatliches Hausgeld',
+     spalten:[{label:'Eigentümer',w:0},{label:'Einheit',w:34},{label:'MEA',w:22,align:'right'},
+              {label:'Anteil / Jahr',w:30,align:'right'},{label:'Hausgeld / Monat',w:34,align:'right'}],
+     zeilen:(d.einzel||[]).map(function(e){
+       return [e.name,e.einheit,(parseFloat(e.meaAbs)||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2}),
+               buhaEuro(e.jahr),buhaEuro(e.monat)];}),
+     fuss:['Summe','','',buhaEuro(mj),buhaEuro(mg)]}
+  ];
+}
 function wegcWplanPdf(){
   var d=_wegcWpData; if(!d||!d.P.length){showToast('Bitte zuerst Positionen anlegen.');return;}
-  try{
-    var jsPDF=window.jspdf.jsPDF; var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-    var W=210,L=18,R=14,AC=[123,31,162];
-    var sm=stammdaten||{}, weg=d.weg||{};
-    var vName=([sm.firma,sm.vname&&sm.nname?sm.vname+' '+sm.nname:'']).filter(Boolean).join(' / ')||'NEKOSTA';
-    var adr=[weg.strasse,weg.plz&&weg.ort?weg.plz+' '+weg.ort:weg.ort].filter(Boolean).join(', ');
-    var fmt=function(v){return (parseFloat(v)||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});};
-    var sf=function(sz,st,r,g,b){doc.setFontSize(sz);doc.setFont('helvetica',st||'normal');doc.setTextColor(r==null?40:r,g==null?40:g,b==null?45:b);};
-    var line=function(x1,x2,yy,col,lw){col=col||[210,210,214];doc.setDrawColor(col[0],col[1],col[2]);doc.setLineWidth(lw||0.3);doc.line(x1,yy,x2,yy);};
-    var y=20; var npi=function(n){if(y+(n||8)>276){doc.addPage();y=20;}};
-    sf(7.5,'normal',135,135,140);doc.text((sm.ort?sm.ort+', ':'')+new Date().toLocaleDateString('de-DE'),W-R,y,{align:'right'});
-    y=32;sf(17,'bold',28,28,34);doc.text('Wirtschaftsplan',L,y);var tw=doc.getTextWidth('Wirtschaftsplan ');sf(17,'bold',AC[0],AC[1],AC[2]);doc.text(String(d.jahr),L+tw,y);
-    y+=7;sf(9.5,'bold',55,55,60);doc.text(weg.name||'WEG',L,y);if(adr){y+=5;sf(8.5,'normal',130,130,135);doc.text(adr,L,y);}y+=10;
-    sf(9.5,'bold',AC[0],AC[1],AC[2]);doc.text('GESAMT-WIRTSCHAFTSPLAN',L,y);line(L,W-R,y+2.5,null,0.4);y+=8;
-    d.P.forEach(function(x){npi(7);sf(8.5,'normal',55,55,60);doc.text(x.name,L+1,y,{maxWidth:110});sf(7.5,'normal',120,120,125);doc.text(x.vn,L+95,y,{maxWidth:45});sf(8.5,'normal',55,55,60);doc.text(fmt(x.gesamtEUR),W-R-1,y,{align:'right'});y+=6;});
-    line(L,W-R,y-1,null,0.4);sf(10,'bold',AC[0],AC[1],AC[2]);doc.text('Summe geplante Kosten',L+1,y+3);doc.text(fmt(d.gesamt)+' EUR',W-R-1,y+3,{align:'right'});y+=12;
-    npi(20);sf(9.5,'bold',AC[0],AC[1],AC[2]);doc.text('EINZELWIRTSCHAFTSPLÄNE · MONATLICHES HAUSGELD',L,y);line(L,W-R,y+2.5,null,0.4);y+=8;
-    var einzelHead=function(){sf(6.5,'bold',120,120,125);doc.text('Eigentümer',L+1,y);doc.text('Einheit',L+78,y);doc.text('MEA',L+118,y,{align:'right'});doc.text('Anteil/Jahr',L+150,y,{align:'right'});doc.text('Hausgeld/Monat',W-R-1,y,{align:'right'});y+=2;line(L,W-R,y,null,0.3);y+=4;};
-    einzelHead();
-    var mg=0,mj=0;
-    d.einzel.forEach(function(e){if(y+7>276){doc.addPage();y=20;einzelHead();}sf(8,'normal',55,55,60);doc.text(e.name,L+1,y,{maxWidth:74});sf(8,'normal',110,110,115);doc.text(e.einheit,L+78,y,{maxWidth:38});doc.text(fmt(e.meaAbs),L+118,y,{align:'right'});sf(8,'normal',55,55,60);doc.text(fmt(e.jahr),L+150,y,{align:'right'});sf(8,'bold',40,40,45);doc.text(fmt(e.monat),W-R-1,y,{align:'right'});mg+=e.monat;mj+=e.jahr;y+=5.5;});
-    line(L,W-R,y-1,null,0.4);sf(9,'bold',40,40,45);doc.text('Summe',L+1,y+3);doc.text(fmt(mj),L+150,y+3,{align:'right'});doc.text(fmt(mg),W-R-1,y+3,{align:'right'});
-    var pages=doc.internal.getNumberOfPages();for(var i=1;i<=pages;i++){doc.setPage(i);line(L,W-R,287,[200,200,200],0.3);sf(7,'normal',150,150,150);if(adr)doc.text(adr,W/2,291,{align:'center',maxWidth:W-L-R});doc.text('Seite '+i+' von '+pages,W-R,291,{align:'right'});}
-    showDoc(doc,'Wirtschaftsplan_'+(weg.name||'WEG').replace(/[^a-zA-Z0-9]+/g,'_')+'_'+d.jahr+'.pdf','vorschau');
-  }catch(e){console.error('Wplan-PDF:',e);showToast('⚠️ PDF-Fehler: '+(e.message||e));}
+  var weg=d.weg||{};
+  var adr=[weg.strasse,weg.plz&&weg.ort?weg.plz+' '+weg.ort:weg.ort].filter(Boolean).join(', ');
+  var doc=buhaPdfDokument({
+    titel:'Wirtschaftsplan '+d.jahr,
+    untertitel:(weg.name||'WEG')+(adr?' · '+adr:''),
+    bloecke:wegcWplanBloecke(d),
+    hinweis:'Wirtschaftsplan nach § 28 Abs. 1 WEG. Das monatliche Hausgeld ergibt sich aus dem Jahresanteil geteilt durch zwölf; '
+      +'er ist bis zum Beschluss eines neuen Wirtschaftsplans weiter zu zahlen.'
+  });
+  if(!doc)return;
+  showDoc(doc,'Wirtschaftsplan_'+_dateiTeil(weg.name||'WEG')+'_'+d.jahr+'.pdf','vorschau');
 }
 
 // ── WEG-Cockpit: HÄUSER (Untergemeinschaften) – Gebäude aufteilen + Einheiten zuordnen ──
@@ -22336,8 +22335,8 @@ function buhaAuswertungWahl(id){ _auswId=id; renderBuhaAuswertungen(); }
 function buhaAuswTabelleHtml(d){
   if(!d.zeilen.length)return '<div style="padding:2.2rem;text-align:center;color:var(--muted);font-size:.85rem">Für diese Auswertung liegen im Wirtschaftsjahr '+buha.jahr+' keine Daten vor.</div>';
   var ar=function(c){return c&&c.align==='right';};
-  return '<table style="width:100%;border-collapse:collapse;font-size:.8rem;min-width:'+Math.max(560,d.spalten.length*115)+'px"><thead><tr style="border-bottom:2px solid var(--border)">'
-    +d.spalten.map(function(c){return '<th style="text-align:'+(ar(c)?'right':'left')+';padding:.45rem .6rem;font-size:.62rem;text-transform:uppercase;color:var(--muted);white-space:nowrap">'+escapeHtml(c.label)+'</th>';}).join('')
+  return '<table style="width:100%;border-collapse:collapse;font-size:.76rem;min-width:'+Math.max(540,d.spalten.length*108)+'px"><thead><tr style="border-bottom:2px solid var(--border)">'
+    +d.spalten.map(function(c){return '<th style="text-align:'+(ar(c)?'right':'left')+';padding:.36rem .55rem;font-size:.6rem;letter-spacing:.03em;text-transform:uppercase;color:var(--muted);white-space:nowrap">'+escapeHtml(c.label)+'</th>';}).join('')
     +'</tr></thead><tbody>'
     +d.zeilen.map(function(z0){
       var vals=Array.isArray(z0)?z0:((z0&&z0.z)||[]);
@@ -22345,17 +22344,17 @@ function buhaAuswTabelleHtml(d){
       if(art==='gruppe'){
         // Werte der Abschnittszeile bleiben in der Reihenfolge der Spalten stehen
         var rest=vals.map(function(v,i){return (i>0&&ar(d.spalten[i])&&String(v||'').trim())?'<span style="font-variant-numeric:tabular-nums;white-space:nowrap">'+escapeHtml(v)+'</span>':'';}).join('');
-        return '<tr><td colspan="'+d.spalten.length+'" style="padding:.5rem .6rem;background:#eef0f3;border-left:3px solid #444851;font-weight:700;font-size:.82rem">'
+        return '<tr><td colspan="'+d.spalten.length+'" style="padding:.4rem .55rem;background:#eef0f3;border-left:3px solid #444851;font-weight:700;font-size:.78rem">'
           +'<span style="display:flex;align-items:baseline;gap:1.2rem"><span style="flex:1">'
           +escapeHtml(String(vals[0]||'').replace(/^—\s*/,''))+'</span>'+rest+'</span></td></tr>';
       }
       return '<tr style="border-bottom:1px solid var(--border);'+(art==='summe'?'font-weight:700;background:#f6f7f9':'')+'">'
         +vals.map(function(v,i){var c=d.spalten[i];
-          return '<td style="padding:.35rem .6rem;'+(ar(c)?'text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap':'')+'">'+escapeHtml(v==null?'':v)+'</td>';}).join('')
+          return '<td style="padding:.28rem .55rem;'+(ar(c)?'text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap':'')+'">'+escapeHtml(v==null?'':v)+'</td>';}).join('')
       +'</tr>';}).join('')
     +(d.fuss?'<tr style="background:#21242a;color:#fff;font-weight:800"><td colspan="'+d.spalten.length+'" style="padding:0"><table style="width:100%;border-collapse:collapse"><tr>'
       +(Array.isArray(d.fuss)?d.fuss:(d.fuss.z||[])).map(function(v,i){var c=d.spalten[i];
-        return '<td style="padding:.5rem .6rem;'+(ar(c)?'text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap':'')+'">'+escapeHtml(v==null?'':v)+'</td>';}).join('')
+        return '<td style="padding:.42rem .55rem;'+(ar(c)?'text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap':'')+'">'+escapeHtml(v==null?'':v)+'</td>';}).join('')
       +'</tr></table></td></tr>':'')
     +'</tbody></table>';
 }
@@ -22368,32 +22367,32 @@ function renderBuhaAuswertungen(){
   // Katalog
   h+='<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:.5rem;position:sticky;top:.5rem">'
     +liste.map(function(a){var on=a.id===_auswId;
-      return '<button onclick="buhaAuswertungWahl(\''+a.id+'\')" title="'+escapeHtml(a.kurz)+'" style="display:block;width:100%;text-align:left;border:none;cursor:pointer;font-family:var(--ff);font-size:.82rem;padding:.45rem .6rem;border-radius:8px;background:'+(on?'#0e7c7b':'transparent')+';color:'+(on?'#fff':'#374151')+';font-weight:'+(on?'700':'500')+';margin-bottom:1px">'+escapeHtml(a.label)+'</button>';}).join('')
+      return '<button onclick="buhaAuswertungWahl(\''+a.id+'\')" title="'+escapeHtml(a.kurz)+'" style="display:block;width:100%;text-align:left;border:none;cursor:pointer;font-family:var(--ff);font-size:.79rem;padding:.36rem .55rem;border-radius:7px;background:'+(on?'#0e7c7b':'transparent')+';color:'+(on?'#fff':'#374151')+';font-weight:'+(on?'700':'500')+';margin-bottom:1px">'+escapeHtml(a.label)+'</button>';}).join('')
     +'<div style="border-top:1px solid var(--border);margin-top:.5rem;padding-top:.5rem">'
     +'<button class="btn-small" style="width:100%;font-size:.74rem" onclick="buhaAuswGesamtPdf()">📚 Gesamtexport als PDF</button>'
     +'<button class="btn-small" style="width:100%;font-size:.74rem;margin-top:.35rem" onclick="buhaAuswGesamtCsv()">📦 Alle als CSV</button></div>'
     +'</div>';
   // Inhalt
   h+='<div style="min-width:0">'
-    +'<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:.8rem;flex-wrap:wrap;margin-bottom:.7rem">'
-    +'<div><div style="font-size:1.05rem;font-weight:800">'+escapeHtml(d.titel)+'</div>'
-    +'<div style="font-size:.78rem;color:var(--muted)">'+escapeHtml(d.unter)+'</div></div>'
+    +'<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:.8rem;flex-wrap:wrap;margin-bottom:.55rem">'
+    +'<div><div style="font-size:1rem;font-weight:800">'+escapeHtml(d.titel)+'</div>'
+    +'<div style="font-size:.75rem;color:var(--muted)">'+escapeHtml(d.unter)+'</div></div>'
     +'<span style="display:inline-flex;gap:.4rem;white-space:nowrap">'
     +'<button class="btn-small" onclick="buhaAuswertungCsv()"><span class="btn-ic" data-icon="download"></span> CSV</button>'
     +'<button class="btn-primary" style="font-size:.8rem;padding:.4rem .9rem" onclick="buhaAuswertungPdf()"><span class="btn-ic" data-icon="printer"></span> PDF</button></span>'
     +'</div>';
   if(d.warnung)h+='<div style="background:#fff8e6;border:1px solid #f0d9a8;border-radius:10px;padding:.7rem .9rem;margin-bottom:.7rem;font-size:.82rem;color:#9a6700">⚠️ '+escapeHtml(d.warnung)+'</div>';
   if(d.karten&&d.karten.length){
-    h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(172px,1fr));gap:.6rem;margin-bottom:.8rem">'
+    h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(172px,1fr));gap:.5rem;margin-bottom:.65rem">'
       +d.karten.map(function(k){
-        return '<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:.65rem .9rem">'
-          +'<div style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)">'+escapeHtml(k.label)+'</div>'
-          +'<div style="font-size:1.02rem;font-weight:800;color:'+(k.farbe||'var(--text)')+'">'+escapeHtml(k.wert)+'</div>'
-          +(k.zusatz?'<div style="font-size:.68rem;color:var(--muted)">'+escapeHtml(k.zusatz)+'</div>':'')+'</div>';
+        return '<div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:.5rem .75rem">'
+          +'<div style="font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)">'+escapeHtml(k.label)+'</div>'
+          +'<div style="font-size:.96rem;font-weight:800;margin-top:1px;color:'+(k.farbe||'var(--text)')+'">'+escapeHtml(k.wert)+'</div>'
+          +(k.zusatz?'<div style="font-size:.65rem;color:var(--muted);margin-top:1px">'+escapeHtml(k.zusatz)+'</div>':'')+'</div>';
       }).join('')+'</div>';
   }
-  h+='<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow-x:auto">'+buhaAuswTabelleHtml(d)+'</div>'
-    +(d.hinweis?'<div style="font-size:.72rem;color:var(--muted);margin-top:.6rem;line-height:1.55">'+escapeHtml(d.hinweis)+'</div>':'')
+  h+='<div style="background:var(--white);border:1px solid var(--border);border-radius:10px;overflow-x:auto">'+buhaAuswTabelleHtml(d)+'</div>'
+    +(d.hinweis?'<div style="font-size:.7rem;color:var(--muted);margin-top:.5rem;line-height:1.5">'+escapeHtml(d.hinweis)+'</div>':'')
     +'</div></div>';
   c.innerHTML=h; applyIcons(c);
 }
@@ -23158,30 +23157,38 @@ function buhaPdfAbsender(){
   return {name:name,briefkopf:sm.briefkopf||null,
     zeile:[name,adr,sm.steuernr?('St.-Nr. '+sm.steuernr):''].filter(Boolean).join('  ·  ')};
 }
-function buhaPdfTabelle(opts){
+// Gemeinsames Dokumentgerüst aller Auswertungen und Berichte.
+// opts: {titel, untertitel, quer, hinweis, doc, bloecke:[{titel,spalten,zeilen,fuss,hinweis}]}
+// Ein einzelner Block lässt sich auch direkt über spalten/zeilen/fuss übergeben.
+function buhaPdfDokument(opts){
   try{
     var jsPDF=window.jspdf.jsPDF;
     var S=BUHA_PDF_STIL;
-    // opts.doc hängt die Tabelle als neue Seite an ein bestehendes Dokument an (Gesamtexport)
+    // opts.doc hängt das Dokument als neue Seite an ein bestehendes an (Gesamtexport)
     var doc=opts.doc;
     if(doc)doc.addPage('a4',opts.quer?'landscape':'portrait');
     else doc=new jsPDF({orientation:opts.quer?'landscape':'portrait',unit:'mm',format:'a4'});
     var W=opts.quer?297:210, H=opts.quer?210:297, L=14, R=14, y=16;
     var breite=W-L-R;
     var abs=buhaPdfAbsender();
+    var bloecke=(opts.bloecke&&opts.bloecke.length)?opts.bloecke
+      :[{spalten:opts.spalten,zeilen:opts.zeilen,fuss:opts.fuss}];
 
     var farbeText=function(c){doc.setTextColor(c[0],c[1],c[2]);};
     var farbeFuell=function(c){doc.setFillColor(c[0],c[1],c[2]);};
     var farbeLinie=function(c){doc.setDrawColor(c[0],c[1],c[2]);};
     var schrift=function(groesse,stil,farbe){doc.setFontSize(groesse);doc.setFont('helvetica',stil||'normal');farbeText(farbe||S.tinte);};
 
-    // Spaltenbreiten: feste Angaben bleiben, der Rest teilt sich den Platz
-    var cols=opts.spalten||[];
-    var fest=cols.reduce(function(s,c){return s+(c.w||0);},0);
-    var offen=cols.filter(function(c){return !c.w;}).length;
-    var ws=cols.map(function(c){return c.w||Math.max(20,(breite-fest)/Math.max(1,offen));});
-    var summeW=ws.reduce(function(s,w){return s+w;},0);
-    ws=ws.map(function(w){return w*breite/summeW;});
+    // Spaltenbreiten des laufenden Blocks: feste Angaben bleiben, der Rest teilt sich den Platz
+    var cols=[], ws=[];
+    var spaltenSetzen=function(spalten){
+      cols=spalten||[];
+      var fest=cols.reduce(function(s,c){return s+(c.w||0);},0);
+      var offen=cols.filter(function(c){return !c.w;}).length;
+      ws=cols.map(function(c){return c.w||Math.max(20,(breite-fest)/Math.max(1,offen));});
+      var summeW=ws.reduce(function(s,w){return s+w;},0);
+      ws=ws.map(function(w){return w*breite/summeW;});
+    };
     var rechts=function(i2){var c=cols[i2];return !!(c&&c.align==='right');};
 
     // Eine Zeile ist entweder ein Array oder {z:[…],art:'gruppe'|'summe'|'zeile'}
@@ -23198,11 +23205,29 @@ function buhaPdfTabelle(opts){
       var t=buhaPdfText(wert);
       if(!t)return {zeilen:[''],groesse:basis};
       doc.setFont('helvetica',stil||'normal');
-      var verf=platz-3, klein=Math.max(6.6,basis-1.2);   // höchstens leicht verkleinern
+      var verf=platz-2.6, klein=Math.max(6.2,basis-1.1);   // höchstens leicht verkleinern
       var g=basis; doc.setFontSize(g);
       while(g>klein&&doc.getTextWidth(t)>verf){ g-=0.3; doc.setFontSize(g); }
       if(doc.getTextWidth(t)<=verf)return {zeilen:[t],groesse:g};
       return {zeilen:doc.splitTextToSize(t,verf),groesse:g};   // sonst umbrechen
+    };
+
+    // ── Tabellenkopf des laufenden Blocks ──
+    var tabellenkopf=function(){
+      if(!cols.length)return;
+      farbeFuell(S.marke); doc.rect(L,y-4,breite,6,'F');
+      schrift(6.8,'bold',[255,255,255]);
+      var cs=0.2;
+      try{doc.setCharSpace(cs);}catch(e){}
+      var x=L;
+      cols.forEach(function(c,i2){
+        var lab=buhaPdfText(String(c.label||'').toUpperCase());
+        // Die Sperrung verbreitert den Text, ohne dass der Rechtsbündig-Satz das kennt – daher vorher abziehen
+        doc.text(lab,rechts(i2)?x+ws[i2]-2-lab.length*cs:x+2,y,{align:rechts(i2)?'right':'left'});
+        x+=ws[i2];
+      });
+      try{doc.setCharSpace(0);}catch(e){}
+      y+=5.4;
     };
 
     // ── Seitenkopf ──
@@ -23213,73 +23238,68 @@ function buhaPdfTabelle(opts){
         try{
           var pr=doc.getImageProperties(abs.briefkopf);
           var bw=breite, bh=bw*(pr.height/pr.width);
-          if(bh>26){bh=26;bw=bh*(pr.width/pr.height);}
+          if(bh>24){bh=24;bw=bh*(pr.width/pr.height);}
           doc.addImage(abs.briefkopf,/png/i.test(String(abs.briefkopf).slice(0,30))?'PNG':'JPEG',L,y,bw,bh);
-          y+=bh+5;
+          y+=bh+4;
         }catch(e){ y=12; }
       }
       // Markenband und Absenderzeile
-      farbeFuell(S.marke); doc.rect(L,y,breite,1.6,'F');
-      y+=5;
-      schrift(7.5,'normal',S.grau);
+      farbeFuell(S.marke); doc.rect(L,y,breite,1.2,'F');
+      y+=4.6;
+      schrift(7,'normal',S.grau);
       doc.text(buhaPdfText(abs.zeile),L,y);
-      var stand='Stand '+new Date().toLocaleDateString('de-DE');
-      doc.text(stand,W-R,y,{align:'right'});
-      y+=8;
-      // Titelblock
-      schrift(15,'bold',S.markeDunkel);
-      doc.text(buhaPdfText(String(opts.titel||'')+(ersteSeite?'':' · Fortsetzung')),L,y);
-      if(opts.untertitel){ y+=5.5; schrift(9,'normal',S.grau); doc.text(buhaPdfText(opts.untertitel),L,y); }
+      doc.text('Stand '+new Date().toLocaleDateString('de-DE'),W-R,y,{align:'right'});
       y+=7;
-      // Tabellenkopf
-      farbeFuell(S.marke); doc.rect(L,y-4.4,breite,7,'F');
-      schrift(7.2,'bold',[255,255,255]);
-      try{doc.setCharSpace(0.25);}catch(e){}
-      var x=L;
-      cols.forEach(function(c,i2){
-        doc.text(buhaPdfText(String(c.label||'').toUpperCase()),rechts(i2)?x+ws[i2]-2:x+2,y,{align:rechts(i2)?'right':'left'});
-        x+=ws[i2];
-      });
-      try{doc.setCharSpace(0);}catch(e){}
-      y+=6.2;
+      // Titelblock
+      schrift(13.5,'bold',S.markeDunkel);
+      doc.text(buhaPdfText(String(opts.titel||'')+(ersteSeite?'':' · Fortsetzung')),L,y);
+      if(opts.untertitel){ y+=4.8; schrift(8.4,'normal',S.grau); doc.text(buhaPdfText(opts.untertitel),L,y); }
+      y+=6.4;
       ersteSeite=false;
+      blockKopf();
     };
-    kopf();
+    // Überschrift und Spaltenkopf des laufenden Blocks – wiederholt sich auf jeder Seite
+    var blockTitel='';
+    var blockKopf=function(){
+      if(blockTitel){ schrift(9,'bold',S.markeDunkel); doc.text(buhaPdfText(blockTitel),L,y); y+=4.6; }
+      tabellenkopf();
+    };
+    var umbruch=function(){ doc.addPage('a4',opts.quer?'landscape':'portrait'); kopf(); };
 
     // ── Datenzeilen ──
     var zeilenHoehe=function(vals,basis,stil){
       var n=1;
       vals.forEach(function(v,i2){ var z=zelle(v,ws[i2],basis,stil); if(z.zeilen.length>n)n=z.zeilen.length; });
-      return n*4+2.6;
+      return n*3.7+2.2;
     };
     var zeichne=function(vals,art,index){
-      var basis=art==='fuss'?8.4:8.2;
+      var basis=art==='fuss'?8:7.8;
       var stil=(art==='fuss'||art==='gruppe'||art==='summe')?'bold':'normal';
       // Abschnittsüberschrift läuft über die ganze Breite, nicht in die erste Spalte gequetscht
       if(art==='gruppe'){
         var titelText=String(vals[0]==null?'':vals[0]).replace(/^—\s*/,'');
-        var hg=8.4;
-        if(y+hg>H-18){ doc.addPage('a4',opts.quer?'landscape':'portrait'); kopf(); }
-        farbeFuell(S.gruppe); doc.rect(L,y-3.8,breite,hg,'F');
-        farbeFuell(S.marke);  doc.rect(L,y-3.8,1.4,hg,'F');
-        schrift(8.4,'bold',S.markeDunkel);
-        doc.text(buhaPdfText(titelText),L+4,y+0.6);
-        // Beträge einer Abschnittszeile bleiben rechts stehen, falls vorhanden
+        var hg=7.2;
+        if(y+hg>H-16)umbruch();
+        farbeFuell(S.gruppe); doc.rect(L,y-3.4,breite,hg,'F');
+        farbeFuell(S.marke);  doc.rect(L,y-3.4,1.2,hg,'F');
+        schrift(8,'bold',S.markeDunkel);
+        doc.text(buhaPdfText(titelText),L+3.4,y+0.5);
+        // Beträge einer Abschnittszeile bleiben rechts in ihren Spalten stehen
         var xg=L;
         vals.forEach(function(v,i2){
           if(i2===0||!rechts(i2)||!String(v||'').trim()){ xg+=ws[i2]; return; }
-          var zg=zelle(v,ws[i2],8.4,'bold'); doc.setFontSize(zg.groesse);
-          doc.text(zg.zeilen,xg+ws[i2]-2,y+0.6,{align:'right'}); xg+=ws[i2];
+          var zg=zelle(v,ws[i2],8,'bold'); doc.setFontSize(zg.groesse);
+          doc.text(zg.zeilen,xg+ws[i2]-2,y+0.5,{align:'right'}); xg+=ws[i2];
         });
-        y+=hg+0.8;
+        y+=hg+0.6;
         return;
       }
       var hh=zeilenHoehe(vals,basis,stil);
-      if(y+hh>H-18){ doc.addPage('a4',opts.quer?'landscape':'portrait'); kopf(); }
+      if(y+hh>H-16)umbruch();
       // Die Schlusszeile bekommt ein dunkles Band – als Gegenstück zum Tabellenkopf
-      if(art==='fuss'){ farbeFuell(S.markeDunkel); doc.rect(L,y-3.8,breite,hh,'F'); }
-      else if(art==='summe'){ farbeFuell(S.markeHell); doc.rect(L,y-3.8,breite,hh,'F'); }
-      else if(index%2===1){ farbeFuell(S.zebra); doc.rect(L,y-3.8,breite,hh,'F'); }
+      if(art==='fuss'){ farbeFuell(S.markeDunkel); doc.rect(L,y-3.4,breite,hh,'F'); }
+      else if(art==='summe'){ farbeFuell(S.markeHell); doc.rect(L,y-3.4,breite,hh,'F'); }
+      else if(index%2===1){ farbeFuell(S.zebra); doc.rect(L,y-3.4,breite,hh,'F'); }
       var x=L;
       vals.forEach(function(v,i2){
         var z=zelle(v,ws[i2],basis,stil);
@@ -23290,23 +23310,41 @@ function buhaPdfTabelle(opts){
         x+=ws[i2];
       });
       y+=hh;
-      if(art==='zeile'){ farbeLinie(S.linie); doc.setLineWidth(.12); doc.line(L,y-2.6,W-R,y-2.6); }
+      if(art==='zeile'){ farbeLinie(S.linie); doc.setLineWidth(.1); doc.line(L,y-2.2,W-R,y-2.2); }
     };
-    var lfd=0;
-    (opts.zeilen||[]).forEach(function(z){
-      var art=zeilenArt(z);
-      if(art==='zeile')lfd++; else lfd=0;
-      zeichne(zeilenWerte(z),art,lfd);
+
+    // ── Blöcke ──
+    spaltenSetzen(bloecke[0].spalten); blockTitel=bloecke[0].titel||'';
+    kopf();
+    bloecke.forEach(function(b,bi){
+      if(bi>0){
+        spaltenSetzen(b.spalten); blockTitel=b.titel||'';
+        y+=5;
+        if(y+24>H-16)umbruch(); else blockKopf();
+      }
+      var lfd=0;
+      (b.zeilen||[]).forEach(function(z){
+        var art=zeilenArt(z);
+        if(art==='zeile')lfd++; else lfd=0;
+        zeichne(zeilenWerte(z),art,lfd);
+      });
+      if(b.fuss){
+        if(y+9>H-16)umbruch();
+        y+=1;
+        zeichne(zeilenWerte(b.fuss),'fuss',0);
+      }
+      if(b.hinweis){
+        y+=3.4;
+        if(y>H-18)umbruch();
+        schrift(6.8,'normal',S.grau);
+        doc.text(doc.splitTextToSize(buhaPdfText(b.hinweis),breite),L,y);
+        y+=doc.splitTextToSize(buhaPdfText(b.hinweis),breite).length*3.1;
+      }
     });
-    if(opts.fuss){
-      if(y+10>H-18){ doc.addPage('a4',opts.quer?'landscape':'portrait'); kopf(); }
-      y+=1.2;
-      zeichne(zeilenWerte(opts.fuss),'fuss',0);
-    }
     if(opts.hinweis){
-      y+=4;
-      if(y>H-20){ doc.addPage('a4',opts.quer?'landscape':'portrait'); kopf(); }
-      schrift(7,'normal',S.grau);
+      y+=3.4;
+      if(y>H-18)umbruch();
+      schrift(6.8,'normal',S.grau);
       doc.text(doc.splitTextToSize(buhaPdfText(opts.hinweis),breite),L,y);
     }
 
@@ -23325,13 +23363,18 @@ function buhaPdfTabelle(opts){
           doc.restoreGraphicsState();
         }catch(e){}
       }
-      farbeLinie(S.linie); doc.setLineWidth(.3); doc.line(L,H-12,W-R,H-12);
-      schrift(7,'normal',S.grau);
-      doc.text(buhaPdfText(abs.zeile),L,H-8,{maxWidth:breite-40});
-      doc.text('Seite '+p+' von '+n,W-R,H-8,{align:'right'});
+      farbeLinie(S.linie); doc.setLineWidth(.25); doc.line(L,H-11,W-R,H-11);
+      schrift(6.8,'normal',S.grau);
+      doc.text(buhaPdfText(abs.zeile),L,H-7.4,{maxWidth:breite-40});
+      doc.text('Seite '+p+' von '+n,W-R,H-7.4,{align:'right'});
     }
     return doc;
-  }catch(e){ console.error('buhaPdfTabelle:',e); showToast('⚠️ PDF-Fehler: '+(e.message||e)); return null; }
+  }catch(e){ console.error('buhaPdfDokument:',e); showToast('⚠️ PDF-Fehler: '+(e.message||e)); return null; }
+}
+// Eine einzelne Tabelle im gemeinsamen Gerüst
+function buhaPdfTabelle(opts){
+  return buhaPdfDokument({titel:opts.titel,untertitel:opts.untertitel,quer:opts.quer,doc:opts.doc,hinweis:opts.hinweis,
+    bloecke:[{spalten:opts.spalten,zeilen:opts.zeilen,fuss:opts.fuss}]});
 }
 
 // Init sidebar groups

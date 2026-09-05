@@ -22999,50 +22999,174 @@ function buhaDownloadText(text,fname,mime){
 
 // ── Generischer Tabellendruck (jsPDF) für alle Auswertungen ──────────────
 // opts: {titel, untertitel, spalten:[{label,w(mm, 0 = Rest),align}], zeilen:[[..]], fuss:[..], hinweis, quer}
+// ── Gestaltung der Auswertungs-PDF ────────────────────────────────────────
+// Alle Auswertungen teilen sich dasselbe Layout: Briefkopf oder Markenband,
+// Titelblock, Tabelle mit farbigem Kopf und Zebrastreifen, hinterlegte
+// Summenzeile und ein Seitenfuß mit Absender und Seitenzahl.
+var BUHA_PDF_STIL={
+  marke:[124,58,237], markeHell:[237,233,254], markeDunkel:[91,33,182],
+  tinte:[26,26,31], grau:[107,101,112], linie:[221,216,232], zebra:[250,248,252],
+  gruppe:[243,241,248]
+};
+// Die eingebauten PDF-Schriften kennen nur den Westeuropa-Zeichensatz.
+// Symbole aus der Oberfläche werden darum vor dem Druck übersetzt, sonst
+// zerreißt der Text (aus „ausgeglichen ✓" wird sonst „a u s g e g l i c h e n").
+var BUHA_PDF_ZEICHEN={'✓':'','✔':'','✕':'x','✗':'x','⑂':'Teil','🔒':'','⚡':'','↺':'','▸':'','▾':'','◀':'','▶':'','→':' -> ','←':' <- ','—':'-','⚠️':'','⚠':'','💡':'','📚':'','📦':'','🧾':'','🏷':'','🧹':''};
+function buhaPdfText(s){
+  s=String(s==null?'':s);
+  Object.keys(BUHA_PDF_ZEICHEN).forEach(function(z){ s=s.split(z).join(BUHA_PDF_ZEICHEN[z]); });
+  // Reste außerhalb des Zeichensatzes entfernen (Westeuropa plus typografische Zeichen)
+  s=s.replace(/[^\u0000-\u00ff\u20ac\u2013\u2014\u2018\u2019\u201a\u201c\u201d\u201e\u2022\u2026\u2039\u203a\u2122]/g,'');
+  return s.replace(/\s{2,}/g,' ').trim();
+}
+// Absender aus den Stammdaten für Kopf- und Fußzeile
+function buhaPdfAbsender(){
+  var sm=(typeof stammdaten!=='undefined'&&stammdaten)||{};
+  var name=sm.firma||((sm.vname&&sm.nname)?(sm.vname+' '+sm.nname):'')||'NEKOSTA';
+  var adr=sm.strasse?(sm.strasse+', '+((sm.plz||'')+' '+(sm.ort||'')).trim()):'';
+  return {name:name,briefkopf:sm.briefkopf||null,
+    zeile:[name,adr,sm.steuernr?('St.-Nr. '+sm.steuernr):''].filter(Boolean).join('  ·  ')};
+}
 function buhaPdfTabelle(opts){
   try{
     var jsPDF=window.jspdf.jsPDF;
+    var S=BUHA_PDF_STIL;
     // opts.doc hängt die Tabelle als neue Seite an ein bestehendes Dokument an (Gesamtexport)
     var doc=opts.doc;
     if(doc)doc.addPage('a4',opts.quer?'landscape':'portrait');
     else doc=new jsPDF({orientation:opts.quer?'landscape':'portrait',unit:'mm',format:'a4'});
     var W=opts.quer?297:210, H=opts.quer?210:297, L=14, R=14, y=16;
-    var sm=(typeof stammdaten!=='undefined'&&stammdaten)||{};
-    var sf=function(sz,st,g){doc.setFontSize(sz);doc.setFont('helvetica',st||'normal');doc.setTextColor(g==null?35:g,g==null?35:g,g==null?40:g);};
-    var breite=W-L-R, cols=opts.spalten||[];
-    var fest=cols.reduce(function(s,c){return s+(c.w||0);},0), rest=cols.filter(function(c){return !c.w;}).length;
-    var ws=cols.map(function(c){return c.w||Math.max(20,(breite-fest)/Math.max(1,rest));});
-    var scale=breite/ws.reduce(function(s,w){return s+w;},0); ws=ws.map(function(w){return w*scale;});
+    var breite=W-L-R;
+    var abs=buhaPdfAbsender();
+
+    var farbeText=function(c){doc.setTextColor(c[0],c[1],c[2]);};
+    var farbeFuell=function(c){doc.setFillColor(c[0],c[1],c[2]);};
+    var farbeLinie=function(c){doc.setDrawColor(c[0],c[1],c[2]);};
+    var schrift=function(groesse,stil,farbe){doc.setFontSize(groesse);doc.setFont('helvetica',stil||'normal');farbeText(farbe||S.tinte);};
+
+    // Spaltenbreiten: feste Angaben bleiben, der Rest teilt sich den Platz
+    var cols=opts.spalten||[];
+    var fest=cols.reduce(function(s,c){return s+(c.w||0);},0);
+    var offen=cols.filter(function(c){return !c.w;}).length;
+    var ws=cols.map(function(c){return c.w||Math.max(20,(breite-fest)/Math.max(1,offen));});
+    var summeW=ws.reduce(function(s,w){return s+w;},0);
+    ws=ws.map(function(w){return w*breite/summeW;});
+    var rechts=function(i2){var c=cols[i2];return !!(c&&c.align==='right');};
+
+    // Zelltext: passt er nicht, wird er behutsam verkleinert und erst dann umbrochen
+    var zelle=function(wert,platz,basis,stil){
+      var t=buhaPdfText(wert);
+      if(!t)return {zeilen:[''],groesse:basis};
+      doc.setFont('helvetica',stil||'normal');
+      var verf=platz-3, klein=Math.max(6.6,basis-1.2);   // höchstens leicht verkleinern
+      var g=basis; doc.setFontSize(g);
+      while(g>klein&&doc.getTextWidth(t)>verf){ g-=0.3; doc.setFontSize(g); }
+      if(doc.getTextWidth(t)<=verf)return {zeilen:[t],groesse:g};
+      return {zeilen:doc.splitTextToSize(t,verf),groesse:g};   // sonst umbrechen
+    };
+
+    // ── Seitenkopf ──
+    var ersteSeite=true;
     var kopf=function(){
-      y=16; sf(8,'normal',130);
-      doc.text([sm.firma||((sm.vname&&sm.nname)?sm.vname+' '+sm.nname:'')].filter(Boolean).join('')||'NEKOSTA',L,y);
-      doc.text(new Date().toLocaleDateString('de-DE'),W-R,y,{align:'right'});
-      y+=8; sf(14,'bold',25); doc.text(String(opts.titel||''),L,y);
-      if(opts.untertitel){ y+=5.5; sf(9,'normal',90); doc.text(String(opts.untertitel),L,y); }
-      y+=7;
-      // Spaltenkopf
-      doc.setFillColor(243,244,246); doc.rect(L,y-4,breite,6,'F');
-      sf(7.5,'bold',60); var x=L;
-      cols.forEach(function(c,i){ doc.text(String(c.label||''),c.align==='right'?x+ws[i]-1.5:x+1.5,y,{align:c.align==='right'?'right':'left'}); x+=ws[i]; });
+      y=12;
+      if(ersteSeite&&abs.briefkopf){
+        try{
+          var pr=doc.getImageProperties(abs.briefkopf);
+          var bw=breite, bh=bw*(pr.height/pr.width);
+          if(bh>26){bh=26;bw=bh*(pr.width/pr.height);}
+          doc.addImage(abs.briefkopf,/png/i.test(String(abs.briefkopf).slice(0,30))?'PNG':'JPEG',L,y,bw,bh);
+          y+=bh+5;
+        }catch(e){ y=12; }
+      }
+      // Markenband und Absenderzeile
+      farbeFuell(S.marke); doc.rect(L,y,breite,1.6,'F');
       y+=5;
+      schrift(7.5,'normal',S.grau);
+      doc.text(buhaPdfText(abs.zeile),L,y);
+      var stand='Stand '+new Date().toLocaleDateString('de-DE');
+      doc.text(stand,W-R,y,{align:'right'});
+      y+=8;
+      // Titelblock
+      schrift(15,'bold',S.markeDunkel);
+      doc.text(buhaPdfText(String(opts.titel||'')+(ersteSeite?'':' · Fortsetzung')),L,y);
+      if(opts.untertitel){ y+=5.5; schrift(9,'normal',S.grau); doc.text(buhaPdfText(opts.untertitel),L,y); }
+      y+=7;
+      // Tabellenkopf
+      farbeFuell(S.marke); doc.rect(L,y-4.2,breite,6.4,'F');
+      schrift(7.5,'bold',[255,255,255]);
+      var x=L;
+      cols.forEach(function(c,i2){
+        doc.text(buhaPdfText(c.label),rechts(i2)?x+ws[i2]-1.6:x+1.6,y,{align:rechts(i2)?'right':'left'});
+        x+=ws[i2];
+      });
+      y+=5.4;
+      ersteSeite=false;
     };
     kopf();
-    sf(8,'normal',45);
-    var zeileH=function(vals){ var maxL=1; vals.forEach(function(v,i){ var t=doc.splitTextToSize(String(v==null?'':v),ws[i]-3); if(t.length>maxL)maxL=t.length; }); return maxL; };
-    var zeichne=function(vals,fett){
-      var lines=vals.map(function(v,i){return doc.splitTextToSize(String(v==null?'':v),ws[i]-3);});
-      var n=zeileH(vals), hh=n*3.6+1.8;
-      if(y+hh>H-16){ doc.addPage(); kopf(); sf(8,fett?'bold':'normal',45); }
-      var x=L;
-      lines.forEach(function(t,i){ var c=cols[i]||{}; doc.text(t,c.align==='right'?x+ws[i]-1.5:x+1.5,y,{align:c.align==='right'?'right':'left'}); x+=ws[i]; });
-      y+=hh; doc.setDrawColor(228,228,232); doc.setLineWidth(.2); doc.line(L,y-1.2,W-R,y-1.2);
+
+    // ── Datenzeilen ──
+    var zeilenHoehe=function(vals,basis,stil){
+      var n=1;
+      vals.forEach(function(v,i2){ var z=zelle(v,ws[i2],basis,stil); if(z.zeilen.length>n)n=z.zeilen.length; });
+      return n*3.6+2.2;
     };
-    (opts.zeilen||[]).forEach(function(z){ sf(8,'normal',45); zeichne(z,false); });
-    if(opts.fuss){ doc.setDrawColor(120,120,125); doc.setLineWidth(.5); doc.line(L,y-1.2,W-R,y-1.2); sf(8,'bold',30); zeichne(opts.fuss,true); }
-    if(opts.hinweis){ y+=3; if(y>H-20){doc.addPage();kopf();} sf(7,'normal',130); doc.text(doc.splitTextToSize(String(opts.hinweis),breite),L,y); }
-    // Seitenzahlen
+    var zeichne=function(vals,art,index){
+      var basis=art==='fuss'?8:7.9;
+      var stil=(art==='fuss'||art==='gruppe'||art==='summe')?'bold':'normal';
+      var hh=zeilenHoehe(vals,basis,stil);
+      if(y+hh>H-18){ doc.addPage('a4',opts.quer?'landscape':'portrait'); kopf(); }
+      // Hintergrund
+      if(art==='fuss'){ farbeFuell(S.markeHell); doc.rect(L,y-3.6,breite,hh,'F'); }
+      else if(art==='gruppe'){ farbeFuell(S.gruppe); doc.rect(L,y-3.6,breite,hh,'F'); }
+      else if(index%2===1){ farbeFuell(S.zebra); doc.rect(L,y-3.6,breite,hh,'F'); }
+      var x=L;
+      vals.forEach(function(v,i2){
+        var z=zelle(v,ws[i2],basis,stil);
+        doc.setFontSize(z.groesse);
+        doc.setFont('helvetica',stil);
+        farbeText(art==='fuss'?S.markeDunkel:S.tinte);
+        doc.text(z.zeilen,rechts(i2)?x+ws[i2]-1.6:x+1.6,y,{align:rechts(i2)?'right':'left'});
+        x+=ws[i2];
+      });
+      y+=hh;
+      if(art!=='fuss'){ farbeLinie(S.linie); doc.setLineWidth(.15); doc.line(L,y-2.4,W-R,y-2.4); }
+    };
+    (opts.zeilen||[]).forEach(function(z,idx){
+      var erste=String(z[0]==null?'':z[0]);
+      zeichne(z,/^—/.test(erste)?'gruppe':(erste==='Summe'?'summe':'zeile'),idx);
+    });
+    if(opts.fuss){
+      if(y+10>H-18){ doc.addPage('a4',opts.quer?'landscape':'portrait'); kopf(); }
+      farbeLinie(S.marke); doc.setLineWidth(.4); doc.line(L,y-3.6,W-R,y-3.6);
+      zeichne(opts.fuss,'fuss',0);
+    }
+    if(opts.hinweis){
+      y+=4;
+      if(y>H-20){ doc.addPage('a4',opts.quer?'landscape':'portrait'); kopf(); }
+      schrift(7,'normal',S.grau);
+      doc.text(doc.splitTextToSize(buhaPdfText(opts.hinweis),breite),L,y);
+    }
+
+    // ── Seitenfuß auf allen Seiten ──
     var n=doc.getNumberOfPages();
-    for(var p=1;p<=n;p++){ doc.setPage(p); sf(7,'normal',150); doc.text('Seite '+p+' von '+n,W-R,H-8,{align:'right'}); doc.text(String(opts.titel||''),L,H-8); }
+    for(var p=1;p<=n;p++){
+      doc.setPage(p);
+      // Wasserzeichen im Free-Tarif, wie in den übrigen Dokumenten
+      if(typeof isWatermark==='function'&&isWatermark()){
+        try{
+          doc.saveGraphicsState();
+          doc.setGState(new doc.GState({opacity:0.08}));
+          schrift(52,'bold',S.marke);
+          doc.text('NEKOSTA',W/2,H/2,{align:'center',angle:35});
+          doc.setGState(new doc.GState({opacity:1}));
+          doc.restoreGraphicsState();
+        }catch(e){}
+      }
+      farbeLinie(S.linie); doc.setLineWidth(.3); doc.line(L,H-12,W-R,H-12);
+      schrift(7,'normal',S.grau);
+      doc.text(buhaPdfText(abs.zeile),L,H-8,{maxWidth:breite-40});
+      doc.text('Seite '+p+' von '+n,W-R,H-8,{align:'right'});
+    }
     return doc;
   }catch(e){ console.error('buhaPdfTabelle:',e); showToast('⚠️ PDF-Fehler: '+(e.message||e)); return null; }
 }

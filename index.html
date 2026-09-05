@@ -1825,6 +1825,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
               <div id="buha-pane-arbeitskonto" style="display:none"></div>
               <div id="buha-pane-personen" style="display:none"></div>
               <div id="buha-pane-auswertungen" style="display:none"></div>
+              <div id="buha-pane-bank" style="display:none"></div>
               <!-- TAB: BUCHEN -->
               <div id="buha-pane-buchen">
                 <div id="buha-kpis" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.6rem;margin-bottom:1rem"></div>
@@ -11346,7 +11347,7 @@ var BUHAC_MODS=[
   {id:'primanota',    label:'Primanota',              icon:'list'},
   {id:'arbeitskonto', label:'Arbeitskonto',           icon:'bookopen'},
   {id:'personen',     label:'Debitoren / Kreditoren', icon:'users'},
-  {id:'bank',         label:'Bank & Import',          icon:'landmark', soon:true},
+  {id:'bank',         label:'Bank & Import',          icon:'landmark'},
   {id:'ausw',         label:'Auswertungen',           icon:'barchart'},
   {id:'gewinn',       label:'Gewinnermittlung',       icon:'euro'},
   {id:'anlagen',      label:'Anlagen / AfA',          icon:'building'},
@@ -11361,7 +11362,7 @@ var BUHAC_TITEL={
   primanota:['Primanota','Buchungen in Erfassungsreihenfolge'],
   arbeitskonto:['Arbeitskonto','Alle Buchungen eines Kontos mit laufendem Saldo'],
   personen:['Debitoren / Kreditoren','Personenkonten, offene Posten und Ausziffern'],
-  bank:['Bank & Import','Kontoumsätze aus MT940 / CSV verbuchen'],
+  bank:['Bank & Import','Kontoumsätze aus MT940 oder CSV einlesen und verbuchen'],
   ausw:['Auswertungen','Saldenliste, EÜR, Umsatzsteuer, Nebenkosten – jede als PDF und CSV'],
   gewinn:['Gewinnermittlung','Einnahmen-Überschuss-Rechnung'],
   anlagen:['Anlagen / AfA','Anlagenverzeichnis und Abschreibungen'],
@@ -11955,6 +11956,7 @@ async function buhaReload(){
       buha.buchungenAlle=ar.data||buha.buchungen;
     } else buha.buchungenAlle=buha.buchungen;
     await buhaStapelLaden();
+    await buhaBankLaden();
   }catch(e){showToast('❌ '+(e.message||e));}
   fillKontoControls();
   renderKonten();
@@ -11967,13 +11969,14 @@ async function buhaReload(){
   if(_sicht('buha-pane-arbeitskonto'))renderBuhaArbeitskonto();
   if(_sicht('buha-pane-personen'))renderBuhaPersonen();
   if(_sicht('buha-pane-auswertungen'))renderBuhaAuswertungen();
+  if(_sicht('buha-pane-bank'))renderBuhaBank();
   var d=document.getElementById('bu-datum'); if(d&&!d.value)d.value=todayStr();
   var bd=document.getElementById('bu-belegdatum'); if(bd&&!bd.value)bd.value=todayStr();
   buhaCalcSteuer();
 }
 
 function buhaTab(t){
-  ['uebersicht','bald','erfassen','stapel','primanota','arbeitskonto','personen','auswertungen','buchen','hausgeld','op','konten','ausw','anlagen','gewinn','import','audit'].forEach(function(x){
+  ['uebersicht','bald','erfassen','stapel','primanota','arbeitskonto','personen','auswertungen','bank','buchen','hausgeld','op','konten','ausw','anlagen','gewinn','import','audit'].forEach(function(x){
     var pane=document.getElementById('buha-pane-'+x); if(pane)pane.style.display=(x===t?'block':'none');
     var btn=document.getElementById('buha-tab-'+x);
     if(btn){var on=x===t;btn.style.color=on?'var(--p)':'var(--muted)';btn.style.fontWeight=on?'700':'400';btn.style.borderBottomColor=on?'var(--p)':'transparent';}
@@ -11985,6 +11988,7 @@ function buhaTab(t){
   if(t==='arbeitskonto')renderBuhaArbeitskonto();
   if(t==='personen')renderBuhaPersonen();
   if(t==='auswertungen')renderBuhaAuswertungen();
+  if(t==='bank')renderBuhaBank();
   if(t==='audit')renderBuhaAudit();
   if(t==='ausw')renderAuswertungen();
   if(t==='anlagen')renderAnlagen();
@@ -21015,6 +21019,7 @@ async function buhaSplitBuchen(){
     var base={user_id:currentUser.id,objekt_id:buha.objektId,wirtschaftsjahr:buha.jahr,untergemeinschaft_id:buha.ug||null,
       buchungsdatum:s.datum||todayStr(),belegdatum:s.belegdatum||s.datum||todayStr(),belegnr:s.belegnr||null,
       kostenstelle:s.kst||null,partner_id:s.partner||null,stapel_id:st.id};
+    if(s.bankumsatz)base.bankumsatz_id=s.bankumsatz.id;
     var rows=buhaSplitRows(s,base,p,gruppe,pn0);
     if(q&&!q.festgeschrieben){
       // Noch nicht festgeschrieben: die Ursprungsbuchung wird Teil 1 und behält ihre Primanota-Nummer.
@@ -21031,6 +21036,14 @@ async function buhaSplitBuchen(){
     }
     await logAudit('buchung_aufgeteilt','buchung',q?q.id:null,
       {gruppe:gruppe,teile:p.zeilen.length,gesamt:p.gesamt,ersetzt:ersetzt,mit_storno:!!(q&&q.festgeschrieben)});
+    // Aus einem Kontoumsatz aufgeteilt: den Umsatz als gebucht markieren und die Zuordnung lernen
+    if(s.bankumsatz){
+      try{
+        await sb.from('buha_bankumsatz').update({status:'gebucht'}).eq('id',s.bankumsatz.id);
+        s.bankumsatz.status='gebucht';
+        await buhaKontierungLernen(s.bankumsatz,p.zeilen[0].konto,p.zeilen[0].bu);
+      }catch(e){}
+    }
     showToast('✅ Beleg in '+p.zeilen.length+' Teile aufgeteilt');
     var ausMaske=!q;
     buhaSplitSchliessen();
@@ -21812,6 +21825,598 @@ function buhaAuswGesamtCsv(){
   var text=liste.map(function(d){return '# '+d.titel+'\r\n# '+d.unter+'\r\n'+buhaAuswCsvText(d);}).join('\r\n\r\n');
   buhaDownloadText(text,'Auswertungen_'+String(k.obj).replace(/[^a-zA-Z0-9]+/g,'_')+'_'+buha.jahr+'.csv');
   showToast('📦 '+liste.length+' Auswertungen exportiert');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BANK & IMPORT
+// Kontoumsätze aus MT940 (Sparkasse/Volksbank: .sta/.txt) oder CSV einlesen,
+// Vorschlag fürs Gegenkonto erzeugen und daraus buchen. Der Vorschlag lernt
+// aus jeder gebuchten Zuordnung – gerechnet wird lokal, ohne externen Dienst.
+// ═══════════════════════════════════════════════════════════════════════════
+buha.bankumsaetze=[]; buha.regeln=[];
+var _bankKonto='', _bankFilter='offen', _bankText='', _bankDatei='', _bankVorschau=null, _bankAuswahl={};
+
+// ── Textwerkzeuge ──
+function buhaBankNorm(s){
+  return String(s==null?'':s).toLowerCase()
+    .replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue').replace(/ß/g,'ss')
+    .replace(/[^a-z0-9]+/g,' ').replace(/\s+/g,' ').trim();
+}
+function buhaBankHash(u){
+  return [String(u.datum||'').slice(0,10),(Math.round((parseFloat(u.betrag)||0)*100)/100).toFixed(2),
+    buhaBankNorm(u.verwendungszweck).slice(0,80),buhaBankNorm(u.partner_name).slice(0,40)].join('|');
+}
+function buhaBankBetrag(s){
+  s=String(s==null?'':s).trim(); if(!s)return 0;
+  var neg=/^-/.test(s)||/-$/.test(s);
+  s=s.replace(/[^0-9,.]/g,'');
+  if(s.indexOf(',')>-1&&s.indexOf('.')>-1)s=s.replace(/\./g,'').replace(',','.');
+  else if(s.indexOf(',')>-1)s=s.replace(',','.');
+  var n=parseFloat(s); if(isNaN(n))return 0;
+  return neg?-Math.abs(n):n;
+}
+function buhaBankDatum(s,jahr){
+  s=String(s==null?'':s).trim(); if(!s)return '';
+  if(/^\d{4}-\d{2}-\d{2}/.test(s))return s.slice(0,10);
+  var m=s.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{2,4})/);
+  if(m){ var y=m[3].length===2?('20'+m[3]):m[3];
+    return y+'-'+('0'+m[2]).slice(-2)+'-'+('0'+m[1]).slice(-2); }
+  var d=s.replace(/[^0-9]/g,'');
+  if(d.length===6)return '20'+d.slice(0,2)+'-'+d.slice(2,4)+'-'+d.slice(4,6);   // YYMMDD
+  if(d.length===8)return d.slice(4,8)+'-'+d.slice(2,4)+'-'+d.slice(0,2);        // TTMMJJJJ
+  if(d.length===4&&jahr)return jahr+'-'+d.slice(0,2)+'-'+d.slice(2,4);          // MMTT aus :61:
+  return '';
+}
+// ── MT940 (SWIFT-Kontoauszug) ──
+// :61: Valuta(JJMMTT) [Buchung(MMTT)] C/D/RC/RD Betrag ...
+// :86: Mehrzweckfeld, bei deutschen Banken strukturiert (?00 Buchungstext, ?20.. Zweck, ?32 Name, ?31 IBAN)
+function buhaMt940Parse(text){
+  var zeilen=String(text||'').replace(/\r/g,'').split('\n');
+  var umsaetze=[],akt=null,konto='',auszug='',feld86='',inFeld86=false;
+  var abschluss=function(){
+    if(!akt)return;
+    var s=feld86;
+    if(/\?/.test(s)){
+      var gvc=(s.match(/\?00([^?]*)/)||[])[1]||'';
+      var zweck=''; for(var i=20;i<=29;i++){ var m=s.match(new RegExp('\\?'+i+'([^?]*)')); if(m)zweck+=m[1]; }
+      for(var j=60;j<=63;j++){ var m2=s.match(new RegExp('\\?'+j+'([^?]*)')); if(m2)zweck+=m2[1]; }
+      var name=((s.match(/\?32([^?]*)/)||[])[1]||'')+((s.match(/\?33([^?]*)/)||[])[1]||'');
+      var iban=(s.match(/\?31([^?]*)/)||[])[1]||'';
+      akt.gvc=gvc.trim(); akt.verwendungszweck=zweck.replace(/\s+/g,' ').trim();
+      akt.partner_name=name.replace(/\s+/g,' ').trim(); akt.partner_iban=iban.trim();
+    } else {
+      akt.verwendungszweck=s.replace(/\s+/g,' ').trim();
+    }
+    akt.bank_iban=konto; akt.auszug=auszug;
+    umsaetze.push(akt); akt=null; feld86='';
+  };
+  zeilen.forEach(function(z){
+    var t=z.trim();
+    if(/^:25:/.test(t)){ abschluss(); inFeld86=false; konto=t.slice(4).trim(); return; }
+    if(/^:28C?:/.test(t)){ abschluss(); inFeld86=false; auszug=t.replace(/^:28C?:/,'').trim(); return; }
+    if(/^:61:/.test(t)){
+      abschluss(); inFeld86=false;
+      var rest=t.slice(4);
+      var m=rest.match(/^(\d{6})(\d{4})?(RC|RD|C|D)([A-Z])?([0-9,.]+)/);
+      if(!m)return;
+      var valuta=buhaBankDatum(m[1]);
+      var jahr=valuta.slice(0,4);
+      var datum=m[2]?buhaBankDatum(m[2],jahr):valuta;
+      // Ein Buchungstag im Januar bei Valuta im Dezember gehört ins Folgejahr
+      if(m[2]&&datum&&valuta&&datum<valuta&&valuta.slice(5,7)==='12'&&datum.slice(5,7)==='01')
+        datum=(parseInt(jahr,10)+1)+datum.slice(4);
+      var vz=m[3], betrag=buhaBankBetrag(m[5]);
+      var minus=(vz==='D'||vz==='RC');   // D = Belastung, RC = Storno einer Gutschrift
+      akt={datum:datum||valuta,valuta:valuta,betrag:minus?-Math.abs(betrag):Math.abs(betrag),
+        waehrung:'EUR',verwendungszweck:'',partner_name:'',partner_iban:'',gvc:'',storno:/^R/.test(vz)};
+      return;
+    }
+    if(/^:86:/.test(t)){ feld86=t.slice(4); inFeld86=true; return; }
+    if(/^:\d{2}[A-Z]?:/.test(t)){ abschluss(); inFeld86=false; return; }
+    if(inFeld86&&t)feld86+=t;
+  });
+  abschluss();
+  return umsaetze;
+}
+// ── CSV (Sparkasse, Volksbank, DKB, Commerzbank …) ──
+function buhaCsvZerlege(zeile,trenner){
+  var out=[],cur='',q=false;
+  for(var i=0;i<zeile.length;i++){
+    var c=zeile[i];
+    if(q){ if(c==='"'){ if(zeile[i+1]==='"'){cur+='"';i++;} else q=false; } else cur+=c; }
+    else if(c==='"')q=true;
+    else if(c===trenner){out.push(cur);cur='';}
+    else cur+=c;
+  }
+  out.push(cur);
+  return out.map(function(x){return x.trim();});
+}
+function buhaBankCsvTrenner(zeile){
+  var s=(zeile.match(/;/g)||[]).length, k=(zeile.match(/,/g)||[]).length, t=(zeile.match(/\t/g)||[]).length;
+  if(t>s&&t>k)return '\t';
+  return k>s?',':';';
+}
+// Spalten anhand der üblichen deutschen Bezeichnungen zuordnen
+function buhaBankCsvSpalten(kopf){
+  var idx={};
+  kopf.forEach(function(h0,i){
+    var k=buhaBankNorm(h0);
+    if(idx.datum==null&&/(^|\s)(buchungstag|buchungsdatum|datum)(\s|$)/.test(k))idx.datum=i;
+    else if(idx.valuta==null&&/valuta|wertstellung/.test(k))idx.valuta=i;
+    if(idx.betrag==null&&/^(betrag|umsatz|soll haben betrag|betrag eur)/.test(k))idx.betrag=i;
+    if(idx.waehrung==null&&/waehrung|currency/.test(k))idx.waehrung=i;
+    if(idx.zweck==null&&/verwendungszweck|buchungstext erweitert|vorgang verwendungszweck/.test(k))idx.zweck=i;
+    if(idx.vorgang==null&&/^(buchungstext|vorgang|umsatzart)$/.test(k))idx.vorgang=i;
+    if(idx.partner==null&&/beguenstigter|zahlungspflichtiger|empfaenger|auftraggeber|name zahlungsbeteiligter|zahlungsbeteiligter/.test(k))idx.partner=i;
+    if(idx.iban==null&&/iban|kontonummer.*zahlungsbeteiligter/.test(k)&&!/eigene|auftragskonto/.test(k))idx.iban=i;
+    if(idx.sh==null&&/soll haben|s h|haben kennzeichen/.test(k))idx.sh=i;
+  });
+  return idx;
+}
+function buhaBankCsvParse(text){
+  var zeilen=String(text||'').replace(/\r/g,'').split('\n').filter(function(z){return z.trim();});
+  if(!zeilen.length)return [];
+  // Kopfzeile suchen: erste Zeile, die eine Datums- und eine Betragsspalte enthält
+  var kopfIdx=-1,trenner=';',idx=null;
+  for(var i=0;i<Math.min(zeilen.length,15);i++){
+    var tr=buhaBankCsvTrenner(zeilen[i]);
+    var sp=buhaBankCsvCache=buhaBankCsvSpalten(buhaCsvZerlege(zeilen[i],tr));
+    if(sp.datum!=null&&sp.betrag!=null){ kopfIdx=i; trenner=tr; idx=sp; break; }
+  }
+  if(kopfIdx<0)return [];
+  var out=[];
+  for(var r=kopfIdx+1;r<zeilen.length;r++){
+    var f=buhaCsvZerlege(zeilen[r],trenner);
+    if(f.length<2)continue;
+    var datum=buhaBankDatum(f[idx.datum]);
+    if(!datum)continue;
+    var betrag=buhaBankBetrag(f[idx.betrag]);
+    if(idx.sh!=null&&/^s/i.test(f[idx.sh]||''))betrag=-Math.abs(betrag);
+    if(idx.sh!=null&&/^h/i.test(f[idx.sh]||''))betrag=Math.abs(betrag);
+    if(!betrag)continue;
+    var zweck=idx.zweck!=null?f[idx.zweck]||'':'';
+    if(idx.vorgang!=null&&f[idx.vorgang])zweck=(f[idx.vorgang]+' '+zweck).trim();
+    out.push({datum:datum,valuta:idx.valuta!=null?buhaBankDatum(f[idx.valuta])||datum:datum,
+      betrag:betrag,waehrung:(idx.waehrung!=null?f[idx.waehrung]:'')||'EUR',
+      verwendungszweck:zweck.replace(/\s+/g,' ').trim(),
+      partner_name:(idx.partner!=null?f[idx.partner]:'')||'',
+      partner_iban:(idx.iban!=null?f[idx.iban]:'')||'',gvc:'',auszug:''});
+  }
+  return out;
+}
+var buhaBankCsvCache=null;
+// Format erkennen und passenden Parser wählen
+function buhaBankParse(text){
+  var t=String(text||'');
+  if(/^\s*:\d{2}[A-Z]?:/m.test(t)||/:61:/.test(t))return {format:'mt940',umsaetze:buhaMt940Parse(t)};
+  return {format:'csv',umsaetze:buhaBankCsvParse(t)};
+}
+
+// ── Lernende Kontierung ────────────────────────────────────────────────────
+// Stichwörter für den ersten Vorschlag, wenn noch keine Regel gelernt wurde.
+// Zugeordnet wird über die Kategorie des Kontos, damit SKR03 und SKR04 gleich funktionieren.
+var BUHA_KONTIER_STICHWORTE=[
+  {re:/\bmiete|mietzahlung|kaltmiete|warmmiete\b/, kat:'miete', richtung:'ein'},
+  {re:/nebenkosten|betriebskosten|nk vorauszahlung|hausgeld/, kat:'nebenkosten', richtung:'ein'},
+  {re:/\bkaution\b/, kat:'kaution'},
+  {re:/stadtwerke|gas|erdgas|heizoel|heizöl|fernwaerme|waerme/, konto:['4230','6320'], richtung:'aus'},
+  {re:/wasser|abwasser|entwaesserung|stadtentwaesserung/, konto:['4240','4241','6325','6326'], richtung:'aus'},
+  {re:/strom|energie|eon|vattenfall|rwe|enbw/, konto:['4242','6327'], richtung:'aus'},
+  {re:/abfall|muell|müll|entsorgung|awb|awa/, konto:['4244','6328'], richtung:'aus'},
+  {re:/grundsteuer|grundabgaben|kommunalabgaben/, konto:['4381','7680'], richtung:'aus'},
+  {re:/versicherung|allianz|provinzial|gothaer|axa|huk/, konto:['4361','6400'], richtung:'aus'},
+  {re:/hausmeister|hauswart|winterdienst|reinigung/, konto:['4780','4250','6780','6330'], richtung:'aus'},
+  {re:/gartenpflege|gruenpflege|baumpflege/, konto:['4252','6332'], richtung:'aus'},
+  {re:/schornsteinfeger|kaminkehrer/, konto:['4254','6334'], richtung:'aus'},
+  {re:/aufzug|lift/, konto:['4256','6336'], richtung:'aus'},
+  {re:/hausverwaltung|verwaltervergu|verwaltergebuehr/, konto:['4790','6795'], richtung:'aus'},
+  {re:/handwerk|klempner|elektriker|maler|dachdecker|sanitaer|reparatur|installation/, konto:['4805','6335'], richtung:'aus'},
+  {re:/steuerberat|buchfuehrung/, konto:['4955','6827'], richtung:'aus'},
+  {re:/kontofuehrung|entgeltabrechnung|kontogebuehr|bankgebuehr|kontoentgelt/, konto:['4970','6855'], richtung:'aus'},
+  {re:/zinsen|darlehen|annuitaet|tilgung/, konto:['2120','7310'], richtung:'aus'},
+  {re:/porto|deutsche post/, konto:['4910','6800'], richtung:'aus'},
+  {re:/telekom|vodafone|internet|telefon/, konto:['4920','6805'], richtung:'aus'}
+];
+// Aussagekräftigstes Stichwort eines Umsatzes – daraus wird die Regel gelernt
+function buhaKontierMuster(u){
+  var partner=buhaBankNorm(u.partner_name);
+  if(partner.length>=4)return partner.split(' ').slice(0,3).join(' ');
+  var stop={'ueberweisung':1,'dauerauftrag':1,'lastschrift':1,'gutschrift':1,'sepa':1,'basislastschrift':1,'folgelastschrift':1,
+    'kartenzahlung':1,'entgeltabrechnung':1,'siehe':1,'anlage':1,'end':1,'to':1,'end to end':1,'ref':1,'referenz':1,'datum':1,'zeit':1,'eur':1,'de':1,'und':1,'der':1,'die':1,'das':1,'fuer':1,'von':1,'mit':1};
+  var worte=buhaBankNorm(u.verwendungszweck).split(' ').filter(function(w){
+    return w.length>=4&&!stop[w]&&!/^\d+$/.test(w);
+  });
+  return worte.slice(0,3).join(' ');
+}
+// Kennzeichnende Bestandteile eines Partnernamens. Anreden, Rechtsformen und
+// allgemeine Wörter bleiben außen vor, damit „Mieter Pais" über „pais" gefunden wird.
+function buhaPartnerTokens(name){
+  var stop={mieter:1,mieterin:1,herr:1,herrn:1,frau:1,familie:1,fam:1,eheleute:1,gmbh:1,mbh:1,ohg:1,gbr:1,ug:1,
+    firma:1,wohnung:1,whg:1,eigentuemer:1,verwaltung:1,hausverwaltung:1,und:1,der:1,die:1,das:1,von:1,fuer:1,sowie:1};
+  return buhaBankNorm(name).split(' ').filter(function(w){return w.length>=4&&!stop[w];});
+}
+function buhaKontoNachKategorie(kat,richtung){
+  var treffer=(buha.konten||[]).filter(function(k){
+    if(buhaKontoKat(k)!==kat)return false;
+    if(richtung==='ein')return k.typ==='ertrag';
+    if(richtung==='aus')return k.typ==='aufwand';
+    return true;
+  });
+  return treffer.length?treffer[0].nummer:'';
+}
+// Vorschlag für das Gegenkonto: erst gelernte Regeln, dann Stichwörter.
+// sicherheit: 'hoch' (gelernte Regel oder eindeutiges Personenkonto), 'mittel' (Stichwort), '' (kein Vorschlag)
+function buhaKontierungVorschlag(u,regeln,konten){
+  regeln=regeln||buha.regeln||[];
+  var text=buhaBankNorm((u.partner_name||'')+' '+(u.verwendungszweck||''));
+  var iban=buhaBankNorm(u.partner_iban||'');
+  var richtung=(parseFloat(u.betrag)||0)>=0?'ein':'aus';
+  var beste=null;
+  regeln.forEach(function(r){
+    if(!r.muster)return;
+    if(r.richtung&&r.richtung!==richtung)return;
+    var m=buhaBankNorm(r.muster);
+    if(!m)return;
+    var feld=(r.feld==='iban')?iban:text;
+    if(feld.indexOf(m)<0)return;
+    if(!kontoExists(r.konto))return;
+    var punkte=(parseInt(r.treffer,10)||0)*10+m.length;
+    if(!beste||punkte>beste.punkte)beste={konto:r.konto,schluessel:r.schluessel||'0',regel:r,punkte:punkte,
+      grund:'Gelernt aus „'+r.muster+'"'+((parseInt(r.treffer,10)||0)>0?' ('+r.treffer+'×)':''),sicherheit:'hoch'};
+  });
+  if(beste)return beste;
+  // Personenkonto: zuerst über die IBAN, sonst über die kennzeichnenden Teile des Namens
+  var pTreffer=null,pPunkte=0,pGrund='';
+  (buha.partner||[]).forEach(function(p){
+    if(!p.konto_nr||!kontoExists(p.konto_nr))return;
+    var pIban=buhaBankNorm(p.iban||'');
+    if(pIban.length>=10&&iban&&iban.indexOf(pIban)>=0){
+      if(pPunkte<1000){pTreffer=p;pPunkte=1000;pGrund='IBAN von „'+p.name+'" erkannt';}
+      return;
+    }
+    var tk=buhaPartnerTokens(p.name);
+    if(!tk.length)return;
+    var alle=tk.every(function(w){return text.indexOf(w)>=0;});
+    if(!alle)return;
+    var punkte=tk.join('').length;
+    if(punkte>pPunkte){pTreffer=p;pPunkte=punkte;pGrund='Geschäftspartner „'+p.name+'" erkannt';}
+  });
+  if(pTreffer)return {konto:pTreffer.konto_nr,schluessel:'0',partner_id:pTreffer.id,
+    grund:pGrund,sicherheit:'hoch'};
+  for(var i=0;i<BUHA_KONTIER_STICHWORTE.length;i++){
+    var s=BUHA_KONTIER_STICHWORTE[i];
+    if(s.richtung&&s.richtung!==richtung)continue;
+    if(!s.re.test(text))continue;
+    var nr='';
+    if(s.kat)nr=buhaKontoNachKategorie(s.kat,s.richtung||richtung);
+    if(!nr&&s.konto)for(var j=0;j<s.konto.length;j++){ if(kontoExists(s.konto[j])){nr=s.konto[j];break;} }
+    if(nr)return {konto:nr,schluessel:'0',grund:'Stichwort im Verwendungszweck',sicherheit:'mittel'};
+  }
+  return {konto:'',schluessel:'0',grund:'Kein Vorschlag – bitte Konto wählen',sicherheit:''};
+}
+// Aus einer gebuchten Zuordnung eine Regel machen bzw. die passende bestätigen
+async function buhaKontierungLernen(u,konto,schluessel){
+  if(!konto||!currentUser)return null;
+  var muster=buhaKontierMuster(u);
+  if(!muster||muster.length<3)return null;
+  var richtung=(parseFloat(u.betrag)||0)>=0?'ein':'aus';
+  var vorhanden=(buha.regeln||[]).filter(function(r){
+    return buhaBankNorm(r.muster)===buhaBankNorm(muster)&&r.konto===konto&&(r.richtung||richtung)===richtung;})[0];
+  try{
+    if(vorhanden){
+      var t=(parseInt(vorhanden.treffer,10)||0)+1;
+      await sb.from('buha_kontierungsregeln').update({treffer:t,zuletzt:new Date().toISOString(),schluessel:schluessel||'0'}).eq('id',vorhanden.id);
+      vorhanden.treffer=t;
+      return vorhanden;
+    }
+    var r=await sb.from('buha_kontierungsregeln').insert({user_id:currentUser.id,objekt_id:buha.objektId,
+      muster:muster,feld:'text',richtung:richtung,konto:konto,schluessel:schluessel||'0',treffer:1,
+      zuletzt:new Date().toISOString(),gelernt:true}).select().maybeSingle();
+    if(r.error)return null;
+    (buha.regeln=buha.regeln||[]).push(r.data);
+    return r.data;
+  }catch(e){ return null; }
+}
+async function buhaBankLaden(){
+  if(!buha.objektId||!currentUser)return;
+  try{
+    var ur=await sb.from('buha_bankumsatz').select('*').eq('user_id',currentUser.id).eq('objekt_id',buha.objektId)
+      .eq('wirtschaftsjahr',buha.jahr).order('datum',{ascending:false});
+    buha.bankumsaetze=ur.data||[];
+    var rr=await sb.from('buha_kontierungsregeln').select('*').eq('user_id',currentUser.id)
+      .or('objekt_id.eq.'+buha.objektId+',objekt_id.is.null').order('treffer',{ascending:false});
+    buha.regeln=rr.data||[];
+  }catch(e){ buha.bankumsaetze=buha.bankumsaetze||[]; buha.regeln=buha.regeln||[]; }
+}
+function buhaBankKonten(){
+  return (buha.konten||[]).filter(function(k){var c=buhaKontoKat(k);return c==='bank'||c==='kasse';});
+}
+function buhaBankKontoWahl(v){ _bankKonto=v||''; renderBuhaBank(); }
+function buhaBankFilter(v){ _bankFilter=v||'offen'; _bankAuswahl={}; renderBuhaBank(); }
+function buhaBankTextEingabe(v){ _bankText=v||''; }
+function buhaBankDatei(input){
+  var f=input&&input.files&&input.files[0]; if(!f)return;
+  _bankDatei=f.name;
+  var r=new FileReader();
+  r.onload=function(){ _bankText=String(r.result||''); buhaBankVorschau(); };
+  r.readAsText(f,/\.(csv|txt)$/i.test(f.name)?'ISO-8859-1':'UTF-8');
+}
+// Vorschau: Umsätze erkennen, Duplikate markieren, Vorschlag berechnen
+function buhaBankVorschauDaten(text){
+  var p=buhaBankParse(text);
+  var vorhanden={}; (buha.bankumsaetze||[]).forEach(function(u){vorhanden[u.hash]=u;});
+  var jahr=parseInt(buha.jahr,10);
+  var zeilen=p.umsaetze.map(function(u){
+    u.hash=buhaBankHash(u);
+    var imJahr=String(u.datum||'').slice(0,4)===String(jahr);
+    return {u:u,dublette:!!vorhanden[u.hash],imJahr:imJahr,vorschlag:buhaKontierungVorschlag(u)};
+  });
+  var neu=zeilen.filter(function(z){return !z.dublette&&z.imJahr;});
+  var daten=zeilen.map(function(z){return z.u.datum;}).filter(Boolean).sort();
+  return {format:p.format,zeilen:zeilen,neu:neu.length,dubletten:zeilen.filter(function(z){return z.dublette;}).length,
+    fremdesJahr:zeilen.filter(function(z){return !z.imJahr;}).length,von:daten[0]||'',bis:daten[daten.length-1]||'',
+    summe:neu.reduce(function(s,z){return s+(parseFloat(z.u.betrag)||0);},0)};
+}
+function buhaBankVorschau(){
+  var t=_bankText||((document.getElementById('bank-text')||{}).value||'');
+  if(!t.trim()){showToast('Bitte eine Datei wählen oder den Kontoauszug einfügen.');return;}
+  _bankText=t;
+  _bankVorschau=buhaBankVorschauDaten(t);
+  if(!_bankVorschau.zeilen.length)showToast('In der Datei wurden keine Umsätze erkannt.');
+  renderBuhaBank();
+}
+async function buhaBankImport(){
+  if(!_bankVorschau||!buha.objektId||!currentUser)return;
+  var neu=_bankVorschau.zeilen.filter(function(z){return !z.dublette&&z.imJahr;});
+  if(!neu.length){showToast('Es gibt nichts zu importieren.');return;}
+  if(!_bankKonto){showToast('Bitte zuerst das Bankkonto wählen.');return;}
+  try{
+    var imp=await sb.from('buha_bankimport').insert({user_id:currentUser.id,objekt_id:buha.objektId,
+      wirtschaftsjahr:buha.jahr,bank_konto:_bankKonto,dateiname:_bankDatei||'Eingefügter Text',format:_bankVorschau.format,
+      anzahl:_bankVorschau.zeilen.length,neu:neu.length,duplikate:_bankVorschau.dubletten,
+      von:_bankVorschau.von||null,bis:_bankVorschau.bis||null}).select().maybeSingle();
+    var rows=neu.map(function(z){var u=z.u;
+      return {user_id:currentUser.id,objekt_id:buha.objektId,import_id:imp.data?imp.data.id:null,
+        wirtschaftsjahr:buha.jahr,bank_konto:_bankKonto,datum:u.datum,valuta:u.valuta||u.datum,
+        betrag:u.betrag,waehrung:u.waehrung||'EUR',verwendungszweck:u.verwendungszweck||null,
+        partner_name:u.partner_name||null,partner_iban:u.partner_iban||null,gvc:u.gvc||null,
+        auszug:u.auszug||null,hash:u.hash,status:'offen'};});
+    var ins=await sb.from('buha_bankumsatz').insert(rows).select();
+    if(ins.error)throw new Error(ins.error.message);
+    await logAudit('bankimport','bankumsatz',imp.data?imp.data.id:null,
+      {format:_bankVorschau.format,neu:neu.length,duplikate:_bankVorschau.dubletten,datei:_bankDatei||null});
+    showToast('✅ '+neu.length+' Umsätze importiert'+(_bankVorschau.dubletten?' · '+_bankVorschau.dubletten+' Dubletten übersprungen':''));
+    _bankVorschau=null; _bankText=''; _bankDatei='';
+    await buhaBankLaden();
+    renderBuhaBank();
+  }catch(e){ showToast('❌ '+(e.message||e)); }
+}
+function buhaBankListe(){
+  return (buha.bankumsaetze||[]).filter(function(u){
+    if(_bankKonto&&u.bank_konto&&u.bank_konto!==_bankKonto)return false;
+    if(_bankFilter==='offen')return u.status==='offen';
+    if(_bankFilter==='gebucht')return u.status==='gebucht';
+    if(_bankFilter==='ignoriert')return u.status==='ignoriert';
+    return true;
+  });
+}
+function buhaBankKontoSetzen(id,konto){
+  var u=(buha.bankumsaetze||[]).filter(function(x){return x.id===id;})[0]; if(!u)return;
+  u._konto=konto; buhaBankZeileInfo(id);
+}
+function buhaBankZeileInfo(id){
+  var el=document.getElementById('bk-info-'+id); if(!el)return;
+  var u=(buha.bankumsaetze||[]).filter(function(x){return x.id===id;})[0]; if(!u)return;
+  var konto=u._konto||buhaKontierungVorschlag(u).konto;
+  el.textContent=konto?(kontoName(konto)||'unbekanntes Konto'):'';
+}
+// Aus einem Umsatz buchen: Bank gegen das gewählte Gegenkonto, Richtung aus dem Vorzeichen
+function buhaBankBuchungssatz(u,konto,bankKonto){
+  var betrag=parseFloat(u.betrag)||0;
+  var ein=betrag>=0;
+  return {soll:ein?bankKonto:konto, haben:ein?konto:bankKonto, betrag:Math.abs(betrag)};
+}
+async function buhaBankBuchen(id){
+  var u=(buha.bankumsaetze||[]).filter(function(x){return x.id===id;})[0]; if(!u)return;
+  if(u.status==='gebucht'){showToast('Dieser Umsatz ist bereits gebucht.');return;}
+  if(buhaWjGesperrt()){showToast('🔒 Das Wirtschaftsjahr '+buha.jahr+' ist abgeschlossen.');return;}
+  var v=buhaKontierungVorschlag(u);
+  var konto=u._konto||v.konto;
+  var bankKonto=u.bank_konto||_bankKonto;
+  if(!konto){showToast('Bitte ein Gegenkonto wählen.');return;}
+  if(!kontoExists(konto)){showToast('Das Konto „'+konto+'" gibt es nicht im Kontenrahmen.');return;}
+  if(!bankKonto||!kontoExists(bankKonto)){showToast('Bitte das Bankkonto wählen.');return;}
+  if(konto===bankKonto){showToast('Gegenkonto und Bankkonto müssen verschieden sein.');return;}
+  var st=await buhaStapelSicherstellen(); if(!st||st.status==='festgeschrieben'){showToast('Kein offener Buchungsstapel.');return;}
+  var satz=buhaBankBuchungssatz(u,konto,bankKonto);
+  var sk=u._schluessel||v.schluessel||'0';
+  var def=buhaSchluesselDef(sk);
+  var netto=def.satz>0?satz.betrag/(1+def.satz/100):satz.betrag;
+  var text=(u.verwendungszweck||u.partner_name||'Kontoumsatz').slice(0,120);
+  try{
+    var neu=await _buchungSpeichern({user_id:currentUser.id,objekt_id:buha.objektId,wirtschaftsjahr:buha.jahr,
+      untergemeinschaft_id:buha.ug||null,buchungsdatum:u.datum,belegdatum:u.valuta||u.datum,
+      belegnr:u.auszug||null,text:text,soll_konto:satz.soll,haben_konto:satz.haben,betrag:satz.betrag,
+      schluessel:sk,ust_satz:def.satz||0,steuer_kz:sk,netto:Math.round(netto*100)/100,
+      steuer:Math.round((satz.betrag-netto)*100)/100,partner_id:v.partner_id||null,
+      stapel_id:st.id,primanota_nr:buhaNaechstePrimanota(st.id),bankumsatz_id:u.id});
+    buha.buchungen.unshift(neu);
+    await sb.from('buha_bankumsatz').update({status:'gebucht',buchung_id:neu.id}).eq('id',u.id);
+    u.status='gebucht'; u.buchung_id=neu.id;
+    await buhaKontierungLernen(u,konto,sk);
+    showToast('✅ Gebucht: '+satz.soll+' an '+satz.haben+' · '+buhaEuro(satz.betrag));
+    renderBuhaBank();
+  }catch(e){ showToast('❌ '+(e.message||e)); }
+}
+// Alle Umsätze mit sicherem Vorschlag in einem Zug buchen
+async function buhaBankAlleBuchen(){
+  var liste=buhaBankListe().filter(function(u){
+    if(u.status!=='offen')return false;
+    var v=buhaKontierungVorschlag(u);
+    return (u._konto&&kontoExists(u._konto))||(v.sicherheit==='hoch'&&v.konto);
+  });
+  if(!liste.length){showToast('Es gibt keine Umsätze mit sicherem Vorschlag.');return;}
+  appConfirm({icon:'⚡',title:'Sichere Vorschläge buchen?',
+    message:'<b>'+liste.length+' Umsätze</b> haben einen sicheren Vorschlag (gelernte Regel oder erkannter Geschäftspartner) und werden in den offenen Buchungsstapel gebucht. Jede Buchung lässt sich einzeln stornieren.',
+    buttons:[{label:'⚡ '+liste.length+' buchen',style:'background:linear-gradient(135deg,#0e7c7b,#0a5f5e);color:#fff',onClick:async function(){
+      var n=0;
+      for(var i=0;i<liste.length;i++){ var vor=liste[i].status; await buhaBankBuchen(liste[i].id); if(liste[i].status==='gebucht'&&vor!=='gebucht')n++; }
+      showToast('✅ '+n+' Umsätze gebucht');
+      renderBuhaBank();
+    }},{label:'Abbrechen',style:'background:var(--bg);color:var(--muted)',onClick:function(){}}]});
+}
+async function buhaBankStatus(id,status){
+  var u=(buha.bankumsaetze||[]).filter(function(x){return x.id===id;})[0]; if(!u)return;
+  try{
+    var r=await sb.from('buha_bankumsatz').update({status:status}).eq('id',id);
+    if(r.error)throw new Error(r.error.message);
+    u.status=status; renderBuhaBank();
+  }catch(e){ showToast('❌ '+(e.message||e)); }
+}
+// Umsatz aufteilen: Split-Dialog mit dem Bankkonto als gemeinsamer Seite vorbelegen
+function buhaBankAufteilen(id){
+  var u=(buha.bankumsaetze||[]).filter(function(x){return x.id===id;})[0]; if(!u)return;
+  if(u.status==='gebucht'){showToast('Dieser Umsatz ist bereits gebucht.');return;}
+  if(buhaWjGesperrt()){showToast('🔒 Das Wirtschaftsjahr '+buha.jahr+' ist abgeschlossen.');return;}
+  var bankKonto=u.bank_konto||_bankKonto;
+  if(!bankKonto||!kontoExists(bankKonto)){showToast('Bitte zuerst das Bankkonto wählen.');return;}
+  var betrag=parseFloat(u.betrag)||0;
+  var v=buhaKontierungVorschlag(u);
+  _split={quelle:null,bankumsatz:u,gesamt:Math.abs(betrag),seite:betrag>=0?'haben':'soll',konto:bankKonto,
+    datum:u.datum,belegdatum:u.valuta||u.datum,belegnr:u.auszug||'',partner:v.partner_id||'',kst:'',
+    text:(u.verwendungszweck||u.partner_name||'').slice(0,120),einheit:'',
+    zeilen:[{konto:v.konto||'',bu:v.schluessel||'0',betrag:0,text:(u.verwendungszweck||'').slice(0,120),einheit:''}]};
+  buhaSplitRender();
+  var f=document.getElementById('bsp-b-0'); if(f)f.focus();
+}
+function buhaRegelLoeschen(id){
+  appConfirm({icon:'🗑',title:'Regel löschen?',message:'Die gelernte Zuordnung wird entfernt. Bereits erfasste Buchungen bleiben unverändert.',
+    buttons:[{label:'Löschen',style:'background:#c0392b;color:#fff',onClick:async function(){
+      var r=await sb.from('buha_kontierungsregeln').delete().eq('id',id);
+      if(r.error){showToast('❌ '+r.error.message);return;}
+      buha.regeln=(buha.regeln||[]).filter(function(x){return x.id!==id;});
+      showToast('🗑 Regel gelöscht'); renderBuhaBank();
+    }},{label:'Abbrechen',style:'background:var(--bg);color:var(--muted)',onClick:function(){}}]});
+}
+var _bankRegelnOffen=false;
+function buhaRegelnToggle(){ _bankRegelnOffen=!_bankRegelnOffen; renderBuhaBank(); }
+function renderBuhaBank(){
+  var c=document.getElementById('buha-pane-bank'); if(!c)return;
+  var bankKonten=buhaBankKonten();
+  if(_bankKonto&&!kontoExists(_bankKonto))_bankKonto='';
+  if(!_bankKonto&&bankKonten.length)_bankKonto=bankKonten[0].nummer;
+  var liste=buhaBankListe();
+  var offen=(buha.bankumsaetze||[]).filter(function(u){return u.status==='offen';}).length;
+  var h='';
+  if(!bankKonten.length){
+    c.innerHTML='<div style="background:var(--white);border:1px dashed var(--border);border-radius:12px;padding:2.2rem;text-align:center;color:var(--muted);font-size:.86rem">'
+      +'Im Kontenrahmen gibt es noch kein Bank- oder Kassenkonto.<br><span style="font-size:.8rem">Lade unter „Kontenrahmen" eine SKR-Vorlage oder lege ein Konto mit der Kategorie „Bank" an.</span></div>';
+    return;
+  }
+  // Kopf: Konto + Import
+  h+='<div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.9rem">'
+    +'<span style="font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)">Bankkonto</span>'
+    +'<select onchange="buhaBankKontoWahl(this.value)" style="border:1px solid var(--border);border-radius:8px;padding:.42rem .6rem;font-size:.84rem;font-family:var(--ff);background:var(--white);min-width:220px">'
+      +bankKonten.map(function(k){return '<option value="'+escapeHtml(k.nummer)+'"'+(k.nummer===_bankKonto?' selected':'')+'>'+escapeHtml(k.nummer+' · '+k.name)+'</option>';}).join('')
+    +'</select>'
+    +'<span style="flex:1"></span>'
+    +'<button class="btn-small'+(_bankRegelnOffen?'':' grau')+'" onclick="buhaRegelnToggle()" style="font-size:.74rem">🧠 Gelernte Regeln ('+(buha.regeln||[]).length+')</button>'
+    +'</div>';
+  if(_bankRegelnOffen){
+    var rg=(buha.regeln||[]).slice().sort(function(a,b){return (parseInt(b.treffer,10)||0)-(parseInt(a.treffer,10)||0);});
+    h+='<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;margin-bottom:1rem;overflow-x:auto">'
+      +'<div style="padding:.6rem .9rem;border-bottom:1px solid var(--border);font-size:.84rem;font-weight:700">Gelernte Kontierungsregeln</div>';
+    if(!rg.length)h+='<div style="padding:1.4rem;text-align:center;color:var(--muted);font-size:.82rem">Noch nichts gelernt. Sobald du einen Umsatz buchst, merkt sich NEKOSTA die Zuordnung und schlägt sie beim nächsten Mal vor.</div>';
+    else h+='<table style="width:100%;border-collapse:collapse;font-size:.8rem"><thead><tr style="border-bottom:1px solid var(--border)">'
+      +['Erkennungsmuster','Richtung','Konto','BU','Treffer',''].map(function(t,i){return '<th style="text-align:'+(i===4?'right':'left')+';padding:.4rem .7rem;font-size:.6rem;text-transform:uppercase;color:var(--muted)">'+t+'</th>';}).join('')
+      +'</tr></thead><tbody>'+rg.map(function(r){
+        return '<tr style="border-bottom:1px solid #f3f4f6"><td style="padding:.35rem .7rem">'+escapeHtml(r.muster||'')+'</td>'
+          +'<td style="padding:.35rem .7rem;color:var(--muted)">'+(r.richtung==='ein'?'Eingang':r.richtung==='aus'?'Ausgang':'beides')+'</td>'
+          +'<td style="padding:.35rem .7rem;font-variant-numeric:tabular-nums">'+escapeHtml(r.konto||'')+' <span style="color:var(--muted);font-size:.72rem">'+escapeHtml(kontoName(r.konto)||'')+'</span></td>'
+          +'<td style="padding:.35rem .7rem;color:var(--muted)">'+escapeHtml((r.schluessel&&r.schluessel!=='0')?r.schluessel:'–')+'</td>'
+          +'<td style="padding:.35rem .7rem;text-align:right;font-variant-numeric:tabular-nums">'+(r.treffer||0)+'</td>'
+          +'<td style="padding:.35rem .7rem;text-align:right"><button class="btn-small" style="font-size:.6rem;padding:2px 7px;background:#fbe9e7;color:#c0392b" onclick="buhaRegelLoeschen(\''+r.id+'\')">🗑</button></td></tr>';
+      }).join('')+'</tbody></table>';
+    h+='</div>';
+  }
+  // Import-Kasten
+  h+='<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:1rem 1.1rem;margin-bottom:1rem">'
+    +'<div style="font-size:.9rem;font-weight:700;margin-bottom:.4rem">Kontoauszug einlesen</div>'
+    +'<div style="font-size:.78rem;color:var(--muted);margin-bottom:.7rem">MT940 (.sta, .txt) oder CSV aus dem Online-Banking. Das Format wird automatisch erkannt, bereits eingelesene Umsätze werden übersprungen.</div>'
+    +'<div style="display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;margin-bottom:.6rem">'
+    +'<input type="file" accept=".sta,.txt,.csv,.mt940" onchange="buhaBankDatei(this)" style="font-size:.8rem">'
+    +'<button class="btn-secondary" onclick="buhaBankVorschau()"><span class="btn-ic" data-icon="search"></span> Vorschau</button>'
+    +(_bankVorschau&&_bankVorschau.neu?'<button class="btn-primary" onclick="buhaBankImport()"><span class="btn-ic" data-icon="check"></span> '+_bankVorschau.neu+' Umsätze importieren</button>':'')
+    +'</div>'
+    +'<textarea id="bank-text" rows="3" oninput="buhaBankTextEingabe(this.value)" placeholder="…oder den Kontoauszug hier einfügen" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:.6rem;font-size:.75rem;font-family:monospace;resize:vertical;box-sizing:border-box">'+escapeHtml(_bankText||'')+'</textarea>';
+  if(_bankVorschau){
+    var v=_bankVorschau;
+    h+='<div style="margin-top:.8rem;background:'+(v.neu?'#e6f4ea':'#fff8e6')+';border:1px solid '+(v.neu?'#bfe3cc':'#f0d9a8')+';border-radius:10px;padding:.7rem .9rem;font-size:.82rem">'
+      +'<b>'+(v.format==='mt940'?'MT940':'CSV')+'</b> erkannt · '+v.zeilen.length+' Umsätze'
+      +(v.von?' vom '+fmtDatum(v.von)+' bis '+fmtDatum(v.bis):'')
+      +' · <b>'+v.neu+' neu</b>'+(v.dubletten?' · '+v.dubletten+' bereits vorhanden':'')
+      +(v.fremdesJahr?' · '+v.fremdesJahr+' außerhalb '+buha.jahr+' (werden übersprungen)':'')
+      +(v.neu?' · Saldo der neuen Umsätze '+buhaEuro(v.summe):'')+'</div>';
+    if(v.zeilen.length)h+='<div style="margin-top:.6rem;max-height:230px;overflow:auto;border:1px solid var(--border);border-radius:10px">'
+      +'<table style="width:100%;border-collapse:collapse;font-size:.76rem"><tbody>'
+      +v.zeilen.slice(0,60).map(function(z){
+        return '<tr style="border-bottom:1px solid #f3f4f6;'+(z.dublette||!z.imJahr?'opacity:.5':'')+'">'
+          +'<td style="padding:.3rem .6rem;white-space:nowrap">'+fmtDatum(z.u.datum)+'</td>'
+          +'<td style="padding:.3rem .6rem;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escapeHtml(z.u.partner_name||'')+(z.u.partner_name?' · ':'')+escapeHtml(z.u.verwendungszweck||'')+'</td>'
+          +'<td style="padding:.3rem .6rem;text-align:right;font-weight:700;white-space:nowrap;color:'+(z.u.betrag<0?'#c0392b':'#1a7a4a')+'">'+buhaEuro(z.u.betrag)+'</td>'
+          +'<td style="padding:.3rem .6rem;color:var(--muted);white-space:nowrap">'+(z.dublette?'bereits vorhanden':(!z.imJahr?'anderes Jahr':(z.vorschlag.konto?'→ '+escapeHtml(z.vorschlag.konto):'ohne Vorschlag')))+'</td></tr>';
+      }).join('')+'</tbody></table>'
+      +(v.zeilen.length>60?'<div style="padding:.4rem .6rem;font-size:.72rem;color:var(--muted)">… und '+(v.zeilen.length-60)+' weitere</div>':'')+'</div>';
+  }
+  h+='</div>';
+  // Umsatzliste
+  var filter=[['offen','Offen'],['gebucht','Gebucht'],['ignoriert','Ignoriert'],['alle','Alle']];
+  h+='<div style="display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;margin-bottom:.6rem">'
+    +filter.map(function(f){var on=_bankFilter===f[0];
+      return '<button onclick="buhaBankFilter(\''+f[0]+'\')" style="border:1px solid '+(on?'#0e7c7b':'var(--border)')+';background:'+(on?'#0e7c7b':'var(--white)')+';color:'+(on?'#fff':'var(--muted)')+';border-radius:8px;padding:.3rem .8rem;font-size:.76rem;font-weight:'+(on?'700':'500')+';cursor:pointer;font-family:var(--ff)">'+f[1]+'</button>';}).join('')
+    +'<span style="font-size:.76rem;color:var(--muted)">'+offen+' offene Umsätze</span>'
+    +'<span style="flex:1"></span>'
+    +(offen?'<button class="btn-small gruen" style="font-size:.74rem" onclick="buhaBankAlleBuchen()">⚡ Sichere Vorschläge buchen</button>':'')
+    +'</div>';
+  h+='<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow-x:auto">';
+  if(!liste.length){
+    h+='<div style="padding:2.2rem;text-align:center;color:var(--muted);font-size:.85rem">'
+      +((buha.bankumsaetze||[]).length?'Keine Umsätze für diesen Filter.':'Noch keine Kontoumsätze eingelesen. Lade oben einen Kontoauszug hoch – aus jedem Umsatz wird mit einem Klick eine Buchung.')+'</div>';
+  }else{
+    h+='<table style="width:100%;border-collapse:collapse;font-size:.8rem;min-width:940px"><thead><tr style="border-bottom:2px solid var(--border)">'
+      +['Datum','Empfänger / Verwendungszweck','Betrag','Gegenkonto','Vorschlag','Status',''].map(function(t,i){
+        return '<th style="text-align:'+(i===2?'right':'left')+';padding:.45rem .6rem;font-size:.62rem;text-transform:uppercase;color:var(--muted);white-space:nowrap">'+t+'</th>';}).join('')
+      +'</tr></thead><tbody>'
+      +liste.map(function(u){
+        var v=buhaKontierungVorschlag(u);
+        var konto=u._konto||v.konto;
+        var offenZeile=u.status==='offen';
+        var farbe=v.sicherheit==='hoch'?'#1a7a4a':(v.sicherheit==='mittel'?'#9a6700':'var(--muted)');
+        return '<tr style="border-bottom:1px solid var(--border);'+(offenZeile?'':'opacity:.6')+'">'
+          +'<td style="padding:.4rem .6rem;white-space:nowrap">'+fmtDatum(String(u.datum||'').slice(0,10))+'</td>'
+          +'<td style="padding:.4rem .6rem;max-width:330px">'+(u.partner_name?'<b>'+escapeHtml(u.partner_name)+'</b><br>':'')
+            +'<span style="color:var(--muted);font-size:.72rem">'+escapeHtml((u.verwendungszweck||'').slice(0,140))+'</span></td>'
+          +'<td style="padding:.4rem .6rem;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;color:'+((parseFloat(u.betrag)||0)<0?'#c0392b':'#1a7a4a')+'">'+buhaEuro(u.betrag)+'</td>'
+          +'<td style="padding:.4rem .6rem">'+(offenZeile
+            ?'<input list="be-konten-dl" value="'+escapeHtml(konto||'')+'" oninput="buhaBankKontoSetzen(\''+u.id+'\',this.value.trim())" placeholder="Konto" style="width:110px;border:1px solid var(--border);border-radius:7px;padding:.3rem .45rem;font-size:.78rem;font-family:var(--ff)"><div id="bk-info-'+u.id+'" style="font-size:.66rem;color:#0e7c7b">'+escapeHtml(konto?(kontoName(konto)||''):'')+'</div>'
+            :'<span style="font-variant-numeric:tabular-nums">'+escapeHtml(konto||'–')+'</span>')+'</td>'
+          +'<td style="padding:.4rem .6rem;font-size:.72rem;color:'+farbe+'">'+escapeHtml(v.grund)+'</td>'
+          +'<td style="padding:.4rem .6rem">'+(u.status==='gebucht'
+            ?'<span style="font-size:.6rem;font-weight:700;padding:1px 6px;border-radius:6px;background:#e6f4ea;color:#1a7a4a">gebucht</span>'
+            :u.status==='ignoriert'?'<span style="font-size:.6rem;font-weight:700;padding:1px 6px;border-radius:6px;background:#f3f4f6;color:#666">ignoriert</span>'
+            :'<span style="font-size:.6rem;font-weight:700;padding:1px 6px;border-radius:6px;background:#fff3cd;color:#9a6700">offen</span>')+'</td>'
+          +'<td style="padding:.4rem .6rem;text-align:right;white-space:nowrap">'
+            +(offenZeile?'<button class="btn-small gruen" style="font-size:.64rem;padding:2px 8px" onclick="buhaBankBuchen(\''+u.id+'\')">Buchen</button> '
+              +'<button class="btn-small" style="font-size:.64rem;padding:2px 8px" title="Auf mehrere Konten aufteilen" onclick="buhaBankAufteilen(\''+u.id+'\')">⑂</button> '
+              +'<button class="btn-small grau" style="font-size:.64rem;padding:2px 8px" title="Nicht buchen" onclick="buhaBankStatus(\''+u.id+'\',\'ignoriert\')">✕</button>'
+              :(u.status==='ignoriert'?'<button class="btn-small" style="font-size:.64rem;padding:2px 8px" onclick="buhaBankStatus(\''+u.id+'\',\'offen\')">↺ offen</button>':''))
+          +'</td></tr>';
+      }).join('')+'</tbody></table>';
+  }
+  h+='</div><div style="font-size:.72rem;color:var(--muted);margin-top:.6rem;line-height:1.55">'
+    +'Der Vorschlag entsteht aus gelernten Regeln, erkannten Geschäftspartnern und Stichwörtern im Verwendungszweck – vollständig auf deinem Gerät, ohne externen Dienst. '
+    +'Jede gebuchte Zuordnung verbessert den nächsten Vorschlag.</div>';
+  c.innerHTML=h; applyIcons(c);
 }
 
 // ── Primanota: Buchungen eines Stapels in Erfassungsreihenfolge ───────────

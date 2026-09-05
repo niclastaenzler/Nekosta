@@ -8985,8 +8985,9 @@ function buhaNkStand(objektId,jahr,konten,buchungen){
     if(typ[nr]==='aufwand'){
       var v=buhaSplitRund(a.soll-a.haben); if(Math.abs(v)<0.005)return;
       var uml=kat[nr]==='nebenkosten';
+      var konto=konten.filter(function(k){return k.nummer===nr;})[0];
       var eintrag={nr:nr,name:nm[nr]||'',betrag:v,schluessel:buhaNkSchluessel(nm[nr]||''),
-        heiz:buhaNkIstHeizkosten(nm[nr]||''),uml:uml,automatisch:!konten.filter(function(k){return k.nummer===nr;})[0]||!konten.filter(function(k){return k.nummer===nr;})[0].kategorie};
+        heiz:buhaNkIstHeizkosten(nm[nr]||''),uml:uml,automatisch:!konto||!konto.kategorie};
       if(uml)umlagefaehig.push(eintrag); else nichtUmlagefaehig.push(eintrag);
       // Ohne ausdrücklich hinterlegte Kategorie wurde nur automatisch eingestuft
       if(eintrag.automatisch)ohneKategorie.push(eintrag);
@@ -9110,11 +9111,9 @@ async function buhaNkStandLaden(){
     var kr=await sb.from('weg_konten').select('*').eq('user_id',currentUser.id).order('nummer');
     var br=await sb.from('weg_buchungen').select('*').eq('user_id',currentUser.id)
       .eq('objekt_id',_nkUeb.objektId).eq('wirtschaftsjahr',_nkUeb.jahr);
-    // buhaKontoKat und buhaKontoAgg arbeiten auf buha.konten – Stand dorthin spiegeln
-    var sicher=buha.konten;
+    // Der Kontenrahmen gilt mandantenweit – buhaKontoKat und buhaKontoAgg lesen ihn aus buha.konten
     buha.konten=kr.data||[];
-    _nkUeb.stand=buhaNkStand(_nkUeb.objektId,_nkUeb.jahr,kr.data||[],br.data||[]);
-    buha.konten=sicher&&sicher.length?sicher:(kr.data||[]);
+    _nkUeb.stand=buhaNkStand(_nkUeb.objektId,_nkUeb.jahr,buha.konten,br.data||[]);
     _nkUeb.auswahl={};
     var liste=buhaNkUebListe();
     liste.forEach(function(k){_nkUeb.auswahl[k.nr]=true;});
@@ -11705,6 +11704,16 @@ function buhacGo(mod){
   buhaTab(pane);
   try{window.scrollTo(0,0);}catch(e){}
 }
+// Ansichtszustand der Module: beim Wechsel von Objekt oder Jahr zurücksetzen,
+// damit keine Auswahl aus dem vorherigen Zusammenhang stehen bleibt.
+function buhaModulZustandZuruecksetzen(auchKonto){
+  if(auchKonto){ _akKonto=''; _bankKonto=''; _auswId='susa'; _pkTyp='debitor'; }
+  _akSuche=''; _akStapel='';
+  _pkOffen={}; _pkAuswahl={};
+  _bankVorschau=null; _bankText=''; _bankDatei=''; _bankFilter='offen'; _bankRegelnOffen=false;
+  _beJournalAlle=false; _beSuche='';
+  buha._pnStapel=null;
+}
 // Cockpit öffnen: Buchhaltungsknoten einbetten, Wirtschaftsjahre + Daten laden
 var _buhaCockpitVon='objekt';
 async function openBuhaCockpit(objId,mod,von){
@@ -11715,7 +11724,7 @@ async function openBuhaCockpit(objId,mod,von){
   }
   o=o||aktivesObjekt;
   if(!o){showToast('Bitte zuerst ein Objekt öffnen.');return;}
-  if(buha.objektId&&buha.objektId!==o.id){buha.jahr=null;buha.ug='';buha.stapelId=null;}
+  if(buha.objektId!==o.id){buha.jahr=null;buha.ug='';buha.stapelId=null;buhaModulZustandZuruecksetzen(true);}
   _buhaCockpitObj=o; aktivesObjekt=o;
   if(!o.buchhaltung_aktiv){ try{ await sb.from('objekte').update({buchhaltung_aktiv:true}).eq('id',o.id).eq('user_id',currentUser.id); o.buchhaltung_aktiv=true; }catch(e){} }
   showPage('buha-cockpit');
@@ -11828,6 +11837,7 @@ function buhaWjStatus(){
 async function buhaWjWechsel(jahr){
   jahr=parseInt(jahr,10); if(!jahr)return;
   buha.jahr=jahr; buha.stapelId=null;
+  buhaModulZustandZuruecksetzen(false);
   buhaWjFuellen();
   await buhaReload();
   buhacGo(_buhacMod);
@@ -11961,7 +11971,10 @@ function renderBuhacUebersicht(){
   var g=gewinnBerechnen(jahr);
   var w=buhaWjAktuell();
   var name={}; (buha.konten||[]).forEach(function(k){name[k.nummer]=k.name;});
-  var card=function(lbl,val,col,sub){return '<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:.85rem 1rem">'
+  // Kennzahl-Karte; mit Ziel wird sie zur Schaltfläche ins passende Modul
+  var card=function(lbl,val,col,sub,ziel){
+    var kl=ziel?';cursor:pointer" title="'+ziel[1]+'" onclick="buhacGo(\''+ziel[0]+'\')"':'"';
+    return '<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:.85rem 1rem'+kl+'>'
     +'<div style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">'+lbl+'</div>'
     +'<div style="font-size:1.22rem;font-weight:800;margin-top:.3rem;color:'+col+';font-variant-numeric:tabular-nums">'+val+'</div>'
     +(sub?'<div style="font-size:.7rem;color:var(--muted);margin-top:.15rem">'+sub+'</div>':'')+'</div>';};
@@ -11979,12 +11992,14 @@ function renderBuhacUebersicht(){
     } else hw.innerHTML='';
   }
   var erg=g.ergebnis;
-  kp.innerHTML=card('Kaltmieten vereinnahmt',buhaEuro(s.miete),'#1a7a4a')
-    +card('Nebenkosten vereinnahmt',buhaEuro(s.nebenkosten),'#1a7a4a','Vorauszahlungen + Nachzahlungen')
-    +(s.hausgeld?card('Hausgeld (WEG)',buhaEuro(s.hausgeld),'#1a7a4a'):card('Sonstige Erträge',buhaEuro(s.sonstErtrag),'#1a7a4a'))
-    +card('Ausgaben gesamt',buhaEuro(s.aufwand),'#c0392b','davon umlagefähig '+buhaEuro(s.aufwandUml))
-    +card('Ergebnis '+jahr,buhaEuro(erg),erg>=0?'#1a7a4a':'#c0392b',g.afa>0.004?'inkl. AfA '+buhaEuro(g.afa):'Einnahmen − Ausgaben')
-    +card('Buchungen',String(s.anzahl),'var(--text)',(s.storno?s.storno+' storniert · ':'')+(s.offen?s.offen+' nicht festgeschrieben':'alle festgeschrieben'));
+  kp.innerHTML=card('Kaltmieten vereinnahmt',buhaEuro(s.miete),'#1a7a4a',null,['ausw','In den Auswertungen ansehen'])
+    +card('Nebenkosten vereinnahmt',buhaEuro(s.nebenkosten),'#1a7a4a','Vorauszahlungen + Nachzahlungen',['ausw','Nebenkosten-Übersicht öffnen'])
+    +(Math.abs(s.hausgeld)>0.004?card('Hausgeld (WEG)',buhaEuro(s.hausgeld),'#1a7a4a'):'')
+    +(Math.abs(s.sonstErtrag)>0.004?card('Sonstige Erträge',buhaEuro(s.sonstErtrag),'#1a7a4a'):'')
+    +card('Ausgaben gesamt',buhaEuro(s.aufwand),'#c0392b','davon umlagefähig '+buhaEuro(s.aufwandUml),['ausw','Nebenkosten-Übersicht öffnen'])
+    +card('Ergebnis '+jahr,buhaEuro(erg),erg>=0?'#1a7a4a':'#c0392b',g.afa>0.004?'inkl. AfA '+buhaEuro(g.afa):'Einnahmen − Ausgaben',['gewinn','Gewinnermittlung öffnen'])
+    +card('Bank und Kasse',buhaEuro(s.geld),s.geld>=0?'#1a7a4a':'#c0392b','Veränderung im Wirtschaftsjahr',['bank','Bank & Import öffnen'])
+    +card('Buchungen',String(s.anzahl),'var(--text)',(s.storno?s.storno+' storniert · ':'')+(s.offen?s.offen+' nicht festgeschrieben':'alle festgeschrieben'),['buchen','Buchungen ansehen']);
   // Links: letzte Buchungen
   if(li){
     var letzte=(buha.buchungen||[]).filter(function(b){return !b.ist_storno&&!b.storniert;}).slice().sort(function(a,b){return String(b.buchungsdatum).localeCompare(String(a.buchungsdatum))||String(b.created_at||'').localeCompare(String(a.created_at||''));}).slice(0,8);
@@ -20639,7 +20654,7 @@ async function renderBuhaObjektliste(){
           +'<td style="padding:.55rem .8rem;color:var(--muted)">'+escapeHtml(adr||'—')+'</td>'
           +'<td style="padding:.55rem .8rem"><span style="font-size:.58rem;font-weight:700;padding:2px 7px;border-radius:7px;background:'+(isWeg?'#f3e8fd':'#e0f7f6')+';color:'+(isWeg?'#6a2d9f':'#0e7c7b')+'">'+(isWeg?'WEG':'Vermietung')+'</span></td>'
           +'<td style="padding:.55rem .8rem;font-size:.78rem">'+wjTxt+'</td>'
-          +'<td style="padding:.55rem .8rem;text-align:right;color:#0e7c7b;font-weight:700;white-space:nowrap">öffnen →</td>'
+          +'<td style="padding:.55rem .8rem;text-align:right;color:#0e7c7b;font-weight:700;white-space:nowrap">'+(wjs.length?'öffnen':'einrichten')+' →</td>'
         +'</tr>';
       }).join('')+'</tbody></table></div>';
   }catch(e){c.innerHTML='<div style="color:#dc2626;font-size:.85rem">Fehler: '+escapeHtml(e.message||'')+'</div>';}
@@ -20890,7 +20905,7 @@ function renderBuhaErfassen(){
   // Erfassungsleiste: klebt am unteren Rand und verrutscht beim Scrollen im Journal nicht (DATEV-Erfassungszeile)
   h+='<div id="be-maske-wrap" style="position:sticky;bottom:0;z-index:40;margin-top:auto;background:var(--white);border:2px solid var(--p);border-radius:12px 12px 0 0;padding:.7rem 1rem .6rem;box-shadow:0 -10px 24px rgba(0,0,0,.13)'+(gesperrt?';opacity:.55;pointer-events:none':'')+'">'
     +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem;flex-wrap:wrap;gap:.5rem">'
-      +'<div style="font-size:.76rem;font-weight:700;color:var(--p)">➕ Buchung erfassen <span style="font-weight:400;color:var(--muted);font-size:.66rem">· Enter = nächstes Feld · „+" im Betrag = buchen · F2/F3 Konto · F8 buchen · Esc leeren</span></div>'
+      +'<div style="font-size:.76rem;font-weight:700;color:var(--p)">➕ Buchung erfassen <span style="font-weight:400;color:var(--muted);font-size:.66rem">· Enter = nächstes Feld · „+" im Betrag = buchen · F2/F3 Konto · F8 buchen · F10 suchen · Esc leeren</span></div>'
       +'<div style="display:flex;gap:.4rem"><button class="btn-small" onclick="buhaPersonenkontoDialog(\'debitor\')" title="Neuen Debitor (Mieter) mit Personenkonto anlegen" style="font-size:.7rem">+ Debitor</button><button class="btn-small" onclick="buhaPersonenkontoDialog(\'kreditor\')" title="Neuen Kreditor (Lieferant) mit Personenkonto anlegen" style="font-size:.7rem">+ Kreditor</button></div>'
     +'</div>'
     +'<div id="be-maske" style="display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:.5rem;align-items:end">'
@@ -20926,7 +20941,20 @@ function buhaErfassenStandardDatum(st){
   if(t.slice(0,4)===jahr)return t;
   return t.slice(0,4)>jahr?jahr+'-12-31':jahr+'-01-01';
 }
+// Funktionstasten wie in DATEV: greifen im ganzen Modul „Buchen", nicht nur im Eingabefeld
+function buhaErfassenGlobalTasten(){
+  if(buhaErfassenGlobalTasten._an)return; buhaErfassenGlobalTasten._an=true;
+  document.addEventListener('keydown',function(e){
+    var pane=document.getElementById('buha-pane-erfassen');
+    if(!pane||!pane.offsetParent)return;                       // Modul nicht sichtbar
+    if(e.target&&e.target.classList&&e.target.classList.contains('be-inp'))return; // Maske regelt selbst
+    var ziel={F2:'be-soll',F3:'be-haben',F10:'be-suche'}[e.key];
+    if(ziel){ var el=document.getElementById(ziel); if(el){e.preventDefault();el.focus();} return; }
+    if(e.key==='F8'){ e.preventDefault(); buhaErfassenSpeichern(); }
+  });
+}
 function buhaErfassenTastatur(){
+  buhaErfassenGlobalTasten();
   var m=document.getElementById('be-maske'); if(!m||m._kb)return; m._kb=true;
   var felder=function(){return Array.prototype.slice.call(m.querySelectorAll('.be-inp'));};
   m.addEventListener('keydown',function(e){
@@ -22263,7 +22291,7 @@ function buhaBankCsvParse(text){
   var kopfIdx=-1,trenner=';',idx=null;
   for(var i=0;i<Math.min(zeilen.length,15);i++){
     var tr=buhaBankCsvTrenner(zeilen[i]);
-    var sp=buhaBankCsvCache=buhaBankCsvSpalten(buhaCsvZerlege(zeilen[i],tr));
+    var sp=buhaBankCsvSpalten(buhaCsvZerlege(zeilen[i],tr));
     if(sp.datum!=null&&sp.betrag!=null){ kopfIdx=i; trenner=tr; idx=sp; break; }
   }
   if(kopfIdx<0)return [];
@@ -22287,7 +22315,6 @@ function buhaBankCsvParse(text){
   }
   return out;
 }
-var buhaBankCsvCache=null;
 // Format erkennen und passenden Parser wählen
 function buhaBankParse(text){
   var t=String(text||'');

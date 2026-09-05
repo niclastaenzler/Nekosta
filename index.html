@@ -3610,6 +3610,13 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
       </div>
     </div>
 
+    <!-- BUCHUNG AUFTEILEN (Split bis Rest 0,00 EUR) -->
+    <div id="buha-split-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:710;align-items:flex-start;justify-content:center;padding:1.5rem;overflow-y:auto">
+      <div style="background:#fff;border-radius:14px;padding:1.3rem 1.5rem;width:100%;max-width:940px;margin:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)">
+        <div id="buha-split-inhalt"></div>
+      </div>
+    </div>
+
     <!-- UNTERGEMEINSCHAFTEN MODAL -->
     <div id="ug-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:700;align-items:center;justify-content:center;padding:1rem">
       <div style="background:#fff;border-radius:14px;padding:1.6rem;width:100%;max-width:460px;max-height:90vh;overflow-y:auto">
@@ -4019,7 +4026,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
           <div style="margin-top:auto;padding:.9rem .6rem 0;font-size:.6rem;color:var(--muted);line-height:1.5">Doppelte Buchführung · SKR03/SKR04 · Festschreibung nach GoBD</div>
         </div>
         <!-- Inhalt -->
-        <div style="flex:1;min-width:0;padding:1.2rem 1.6rem 5rem">
+        <div style="flex:1;min-width:0;padding:1.2rem 1.6rem 0">
           <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem;margin-bottom:1.1rem">
             <div>
               <h1 id="buhac-titel" style="font-size:1.35rem;font-weight:800;letter-spacing:-.01em;margin:0">Übersicht</h1>
@@ -11412,7 +11419,7 @@ async function openBuhaCockpit(objId,mod,von){
   var node=document.getElementById('tab-content-buchhaltung');
   if(!node){c.innerHTML='<div style="color:#c0392b;font-size:.85rem">Buchhaltungs-Modul nicht gefunden.</div>';return;}
   if(!_buhaHomeParent)_buhaHomeParent=node.parentNode;
-  c.innerHTML=''; c.appendChild(node); node.style.display='block';
+  c.innerHTML=''; c.appendChild(node); node.style.display='block'; node.style.paddingBottom='0';
   var tb=document.getElementById('buha-tabbar'); if(tb)tb.style.display='none';
   var ak=document.getElementById('buha-altkopf'); if(ak)ak.style.display='none';
   renderBuhacNav(mod||'uebersicht');
@@ -11427,6 +11434,7 @@ function closeBuhaCockpit(){
   // Knoten an seinen ursprünglichen Platz zurückschieben, sonst fehlt er anderswo
   var node=document.getElementById('tab-content-buchhaltung');
   if(node&&_buhaHomeParent&&node.parentNode!==_buhaHomeParent){ _buhaHomeParent.appendChild(node); node.style.display='none'; }
+  if(node)node.style.paddingBottom='';
   var tb=document.getElementById('buha-tabbar'); if(tb)tb.style.display='flex';
   var ak=document.getElementById('buha-altkopf'); if(ak)ak.style.display='flex';
   var o=_buhaCockpitObj;
@@ -12423,32 +12431,62 @@ function buhaRowDetail(id){
     +row('Soll',escapeHtml(b.soll_konto||'–')+' '+escapeHtml(nm[b.soll_konto]||''))+row('Haben',escapeHtml(b.haben_konto||'–')+' '+escapeHtml(nm[b.haben_konto]||''))
     +row('BU-Schlüssel',escapeHtml(b.schluessel||'0'))+row('Betrag (brutto)',buhaEuro(b.betrag))+row('Netto',buhaEuro(b.netto))+row('Steuer',buhaEuro(b.steuer))
     +(b.kostenstelle?row('Kostenstelle',escapeHtml(b.kostenstelle)):'')+(b.einheit_bez?row('Einheit',escapeHtml(b.einheit_bez)):'')+(b.eigentuemer?row('Eigentümer',escapeHtml(b.eigentuemer)):'')
-    +row('Status',b.ist_storno?'Storno':b.storniert?'storniert':'gebucht')
+    +row('Status',b.ist_storno?'Storno':b.storniert?'storniert':(b.festgeschrieben?'gebucht · festgeschrieben':'gebucht'))
+    +(function(){var si=(typeof buhaSplitInfo==='function')?buhaSplitInfo(b):null; if(!si)return '';
+      return row('Aufteilung','Teil '+si.teil+' von '+si.n+' · Gesamtbeleg '+buhaEuro(si.gesamt))
+        +'<div style="font-size:.74rem;color:var(--muted);padding:4px 0;text-align:left">'+si.teile.filter(function(x){return !x.ist_storno;}).map(function(x){
+          return (x.split_teil||'?')+': '+escapeHtml(x.soll_konto||'')+' an '+escapeHtml(x.haben_konto||'')+' · '+buhaEuro(x.betrag)+(x.storniert?' (storniert)':'')+(x.id===b.id?' ←':'');}).join('<br>')+'</div>';})()
     +'</div>';
   var btns=[{label:'Schließen',style:'background:var(--bg);color:var(--muted)',onClick:function(){}}];
-  if(!(b.storniert||b.ist_storno))btns.unshift({label:'↺ Stornieren',style:'background:#9a6700;color:#fff',onClick:function(){buhaStorno(id);}});
+  if(!(b.storniert||b.ist_storno)){
+    btns.unshift({label:'↺ Stornieren',style:'background:#9a6700;color:#fff',onClick:function(){buhaStorno(id);}});
+    if(typeof buhaSplitAusBuchung==='function')btns.unshift({label:'⑂ Aufteilen',style:'background:var(--p);color:#fff',onClick:function(){buhaSplitAusBuchung(id);}});
+  }
   appConfirm({icon:'🧾',title:'Buchung '+(b.belegnr||''),message:html,buttons:btns});
 }
+// Gegenbuchung anlegen (Soll/Haben getauscht) und das Original als storniert markieren.
+// Ausgelagert, damit auch eine ganze Split-Gruppe in einem Rutsch storniert werden kann.
+async function _buhaStornoAnlegen(b,grund){
+  if(!b||b.storniert||b.ist_storno)return null;
+  if(typeof buhaWjGesperrt==='function'&&buhaWjGesperrt())throw new Error('Das Wirtschaftsjahr ist abgeschlossen - bitte zuerst wieder öffnen.');
+  var st=(typeof buhaStapelAktuell==='function')?buhaStapelAktuell():null;
+  var offen=st&&st.status==='offen';
+  var storno={user_id:currentUser.id,objekt_id:b.objekt_id,wirtschaftsjahr:b.wirtschaftsjahr,untergemeinschaft_id:b.untergemeinschaft_id||null,
+    buchungsdatum:todayStr(),belegdatum:b.belegdatum,belegnr:b.belegnr,
+    text:'Storno'+(grund?' ('+grund+')':'')+': '+(b.text||''),soll_konto:b.haben_konto,haben_konto:b.soll_konto,betrag:b.betrag,ust_satz:b.ust_satz,
+    schluessel:b.schluessel||'0',steuer_kz:b.steuer_kz||b.schluessel||'0',netto:b.netto,steuer:b.steuer,
+    kostenstelle:b.kostenstelle||null,einheit_id:b.einheit_id||null,einheit_bez:b.einheit_bez||null,partner_id:b.partner_id||null,
+    split_gruppe:b.split_gruppe||null,split_teil:b.split_teil||null,
+    stapel_id:offen?st.id:null,
+    primanota_nr:(offen&&typeof buhaNaechstePrimanota==='function')?buhaNaechstePrimanota(st.id):null,
+    ist_storno:true,storno_buchung_id:b.id};
+  var ins=await sb.from('weg_buchungen').insert(storno).select().single();
+  if(ins.error)throw new Error(ins.error.message);
+  var up=await sb.from('weg_buchungen').update({storniert:true,storno_buchung_id:ins.data.id}).eq('id',b.id);
+  if(up.error)throw new Error(up.error.message);
+  var lok=(buha.buchungen||[]).filter(function(x){return x.id===b.id;})[0]||b;
+  lok.storniert=true; lok.storno_buchung_id=ins.data.id;
+  (buha.buchungen=buha.buchungen||[]).unshift(ins.data);
+  await logAudit('storno','buchung',b.id,{betrag:b.betrag,gegenbuchung:ins.data.id,grund:grund||null});
+  return ins.data;
+}
 function buhaStorno(id){
-  var b=buha.buchungen.find(function(x){return x.id===id;}); if(!b)return;
-  appConfirm({icon:'↺',title:'Buchung stornieren?',message:'Es wird eine <strong>Gegenbuchung</strong> erstellt (Soll/Haben getauscht) und die Originalbuchung als storniert markiert. Revisionssicher – nichts wird gelöscht.',
-    buttons:[{label:'↺ Stornieren',style:'background:#9a6700;color:#fff',onClick:async function(){
-      if(typeof buhaWjGesperrt==='function'&&buhaWjGesperrt()){showToast('🔒 Das Wirtschaftsjahr ist abgeschlossen – bitte zuerst wieder öffnen.');return;}
-      var st=(typeof buhaStapelAktuell==='function')?buhaStapelAktuell():null;
-      var storno={user_id:currentUser.id,objekt_id:b.objekt_id,wirtschaftsjahr:b.wirtschaftsjahr,untergemeinschaft_id:b.untergemeinschaft_id||null,
-        buchungsdatum:todayStr(),belegdatum:b.belegdatum,belegnr:b.belegnr,
-        text:'Storno: '+(b.text||''),soll_konto:b.haben_konto,haben_konto:b.soll_konto,betrag:b.betrag,ust_satz:b.ust_satz,
-        schluessel:b.schluessel||'0',steuer_kz:b.steuer_kz||b.schluessel||'0',netto:b.netto,steuer:b.steuer,
-        kostenstelle:b.kostenstelle||null,einheit_id:b.einheit_id||null,einheit_bez:b.einheit_bez||null,partner_id:b.partner_id||null,
-        stapel_id:(st&&st.status==='offen')?st.id:null,
-        primanota_nr:(st&&st.status==='offen'&&typeof buhaNaechstePrimanota==='function')?buhaNaechstePrimanota(st.id):null,
-        ist_storno:true,storno_buchung_id:b.id};
-      var ins=await sb.from('weg_buchungen').insert(storno).select().single();
-      if(ins.error){showToast('❌ '+ins.error.message);return;}
-      await sb.from('weg_buchungen').update({storniert:true,storno_buchung_id:ins.data.id}).eq('id',b.id);
-      await logAudit('storno','buchung',b.id,{betrag:b.betrag,gegenbuchung:ins.data.id});
-      showToast('↺ Storniert'); await buhaReload();
-    }},{label:'Abbrechen',style:'background:var(--bg);color:var(--muted)',onClick:function(){}}]});
+  var b=(buha.buchungen||[]).filter(function(x){return x.id===id;})[0]; if(!b)return;
+  if(b.storniert||b.ist_storno){showToast('Diese Buchung ist bereits storniert.');return;}
+  var si=(typeof buhaSplitInfo==='function')?buhaSplitInfo(b):null;
+  var andere=si?si.teile.filter(function(x){return x.id!==b.id&&!x.storniert&&!x.ist_storno;}):[];
+  var msg=(si?'Diese Buchung ist <strong>Teil '+si.teil+' von '+si.n+'</strong> eines aufgeteilten Belegs (Gesamt '+buhaEuro(si.gesamt)+').<br><br>':'')
+    +'Es wird eine <strong>Gegenbuchung</strong> erstellt (Soll und Haben getauscht) und die Originalbuchung als storniert markiert. Revisionssicher – nichts wird gelöscht.';
+  var btns=[];
+  if(andere.length)btns.push({label:'↺ Ganzen Beleg ('+(andere.length+1)+' Teile)',style:'background:#c0392b;color:#fff',onClick:async function(){
+    try{ var alle=[b].concat(andere); for(var i=0;i<alle.length;i++){ await _buhaStornoAnlegen(alle[i],'Beleg'); }
+      showToast('↺ '+alle.length+' Teile storniert'); await buhaReload(); }catch(e){showToast('❌ '+(e.message||e));}
+  }});
+  btns.push({label:'↺ Stornieren'+(andere.length?' (nur dieser Teil)':''),style:'background:#9a6700;color:#fff',onClick:async function(){
+    try{ await _buhaStornoAnlegen(b); showToast('↺ Storniert'); await buhaReload(); }catch(e){showToast('❌ '+(e.message||e));}
+  }});
+  btns.push({label:'Abbrechen',style:'background:var(--bg);color:var(--muted)',onClick:function(){}});
+  appConfirm({icon:'↺',title:'Buchung stornieren?',message:msg,buttons:btns});
 }
 // ══════════════════════════════════════════════════════════════════════════
 //  DATEV-BUCHUNGSSTAPEL EXPORT (EXTF, Format „Buchungsstapel" 700/13)
@@ -16037,7 +16075,7 @@ function _wegcRestoreBuha(){ // externer Hook (showPage/openObjektDetail) – st
   try{
     var bc=document.getElementById('buhac-content'), n=document.getElementById('tab-content-buchhaltung');
     if(bc&&n&&_buhaHomeParent&&n.parentNode===bc){
-      n.style.display='none'; _buhaHomeParent.appendChild(n);
+      n.style.display='none'; n.style.paddingBottom=''; _buhaHomeParent.appendChild(n);
       var tb=document.getElementById('buha-tabbar'); if(tb)tb.style.display='flex';
       var ak=document.getElementById('buha-altkopf'); if(ak)ak.style.display='flex';
     }
@@ -20512,7 +20550,20 @@ function renderBuhaErfassen(){
   var pOpts='<option value="">–</option>'+(buha.partner||[]).map(function(p){return '<option value="'+p.id+'">'+escapeHtml(p.name)+(p.konto_nr?' ('+escapeHtml(p.konto_nr)+')':'')+'</option>';}).join('');
   var eOpts='<option value="">– gesamtes Objekt –</option>'+(buha.einheiten||[]).map(function(e){return '<option value="'+e.id+'">'+escapeHtml(e.bez)+'</option>';}).join('');
   var fld=function(lbl,inner,span){return '<div'+(span?' style="grid-column:span '+span+'"':'')+'><label>'+lbl+'</label>'+inner+'</div>';};
-  h+='<div id="be-maske-wrap" style="background:var(--white);border:2px solid var(--p);border-radius:12px;padding:.75rem 1rem;margin-bottom:1rem;box-shadow:0 4px 18px rgba(0,0,0,.06)'+(gesperrt?';opacity:.55;pointer-events:none':'')+'">'
+  // Journal oben, Erfassungsleiste unten: die Spalte ist mindestens bildschirmhoch,
+  // damit die Leiste auch bei wenigen Buchungen unten steht.
+  h+='<div style="display:flex;flex-direction:column;min-height:calc(100vh - var(--header-h) - 9rem)">';
+  // Journal des Stapels
+  h+='<div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.5rem">'
+    +'<span style="font-size:.88rem;font-weight:700;display:inline-flex;align-items:center;gap:.4rem"><span class="mini-ic" data-icon="bookopen" style="color:var(--p)"></span>'+(_beJournalAlle?'Journal '+buha.jahr:'Buchungen im Stapel')+'</span>'
+    +'<button class="btn-small" onclick="_beJournalAlle=!_beJournalAlle;renderBuhaErfassen()" style="font-size:.7rem">'+(_beJournalAlle?'Nur aktueller Stapel':'Alle Buchungen '+buha.jahr)+'</button>'
+    +'<input type="text" id="be-suche" value="'+escapeHtml(_beSuche)+'" oninput="_beSuche=this.value;buhaErfassenJournal()" placeholder="🔍 Suchen …" style="border:1px solid var(--border);border-radius:8px;padding:.35rem .6rem;font-size:.8rem;font-family:var(--ff);outline:none;flex:1;min-width:160px;max-width:320px">'
+    +'<span style="flex:1"></span>'
+    +'<button class="btn-small" onclick="buhaExportCsv()"><span class="btn-ic" data-icon="download"></span> CSV</button>'
+    +'<button class="btn-small gruen" onclick="buhaDatevExport('+(_beJournalAlle||!st?'':'\''+st.id+'\'')+')"><span class="btn-ic" data-icon="download"></span> DATEV-Export</button>'
+    +'</div><div id="be-journal" style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow-x:auto;margin-bottom:1rem"></div>';
+  // Erfassungsleiste: klebt am unteren Rand und verrutscht beim Scrollen im Journal nicht (DATEV-Erfassungszeile)
+  h+='<div id="be-maske-wrap" style="position:sticky;bottom:0;z-index:40;margin-top:auto;background:var(--white);border:2px solid var(--p);border-radius:12px 12px 0 0;padding:.7rem 1rem .6rem;box-shadow:0 -10px 24px rgba(0,0,0,.13)'+(gesperrt?';opacity:.55;pointer-events:none':'')+'">'
     +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem;flex-wrap:wrap;gap:.5rem">'
       +'<div style="font-size:.76rem;font-weight:700;color:var(--p)">➕ Buchung erfassen <span style="font-weight:400;color:var(--muted);font-size:.66rem">· Enter = nächstes Feld · „+" im Betrag = buchen · F2/F3 Konto · F8 buchen · Esc leeren</span></div>'
       +'<div style="display:flex;gap:.4rem"><button class="btn-small" onclick="buhaPersonenkontoDialog(\'debitor\')" title="Neuen Debitor (Mieter) mit Personenkonto anlegen" style="font-size:.7rem">+ Debitor</button><button class="btn-small" onclick="buhaPersonenkontoDialog(\'kreditor\')" title="Neuen Kreditor (Lieferant) mit Personenkonto anlegen" style="font-size:.7rem">+ Kreditor</button></div>'
@@ -20529,20 +20580,12 @@ function renderBuhaErfassen(){
     +fld('Geschäftspartner','<select id="be-partner" class="buha-inp be-inp">'+pOpts+'</select>',3)
     +fld('Einheit','<select id="be-einheit" class="buha-inp be-inp">'+eOpts+'</select>',3)
     +fld('Buchungstext','<input type="text" id="be-text" class="buha-inp be-inp" placeholder="z. B. Miete März Müller">',9)
-    +'<div style="grid-column:span 3;display:flex;gap:.4rem;justify-content:flex-end"><button class="btn-small grau" onclick="buhaErfassenLeeren()" title="Felder leeren (Esc)">Leeren</button><button class="btn-primary" id="be-save" style="white-space:nowrap;padding:.45rem .9rem" onclick="buhaErfassenSpeichern()"><span class="btn-ic" data-icon="check"></span> Buchen (F8)</button></div>'
+    +'<div style="grid-column:span 3;display:flex;gap:.4rem;justify-content:flex-end"><button class="btn-small" id="be-split" onclick="buhaSplitAusMaske()" title="Betrag auf mehrere Konten aufteilen, bis der Rest 0,00 € ist">⑂ Aufteilen…</button><button class="btn-small grau" onclick="buhaErfassenLeeren()" title="Felder leeren (Esc)">Leeren</button><button class="btn-primary" id="be-save" style="white-space:nowrap;padding:.45rem .9rem" onclick="buhaErfassenSpeichern()"><span class="btn-ic" data-icon="check"></span> Buchen (F8)</button></div>'
     +'</div>'
     +'<div id="be-info" style="font-size:.72rem;color:var(--muted);margin-top:.45rem;min-height:1em"></div>'
     +'<datalist id="be-konten-dl">'+buhaPersonenkontenOpts()+'</datalist>'
     +'</div>';
-  // Journal des Stapels
-  h+='<div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.5rem">'
-    +'<span style="font-size:.88rem;font-weight:700;display:inline-flex;align-items:center;gap:.4rem"><span class="mini-ic" data-icon="bookopen" style="color:var(--p)"></span>'+(_beJournalAlle?'Journal '+buha.jahr:'Buchungen im Stapel')+'</span>'
-    +'<button class="btn-small" onclick="_beJournalAlle=!_beJournalAlle;renderBuhaErfassen()" style="font-size:.7rem">'+(_beJournalAlle?'Nur aktueller Stapel':'Alle Buchungen '+buha.jahr)+'</button>'
-    +'<input type="text" id="be-suche" value="'+escapeHtml(_beSuche)+'" oninput="_beSuche=this.value;buhaErfassenJournal()" placeholder="🔍 Suchen …" style="border:1px solid var(--border);border-radius:8px;padding:.35rem .6rem;font-size:.8rem;font-family:var(--ff);outline:none;flex:1;min-width:160px;max-width:320px">'
-    +'<span style="flex:1"></span>'
-    +'<button class="btn-small" onclick="buhaExportCsv()"><span class="btn-ic" data-icon="download"></span> CSV</button>'
-    +'<button class="btn-small gruen" onclick="buhaDatevExport('+(_beJournalAlle||!st?'':'\''+st.id+'\'')+')"><span class="btn-ic" data-icon="download"></span> DATEV-Export</button>'
-    +'</div><div id="be-journal" style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow-x:auto"></div>';
+  h+='</div>';
   c.innerHTML=h; applyIcons(c);
   Object.keys(vorher).forEach(function(id){var e=document.getElementById(id);if(e&&vorher[id])e.value=vorher[id];});
   var bd=document.getElementById('be-belegdatum'); if(bd&&!bd.value)bd.value=buhaErfassenStandardDatum(st);
@@ -20672,12 +20715,12 @@ function buhaErfassenJournal(){
         +'<td style="padding:.4rem .6rem;color:var(--muted);font-variant-numeric:tabular-nums">'+(b.primanota_nr||'–')+(_beJournalAlle&&b.stapel_id?'<div style="font-size:.62rem;white-space:nowrap">'+escapeHtml(stName[b.stapel_id]||'')+'</div>':'')+'</td>'
         +'<td style="padding:.4rem .6rem;white-space:nowrap">'+fmtDatum(String(b.buchungsdatum||'').slice(0,10))+'</td>'
         +'<td style="padding:.4rem .6rem;color:var(--muted)">'+escapeHtml(b.belegnr||'–')+'</td>'
-        +'<td style="padding:.4rem .6rem">'+escapeHtml(b.text||'')+(b.einheit_bez?'<div style="font-size:.66rem;color:var(--muted)">'+escapeHtml(b.einheit_bez)+'</div>':'')+'</td>'
+        +'<td style="padding:.4rem .6rem">'+escapeHtml(b.text||'')+buhaSplitBadge(b)+(b.einheit_bez?'<div style="font-size:.66rem;color:var(--muted)">'+escapeHtml(b.einheit_bez)+'</div>':'')+'</td>'
         +'<td style="padding:.4rem .6rem">'+kl(b.soll_konto)+'</td><td style="padding:.4rem .6rem">'+kl(b.haben_konto)+'</td>'
         +'<td style="padding:.4rem .6rem;text-align:center;color:var(--muted)">'+escapeHtml((b.schluessel&&b.schluessel!=='0')?b.schluessel:'–')+'</td>'
         +'<td style="padding:.4rem .6rem;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap">'+buhaEuro(b.betrag)+'</td>'
         +'<td style="padding:.4rem .6rem;text-align:center">'+badge+'</td>'
-        +'<td style="padding:.4rem .6rem;text-align:right">'+(!stor?'<button class="btn-small" style="font-size:.6rem;padding:2px 7px;background:#fff3cd;color:#856404" title="Stornieren" onclick="event.stopPropagation();buhaStorno(\''+b.id+'\')">↺</button>':'')+'</td>'
+        +'<td style="padding:.4rem .6rem;text-align:right;white-space:nowrap">'+(!stor?'<button class="btn-small" style="font-size:.6rem;padding:2px 7px" title="Buchung aufteilen" onclick="event.stopPropagation();buhaSplitAusBuchung(\''+b.id+'\')">⑂</button> <button class="btn-small" style="font-size:.6rem;padding:2px 7px;background:#fff3cd;color:#856404" title="Stornieren" onclick="event.stopPropagation();buhaStorno(\''+b.id+'\')">↺</button>':'')+'</td>'
       +'</tr>';
     }).join('')
     +'<tr style="background:#fafafa;font-weight:800"><td colspan="7" style="padding:.45rem .6rem">'+n+' Buchung'+(n===1?'':'en')+' (ohne Storni)</td><td style="padding:.45rem .6rem;text-align:right;white-space:nowrap">'+buhaEuro(sum)+'</td><td colspan="2"></td></tr>'
@@ -20728,6 +20771,256 @@ async function buhaPersonenkontoAnlegen(typ){
   buhaErfassenLive();
 }
 
+// ══ Buchung aufteilen (Split): ein Beleg, mehrere Konten, Rest muss 0,00 € sein ══
+// Jede Teilzeile ist eine vollständige Soll/Haben-Buchung. Alle Teile tragen dieselbe
+// split_gruppe und ein fortlaufendes split_teil. Dadurch bleiben Saldenliste, EÜR,
+// Übersicht und DATEV-Export ohne Sonderbehandlung korrekt – es wird nichts doppelt gezählt.
+var _split=null;
+function buhaUuid(){
+  try{ if(window.crypto&&crypto.randomUUID)return crypto.randomUUID(); }catch(e){}
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){var r=Math.random()*16|0,v=c==='x'?r:((r&0x3)|0x8);return v.toString(16);});
+}
+function buhaSplitRund(n){ return Math.round((parseFloat(n)||0)*100)/100; }
+// Zusammengehörende Teile einer Aufteilung (aus den geladenen Buchungen)
+function buhaSplitInfo(b){
+  if(!b||!b.split_gruppe)return null;
+  var teile=(buha.buchungen||[]).filter(function(x){return x.split_gruppe===b.split_gruppe;})
+    .sort(function(x,y){return (parseInt(x.split_teil,10)||0)-(parseInt(y.split_teil,10)||0);});
+  var orig=teile.filter(function(x){return !x.ist_storno;});
+  var gesamt=orig.reduce(function(s,x){return s+(parseFloat(x.betrag)||0);},0);
+  return {teil:parseInt(b.split_teil,10)||0,n:orig.length,gesamt:buhaSplitRund(gesamt),teile:teile};
+}
+function buhaSplitLabel(b){ var si=buhaSplitInfo(b); return si?' (Teil '+si.teil+'/'+si.n+')':''; }
+function buhaSplitBadge(b){
+  var si=buhaSplitInfo(b); if(!si)return '';
+  return ' <span title="Aufgeteilter Beleg: Teil '+si.teil+' von '+si.n+' - Gesamt '+buhaEuro(si.gesamt)+'" style="font-size:.6rem;font-weight:700;padding:1px 6px;border-radius:6px;background:#eef2ff;color:#1565c0;white-space:nowrap">⑂ '+si.teil+'/'+si.n+'</span>';
+}
+// Welche Seite wird aufgeteilt? Das Geldkonto (Bank/Kasse) bleibt gemeinsam, die Gegenseite wird zerlegt.
+function buhaSplitSeiteVorschlag(soll,haben){
+  var geld=function(nr){var k=nr?buhaKontoKat(nr):''; return k==='bank'||k==='kasse';};
+  if(haben&&geld(haben))return 'soll';
+  if(soll&&geld(soll))return 'haben';
+  if(soll&&!haben)return 'haben';
+  if(haben&&!soll)return 'soll';
+  return 'soll';
+}
+// Reine Prüfung: Zeilen, Zuordnung, Restbetrag, Fehlerliste. Netto/Steuer je Zeile aus dem BU-Schlüssel.
+function buhaSplitPruefen(s){
+  var fehler=[], zeilen=[], summe=0;
+  var gesamt=buhaSplitRund(s.gesamt);
+  if(!(gesamt>0))fehler.push('Gesamtbetrag muss größer als 0 sein');
+  if(!s.konto)fehler.push('Gemeinsames Konto fehlt');
+  else if(!kontoExists(s.konto))fehler.push('Konto "'+s.konto+'" gibt es nicht im Kontenrahmen');
+  if(s.datum&&String(s.datum).slice(0,4)!==String(buha.jahr))fehler.push('Buchungsdatum liegt nicht im Wirtschaftsjahr '+buha.jahr);
+  (s.zeilen||[]).forEach(function(z,i){
+    var nr=i+1, betrag=buhaSplitRund(z.betrag), zf=[];
+    if(!z.konto)zf.push('Zeile '+nr+': Konto fehlt');
+    else if(!kontoExists(z.konto))zf.push('Zeile '+nr+': Konto "'+z.konto+'" gibt es nicht');
+    else if(z.konto===s.konto)zf.push('Zeile '+nr+': Konto und Gegenkonto sind gleich');
+    if(!(betrag>0))zf.push('Zeile '+nr+': Betrag fehlt');
+    var def=buhaSchluesselDef(z.bu||'0');
+    var netto=def.satz>0?betrag/(1+def.satz/100):betrag;
+    summe+=betrag;
+    zeilen.push({konto:z.konto,bu:z.bu||'0',betrag:betrag,text:z.text||'',einheit:z.einheit||'',def:def,
+      netto:buhaSplitRund(netto),steuer:buhaSplitRund(betrag-netto),fehler:zf});
+    fehler=fehler.concat(zf);
+  });
+  summe=buhaSplitRund(summe);
+  var rest=buhaSplitRund(gesamt-summe);
+  if(zeilen.length<2)fehler.push('Eine Aufteilung braucht mindestens zwei Zeilen');
+  if(Math.abs(rest)>=0.005)fehler.push(rest>0?'Es sind noch '+buhaEuro(rest)+' nicht zugeordnet':'Die Zeilen übersteigen den Gesamtbetrag um '+buhaEuro(-rest));
+  return {ok:!fehler.length,fehler:fehler,zeilen:zeilen,zugeordnet:summe,rest:rest,gesamt:gesamt};
+}
+// Datensätze für den Insert bauen (Seitenorientierung, gemeinsame Felder, Gruppe, Primanota)
+function buhaSplitRows(s,base,p,gruppe,pn0){
+  return p.zeilen.map(function(z,i){
+    var eb=(buha.einheiten||[]).filter(function(e){return e.id===z.einheit;})[0];
+    return Object.assign({},base,{
+      soll_konto:s.seite==='soll'?z.konto:s.konto,
+      haben_konto:s.seite==='soll'?s.konto:z.konto,
+      betrag:z.betrag,schluessel:z.bu,steuer_kz:z.bu,ust_satz:z.def.satz||0,netto:z.netto,steuer:z.steuer,
+      text:((z.text||s.text||'')||null),einheit_id:z.einheit||null,einheit_bez:eb?eb.bez:null,
+      split_gruppe:gruppe,split_teil:i+1,primanota_nr:pn0+i});
+  });
+}
+function buhaSplitAusMaske(){
+  if(buhaWjGesperrt()){showToast('🔒 Das Wirtschaftsjahr '+buha.jahr+' ist abgeschlossen.');return;}
+  var v=buhaErfassenWerte();
+  if(!(v.betrag>0)){showToast('Bitte zuerst den Gesamtbetrag eingeben.');var f=document.getElementById('be-betrag');if(f)f.focus();return;}
+  var seite=buhaSplitSeiteVorschlag(v.soll,v.haben);
+  var konto=seite==='soll'?v.haben:v.soll, erst=seite==='soll'?v.soll:v.haben;
+  _split={quelle:null,gesamt:v.betrag,seite:seite,konto:konto||'',datum:v.datum||todayStr(),
+    belegdatum:v.belegdatum||v.datum||todayStr(),belegnr:v.belegnr||'',partner:v.partner||'',kst:v.kst||'',
+    text:v.text||'',einheit:v.einheit||'',
+    zeilen:[{konto:erst||'',bu:v.bu||'0',betrag:0,text:v.text||'',einheit:v.einheit||''}]};
+  buhaSplitRender();
+  var f2=document.getElementById(erst?'bsp-b-0':'bsp-k-0'); if(f2)f2.focus();
+}
+function buhaSplitAusBuchung(id){
+  var b=(buha.buchungen||[]).filter(function(x){return x.id===id;})[0]; if(!b)return;
+  if(b.storniert||b.ist_storno){showToast('Stornierte Buchungen lassen sich nicht aufteilen.');return;}
+  if(buhaWjGesperrt()){showToast('🔒 Das Wirtschaftsjahr '+buha.jahr+' ist abgeschlossen.');return;}
+  var seite=buhaSplitSeiteVorschlag(b.soll_konto,b.haben_konto);
+  var konto=seite==='soll'?b.haben_konto:b.soll_konto, erst=seite==='soll'?b.soll_konto:b.haben_konto;
+  _split={quelle:b,gesamt:parseFloat(b.betrag)||0,seite:seite,konto:konto||'',
+    datum:String(b.buchungsdatum||'').slice(0,10),belegdatum:String(b.belegdatum||b.buchungsdatum||'').slice(0,10),
+    belegnr:b.belegnr||'',partner:b.partner_id||'',kst:b.kostenstelle||'',text:b.text||'',einheit:b.einheit_id||'',
+    zeilen:[{konto:erst||'',bu:b.schluessel||'0',betrag:0,text:b.text||'',einheit:b.einheit_id||''}]};
+  try{appConfirmClose();}catch(e){}
+  buhaSplitRender();
+  var f=document.getElementById('bsp-b-0'); if(f)f.focus();
+}
+function buhaSplitSchliessen(){ var m=document.getElementById('buha-split-modal'); if(m)m.style.display='none'; _split=null; }
+function buhaSplitSet(i,feld,val){ if(!_split||!_split.zeilen[i])return; _split.zeilen[i][feld]=val; buhaSplitFuss(); }
+function buhaSplitSeite(v){ if(!_split)return; _split.seite=(v==='haben')?'haben':'soll'; buhaSplitRender(); }
+function buhaSplitZeileAdd(){
+  if(!_split)return;
+  var p=buhaSplitPruefen(_split), last=_split.zeilen[_split.zeilen.length-1]||{};
+  _split.zeilen.push({konto:'',bu:last.bu||'0',betrag:p.rest>0.004?p.rest:0,text:_split.text||'',einheit:_split.einheit||''});
+  buhaSplitRender();
+  var k=document.getElementById('bsp-k-'+(_split.zeilen.length-1)); if(k)k.focus();
+}
+function buhaSplitZeileDel(i){ if(!_split||_split.zeilen.length<=1)return; _split.zeilen.splice(i,1); buhaSplitRender(); }
+function buhaSplitRestUebernehmen(){
+  if(!_split||!_split.zeilen.length)return;
+  var p=buhaSplitPruefen(_split), last=_split.zeilen[_split.zeilen.length-1];
+  last.betrag=buhaSplitRund((parseFloat(last.betrag)||0)+p.rest);
+  buhaSplitRender();
+}
+// Gleichmäßig verteilen; die Rundungsdifferenz trägt die letzte Zeile, damit der Rest exakt 0 wird.
+function buhaSplitGleich(){
+  if(!_split||!_split.zeilen.length)return;
+  var n=_split.zeilen.length, g=buhaSplitRund(_split.gesamt);
+  var basis=Math.floor(g*100/n)/100, rest=buhaSplitRund(g-basis*n);
+  _split.zeilen.forEach(function(z,i){ z.betrag=buhaSplitRund(basis+(i===n-1?rest:0)); });
+  buhaSplitRender();
+}
+function buhaSplitRender(){
+  var m=document.getElementById('buha-split-modal'), c=document.getElementById('buha-split-inhalt');
+  if(!m||!c||!_split)return;
+  var s=_split, fb=function(n){return (parseFloat(n)||0).toFixed(2).replace('.',',');};
+  var lbl=function(t){return '<label style="font-size:.6rem;font-weight:700;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:1px">'+t+'</label>';};
+  var fld=function(l,inner,span){return '<div style="grid-column:span '+(span||2)+'">'+lbl(l)+inner+'</div>';};
+  var skOpts=function(sel){return buhaSchluesselListe().map(function(x){return '<option value="'+escapeHtml(x.schluessel)+'"'+(String(x.schluessel)===String(sel||'0')?' selected':'')+'>'+escapeHtml(x.schluessel+' · '+x.bezeichnung)+'</option>';}).join('');};
+  var eOpts=function(sel){return '<option value="">– gesamtes Objekt –</option>'+(buha.einheiten||[]).map(function(e){return '<option value="'+e.id+'"'+(e.id===sel?' selected':'')+'>'+escapeHtml(e.bez)+'</option>';}).join('');};
+  var h='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;margin-bottom:.8rem">'
+    +'<div><h3 style="font-size:1.05rem;font-weight:800;margin:0">⑂ Buchung aufteilen</h3>'
+    +'<div style="font-size:.78rem;color:var(--muted);margin-top:.2rem">'
+    +(s.quelle?('Bestehende Buchung'+(s.quelle.primanota_nr?' Nr. '+s.quelle.primanota_nr:'')+' wird zerlegt'+(s.quelle.festgeschrieben?' – festgeschrieben, daher Storno und Neuanlage':''))
+             :'Ein Beleg, mehrere Konten – gebucht wird, sobald der Rest 0,00 € beträgt')
+    +'</div></div>'
+    +'<div style="text-align:right"><div style="font-size:.6rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Gesamtbeleg</div>'
+    +'<div id="bsp-gesamt-anz" style="font-size:1.35rem;font-weight:800">'+buhaEuro(s.gesamt)+'</div></div></div>';
+  h+='<div style="display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:.5rem;align-items:end;margin-bottom:.8rem">'
+    +fld('Belegdatum','<input type="date" id="bsp-belegdatum" class="buha-inp" value="'+escapeHtml(s.belegdatum||'')+'" onchange="_split.belegdatum=this.value">')
+    +fld('Buchungsdatum','<input type="date" id="bsp-datum" class="buha-inp" value="'+escapeHtml(s.datum||'')+'" onchange="_split.datum=this.value;buhaSplitFuss()">')
+    +fld('Beleg-Nr.','<input type="text" id="bsp-belegnr" class="buha-inp" value="'+escapeHtml(s.belegnr||'')+'" oninput="_split.belegnr=this.value.trim()">')
+    +fld('Gesamtbetrag (€)','<input type="text" inputmode="decimal" id="bsp-gesamt" class="buha-inp" style="text-align:right" value="'+fb(s.gesamt)+'" oninput="sanitizeNumInput(this);_split.gesamt=parseNum(this.value);buhaSplitFuss()">')
+    +fld('Aufgeteilt wird','<select id="bsp-seite" class="buha-inp" onchange="buhaSplitSeite(this.value)"><option value="soll"'+(s.seite==='soll'?' selected':'')+'>Konto (Soll)</option><option value="haben"'+(s.seite==='haben'?' selected':'')+'>Gegenkonto (Haben)</option></select>')
+    +fld('Gemeinsames '+(s.seite==='soll'?'Gegenkonto (Haben)':'Konto (Soll)')+' <span id="bsp-konto-name" style="text-transform:none;font-weight:400;color:#0e7c7b"></span>','<input list="bsp-konten-dl" id="bsp-konto" class="buha-inp" value="'+escapeHtml(s.konto||'')+'" placeholder="z. B. 1200" oninput="_split.konto=this.value.trim();buhaSplitFuss()">')
+    +'</div>';
+  h+='<div style="background:var(--white);border:1px solid var(--border);border-radius:10px;overflow-x:auto">'
+    +'<table style="width:100%;border-collapse:collapse;font-size:.8rem;min-width:760px"><thead><tr style="border-bottom:2px solid var(--border)">'
+    +['#',(s.seite==='soll'?'Konto (Soll)':'Gegenkonto (Haben)'),'BU','Betrag (€)','Buchungstext','Einheit',''].map(function(t,i){
+      return '<th style="text-align:'+(i===3?'right':'left')+';padding:.4rem .5rem;font-size:.6rem;text-transform:uppercase;color:var(--muted);white-space:nowrap">'+t+'</th>';}).join('')
+    +'</tr></thead><tbody>';
+  s.zeilen.forEach(function(z,i){
+    h+='<tr style="border-bottom:1px solid var(--border)"><td style="padding:.3rem .5rem;color:var(--muted)">'+(i+1)+'</td>'
+      +'<td style="padding:.3rem .5rem;min-width:170px"><input list="bsp-konten-dl" id="bsp-k-'+i+'" class="buha-inp" value="'+escapeHtml(z.konto||'')+'" placeholder="Nr." autocomplete="off" oninput="buhaSplitSet('+i+',\'konto\',this.value.trim())"><div id="bsp-kn-'+i+'" style="font-size:.66rem;color:#0e7c7b;min-height:.9em"></div></td>'
+      +'<td style="padding:.3rem .5rem;min-width:120px"><select id="bsp-bu-'+i+'" class="buha-inp" onchange="buhaSplitSet('+i+',\'bu\',this.value)">'+skOpts(z.bu)+'</select></td>'
+      +'<td style="padding:.3rem .5rem;min-width:105px"><input type="text" inputmode="decimal" id="bsp-b-'+i+'" class="buha-inp" style="text-align:right" value="'+(z.betrag?fb(z.betrag):'')+'" placeholder="0,00" oninput="sanitizeNumInput(this);buhaSplitSet('+i+',\'betrag\',parseNum(this.value))"></td>'
+      +'<td style="padding:.3rem .5rem;min-width:150px"><input type="text" id="bsp-t-'+i+'" class="buha-inp" value="'+escapeHtml(z.text||'')+'" oninput="buhaSplitSet('+i+',\'text\',this.value)"></td>'
+      +'<td style="padding:.3rem .5rem;min-width:125px"><select id="bsp-e-'+i+'" class="buha-inp" onchange="buhaSplitSet('+i+',\'einheit\',this.value)">'+eOpts(z.einheit)+'</select></td>'
+      +'<td style="padding:.3rem .5rem;text-align:right">'+(s.zeilen.length>1?'<button class="btn-small" style="font-size:.62rem;padding:2px 7px;background:#fbe9e7;color:#c0392b" title="Zeile entfernen" onclick="buhaSplitZeileDel('+i+')">✕</button>':'')+'</td></tr>';
+  });
+  h+='</tbody></table></div><div id="bsp-fuss" style="margin-top:.7rem"></div>';
+  h+='<div style="display:flex;gap:.5rem;justify-content:space-between;margin-top:.9rem;flex-wrap:wrap">'
+    +'<div style="display:flex;gap:.4rem;flex-wrap:wrap">'
+    +'<button class="btn-small" onclick="buhaSplitZeileAdd()">+ Zeile (Rest)</button>'
+    +'<button class="btn-small grau" onclick="buhaSplitRestUebernehmen()" title="Restbetrag der letzten Zeile zuschlagen">Rest zur letzten Zeile</button>'
+    +'<button class="btn-small grau" onclick="buhaSplitGleich()" title="Gesamtbetrag gleichmäßig verteilen">Gleich verteilen</button></div>'
+    +'<div style="display:flex;gap:.4rem"><button class="btn-secondary" onclick="buhaSplitSchliessen()">Abbrechen</button>'
+    +'<button class="btn-primary" id="bsp-save" onclick="buhaSplitBuchen()">⑂ Aufteilung buchen</button></div></div>'
+    +'<div style="font-size:.68rem;color:var(--muted);margin-top:.5rem">Enter im Betragsfeld der letzten Zeile legt eine neue Zeile mit dem Restbetrag an · Strg+Enter bucht · Esc bricht ab</div>'
+    +'<datalist id="bsp-konten-dl">'+buhaPersonenkontenOpts()+'</datalist>';
+  c.innerHTML=h; applyIcons(c);
+  m.style.display='flex';
+  if(!m._kb){ m._kb=true; m.addEventListener('keydown',function(e){
+    if(e.key==='Escape'){e.preventDefault();buhaSplitSchliessen();return;}
+    if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();buhaSplitBuchen();return;}
+    if(e.key==='Enter'&&e.target&&/^bsp-b-[0-9]+$/.test(e.target.id||'')){
+      e.preventDefault();
+      var i=parseInt(e.target.id.slice(6),10);
+      if(_split&&i===_split.zeilen.length-1){ if(buhaSplitPruefen(_split).rest>0.004)buhaSplitZeileAdd(); else buhaSplitBuchen(); }
+      else { var n=document.getElementById('bsp-k-'+(i+1)); if(n)n.focus(); }
+    }
+  }); }
+  buhaSplitFuss();
+}
+function buhaSplitFuss(){
+  var f=document.getElementById('bsp-fuss'); if(!f||!_split)return null;
+  var p=buhaSplitPruefen(_split);
+  var kn=document.getElementById('bsp-konto-name');
+  if(kn)kn.textContent=(_split.konto&&kontoExists(_split.konto))?'· '+kontoName(_split.konto):'';
+  var ga=document.getElementById('bsp-gesamt-anz'); if(ga)ga.textContent=buhaEuro(p.gesamt);
+  var ki=document.getElementById('bsp-konto'); if(ki)ki.classList.toggle('err',!!(_split.konto&&!kontoExists(_split.konto)));
+  _split.zeilen.forEach(function(z,i){
+    var e=document.getElementById('bsp-k-'+i), n=document.getElementById('bsp-kn-'+i);
+    if(e)e.classList.toggle('err',!!(z.konto&&(!kontoExists(z.konto)||z.konto===_split.konto)));
+    if(n)n.textContent=(z.konto&&kontoExists(z.konto))?kontoName(z.konto):'';
+  });
+  var restOk=Math.abs(p.rest)<0.005;
+  f.innerHTML='<div style="display:flex;gap:1.4rem;align-items:center;flex-wrap:wrap;background:'+(restOk?'#e6f4ea':'#fff8e6')+';border:1px solid '+(restOk?'#bfe3cc':'#f0d9a8')+';border-radius:10px;padding:.6rem .9rem">'
+    +'<div><div style="font-size:.6rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Zugeordnet</div><div style="font-weight:800">'+buhaEuro(p.zugeordnet)+'</div></div>'
+    +'<div><div style="font-size:.6rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Rest</div>'
+    +'<div id="bsp-rest" style="font-size:1.15rem;font-weight:800;color:'+(restOk?'#1a7a4a':'#c0392b')+'">'+buhaEuro(p.rest)+(restOk?' ✓':'')+'</div></div>'
+    +'<div style="flex:1;min-width:200px;font-size:.74rem;color:'+(p.fehler.length?'#c0392b':'#1a7a4a')+'">'
+    +(p.fehler.length?escapeHtml(p.fehler[0])+(p.fehler.length>1?' (und '+(p.fehler.length-1)+' weitere)':'')
+                    :'Alles zugeordnet – '+p.zeilen.length+' Teilbuchungen bereit')+'</div></div>';
+  var btn=document.getElementById('bsp-save');
+  if(btn){btn.disabled=!p.ok;btn.style.opacity=p.ok?'1':'.55';btn.style.cursor=p.ok?'pointer':'not-allowed';}
+  return p;
+}
+async function buhaSplitBuchen(){
+  var s=_split; if(!s||!buha.objektId||!currentUser)return;
+  var p=buhaSplitPruefen(s);
+  if(!p.ok){showToast('❌ '+p.fehler[0]);return;}
+  if(buhaWjGesperrt()){showToast('🔒 Das Wirtschaftsjahr '+buha.jahr+' ist abgeschlossen.');return;}
+  var st=await buhaStapelSicherstellen(); if(!st){showToast('Kein offener Stapel.');return;}
+  if(st.status==='festgeschrieben'){showToast('🔒 Der Stapel ist festgeschrieben – bitte einen offenen Stapel wählen.');return;}
+  var btn=document.getElementById('bsp-save'); if(btn)btn.disabled=true;
+  try{
+    var q=s.quelle, ersetzt=false;
+    // Festgeschriebene Buchungen bleiben unveränderlich: erst Storno, dann die Teile neu buchen.
+    if(q&&q.festgeschrieben){ await _buhaStornoAnlegen(q,'Aufteilung'); }
+    var gruppe=buhaUuid(), pn0=buhaNaechstePrimanota(st.id);
+    var base={user_id:currentUser.id,objekt_id:buha.objektId,wirtschaftsjahr:buha.jahr,untergemeinschaft_id:buha.ug||null,
+      buchungsdatum:s.datum||todayStr(),belegdatum:s.belegdatum||s.datum||todayStr(),belegnr:s.belegnr||null,
+      kostenstelle:s.kst||null,partner_id:s.partner||null,stapel_id:st.id};
+    var rows=buhaSplitRows(s,base,p,gruppe,pn0);
+    if(q&&!q.festgeschrieben){
+      // Noch nicht festgeschrieben: die Ursprungsbuchung wird Teil 1 und behält ihre Primanota-Nummer.
+      var upd=Object.assign({},rows[0]);
+      delete upd.user_id; delete upd.objekt_id; delete upd.stapel_id; delete upd.primanota_nr;
+      var r=await sb.from('weg_buchungen').update(upd).eq('id',q.id);
+      if(r.error)throw new Error(r.error.message);
+      rows=rows.slice(1).map(function(x,i){ x.primanota_nr=pn0+i; return x; });
+      ersetzt=true;
+    }
+    if(rows.length){
+      var ins=await sb.from('weg_buchungen').insert(rows).select();
+      if(ins.error)throw new Error(ins.error.message);
+    }
+    await logAudit('buchung_aufgeteilt','buchung',q?q.id:null,
+      {gruppe:gruppe,teile:p.zeilen.length,gesamt:p.gesamt,ersetzt:ersetzt,mit_storno:!!(q&&q.festgeschrieben)});
+    showToast('✅ Beleg in '+p.zeilen.length+' Teile aufgeteilt');
+    var ausMaske=!q;
+    buhaSplitSchliessen();
+    if(ausMaske){ ['be-betrag','be-soll','be-haben','be-text','be-kst'].forEach(function(id){var e=document.getElementById(id);if(e){e.value='';e.classList.remove('err');}}); }
+    await buhaReload();
+  }catch(e){ showToast('❌ '+(e.message||e)); if(btn)btn.disabled=false; }
+}
+
 // ── Primanota: Buchungen eines Stapels in Erfassungsreihenfolge ───────────
 function buhaPrimanotaZeilen(stapelId){
   return (buha.buchungen||[]).filter(function(b){return (b.stapel_id||null)===(stapelId||null);})
@@ -20766,7 +21059,7 @@ function renderBuhaPrimanota(){
         +'<td style="padding:.4rem .6rem;color:var(--muted)">'+escapeHtml((b.schluessel&&b.schluessel!=='0')?b.schluessel:'–')+'</td>'
         +'<td style="padding:.4rem .6rem">'+escapeHtml(b.soll_konto||'')+' <span style="color:var(--muted);font-size:.7rem">'+escapeHtml(nm[b.soll_konto]||'')+'</span></td>'
         +'<td style="padding:.4rem .6rem">'+escapeHtml(b.haben_konto||'')+' <span style="color:var(--muted);font-size:.7rem">'+escapeHtml(nm[b.haben_konto]||'')+'</span></td>'
-        +'<td style="padding:.4rem .6rem">'+escapeHtml(b.text||'')+'</td>'
+        +'<td style="padding:.4rem .6rem">'+escapeHtml(b.text||'')+buhaSplitBadge(b)+'</td>'
         +'<td style="padding:.4rem .6rem;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap">'+buhaEuro(b.betrag)+'</td>'
         +'<td style="padding:.4rem .6rem;font-size:.7rem;color:var(--muted)">'+(b.ist_storno?'Storno':b.storniert?'storniert':b.festgeschrieben?'🔒':'')+'</td></tr>';
     }).join('')+'<tr style="background:#fafafa;font-weight:800"><td colspan="7" style="padding:.45rem .6rem">Summe (ohne Storni) · '+zeilen.length+' Buchung'+(zeilen.length===1?'':'en')+'</td><td style="padding:.45rem .6rem;text-align:right;white-space:nowrap">'+buhaEuro(sum)+'</td><td></td></tr></tbody></table>';
@@ -20781,7 +21074,7 @@ function buhaPrimanotaDaten(stapelId){
   var rows=zeilen.map(function(b){var stor=b.storniert||b.ist_storno; if(!stor)sum+=parseFloat(b.betrag)||0;
     return [String(b.primanota_nr||''),fmtDatum(String(b.buchungsdatum||'').slice(0,10)),b.belegnr||'',(b.schluessel&&b.schluessel!=='0')?b.schluessel:'',
       (b.soll_konto||'')+(nm[b.soll_konto]?' '+nm[b.soll_konto]:''),(b.haben_konto||'')+(nm[b.haben_konto]?' '+nm[b.haben_konto]:''),
-      (b.text||'')+(b.ist_storno?' [Storno]':b.storniert?' [storniert]':''),buhaEuro(b.betrag)];});
+      (b.text||'')+buhaSplitLabel(b)+(b.ist_storno?' [Storno]':b.storniert?' [storniert]':''),buhaEuro(b.betrag)];});
   var obj=(_buhaCockpitObj&&_buhaCockpitObj.name)||(aktivesObjekt&&aktivesObjekt.name)||'Objekt';
   return {st:st,zeilen:zeilen,rows:rows,summe:sum,obj:obj,
     titel:'Primanota '+(st?(st.nummer?st.nummer+' · ':'')+st.name:'(Buchungen ohne Stapel)'),

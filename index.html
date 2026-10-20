@@ -2019,8 +2019,8 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
             </div>
             <div class="field"><label>Fläche (m²)</label><input type="number" id="weg-ein-flaeche" placeholder="75" step="0.01"></div>
             <div class="field" style="grid-column:1/-1"><label>Stockwerk / Lage</label><input type="text" id="weg-ein-stockwerk" placeholder="1. OG links"></div>
-            <div class="field"><label>Miteigentumsanteil (Zähler)</label><input type="number" id="weg-ein-mea-z" placeholder="250"></div>
-            <div class="field"><label>von (Nenner)</label><input type="number" id="weg-ein-mea-n" value="1000"></div>
+            <div class="field"><label>Miteigentumsanteil (Zähler)</label><input type="text" inputmode="decimal" id="weg-ein-mea-z" placeholder="z. B. 49,24"></div>
+            <div class="field"><label>von (Nenner)</label><input type="text" inputmode="decimal" id="weg-ein-mea-n" value="1000"></div>
             <div class="field"><label>Personen</label><input type="number" id="weg-ein-personen" placeholder="0" min="0" step="1"></div>
             <div class="field"><label>Haus</label><select id="weg-ein-haus" style="border:1px solid var(--border);border-radius:7px;padding:.45rem .65rem;font-size:.85rem;font-family:var(--ff);width:100%;background:var(--bg);outline:none"><option value="">— ohne —</option></select></div>
             <div class="field" style="grid-column:1/-1"><label>Zugeordnete Wohnung <span style="font-weight:400;color:var(--muted)">(für Garage / Stellplatz / Keller)</span></label><select id="weg-ein-wohnung" style="border:1px solid var(--border);border-radius:7px;padding:.45rem .65rem;font-size:.85rem;font-family:var(--ff);width:100%;background:var(--bg);outline:none"><option value="">— keine —</option></select></div>
@@ -15054,7 +15054,7 @@ async function wegcRenderAbrechnung(c){
     var byN={}; units.forEach(function(u){var n=parseFloat(u.mea_nenner)||0; if(n>0)byN[n]=(byN[n]||0)+(parseFloat(u.mea_zaehler)||0);});
     var ns=Object.keys(byN);
     var _fm=function(v){return (Math.round(v*100)/100).toLocaleString('de-DE',{maximumFractionDigits:2});};
-    if(ns.length===1){ var N=parseFloat(ns[0]); var sz=byN[N]; if(Math.abs(sz-N)>0.5)meaWarn='Die Summe der Miteigentumsanteile ('+_fm(sz)+') entspricht nicht dem Nenner ('+_fm(N)+'). Bitte die MEA der Einheiten im Reiter „Einheiten" prüfen.'; }
+    if(ns.length===1){ var N=parseFloat(ns[0]); var sz=byN[N]; if(Math.abs(sz-N)>0.005)meaWarn='Die Summe der Miteigentumsanteile ('+_fm(sz)+') entspricht nicht dem Nenner ('+_fm(N)+'). Bitte die MEA der Einheiten im Reiter „Einheiten" prüfen.'; }
     else if(ns.length>1)meaWarn='Es sind unterschiedliche MEA-Nenner hinterlegt ('+ns.map(_fm).join(', ')+'). Für eine korrekte Verteilung sollte der Nenner einheitlich sein.';
   })();
   var warnMea=meaWarn?'<div style="display:flex;gap:.55rem;align-items:flex-start;background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:10px;padding:.7rem .9rem;margin-bottom:1.1rem;font-size:.82rem;line-height:1.45"><span class="mini-ic" data-icon="alerttriangle" style="margin-top:1px;flex-shrink:0"></span><span>'+escapeHtml(meaWarn)+'</span></div>':'';
@@ -15384,9 +15384,10 @@ function _wegcAbrEinzelHtml(bo){
   if(!bo.eigs)bo={primary:bo,id:bo.id,eigs:[bo],name:_wegcEigName(bo),einheit:(bo.weg_einheiten&&bo.weg_einheiten.bezeichnung)||'',mea:_wegcMeaVal(bo.weg_einheiten)};
   var n2=function(v){return (parseFloat(v)||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});};
   var th=function(t,r){return '<th style="padding:.4rem .55rem;text-align:'+(r?'right':'left')+';font-size:.58rem;text-transform:uppercase;color:var(--muted);white-space:nowrap">'+t+'</th>';};
-  // MEA als Zähler/Nenner statt Prozent: Basis (Bruchteil) × Nenner, bei Nenner-Vielfachen von 1000 auf /81 kürzen.
+  // MEA als Zähler/Nenner statt Prozent: Basis (Bruchteil) × Nenner. „Gesamt" ist der Nenner der Position
+  // (gesamte WEG, z. B. 810, bzw. Summe der Untergemeinschaft, z. B. Haus 19 = 292), „Ihr Anteil" der Zähler.
   var meaNen=0; (d.units||[]).forEach(function(u){var n=parseFloat(u.mea_nenner)||0; if(n>meaNen)meaNen=n;});
-  var meaNum=function(base){ if(!(meaNen>0))return n2(base); var v=base*meaNen; if(meaNen%1000===0&&meaNen>1000)v=v/1000; return (Math.round(v*1000)/1000).toLocaleString('de-DE',{maximumFractionDigits:3}); };
+  var meaNum=function(base){ if(!(meaNen>0))return n2(base); return n2(Math.round(base*meaNen*100)/100); };
   var baseDisp=function(r,base){ return (r.einh==='MEA')?meaNum(base):n2(base); };
   var blockRows=function(list,title){
     if(!list.length)return '';
@@ -15990,7 +15991,7 @@ function _wegcAbrPdfCtx(doc,d){
   var fussTxt=(cfg.fuss_text!=null&&(''+cfg.fuss_text).trim()!=='')?(''+cfg.fuss_text).trim():adr;
   var fmt=function(v){return (parseFloat(v)||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});};
   var _meaNen=0; (d.units||[]).forEach(function(u){var n=parseFloat(u.mea_nenner)||0; if(n>_meaNen)_meaNen=n;});
-  var meaNum=function(base){ if(!(_meaNen>0))return fmt(base); var v=base*_meaNen; if(_meaNen%1000===0&&_meaNen>1000)v=v/1000; return (Math.round(v*1000)/1000).toLocaleString('de-DE',{maximumFractionDigits:3}); };
+  var meaNum=function(base){ if(!(_meaNen>0))return fmt(base); return fmt(Math.round(base*_meaNen*100)/100); };
   var baseDisp=function(r,base){ return (r.einh==='MEA')?meaNum(base):fmt(base); };
   var sf=function(sz,st,r,g,b){doc.setFontSize(sz);doc.setFont('helvetica',st||'normal');doc.setTextColor(r==null?40:r,g==null?40:g,b==null?45:b);};
   var line=function(x1,x2,yy,col,lw){col=col||[210,210,214];doc.setDrawColor(col[0],col[1],col[2]);doc.setLineWidth(lw||0.3);doc.line(x1,yy,x2,yy);};
@@ -16218,8 +16219,8 @@ async function wegcRenderWplan(c){
   var einzel=owners.map(function(o){
     var jahrA=P.reduce(function(s,x){return s+_wegcAbrRow(x,o,{}).ownerEUR;},0);
     var meaP=totMea>0?_wegcMeaVal(o.weg_einheiten)/totMea*100:0;
-    // Absoluter MEA = Zaehler mit Komma 2 Stellen nach links (z. B. 4924 -> 49,24)
-    var meaAbs=(parseFloat((o.weg_einheiten&&o.weg_einheiten.mea_zaehler)||0)||0)/100;
+    // Absoluter MEA = Zaehler, wie hinterlegt (mit Dezimalstellen, z. B. 49,24)
+    var meaAbs=(parseFloat((o.weg_einheiten&&o.weg_einheiten.mea_zaehler)||0)||0);
     return {o:o,name:_wegcEigName(o),einheit:(o.weg_einheiten&&o.weg_einheiten.bezeichnung)||'–',meaP:meaP,meaAbs:meaAbs,jahr:jahrA,monat:jahrA/12};
   });
   _wegcWpData={jahr:jahr,weg:_wegcCur,P:P,gesamt:gesamt,einzel:einzel};
@@ -16430,8 +16431,8 @@ async function wegcRenderHaeuser(c){
       +_wegcFld('Straße','<input id="wegc-haus-str" type="text" placeholder="Straße + Nr." class="buha-inp" style="min-width:150px">')
       +_wegcFld('PLZ','<input id="wegc-haus-plz" type="text" placeholder="PLZ" class="buha-inp" style="max-width:80px">')
       +_wegcFld('Ort','<input id="wegc-haus-ort" type="text" placeholder="Ort" class="buha-inp" style="min-width:120px">')
-      +_wegcFld('MEA Zähler','<input id="wegc-haus-meaz" type="text" inputmode="numeric" placeholder="z. B. 480" class="buha-inp" style="max-width:90px" onkeydown="if(event.key===\'Enter\')wegcHausSave()">')
-      +_wegcFld('MEA Nenner','<input id="wegc-haus-mean" type="text" inputmode="numeric" placeholder="z. B. 1000" class="buha-inp" style="max-width:90px" onkeydown="if(event.key===\'Enter\')wegcHausSave()">')
+      +_wegcFld('MEA Zähler','<input id="wegc-haus-meaz" type="text" inputmode="decimal" placeholder="z. B. 292,00" class="buha-inp" style="max-width:90px" onkeydown="if(event.key===\'Enter\')wegcHausSave()">')
+      +_wegcFld('MEA Nenner','<input id="wegc-haus-mean" type="text" inputmode="decimal" placeholder="z. B. 810" class="buha-inp" style="max-width:90px" onkeydown="if(event.key===\'Enter\')wegcHausSave()">')
       +'<button id="wegc-haus-savebtn" class="btn-primary" style="padding:.5rem 1rem;white-space:nowrap" onclick="wegcHausSave()"><span class="btn-ic" data-icon="plus"></span> Anlegen</button>'
       +'<button id="wegc-haus-cancelbtn" onclick="wegcHausEditCancel()" style="display:none;padding:.5rem .9rem;border:1px solid var(--border);background:#fff;border-radius:9px;cursor:pointer;font-size:.82rem;font-weight:600;color:#6b7280">Abbrechen</button>'
     +'</div>'
@@ -16447,7 +16448,7 @@ async function wegcRenderHaeuser(c){
       var adr=[h.strasse,h.plz&&h.ort?h.plz+' '+h.ort:h.ort].filter(Boolean).join(', ');
       var typ=h.typ||'Haus';
       var typCol={Haus:'#6a2d9f',Tiefgarage:'#0369a1',Stellplatzanlage:'#0369a1',Gewerbe:'#b45309',Sonstiges:'#6b7280'}[typ]||'#6b7280';
-      var ownMea=(h.mea_zaehler&&h.mea_nenner)?(Number(h.mea_zaehler).toLocaleString('de-DE')+' / '+Number(h.mea_nenner).toLocaleString('de-DE')):'–';
+      var ownMea=(h.mea_zaehler&&h.mea_nenner)?(_meaFmt(h.mea_zaehler)+' / '+_meaFmt(h.mea_nenner)):'–';
       html+='<div style="background:var(--white);border:1px solid #eef0f4;border-radius:12px;padding:1rem 1.1rem;box-shadow:0 1px 2px rgba(16,24,40,.05)">'
         +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">'
           +'<div><div style="display:flex;align-items:center;gap:.45rem;flex-wrap:wrap"><div style="font-weight:800;font-size:1rem;color:#111827">'+escapeHtml(h.name)+'</div>'
@@ -16492,7 +16493,12 @@ async function wegcRenderHaeuser(c){
 }
 var _wegcHaeuserCache=[];
 var _wegcHausEditId=null;
-function _wegcHausInt(id){var v=parseInt((document.getElementById(id).value||'').replace(/[^\d]/g,''));return isNaN(v)?null:v;}
+function _wegcHausInt(id){return _meaParse(document.getElementById(id).value);}
+// MEA-Eingabe mit Dezimalstellen: "49,24" / "49.24" / "1.234,56" -> Zahl, leer -> null
+function _meaParse(s){s=(''+(s==null?'':s)).trim().replace(/\s/g,''); if(!s)return null;
+  if(s.indexOf(',')>=0)s=s.replace(/\./g,'').replace(',','.'); var v=parseFloat(s.replace(/[^\d.]/g,'')); return isNaN(v)?null:v;}
+// MEA-Anzeige: ganze Zahlen ohne, sonst mit 2 Dezimalstellen (z. B. 810 / 49,24)
+function _meaFmt(v){v=parseFloat(v)||0; return v.toLocaleString('de-DE',{minimumFractionDigits:(Math.abs(v-Math.round(v))<0.005)?0:2,maximumFractionDigits:2});}
 async function wegcHausSave(){
   if(!_wegcCur)return;
   var nEl=document.getElementById('wegc-haus-name'); if(!nEl)return;
@@ -18583,7 +18589,7 @@ async function loadWegEinheiten(objId){
         +'<td style="padding:.6rem .85rem;font-size:.85rem"><strong>'+e.bezeichnung+'</strong>'+(e.stockwerk?'<div style="font-size:.7rem;color:var(--muted)">'+e.stockwerk+'</div>':'')+(e.wohnung_einheit_id&&einhById[e.wohnung_einheit_id]?'<div style="font-size:.7rem;color:#7b1fa2">→ '+escapeHtml(einhById[e.wohnung_einheit_id].bezeichnung||'')+'</div>':'')+'</td>'
         +'<td style="padding:.6rem .85rem;font-size:.82rem">'+(e.typ||'Wohnung')+'</td>'
         +'<td style="padding:.6rem .85rem;text-align:right;font-size:.82rem">'+(e.flaeche?e.flaeche+' m²':'–')+'</td>'
-        +'<td style="padding:.6rem .85rem;text-align:right;font-size:.82rem"><strong>'+(e.mea_zaehler||0)+'/'+(e.mea_nenner||1000)+'</strong><div style="font-size:.7rem;color:var(--muted)">'+meaProzent+'%</div></td>'
+        +'<td style="padding:.6rem .85rem;text-align:right;font-size:.82rem"><strong>'+_meaFmt(e.mea_zaehler||0)+'/'+_meaFmt(e.mea_nenner||1000)+'</strong><div style="font-size:.7rem;color:var(--muted)">'+meaProzent+'%</div></td>'
         +'<td style="padding:.6rem .85rem;text-align:right">'
           +'<button class="btn-small" style="font-size:.65rem;padding:2px 6px" onclick="editWegEinheit(\''+e.id+'\')">✏️</button> '
           +'<button class="btn-small" style="font-size:.65rem;padding:2px 6px;background:var(--danger)" onclick="deleteWegEinheit(\''+e.id+'\')">🗑</button>'
@@ -18629,8 +18635,8 @@ async function editWegEinheit(id){
   document.getElementById('weg-ein-typ').value=data.typ||'Wohnung';
   document.getElementById('weg-ein-flaeche').value=data.flaeche||'';
   document.getElementById('weg-ein-stockwerk').value=data.stockwerk||'';
-  document.getElementById('weg-ein-mea-z').value=data.mea_zaehler||'';
-  document.getElementById('weg-ein-mea-n').value=data.mea_nenner||'1000';
+  document.getElementById('weg-ein-mea-z').value=data.mea_zaehler!=null?String(data.mea_zaehler).replace('.',','):'';
+  document.getElementById('weg-ein-mea-n').value=data.mea_nenner!=null?String(data.mea_nenner).replace('.',','):'1000';
   var pEl=document.getElementById('weg-ein-personen');if(pEl)pEl.value=data.personen||'';
   await _fillWegEinheitHaus(data.untergemeinschaft_id||'');
   await _fillWegEinheitWohnung(data.wohnung_einheit_id||'',data.id);
@@ -18644,8 +18650,8 @@ async function saveWegEinheit(){
     typ:document.getElementById('weg-ein-typ').value,
     flaeche:parseFloat(document.getElementById('weg-ein-flaeche').value)||null,
     stockwerk:document.getElementById('weg-ein-stockwerk').value.trim()||null,
-    mea_zaehler:parseInt(document.getElementById('weg-ein-mea-z').value)||0,
-    mea_nenner:parseInt(document.getElementById('weg-ein-mea-n').value)||1000,
+    mea_zaehler:_meaParse(document.getElementById('weg-ein-mea-z').value)||0,
+    mea_nenner:_meaParse(document.getElementById('weg-ein-mea-n').value)||1000,
     personen:parseInt(document.getElementById('weg-ein-personen').value)||0,
     untergemeinschaft_id:document.getElementById('weg-ein-haus').value||null,
     wohnung_einheit_id:document.getElementById('weg-ein-wohnung').value||null};

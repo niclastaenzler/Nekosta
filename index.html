@@ -2762,6 +2762,20 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
         <div class="card">
           <div class="card-title">① Objekt &amp; Mietparteien wählen</div>
           <div style="font-size:.82rem;color:var(--muted);margin-bottom:1rem">Objekt auswählen – die Mietverhältnisse werden automatisch geladen. Anrede, Name, Einheit und Anschrift setzt NEKOSTA für jeden Brief ein.</div>
+          <!-- Empfängerkreise: Auswahl einmal speichern, künftig mit einem Klick laden -->
+          <div style="border:1px solid var(--border);border-radius:10px;padding:.6rem .8rem;background:var(--bg);margin-bottom:.9rem">
+            <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:end">
+              <div class="field" style="flex:1;min-width:180px;margin-bottom:0"><label>Empfängerkreis</label>
+                <select id="anschr-kreis-select" onchange="anschrKreisLaden()">
+                  <option value="">– Kreis wählen –</option>
+                </select>
+              </div>
+              <button class="btn-small" onclick="anschrKreisSpeichern()" title="Aktuelle Empfängerauswahl als Kreis sichern"><span class="btn-ic" data-icon="save"></span> Auswahl als Kreis speichern</button>
+              <button class="btn-small grau" onclick="anschrKreisUeberschreiben()" title="Gewählten Kreis mit der aktuellen Auswahl aktualisieren"><span class="btn-ic" data-icon="refresh"></span> Aktualisieren</button>
+              <button class="btn-small grau" onclick="anschrKreisLoeschen()" title="Gewählten Kreis löschen" style="color:#c0392b"><span class="btn-ic" data-icon="trash"></span></button>
+            </div>
+            <div id="anschr-kreis-info" style="font-size:.72rem;color:var(--muted);margin-top:.5rem">Ein Kreis merkt sich Objekte und Einheiten, nicht die Personen – zieht ein neuer Mieter ein, wird beim nächsten Mal automatisch der aktuelle Mieter angeschrieben. Kreise können mehrere Objekte umfassen.</div>
+          </div>
           <div style="display:grid;grid-template-columns:1fr auto;gap:.7rem;align-items:end;margin-bottom:.9rem">
             <div class="field"><label>Objekt</label>
               <select id="anschr-objekt-select" onchange="anschrObjektGewaehlt()">
@@ -2774,6 +2788,9 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
             <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-bottom:.6rem">
               <button class="btn-small" onclick="anschrAlleWaehlen(true)"><span class="btn-ic" data-icon="check"></span> Alle auswählen</button>
               <button class="btn-small grau" onclick="anschrAlleWaehlen(false)"><span class="btn-ic" data-icon="x"></span> Auswahl aufheben</button>
+              <select id="anschr-objekt-add" onchange="anschrObjektHinzu()" title="Mietparteien eines weiteren Objekts ergänzen" style="border:1px solid var(--border);border-radius:7px;padding:.3rem .45rem;font-size:.76rem;font-family:var(--ff);background:var(--white);max-width:220px">
+                <option value="">+ Weiteres Objekt hinzufügen…</option>
+              </select>
               <span id="anschr-empf-count" style="font-size:.8rem;font-weight:700;color:var(--p);margin-left:auto"></span>
             </div>
             <div id="anschr-empf-liste" style="border:1px solid var(--border);border-radius:10px;max-height:280px;overflow-y:auto;background:var(--bg)"></div>
@@ -4620,6 +4637,7 @@ function showPage(name){
     if(typeof anschrLadeGespeicherte==='function')anschrLadeGespeicherte();
     if(typeof anschrLadeLayout==='function')anschrLadeLayout();
     if(typeof anschrLadeVorlagen==='function')anschrLadeVorlagen();
+    if(typeof anschrLadeKreise==='function')anschrLadeKreise();
     if(typeof anschrRueckFelderFuellen==='function')anschrRueckFelderFuellen();
     if(typeof anschrReiter==='function'){var _r='erstellen';try{_r=localStorage.getItem('nekosta-anschr-reiter')||'erstellen';}catch(e){}anschrReiter(_r);}
     if(typeof renderBriefkopfPreview==='function')renderBriefkopfPreview();
@@ -9378,6 +9396,7 @@ function resetAnschreiben(){
   // Auswahl und Bearbeitungszustand zurücksetzen
   anschrAuswahl={}; anschrBriefe=[]; anschrVorschauIdx=0; anschrEditId=null;
   var os=document.getElementById('anschr-objekt-select'); if(os)os.value='';
+  var ks=document.getElementById('anschr-kreis-select'); if(ks)ks.value='';
   var box=document.getElementById('anschr-empf-box'); if(box)box.style.display='none';
   var leer=document.getElementById('anschr-empf-leer');
   if(leer){leer.style.display='block';leer.textContent='Noch kein Objekt gewählt – du kannst die Empfängerdaten alternativ unten von Hand eintragen.';}
@@ -9668,14 +9687,20 @@ async function anschrLadeObjekte(force){
       return '<option value="'+o.id+'">'+escapeHtml(o.name||'(ohne Namen)')+(adr?' – '+escapeHtml(adr):'')+'</option>';
     }).join('');
     if(cur)sel.value=cur;
+    var add=document.getElementById('anschr-objekt-add');
+    if(add)add.innerHTML='<option value="">+ Weiteres Objekt hinzufügen…</option>'+anschrObjekte.map(function(o){
+      return '<option value="'+o.id+'">'+escapeHtml(o.name||'(ohne Namen)')+'</option>';
+    }).join('');
     if(force)showToast('✅ Objektliste aktualisiert');
   }catch(e){ console.error('anschrLadeObjekte:',e); }
 }
 
 // ── Mietparteien eines Objekts laden (beide Datenmodelle) ───────────────
-async function anschrLadeEmpfaenger(objektId){
-  anschrEmpfaenger=[]; anschrAuswahl={};
+// anhaengen=true: Liste um dieses Objekt ergänzen (Empfängerkreise über mehrere Objekte)
+async function anschrLadeEmpfaenger(objektId,anhaengen){
+  if(!anhaengen){ anschrEmpfaenger=[]; anschrAuswahl={}; }
   if(!objektId||!currentUser)return;
+  var neu=[];
   var obj=anschrObjekte.filter(function(o){return o.id===objektId;})[0]||{};
   var objAdr=[obj.strasse,[obj.plz,obj.ort].filter(Boolean).join(' ')].filter(Boolean).join(', ');
   var basis={objektId:objektId,objektLabel:obj.name||'',objektAdresse:objAdr,
@@ -9710,7 +9735,7 @@ async function anschrLadeEmpfaenger(objektId){
     // Eigene Anschrift des Kontakts hat Vorrang, sonst Objektadresse
     var eigen=(k0.strasse||'').trim();
     var adrStr=eigen||basis.strasse, adrPlz=eigen?(k0.plz||''):basis.plz, adrOrt=eigen?(k0.ort||''):basis.ort;
-    anschrEmpfaenger.push(Object.assign({},basis,{
+    neu.push(Object.assign({},basis,{
       id:'mv:'+liste[0].id, quelle:'mv',
       einheitId:e.id, mietverhaeltnisId:liste[0].id,
       einheitLabel:e.bezeichnung||'',
@@ -9728,12 +9753,12 @@ async function anschrLadeEmpfaenger(objektId){
     var lr=await sb.from('mieter').select('id,anrede,vorname,nachname,wohneinheit,aktiv')
             .eq('user_id',currentUser.id).eq('objekt_id',objektId).eq('aktiv',true).order('wohneinheit');
     var vorhanden={};
-    anschrEmpfaenger.forEach(function(e){ e.personen.forEach(function(p){vorhanden[_anschrNormName(_anschrPersonName(p))]=1;}); });
+    neu.forEach(function(e){ e.personen.forEach(function(p){vorhanden[_anschrNormName(_anschrPersonName(p))]=1;}); });
     (lr.data||[]).forEach(function(m){
       var nm=_anschrPersonName(m); if(!nm)return;
       if(vorhanden[_anschrNormName(nm)])return;   // Dublette (z. B. Max Mustermann in beiden Modellen)
       var pers=[{anrede:m.anrede,vorname:m.vorname,nachname:m.nachname}];
-      anschrEmpfaenger.push(Object.assign({},basis,{
+      neu.push(Object.assign({},basis,{
         id:'legacy:'+m.id, quelle:'legacy',
         einheitId:null, mietverhaeltnisId:null,
         einheitLabel:m.wohneinheit||'',
@@ -9747,8 +9772,13 @@ async function anschrLadeEmpfaenger(objektId){
     });
   }catch(e){ console.error('anschrLadeEmpfaenger (alt):',e); }
 
-  // Nach Lage im Haus sortieren, nicht alphabetisch (sonst steht das EG hinten)
+  // Ein erneut geladenes Objekt ersetzt seine bisherigen Einträge
+  anschrEmpfaenger=anschrEmpfaenger.filter(function(e){
+    if(e.objektId!==objektId)return true; delete anschrAuswahl[e.id]; return false;
+  }).concat(neu);
+  // Nach Objekt, dann nach Lage im Haus sortieren, nicht alphabetisch (sonst steht das EG hinten)
   anschrEmpfaenger.sort(function(a,b){
+    var o=(a.objektLabel||'').localeCompare(b.objektLabel||'','de'); if(o)return o;
     return einheitVergleich({bezeichnung:a.einheitLabel||''},{bezeichnung:b.einheitLabel||''});
   });
 }
@@ -9781,6 +9811,8 @@ async function anschrObjektGewaehlt(){
 function anschrRenderEmpfaenger(){
   var el=document.getElementById('anschr-empf-liste'); if(!el)return;
   if(!anschrEmpfaenger.length){ el.innerHTML='<div style="padding:1rem;color:var(--muted);font-size:.84rem">Keine Mietparteien gefunden.</div>'; anschrAktualisiereZaehler(); return; }
+  var objIds={}; anschrEmpfaenger.forEach(function(e){objIds[e.objektId]=1;});
+  var mehrObj=Object.keys(objIds).length>1;
   el.innerHTML=anschrEmpfaenger.map(function(e,i){
     var warn=e.vollstaendig?'':'<span title="Keine vollständige Anschrift hinterlegt" style="color:#c0392b;font-size:.72rem;font-weight:700;margin-left:.4rem">⚠ Anschrift unvollständig</span>';
     var alt=e.quelle==='legacy'?'<span style="font-size:.66rem;color:var(--muted);border:1px solid var(--border);border-radius:4px;padding:.05rem .3rem;margin-left:.4rem">Altbestand</span>':'';
@@ -9789,7 +9821,7 @@ function anschrRenderEmpfaenger(){
       +'<input type="checkbox" data-idx="'+i+'" onchange="anschrToggle('+i+')"'+(anschrAuswahl[e.id]?' checked':'')+' style="margin-top:.2rem">'
       +'<span style="flex:1;min-width:0">'
       +'<span style="font-size:.86rem;font-weight:700">'+escapeHtml(e.briefName)+'</span>'+mehr+alt+warn
-      +'<br><span style="font-size:.76rem;color:var(--muted)">'+escapeHtml(e.einheitLabel||'(ohne Einheit)')+' · '+escapeHtml(e.anredeText)+'</span>'
+      +'<br><span style="font-size:.76rem;color:var(--muted)">'+(mehrObj?escapeHtml(e.objektLabel||'')+' · ':'')+escapeHtml(e.einheitLabel||'(ohne Einheit)')+' · '+escapeHtml(e.anredeText)+'</span>'
       +'</span></label>';
   }).join('');
   anschrAktualisiereZaehler();
@@ -10671,6 +10703,148 @@ function anschrVorlageLoeschen(){
              }}]});
 }
 
+// ── Empfängerkreise ─────────────────────────────────────────────────────
+// Benannte Empfängerauswahl für künftige Schreiben. Gespeichert werden Objekte
+// und Einheiten (nicht Personen), damit nach einem Mieterwechsel automatisch
+// der aktuelle Mieter angeschrieben wird. alle=true: alle aktiven Mietparteien
+// des Objekts zum Zeitpunkt des Ladens (auch später hinzugekommene Einheiten).
+var anschrKreise=[];
+async function anschrLadeKreise(){
+  var sel=document.getElementById('anschr-kreis-select'); if(!sel||!currentUser)return;
+  try{
+    var r=await sb.from('anschreiben_kreise').select('*').eq('user_id',currentUser.id).order('name');
+    if(r.error)throw r.error;
+    anschrKreise=r.data||[];
+    var cur=sel.value;
+    sel.innerHTML='<option value="">– Kreis wählen –</option>'+anschrKreise.map(function(k){
+      return '<option value="'+k.id+'">'+escapeHtml(k.name||'(ohne Namen)')+'</option>';
+    }).join('');
+    if(cur)sel.value=cur;
+  }catch(e){ console.error('anschrLadeKreise:',e); }
+}
+function _anschrKreisAktiv(){
+  var id=(document.getElementById('anschr-kreis-select')||{value:''}).value;
+  return anschrKreise.filter(function(k){return k.id===id;})[0]||null;
+}
+// Aktuelle Auswahl → Mitglieder je Objekt
+function _anschrKreisMitglieder(){
+  var byObj={}, reihe=[];
+  anschrEmpfaenger.forEach(function(e){
+    var g=byObj[e.objektId]; if(!g){g=byObj[e.objektId]={objekt_id:e.objektId,gesamt:0,n:0,einheit_ids:[],legacy_ids:[]};reihe.push(g);}
+    g.gesamt++;
+    if(!anschrAuswahl[e.id])return;
+    g.n++;
+    if(e.einheitId)g.einheit_ids.push(e.einheitId);
+    else if(e.quelle==='legacy')g.legacy_ids.push(e.id.replace(/^legacy:/,''));
+  });
+  return reihe.filter(function(g){return g.n>0;}).map(function(g){
+    var alle=g.n===g.gesamt;
+    return {objekt_id:g.objekt_id,alle:alle,einheit_ids:alle?[]:g.einheit_ids,legacy_ids:alle?[]:g.legacy_ids};
+  });
+}
+function _anschrKreisBeschreibung(m){
+  return m.map(function(x){
+    var o=anschrObjekte.filter(function(y){return y.id===x.objekt_id;})[0];
+    var nm=o?(o.name||'Objekt'):'(Objekt nicht mehr vorhanden)';
+    var n=(x.einheit_ids||[]).length+(x.legacy_ids||[]).length;
+    return nm+(x.alle?' (alle Mietparteien)':' ('+(n===1?'1 Einheit':n+' Einheiten')+')');
+  }).join(', ');
+}
+function _anschrKreisInfo(k){
+  var el=document.getElementById('anschr-kreis-info'); if(!el)return;
+  el.innerHTML=k?('<strong>'+escapeHtml(k.name||'')+':</strong> '+escapeHtml(_anschrKreisBeschreibung(k.mitglieder||[])))
+    :'Ein Kreis merkt sich Objekte und Einheiten, nicht die Personen – zieht ein neuer Mieter ein, wird beim nächsten Mal automatisch der aktuelle Mieter angeschrieben. Kreise können mehrere Objekte umfassen.';
+}
+async function anschrKreisLaden(){
+  var k=_anschrKreisAktiv(); if(!k){_anschrKreisInfo(null);return;}
+  await anschrLadeObjekte();
+  _anschrKreisInfo(k);
+  var box=document.getElementById('anschr-empf-box'), leer=document.getElementById('anschr-empf-leer'), liste=document.getElementById('anschr-empf-liste');
+  if(box)box.style.display='block'; if(leer)leer.style.display='none';
+  if(liste)liste.innerHTML='<div style="padding:1rem;color:var(--muted);font-size:.84rem">Empfängerkreis wird geladen…</div>';
+  anschrEmpfaenger=[]; anschrAuswahl={};
+  var mitglieder=k.mitglieder||[], fehlt=0, leerstand=0;
+  for(var i=0;i<mitglieder.length;i++){
+    var m=mitglieder[i];
+    if(!anschrObjekte.some(function(o){return o.id===m.objekt_id;})){fehlt++;continue;}
+    await anschrLadeEmpfaenger(m.objekt_id,true);
+    var eids={}, lids={}, getroffen={};
+    (m.einheit_ids||[]).forEach(function(x){eids[x]=1;}); (m.legacy_ids||[]).forEach(function(x){lids[x]=1;});
+    anschrEmpfaenger.forEach(function(e){
+      if(e.objektId!==m.objekt_id)return;
+      var lid=e.quelle==='legacy'?e.id.replace(/^legacy:/,''):null;
+      if(m.alle||(e.einheitId&&eids[e.einheitId])||(lid&&lids[lid])){ anschrAuswahl[e.id]=true; getroffen[e.einheitId||lid]=1; }
+    });
+    if(!m.alle)leerstand+=(m.einheit_ids||[]).concat(m.legacy_ids||[]).filter(function(x){return !getroffen[x];}).length;
+  }
+  // Objektfelder mitführen: bei genau einem Objekt wie eine normale Objektwahl
+  var sel=document.getElementById('anschr-objekt-select'), of=document.getElementById('anschr-objekt');
+  var objIds=mitglieder.map(function(m){return m.objekt_id;});
+  if(sel)sel.value=objIds.length===1?objIds[0]:'';
+  var o1=objIds.length===1?anschrObjekte.filter(function(x){return x.id===objIds[0];})[0]:null;
+  if(of)of.value=o1?((o1.name||'')+(o1.strasse?', '+o1.strasse:'')):'';
+  anschrRenderEmpfaenger();
+  var n=anschrAuswahlListe().length, hinweise=[];
+  if(fehlt)hinweise.push(fehlt===1?'1 Objekt existiert nicht mehr':fehlt+' Objekte existieren nicht mehr');
+  if(leerstand)hinweise.push(leerstand===1?'1 Einheit ohne aktiven Mieter':leerstand+' Einheiten ohne aktiven Mieter');
+  showToast((hinweise.length?'⚠️ ':'✅ ')+'Kreis „'+(k.name||'')+'": '+(n===1?'1 Mietpartei':n+' Mietparteien')+' ausgewählt'+(hinweise.length?' – '+hinweise.join(', '):''));
+}
+async function anschrObjektHinzu(){
+  var s=document.getElementById('anschr-objekt-add'); if(!s)return;
+  var id=s.value; s.value=''; if(!id)return;
+  await anschrLadeEmpfaenger(id,true);
+  var n=0; anschrEmpfaenger.forEach(function(e){ if(e.objektId===id){anschrAuswahl[e.id]=true;n++;} });
+  anschrRenderEmpfaenger();
+  var o=anschrObjekte.filter(function(x){return x.id===id;})[0];
+  showToast(n?('➕ '+(o&&o.name?o.name:'Objekt')+': '+(n===1?'1 Mietpartei':n+' Mietparteien')+' ergänzt'):'⚠️ Für dieses Objekt sind keine aktiven Mietparteien hinterlegt.');
+}
+async function anschrKreisSpeichern(){
+  if(!currentUser){showToast('Bitte zuerst anmelden.');return;}
+  var m=_anschrKreisMitglieder();
+  if(!m.length){showToast('Bitte zuerst Mietparteien auswählen.');return;}
+  var o1=anschrObjekte.filter(function(x){return x.id===m[0].objekt_id;})[0];
+  var name=window.prompt('Name des Empfängerkreises:',m.length===1&&o1?((m[0].alle?'Alle Mieter ':'Auswahl ')+(o1.name||'')):'Neuer Kreis');
+  if(name===null)return;
+  name=String(name).trim(); if(!name){showToast('Bitte einen Namen angeben.');return;}
+  try{
+    var r=await sb.from('anschreiben_kreise').insert({user_id:currentUser.id,name:name,mitglieder:m}).select().single();
+    if(r.error)throw r.error;
+    await anschrLadeKreise();
+    var sel=document.getElementById('anschr-kreis-select'); if(sel&&r.data)sel.value=r.data.id;
+    _anschrKreisInfo(r.data);
+    showToast('✅ Empfängerkreis „'+name+'" gespeichert');
+  }catch(e){ showToast('⚠️ Speichern fehlgeschlagen: '+(e.message||e)); }
+}
+async function anschrKreisUeberschreiben(){
+  var k=_anschrKreisAktiv();
+  if(!k){showToast('Bitte zuerst einen Kreis auswählen.');return;}
+  var m=_anschrKreisMitglieder();
+  if(!m.length){showToast('Bitte zuerst Mietparteien auswählen.');return;}
+  try{
+    var r=await sb.from('anschreiben_kreise').update({mitglieder:m,updated_at:new Date().toISOString()}).eq('id',k.id);
+    if(r.error)throw r.error;
+    await anschrLadeKreise();
+    _anschrKreisInfo(_anschrKreisAktiv());
+    showToast('✅ Empfängerkreis „'+(k.name||'')+'" aktualisiert');
+  }catch(e){ showToast('⚠️ Fehler: '+(e.message||e)); }
+}
+function anschrKreisLoeschen(){
+  var k=_anschrKreisAktiv();
+  if(!k){showToast('Bitte zuerst einen Kreis auswählen.');return;}
+  appConfirm({icon:'🗑',title:'Empfängerkreis löschen?',
+    message:'<b>'+escapeHtml(k.name||'')+'</b><br><br>Der Kreis wird dauerhaft gelöscht. Mietparteien und bereits erstellte Anschreiben bleiben erhalten.',
+    buttons:[{label:'Abbrechen',style:'background:var(--bg);color:var(--text)'},
+             {label:'Löschen',style:'background:#c0392b;color:#fff',onClick:async function(){
+               try{
+                 var r=await sb.from('anschreiben_kreise').delete().eq('id',k.id);
+                 if(r.error)throw r.error;
+                 var sel=document.getElementById('anschr-kreis-select'); if(sel)sel.value='';
+                 await anschrLadeKreise(); _anschrKreisInfo(null);
+                 showToast('🗑 Empfängerkreis gelöscht');
+               }catch(e){ showToast('⚠️ Fehler: '+(e.message||e)); }
+             }}]});
+}
+
 // ── Anschreiben in der Objektansicht / im Einheiten-Cockpit ─────────────
 // Kompakte Liste der letzten Briefe zu einem Objekt bzw. einer Einheit.
 async function odLadeAnschreiben(objektId){
@@ -10825,6 +10999,7 @@ function anschrOeffnen(id,alsKopie){
   // Empfängerauswahl aufheben – der Brief ist bereits personalisiert
   anschrAuswahl={};
   var os=document.getElementById('anschr-objekt-select'); if(os)os.value='';
+  var ks=document.getElementById('anschr-kreis-select'); if(ks)ks.value='';
   var box=document.getElementById('anschr-empf-box'); if(box)box.style.display='none';
   var leer=document.getElementById('anschr-empf-leer');
   if(leer){leer.style.display='block';leer.textContent=alsKopie?'Kopie – Empfänger unten anpassen oder erneut ein Objekt wählen.':'Gespeichertes Anschreiben – Empfängerdaten stehen im Text.';}

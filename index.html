@@ -234,6 +234,18 @@ body.sidebar-open #sidebar-backdrop{display:block;opacity:1}
 #page-tool .card{border-radius:8px;border:1px solid #e5e7eb;box-shadow:none;padding:1rem;margin-bottom:1rem}
 #page-tool .card-title{font-size:10px;font-weight:600;letter-spacing:.11em;color:var(--p);margin-bottom:.85rem}
 #page-tool .card-title::before{width:2px;height:12px;background:#8b5cf6;border-radius:0}
+/* Anschreiben: geteilte Vorschau (Empfänger links, Brief rechts) und Platzhalter-Chips */
+.anschr-pv-grid{display:block}
+.anschr-pv-grid.mehr{display:grid;grid-template-columns:250px minmax(0,1fr);gap:1rem;align-items:start}
+@media(max-width:820px){.anschr-pv-grid.mehr{grid-template-columns:1fr}}
+.anschr-pv-item{display:flex;align-items:center;gap:.5rem;width:100%;text-align:left;border:none;border-bottom:1px solid var(--border);background:transparent;padding:.55rem .7rem;cursor:pointer;font-family:var(--ff);color:var(--text)}
+.anschr-pv-item:last-child{border-bottom:none}
+.anschr-pv-item:hover{background:var(--p-light)}
+.anschr-pv-item.aktiv{background:var(--p-light);box-shadow:inset 3px 0 0 var(--p)}
+.anschr-chip{border:1px solid var(--p-light);background:var(--p-light);color:var(--p);border-radius:999px;padding:.22rem .65rem;font-size:.72rem;font-weight:600;cursor:pointer;font-family:var(--ff)}
+.anschr-chip:hover{border-color:var(--p)}
+.anschr-grp{display:flex;align-items:center;gap:.5rem;padding:.45rem .7rem;background:var(--white);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:1;font-size:.74rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.anschr-grp button{border:none;background:none;color:var(--p);font-size:.72rem;font-weight:600;cursor:pointer;font-family:var(--ff);text-transform:none;letter-spacing:0;padding:0 .2rem}
 /* Step 1: Felder einheitlich (gray-50 Hintergrund, kleine Labels) */
 #page-tool .field label{font-size:10px;font-weight:500;letter-spacing:.04em;color:#9ca3af}
 #page-tool .field input,#page-tool .field select{border:1px solid #e5e7eb;border-radius:6px;padding:.5rem .7rem;font-size:.875rem;background:#f9fafb;color:#374151}
@@ -2747,7 +2759,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
 
     <!-- ANSCHREIBEN -->
         <div id="page-anschreiben" style="display:none">
-      <div style="padding:2rem;max-width:820px">
+      <div style="padding:2rem;max-width:1080px">
         <div class="page-header"><div class="page-title">✉️ Anschreiben erstellen</div><div class="page-sub">Professionelle Briefe an Mieter in Sekunden generieren</div></div>
 
         <!-- REITER -->
@@ -2793,7 +2805,11 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
               </select>
               <span id="anschr-empf-count" style="font-size:.8rem;font-weight:700;color:var(--p);margin-left:auto"></span>
             </div>
-            <div id="anschr-empf-liste" style="border:1px solid var(--border);border-radius:10px;max-height:280px;overflow-y:auto;background:var(--bg)"></div>
+            <div style="position:relative;margin-bottom:.5rem">
+              <span class="mini-ic" data-icon="search" style="position:absolute;left:.7rem;top:50%;transform:translateY(-50%);color:var(--muted)"></span>
+              <input type="text" id="anschr-empf-suche" oninput="anschrRenderEmpfaenger()" placeholder="Mietpartei, Einheit oder Objekt suchen…" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:.45rem .7rem .45rem 2.1rem;font-size:.84rem;font-family:var(--ff);background:var(--white);outline:none;box-sizing:border-box">
+            </div>
+            <div id="anschr-empf-liste" style="border:1px solid var(--border);border-radius:10px;max-height:340px;overflow-y:auto;background:var(--bg)"></div>
           </div>
           <div id="anschr-empf-leer" style="font-size:.82rem;color:var(--muted);padding:.85rem;border:1px dashed var(--border);border-radius:10px">Noch kein Objekt gewählt – du kannst die Empfängerdaten alternativ unten von Hand eintragen.</div>
         </div>
@@ -2801,7 +2817,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
         <!-- SCHRITT 2: VORLAGE -->
         <div class="card">
           <div class="card-title">② Art des Schreibens</div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.75rem;margin-bottom:.25rem">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:.75rem;margin-bottom:.25rem">
             <div onclick="setAnschrVorlage('info')" id="vorlage-info" style="border:2px solid var(--p);border-radius:10px;padding:.85rem;cursor:pointer;background:var(--p-light)">
               <div style="font-size:1.2rem;margin-bottom:.3rem">✍️</div>
               <div style="font-size:.85rem;font-weight:700;color:var(--p)">Freier Text</div>
@@ -2897,6 +2913,7 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
               <input type="text" id="anschr-betreff" placeholder="z. B. Information zur Nebenkostenabrechnung">
             </div>
             <div class="field"><label>Brieftext</label>
+              <div style="font-size:.74rem;color:var(--muted);margin:-.1rem 0 .4rem">Absender, Datum, Betreff, Anrede und Grußformel ergänzt NEKOSTA automatisch – schreibst du sie selbst, werden sie nicht doppelt eingefügt.</div>
               <div style="display:flex;gap:.3rem;flex-wrap:wrap;align-items:center;background:var(--bg);border:1px solid var(--border);border-bottom:none;border-radius:8px 8px 0 0;padding:.35rem .45rem">
                 <button type="button" id="frei-fmt-bold" onmousedown="event.preventDefault()" onclick="anschrFreiFormat('bold')" title="Fett (Strg+B)"
                   style="width:28px;height:26px;border:1px solid var(--border);background:var(--white);border-radius:5px;cursor:pointer;font-family:var(--ff);font-weight:800;font-size:.82rem">F</button>
@@ -2923,7 +2940,8 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
           </div>
           <!-- Platzhalter -->
           <div style="margin-top:.8rem">
-            <div style="font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem">Platzhalter einfügen (Klick)</div>
+            <div style="font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.15rem">Platzhalter einfügen</div>
+            <div style="font-size:.74rem;color:var(--muted);margin-bottom:.45rem">In den Text klicken, dann Baustein wählen – er wird für jeden Empfänger passend ausgefüllt.</div>
             <div id="anschr-platzhalter-chips" style="display:flex;flex-wrap:wrap;gap:.35rem"></div>
           </div>
           <div class="btn-row" style="margin-top:.75rem">
@@ -2934,23 +2952,31 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
 
         <!-- VORSCHAU -->
         <div class="card" id="anschr-preview" style="display:none">
-          <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem">
-            <span style="display:inline-flex;align-items:center;gap:.4rem"><span class="mini-ic" data-icon="file"></span>Vorschau</span>
-            <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+          <div class="card-title" style="display:flex;align-items:center;flex-wrap:wrap;gap:.5rem">
+            <span style="display:inline-flex;align-items:center;gap:.4rem"><span class="mini-ic" data-icon="file"></span>④ Vorschau &amp; Feinschliff</span>
+            <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-left:auto">
               <button class="btn-small" onclick="anschrSpeichern()"><span class="btn-ic" data-icon="save"></span> Speichern</button>
               <button class="btn-small" onclick="anschreibenPdf('vorschau')"><span class="btn-ic" data-icon="file"></span> PDF-Vorschau</button>
               <button class="btn-small gruen" onclick="anschreibenPdf('download')"><span class="btn-ic" data-icon="download"></span> PDF</button><button class="btn-small" onclick="anschrWordExport()" title="Als Word-Dokument (.docx) herunterladen"><span class="btn-ic" data-icon="download"></span> Word</button>
               <button class="btn-small grau" onclick="kopierenAnschreiben()"><span class="btn-ic" data-icon="copy"></span> Kopieren</button>
             </div>
           </div>
-          <!-- Blättern bei mehreren Empfängern -->
-          <div id="anschr-nav" style="display:none;align-items:center;gap:.6rem;margin-bottom:.7rem;padding:.5rem .7rem;background:var(--p-light);border-radius:8px">
-            <button class="btn-small grau" onclick="anschrVorschauNav(-1)">←</button>
-            <span id="anschr-nav-info" style="font-size:.8rem;font-weight:700;color:var(--p)"></span>
-            <button class="btn-small grau" onclick="anschrVorschauNav(1)">→</button>
-            <span id="anschr-nav-empf" style="font-size:.78rem;color:var(--muted);margin-left:auto"></span>
+          <div id="anschr-pv-grid" class="anschr-pv-grid">
+          <!-- Empfängerliste: jeden Brief einzeln anpassen -->
+          <div id="anschr-pv-liste-box" style="display:none">
+            <div style="font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem">Briefe <span id="anschr-pv-zahl"></span></div>
+            <div id="anschr-pv-liste" style="border:1px solid var(--border);border-radius:10px;max-height:62vh;overflow-y:auto;background:var(--bg)"></div>
           </div>
-          <div style="font-size:.76rem;color:var(--muted);margin-bottom:.5rem">✏️ Der Text ist direkt bearbeitbar und formatierbar – Änderungen landen im PDF und beim Speichern. „PDF-Vorschau" zeigt das fertige DIN-5008-Layout.</div>
+          <div style="min-width:0">
+          <!-- Blättern bei mehreren Empfängern -->
+          <div id="anschr-nav" style="display:none;align-items:center;gap:.6rem;margin-bottom:.7rem;padding:.5rem .7rem;background:var(--p-light);border-radius:8px;flex-wrap:wrap">
+            <button class="btn-small grau" onclick="anschrVorschauNav(-1)" title="Vorheriger Brief">←</button>
+            <span id="anschr-nav-info" style="font-size:.8rem;font-weight:700;color:var(--p)"></span>
+            <button class="btn-small grau" onclick="anschrVorschauNav(1)" title="Nächster Brief">→</button>
+            <span id="anschr-nav-empf" style="font-size:.78rem;color:var(--muted)"></span>
+            <button id="anschr-brief-reset" class="btn-small grau" onclick="anschrBriefZuruecksetzen()" title="Eigene Änderungen an diesem Brief verwerfen" style="margin-left:auto;display:none"><span class="btn-ic" data-icon="refresh"></span> Änderungen verwerfen</button>
+          </div>
+          <div id="anschr-pv-hinweis" style="font-size:.76rem;color:var(--muted);margin-bottom:.5rem">✏️ Der Text ist direkt bearbeitbar und formatierbar – Änderungen landen im PDF und beim Speichern. „PDF-Vorschau" zeigt das fertige DIN-5008-Layout.</div>
           <!-- SYMBOLLEISTE -->
           <div style="display:flex;gap:.3rem;flex-wrap:wrap;align-items:center;background:var(--bg);border:1px solid var(--border);border-bottom:none;border-radius:8px 8px 0 0;padding:.4rem .5rem">
             <button type="button" id="anschr-fmt-bold" onmousedown="event.preventDefault()" onclick="anschrFormat('bold')" title="Fett (Strg+B)"
@@ -2977,13 +3003,15 @@ function lpFaq(q){var it=q.parentElement;var a=q.nextElementSibling;var open=it.
           <div id="anschr-text" contenteditable="true" spellcheck="true"
             oninput="anschrTextBearbeitet()" onkeyup="anschrFormatStatus()" onmouseup="anschrFormatStatus()" onfocus="anschrFormatStatus()"
             style="font-family:var(--ff);font-size:.9rem;line-height:1.7;background:var(--white);border-radius:0 0 8px 8px;padding:1.5rem;border:1px solid var(--border);min-height:340px;width:100%;box-sizing:border-box;outline:none;overflow-y:auto;max-height:70vh"></div>
+          </div>
+          </div>
         </div>
 
         <!-- GESPEICHERTE ANSCHREIBEN -->
         <div class="card">
-          <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem">
+          <div class="card-title" style="display:flex;align-items:center;flex-wrap:wrap;gap:.5rem">
             <span style="display:inline-flex;align-items:center;gap:.4rem"><span class="mini-ic" data-icon="inbox"></span>Gespeicherte Anschreiben</span>
-            <button class="btn-small grau" onclick="anschrLadeGespeicherte()"><span class="btn-ic" data-icon="refresh"></span> Aktualisieren</button>
+            <button class="btn-small grau" style="margin-left:auto" onclick="anschrLadeGespeicherte()"><span class="btn-ic" data-icon="refresh"></span> Aktualisieren</button>
           </div>
           <div style="position:relative;margin-bottom:.8rem">
             <span class="mini-ic" data-icon="search" style="position:absolute;left:.7rem;top:50%;transform:translateY(-50%);color:var(--muted)"></span>
@@ -9500,12 +9528,12 @@ function generiereAnschreiben(emp){
     teile.push(_escHtml((ort?ort+', ':'')+datum));
     teile.push('');
     if(betreffFeld){ teile.push('Betreff: '+_escHtml(betreffFeld)); teile.push(''); }
-    if(!/^\s*sehr geehrte|^\s*hallo|^\s*guten tag|^\s*liebe/i.test(freiText)){ teile.push(_escHtml(anredeZeile+',')); teile.push(''); }
+    if(!/^\s*(sehr geehrte|hallo|guten tag|liebe|\{\{\s*anrede)/i.test(freiText)){ teile.push(_escHtml(anredeZeile+',')); teile.push(''); }
     var kopfHtml=teile.map(function(z){return '<div>'+(z||'<br>')+'</div>';}).join('');
     var rumpfHtml=freiHtml&&freiText?freiHtml:'<div>(Bitte Brieftext eingeben.)</div>';
     var fussTeile=[];
     if(zusatz){ fussTeile.push(''); zusatz.split('\n').forEach(function(z){fussTeile.push(_escHtml(z));}); }
-    var grussZeilen=anschrGrussZeilen();
+    var grussZeilen=_anschrGrussOhneDoppelte(anschrGrussZeilen(),freiText);
     if(grussZeilen.length){ fussTeile.push(''); grussZeilen.forEach(function(z){fussTeile.push(_escHtml(z));}); }
     var fussHtml=fussTeile.map(function(z){return '<div>'+(z||'<br>')+'</div>';}).join('');
     var gesamtHtml=kopfHtml+rumpfHtml+fussHtml;
@@ -9808,12 +9836,23 @@ async function anschrObjektGewaehlt(){
   anschrRenderEmpfaenger();
 }
 
+function _anschrEmpfSuche(){ return ((document.getElementById('anschr-empf-suche')||{value:''}).value||'').trim().toLowerCase(); }
+function _anschrEmpfTrifft(e,q){
+  if(!q)return true;
+  return [e.briefName,e.einheitLabel,e.objektLabel,e.anredeText].join(' ').toLowerCase().indexOf(q)>=0;
+}
 function anschrRenderEmpfaenger(){
   var el=document.getElementById('anschr-empf-liste'); if(!el)return;
   if(!anschrEmpfaenger.length){ el.innerHTML='<div style="padding:1rem;color:var(--muted);font-size:.84rem">Keine Mietparteien gefunden.</div>'; anschrAktualisiereZaehler(); return; }
-  var objIds={}; anschrEmpfaenger.forEach(function(e){objIds[e.objektId]=1;});
-  var mehrObj=Object.keys(objIds).length>1;
-  el.innerHTML=anschrEmpfaenger.map(function(e,i){
+  var q=_anschrEmpfSuche();
+  var gruppen=[], byObj={};
+  anschrEmpfaenger.forEach(function(e,i){
+    var g=byObj[e.objektId]; if(!g){g=byObj[e.objektId]={id:e.objektId,label:e.objektLabel||'Objekt',alle:0,gew:0,zeilen:[]};gruppen.push(g);}
+    g.alle++; if(anschrAuswahl[e.id])g.gew++;
+    if(_anschrEmpfTrifft(e,q))g.zeilen.push({e:e,i:i});
+  });
+  var mehrObj=gruppen.length>1;
+  var zeile=function(e,i){
     var warn=e.vollstaendig?'':'<span title="Keine vollständige Anschrift hinterlegt" style="color:#c0392b;font-size:.72rem;font-weight:700;margin-left:.4rem">⚠ Anschrift unvollständig</span>';
     var alt=e.quelle==='legacy'?'<span style="font-size:.66rem;color:var(--muted);border:1px solid var(--border);border-radius:4px;padding:.05rem .3rem;margin-left:.4rem">Altbestand</span>':'';
     var mehr=e.personen.length>1?'<span style="font-size:.66rem;color:var(--p);border:1px solid var(--p);border-radius:4px;padding:.05rem .3rem;margin-left:.4rem">'+e.personen.length+' Personen</span>':'';
@@ -9821,9 +9860,21 @@ function anschrRenderEmpfaenger(){
       +'<input type="checkbox" data-idx="'+i+'" onchange="anschrToggle('+i+')"'+(anschrAuswahl[e.id]?' checked':'')+' style="margin-top:.2rem">'
       +'<span style="flex:1;min-width:0">'
       +'<span style="font-size:.86rem;font-weight:700">'+escapeHtml(e.briefName)+'</span>'+mehr+alt+warn
-      +'<br><span style="font-size:.76rem;color:var(--muted)">'+(mehrObj?escapeHtml(e.objektLabel||'')+' · ':'')+escapeHtml(e.einheitLabel||'(ohne Einheit)')+' · '+escapeHtml(e.anredeText)+'</span>'
+      +'<br><span style="font-size:.76rem;color:var(--muted)">'+escapeHtml(e.einheitLabel||'(ohne Einheit)')+' · '+escapeHtml(e.anredeText)+'</span>'
       +'</span></label>';
-  }).join('');
+  };
+  var html='', treffer=0;
+  gruppen.forEach(function(g){
+    treffer+=g.zeilen.length;
+    if(!g.zeilen.length)return;
+    if(mehrObj)html+='<div class="anschr-grp"><span style="flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escapeHtml(g.label)+'</span><span style="font-weight:600;color:var(--p);margin-right:auto">'+g.gew+'/'+g.alle+'</span>'
+      +'<button type="button" onclick="anschrObjektAuswahl(\''+g.id+'\',true)">alle</button>'
+      +'<button type="button" onclick="anschrObjektAuswahl(\''+g.id+'\',false)">keine</button>'
+      +'<button type="button" onclick="anschrObjektEntfernen(\''+g.id+'\')" title="Objekt aus der Liste entfernen" style="color:#c0392b">entfernen</button></div>';
+    html+=g.zeilen.map(function(z){return zeile(z.e,z.i);}).join('');
+  });
+  if(!treffer)html='<div style="padding:1rem;color:var(--muted);font-size:.84rem">Keine Mietpartei passt zur Suche „'+escapeHtml(q)+'“.</div>';
+  el.innerHTML=html;
   anschrAktualisiereZaehler();
 }
 
@@ -9832,9 +9883,20 @@ function anschrToggle(i){
   if(anschrAuswahl[e.id])delete anschrAuswahl[e.id]; else anschrAuswahl[e.id]=true;
   anschrRenderEmpfaenger();
 }
+// Bei aktiver Suche wirkt „Alle auswählen/aufheben" nur auf die Treffer
 function anschrAlleWaehlen(an){
-  anschrAuswahl={};
-  if(an)anschrEmpfaenger.forEach(function(e){anschrAuswahl[e.id]=true;});
+  var q=_anschrEmpfSuche();
+  if(!q)anschrAuswahl={};
+  anschrEmpfaenger.forEach(function(e){ if(!_anschrEmpfTrifft(e,q))return; if(an)anschrAuswahl[e.id]=true; else delete anschrAuswahl[e.id]; });
+  anschrRenderEmpfaenger();
+}
+function anschrObjektAuswahl(objektId,an){
+  anschrEmpfaenger.forEach(function(e){ if(e.objektId!==objektId)return; if(an)anschrAuswahl[e.id]=true; else delete anschrAuswahl[e.id]; });
+  anschrRenderEmpfaenger();
+}
+function anschrObjektEntfernen(objektId){
+  anschrEmpfaenger=anschrEmpfaenger.filter(function(e){ if(e.objektId!==objektId)return true; delete anschrAuswahl[e.id]; return false; });
+  var sel=document.getElementById('anschr-objekt-select'); if(sel&&sel.value===objektId)sel.value='';
   anschrRenderEmpfaenger();
 }
 function anschrAuswahlListe(){
@@ -10025,7 +10087,37 @@ function anschrTextBearbeitet(){
   var i=Math.min(Math.max(anschrVorschauIdx,0),anschrBriefe.length-1);
   anschrBriefe[i].html=_anschrHtmlGet();
   anschrBriefe[i].text=_anschrTextGet();
-  anschrBriefe[i].bearbeitet=true;
+  if(!anschrBriefe[i].bearbeitet){ anschrBriefe[i].bearbeitet=true; _anschrRenderBriefListe(); }
+}
+// Einen einzelnen Brief neu aus Vorlage/Formular erzeugen (eigene Änderungen verwerfen)
+function anschrBriefZuruecksetzen(){
+  if(!anschrBriefe.length)return;
+  var i=Math.min(Math.max(anschrVorschauIdx,0),anschrBriefe.length-1), b=anschrBriefe[i];
+  var t=b.emp?generiereAnschreiben(b.emp):generiereAnschreiben();
+  b.text=t; b.html=_anschrHtmlLetzt||anschrTextZuHtml(t); b.bearbeitet=false;
+  anschrZeigeVorschau();
+  showToast('↺ Brief'+(b.emp?' an '+b.emp.briefName:'')+' zurückgesetzt');
+}
+function anschrBriefWaehlen(i){ anschrVorschauIdx=i; anschrZeigeVorschau(); }
+function _anschrRenderBriefListe(){
+  var box=document.getElementById('anschr-pv-liste-box'), el=document.getElementById('anschr-pv-liste'), grid=document.getElementById('anschr-pv-grid');
+  var mehr=anschrBriefe.length>1;
+  if(grid)grid.classList.toggle('mehr',mehr);
+  if(box)box.style.display=mehr?'block':'none';
+  var rb=document.getElementById('anschr-brief-reset'), cur=anschrBriefe[anschrVorschauIdx];
+  if(rb)rb.style.display=(cur&&cur.bearbeitet)?'':'none';
+  if(!mehr||!el)return;
+  var n=anschrBriefe.filter(function(b){return b.bearbeitet;}).length;
+  var z=document.getElementById('anschr-pv-zahl'); if(z)z.textContent='('+anschrBriefe.length+(n?', '+n+' angepasst':'')+')';
+  el.innerHTML=anschrBriefe.map(function(b,i){
+    var e=b.emp||{};
+    return '<button type="button" class="anschr-pv-item'+(i===anschrVorschauIdx?' aktiv':'')+'" onclick="anschrBriefWaehlen('+i+')">'
+      +'<span style="flex:1;min-width:0"><span style="display:block;font-size:.82rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escapeHtml(e.briefName||'Brief '+(i+1))+'</span>'
+      +'<span style="display:block;font-size:.72rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escapeHtml([e.objektLabel,e.einheitLabel].filter(Boolean).join(' · '))+'</span></span>'
+      +(b.bearbeitet?'<span title="Einzeln angepasst" style="font-size:.64rem;font-weight:700;color:#157f3c;background:#e8f6ee;border-radius:999px;padding:.1rem .45rem;white-space:nowrap">✏️ angepasst</span>':'')
+      +'</button>';
+  }).join('');
+  var akt=el.querySelector('.aktiv'); if(akt&&akt.scrollIntoView)akt.scrollIntoView({block:'nearest'});
 }
 // ── Formatierbarer Brieftext (Schritt ③) ───────────────────────────────
 function _anschrFreiEl(){ return document.getElementById('anschr-freitext'); }
@@ -10320,10 +10412,13 @@ function anschrPlatzhalter(text,emp){
   });
 }
 // Klickbare Platzhalter-Chips unter dem Formular
+var ANSCHR_PLATZHALTER_LABEL={anrede_name:'Anrede + Name',anrede:'Anrede',mietername:'Mietername',vorname:'Vorname',nachname:'Nachname',
+  einheit:'Einheit',objekt:'Objekt',objektadresse:'Objektadresse',strasse:'Straße',plz:'PLZ',ort:'Ort',
+  datum:'Datum',jahr:'Jahr',betreff:'Betreff',verwalter:'Verwalter',verwalter_tel:'Telefon Verwalter',verwalter_email:'E-Mail Verwalter'};
 function anschrInitPlatzhalter(){
   var box=document.getElementById('anschr-platzhalter-chips'); if(!box||box.firstChild)return;
   box.innerHTML=ANSCHR_PLATZHALTER.map(function(p){
-    return '<button type="button" class="btn-small grau" onclick="anschrFuegePlatzhalter(\''+p+'\')" style="font-size:.68rem;padding:.2rem .5rem">{{'+p+'}}</button>';
+    return '<button type="button" class="anschr-chip" onmousedown="event.preventDefault()" onclick="anschrFuegePlatzhalter(\''+p+'\')" title="Fügt {{'+p+'}} ein">'+escapeHtml(ANSCHR_PLATZHALTER_LABEL[p]||p)+'</button>';
   }).join('');
 }
 // Fügt an der Cursorposition im zuletzt fokussierten Textfeld ein
@@ -10369,6 +10464,7 @@ function anschrGenerieren(force){
   anschrBriefe=sel.map(function(e){ var t=generiereAnschreiben(e); return {emp:e,text:t,html:_anschrHtmlLetzt||anschrTextZuHtml(t)}; });
   anschrVorschauIdx=0;
   anschrZeigeVorschau();
+  var _pv=document.getElementById('anschr-preview'); if(_pv&&_pv.scrollIntoView)setTimeout(function(){_pv.scrollIntoView({behavior:'smooth',block:'start'});},50);
   if(unvollstaendig.length)showToast('⚠️ '+unvollstaendig.length+' Empfänger ohne vollständige Anschrift.');
   else showToast('✅ '+anschrBriefe.length+' Anschreiben erzeugt');
 }
@@ -10386,6 +10482,11 @@ function anschrZeigeVorschau(){
     if(info)info.textContent='Empfänger '+(anschrVorschauIdx+1)+' von '+anschrBriefe.length;
     if(ne)ne.textContent=b.emp?(b.emp.briefName+(b.emp.einheitLabel?' · '+b.emp.einheitLabel:'')):'';
   }
+  var hw=document.getElementById('anschr-pv-hinweis');
+  if(hw)hw.innerHTML=anschrBriefe.length>1
+    ?'✏️ Jeder Brief lässt sich <strong>einzeln anpassen</strong>: links Empfänger wählen und direkt im Text ändern – die Änderung gilt nur für diesen Brief. „PDF-Vorschau" zeigt das fertige DIN-5008-Layout.'
+    :'✏️ Der Text ist direkt bearbeitbar und formatierbar – Änderungen landen im PDF und beim Speichern. „PDF-Vorschau" zeigt das fertige DIN-5008-Layout.';
+  _anschrRenderBriefListe();
 }
 function anschrVorschauNav(d){ anschrVorschauIdx+=d; anschrZeigeVorschau(); }
 // Briefe für PDF/Speichern – erzeugt bei Bedarf neu
@@ -11151,6 +11252,19 @@ function anschrGrussZeilen(){
   var text=(sm.gruss_text||'').trim();
   if(text)return text.split(/\r\n|\r|\n/);
   return ['Mit freundlichen Grüßen','',(sm.firma||((sm.vname&&sm.nname)?(sm.vname+' '+sm.nname):'Ihre Hausverwaltung'))];
+}
+// Grußformel/Unterschrift weglassen, wenn der freie Text sie am Ende schon enthält
+var _ANSCHR_GRUSS_RE=/^(mit (den )?(freundlichen|besten|herzlichen) grüßen|(freundliche|beste|viele|herzliche) grüße|hochachtungsvoll)\s*[,.!]?$/i;
+function _anschrGrussOhneDoppelte(zeilen,freiText){
+  var ende=(freiText||'').split(/\r\n|\r|\n/).map(function(z){return z.trim();}).filter(Boolean).slice(-4);
+  if(!ende.length)return zeilen;
+  var endeLc=ende.map(function(z){return z.toLowerCase();});
+  var hatGruss=ende.some(function(z){return _ANSCHR_GRUSS_RE.test(z);});
+  var rest=zeilen.filter(function(z){ var t=z.trim(); if(!t)return true;
+    if(hatGruss&&_ANSCHR_GRUSS_RE.test(t))return false;
+    return endeLc.indexOf(t.toLowerCase())<0; });
+  while(rest.length&&!rest[0].trim())rest.shift();
+  return rest.some(function(z){return z.trim();})?rest:[];
 }
 function anschrGrussText(){
   var z=anschrGrussZeilen();

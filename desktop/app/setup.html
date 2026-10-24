@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><title>NEKOSTA einrichten</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'">
+<link rel="stylesheet" href="ui.css"></head>
+<body><div class="wrap">
+  <div class="brand">NEKOSTA<span>.</span></div>
+
+  <!-- Schritt 1: Rolle dieses PCs -->
+  <section id="s1">
+    <div class="steps"><span class="on"></span><span></span></div>
+    <h1>Willkommen bei NEKOSTA</h1>
+    <p class="sub">Welche Rolle hat dieser PC im Büro?</p>
+    <div class="choice">
+      <button class="opt" id="optServer" onclick="pick('server')"><div class="ic">🗄️</div><b>Dieser PC ist der Server</b><small>Hier liegen Datenbank und Dokumente. Einmal im Büro einrichten – am besten auf dem PC, der tagsüber immer läuft.</small></button>
+      <button class="opt" id="optClient" onclick="pick('client')"><div class="ic">💻</div><b>Arbeitsplatz</b><small>Mit dem NEKOSTA-Server im Büronetz verbinden. Die Daten bleiben auf dem Server-PC.</small></button>
+    </div>
+    <div class="actions"><button class="b" id="next1" disabled onclick="next()">Weiter</button></div>
+  </section>
+
+  <!-- Schritt 2a: Server -->
+  <section id="s2server" class="hidden">
+    <div class="steps"><span class="on"></span><span class="on"></span></div>
+    <h1>Server einrichten</h1>
+    <p class="sub">Datenbank und Dokumente werden in diesem Ordner gespeichert.</p>
+    <div class="card">
+      <h2>Datenordner</h2>
+      <div class="row"><div class="path" id="dataDir" style="flex:1"></div><button class="b sec sm" onclick="chooseDir('dataDir','Ordner für die NEKOSTA-Daten')">Ändern …</button></div>
+      <h2 style="margin-top:16px">Datensicherung</h2>
+      <div class="row"><div class="path" id="backupDir" style="flex:1"></div><button class="b sec sm" onclick="chooseDir('backupDir','Ordner für die tägliche Datensicherung')">Ändern …</button></div>
+      <p class="small muted" style="margin:8px 0 0">NEKOSTA sichert täglich automatisch. Tipp: Sicherungsordner auf eine externe Festplatte oder ein NAS legen.</p>
+      <label style="display:flex;gap:8px;align-items:center;margin-top:14px;font-size:13.5px"><input type="checkbox" id="autostart" checked> Beim Windows-Start automatisch im Hintergrund starten</label>
+    </div>
+    <div id="srvMsg" class="msg hidden"></div>
+    <div class="actions"><button class="b sec" onclick="back()">Zurück</button><button class="b" id="startSrv" onclick="startServer()">Server starten</button></div>
+  </section>
+
+  <!-- Schritt 2b: Arbeitsplatz -->
+  <section id="s2client" class="hidden">
+    <div class="steps"><span class="on"></span><span class="on"></span></div>
+    <h1>Mit dem Server verbinden</h1>
+    <p class="sub">NEKOSTA sucht den Server-PC im Büronetz.</p>
+    <div class="card">
+      <h2>Gefundene Server</h2>
+      <div id="found" class="list"><div class="it muted">Suche läuft …</div></div>
+      <div class="actions" style="justify-content:flex-start;margin-top:10px"><button class="b sec sm" onclick="search()">Erneut suchen</button></div>
+      <h2 style="margin-top:16px">Oder Adresse eingeben</h2>
+      <div class="row"><input type="text" id="manual" placeholder="z. B. 192.168.1.20 oder BUERO-PC"><button class="b sec" onclick="testManual()">Prüfen</button></div>
+      <p class="small muted" style="margin:8px 0 0">Die Adresse steht auf dem Server-PC unter <b>NEKOSTA → Server-Status</b>.</p>
+    </div>
+    <div id="cliMsg" class="msg hidden"></div>
+    <div class="actions"><button class="b sec" onclick="back()">Zurück</button><button class="b" id="connect" disabled onclick="connect()">Verbinden</button></div>
+  </section>
+
+  <!-- Fertig (Server) -->
+  <section id="s3" class="hidden">
+    <h1>Der Server läuft ✅</h1>
+    <p class="sub">Auf den anderen Büro-PCs NEKOSTA installieren und „Arbeitsplatz" wählen – der Server wird automatisch gefunden.</p>
+    <div class="card"><h2>Adresse im Büronetz</h2><div id="addrs"></div>
+      <p class="small muted" style="margin:10px 0 0">Falls Windows nach der Firewall fragt: <b>„Private Netzwerke" zulassen</b>, damit die Arbeitsplätze zugreifen können.</p></div>
+    <div class="card"><h2>Nächster Schritt</h2>
+      <p style="margin:0 0 10px">Lege dein Konto an – oder übernimm deine bisherigen Daten aus der NEKOSTA-Cloud (Objekte, Mieter, Abrechnungen, Dokumente).</p>
+      <div class="row"><button class="b" onclick="window.nekosta.openWindow('import')">Daten aus der Cloud übernehmen</button><button class="b sec" onclick="window.nekosta.openMain()">Ohne Übernahme starten</button></div>
+    </div>
+  </section>
+</div>
+<script src="common.js"></script>
+<script>
+let mode = null, chosenUrl = null, st = null;
+function pick(m) { mode = m; $('#optServer').classList.toggle('sel', m === 'server'); $('#optClient').classList.toggle('sel', m === 'client'); $('#next1').disabled = false; }
+function show(id) { ['s1', 's2server', 's2client', 's3'].forEach((s) => $('#' + s).classList.toggle('hidden', s !== id)); }
+function back() { show('s1'); }
+async function next() { if (mode === 'server') { show('s2server'); } else { show('s2client'); search(); } }
+async function chooseDir(id, title) { const d = await api(window.nekosta.pickFolder, title, $('#' + id).textContent); if (d) $('#' + id).textContent = d; }
+async function startServer() {
+  const b = $('#startSrv'); b.disabled = true; b.textContent = 'Startet …';
+  try {
+    const r = await api(window.nekosta.chooseServer, { dataDir: $('#dataDir').textContent, backupDir: $('#backupDir').textContent, autostart: $('#autostart').checked });
+    $('#addrs').innerHTML = r.lan.length ? r.lan.map((u) => '<div style="margin:4px 0"><span class="addr">' + esc(u) + '</span></div>').join('') : '<span class="muted">Kein Netzwerk gefunden – nur auf diesem PC nutzbar.</span>';
+    show('s3');
+  } catch (e) { msg($('#srvMsg'), 'err', e.message); b.disabled = false; b.textContent = 'Server starten'; }
+}
+function selectUrl(u, el) { chosenUrl = u; document.querySelectorAll('#found .it').forEach((x) => x.classList.toggle('sel', x === el)); $('#connect').disabled = false; }
+async function search() {
+  $('#found').innerHTML = '<div class="it muted">Suche läuft …</div>';
+  try {
+    const list = await api(window.nekosta.discover);
+    if (!list.length) { $('#found').innerHTML = '<div class="it muted">Kein Server gefunden. Läuft NEKOSTA auf dem Server-PC? Sonst Adresse unten eingeben.</div>'; return; }
+    $('#found').innerHTML = list.map((s, i) => '<div class="it" data-u="' + esc(s.url) + '">🗄️ <div style="flex:1"><b>' + esc(s.name || 'NEKOSTA-Server') + '</b><div class="small muted">' + esc(s.url) + '</div></div></div>').join('');
+    document.querySelectorAll('#found .it').forEach((el) => el.addEventListener('click', () => selectUrl(el.dataset.u, el)));
+    if (list.length === 1) selectUrl(list[0].url, document.querySelector('#found .it'));
+  } catch (e) { $('#found').innerHTML = '<div class="it muted">' + esc(e.message) + '</div>'; }
+}
+async function testManual() {
+  try { const r = await api(window.nekosta.testServer, $('#manual').value); chosenUrl = r.url; $('#connect').disabled = false; msg($('#cliMsg'), 'ok', 'Server „' + (r.name || r.url) + '" gefunden.'); }
+  catch (e) { msg($('#cliMsg'), 'err', e.message); }
+}
+async function connect() { try { await api(window.nekosta.testServer, chosenUrl); await api(window.nekosta.chooseClient, chosenUrl); window.close(); } catch (e) { msg($('#cliMsg'), 'err', e.message); } }
+(async () => { st = await api(window.nekosta.state); $('#dataDir').textContent = st.dataDir; $('#backupDir').textContent = st.backupDir; })();
+</script>
+</body></html>

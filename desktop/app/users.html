@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><title>NEKOSTA – Benutzer</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'">
+<link rel="stylesheet" href="ui.css"></head>
+<body><div class="wrap">
+  <div class="brand">NEKOSTA<span>.</span></div>
+  <h1>Benutzer verwalten</h1>
+  <p class="sub">Wer sich an NEKOSTA anmelden darf. Da lokal keine E-Mails verschickt werden, setzt du vergessene Passwörter hier zurück.</p>
+  <div class="card">
+    <h2>Neuer Benutzer</h2>
+    <div class="row">
+      <input type="text" id="nName" placeholder="Name">
+      <input type="email" id="nMail" placeholder="E-Mail">
+      <input type="password" id="nPw" placeholder="Passwort (mind. 6 Zeichen)">
+      <button class="b" onclick="create()">Anlegen</button>
+    </div>
+    <div id="cmsg" class="msg hidden"></div>
+  </div>
+  <div class="card">
+    <h2>Benutzer</h2>
+    <table><thead><tr><th>E-Mail</th><th>Letzte Anmeldung</th><th></th></tr></thead><tbody id="list"></tbody></table>
+    <div id="lmsg" class="msg hidden"></div>
+  </div>
+</div>
+<script src="common.js"></script>
+<script>
+async function load() {
+  try {
+    const us = await api(window.nekosta.users.list);
+    $('#list').innerHTML = us.map((u) => '<tr><td><b>' + esc(u.email) + '</b>' + (u.name ? '<div class="small muted">' + esc(u.name) + '</div>' : '')
+      + (u.platzhalter ? '<div class="small" style="color:#92400e">aus dem Import – bitte E-Mail und Passwort setzen</div>' : '')
+      + (u.banned_until ? '<div class="small" style="color:#b91c1c">gesperrt</div>' : '') + '</td>'
+      + '<td class="muted small">' + fmtDate(u.last_sign_in_at) + '</td>'
+      + '<td style="text-align:right;white-space:nowrap"><button class="b sec sm" data-a="pw" data-id="' + u.id + '">Passwort setzen</button> '
+      + '<button class="b sec sm" data-a="mail" data-id="' + u.id + '" data-v="' + esc(u.email) + '">E-Mail ändern</button> '
+      + '<button class="b ' + (u.banned_until ? 'sec' : 'danger') + ' sm" data-a="lock" data-on="' + (u.banned_until ? '0' : '1') + '" data-id="' + u.id + '">' + (u.banned_until ? 'Entsperren' : 'Sperren') + '</button></td></tr>').join('')
+      || '<tr><td colspan="3" class="muted">Noch keine Benutzer.</td></tr>';
+    document.querySelectorAll('#list button').forEach((b) => b.onclick = () => act(b));
+  } catch (e) { msg($('#lmsg'), 'err', e.message); }
+}
+async function act(b) {
+  const id = b.dataset.id;
+  try {
+    if (b.dataset.a === 'pw') { const pw = prompt('Neues Passwort (mind. 6 Zeichen):'); if (!pw) return; await api(window.nekosta.users.setPassword, id, pw); msg($('#lmsg'), 'ok', 'Passwort gesetzt. Der Benutzer muss sich neu anmelden.'); }
+    if (b.dataset.a === 'mail') { const e = prompt('Neue E-Mail-Adresse:', b.dataset.v); if (!e) return; await api(window.nekosta.users.setEmail, id, e); msg($('#lmsg'), 'ok', 'E-Mail geändert.'); }
+    if (b.dataset.a === 'lock') { await api(window.nekosta.users.lock, id, b.dataset.on === '1'); msg($('#lmsg'), 'ok', b.dataset.on === '1' ? 'Benutzer gesperrt.' : 'Benutzer entsperrt.'); }
+    load();
+  } catch (e) { msg($('#lmsg'), 'err', e.message); }
+}
+async function create() {
+  try { await api(window.nekosta.users.create, { name: $('#nName').value, email: $('#nMail').value, password: $('#nPw').value }); msg($('#cmsg'), 'ok', 'Benutzer angelegt.'); ['#nName', '#nMail', '#nPw'].forEach((s) => $(s).value = ''); load(); }
+  catch (e) { msg($('#cmsg'), 'err', e.message.replace('User already registered', 'Diese E-Mail ist bereits angelegt.').replace('Password should be at least 6 characters.', 'Das Passwort muss mindestens 6 Zeichen haben.').replace(/Unable to validate email.*/, 'Bitte eine gültige E-Mail-Adresse eingeben.')); }
+}
+load();
+</script>
+</body></html>

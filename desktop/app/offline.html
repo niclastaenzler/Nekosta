@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><title>NEKOSTA – Server nicht erreichbar</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'">
+<link rel="stylesheet" href="ui.css"></head>
+<body><div class="wrap" style="max-width:620px;padding-top:70px">
+  <div class="brand">NEKOSTA<span>.</span></div>
+  <h1>Der NEKOSTA-Server ist nicht erreichbar</h1>
+  <p class="sub">Bitte prüfen: Ist der Server-PC eingeschaltet und läuft dort NEKOSTA (Symbol unten rechts in der Taskleiste)? Ist dieser PC im Büronetz?</p>
+  <div class="card"><div class="kv"><div>Adresse</div><div class="path" id="u"></div><div>Fehler</div><div class="small muted" id="f"></div></div></div>
+  <div class="actions" style="justify-content:flex-start"><button class="b" onclick="retry()">Erneut verbinden</button><button class="b sec" onclick="window.nekosta.resetMode()">Anderen Server wählen …</button></div>
+  <p class="small muted" id="auto"></p>
+</div>
+<script src="common.js"></script>
+<script>
+const q = new URLSearchParams(location.search); const target = q.get('url') || '';
+$('#u').textContent = target; $('#f').textContent = q.get('fehler') || '';
+async function retry() { const r = await window.nekosta.testServer(target); if (r.ok) location.href = target; else $('#auto').textContent = 'Noch nicht erreichbar – nächster Versuch in 10 Sekunden …'; }
+setInterval(retry, 10000);
+</script>
+</body></html>

@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><title>NEKOSTA – Status</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'">
+<link rel="stylesheet" href="ui.css"></head>
+<body><div class="wrap">
+  <div class="brand">NEKOSTA<span>.</span></div>
+  <h1 id="title">Status</h1>
+  <p class="sub" id="sub"></p>
+
+  <div id="server" class="hidden">
+    <div class="card">
+      <h2>Server</h2>
+      <div class="row" style="justify-content:space-between"><span id="run" class="pill">● läuft</span><span class="small muted" id="host"></span></div>
+      <p style="margin:12px 0 6px">Adresse für die Arbeitsplätze im Büro:</p>
+      <div id="addrs"></div>
+      <p class="small muted" style="margin:10px 0 0">Arbeitsplätze finden den Server normalerweise automatisch. Falls nicht, diese Adresse dort eingeben.</p>
+    </div>
+    <div class="card">
+      <h2>Datensicherung</h2>
+      <div class="kv"><div>Letzte Sicherung</div><div id="last"></div><div>Sicherungsordner</div><div class="path" id="bdir"></div><div>Datenordner</div><div class="path" id="ddir"></div></div>
+      <div id="bwarn" class="msg warn hidden"></div>
+      <div class="actions" style="justify-content:flex-start">
+        <button class="b" id="bnow" onclick="backupNow()">Jetzt sichern</button>
+        <button class="b sec" onclick="window.nekosta.backup.setFolder().then(load)">Sicherungsordner ändern …</button>
+        <button class="b sec" onclick="window.nekosta.backup.openFolder()">Ordner öffnen</button>
+      </div>
+      <div id="bmsg" class="msg hidden"></div>
+      <h2 style="margin-top:18px">Vorhandene Sicherungen</h2>
+      <table><thead><tr><th>Stand</th><th>Größe</th><th></th></tr></thead><tbody id="blist"></tbody></table>
+    </div>
+    <div class="card">
+      <h2>Einstellungen</h2>
+      <label style="display:flex;gap:8px;align-items:center;font-size:13.5px"><input type="checkbox" id="auto" onchange="window.nekosta.setAutostart(this.checked)"> Beim Windows-Start automatisch im Hintergrund starten</label>
+      <div class="actions" style="justify-content:flex-start">
+        <button class="b sec" onclick="window.nekosta.openWindow('users')">Benutzer verwalten</button>
+        <button class="b sec" onclick="window.nekosta.openWindow('import')">Daten aus der Cloud übernehmen</button>
+        <button class="b danger" onclick="window.nekosta.resetMode()">Modus wechseln …</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="client" class="hidden">
+    <div class="card">
+      <h2>Verbindung</h2>
+      <div class="kv"><div>Server</div><div class="path" id="surl"></div><div>Status</div><div id="sstat">prüfe …</div></div>
+      <div class="actions" style="justify-content:flex-start"><button class="b" onclick="window.nekosta.openMain()">NEKOSTA öffnen</button><button class="b danger" onclick="window.nekosta.resetMode()">Anderen Server wählen …</button></div>
+    </div>
+  </div>
+  <p class="small muted" id="ver"></p>
+</div>
+<script src="common.js"></script>
+<script>
+async function load() {
+  const s = await api(window.nekosta.state);
+  $('#ver').textContent = 'NEKOSTA ' + s.version;
+  if (s.mode === 'server') {
+    $('#title').textContent = 'Server-Status & Datensicherung'; $('#sub').textContent = 'Dieser PC stellt NEKOSTA für das Büro bereit.';
+    $('#server').classList.remove('hidden');
+    $('#run').className = 'pill' + (s.running ? '' : ' off'); $('#run').textContent = s.running ? '● läuft' : '● gestoppt';
+    $('#host').textContent = s.hostname + ' · ' + (s.users || 0) + ' Benutzer';
+    $('#addrs').innerHTML = s.lan.length ? s.lan.map((u) => '<div style="margin:4px 0" class="row"><span class="addr">' + esc(u) + '</span><button class="b sec sm" data-u="' + esc(u) + '">Kopieren</button></div>').join('') : '<span class="muted">Kein Netzwerk gefunden.</span>';
+    document.querySelectorAll('#addrs button').forEach((b) => b.onclick = () => { window.nekosta.copy(b.dataset.u); b.textContent = 'Kopiert ✓'; });
+    $('#last').textContent = fmtDate(s.lastBackup); $('#bdir').textContent = s.backupDir; $('#ddir').textContent = s.dataDir;
+    const old = !s.lastBackup || Date.now() - Date.parse(s.lastBackup) > 2 * 86400000;
+    if (old) msg($('#bwarn'), 'warn', s.lastBackup ? 'Die letzte Sicherung ist älter als zwei Tage.' : 'Es wurde noch keine Sicherung erstellt.'); else $('#bwarn').classList.add('hidden');
+    $('#blist').innerHTML = s.backups.length ? s.backups.map((b) => '<tr><td>' + fmtDate(b.mtime) + '</td><td class="muted">' + fmtSize(b.size) + '</td><td style="text-align:right"><button class="b sec sm" data-f="' + esc(b.file) + '">Wiederherstellen …</button></td></tr>').join('') : '<tr><td colspan="3" class="muted">Noch keine Sicherungen.</td></tr>';
+    document.querySelectorAll('#blist button').forEach((b) => b.onclick = async () => { const r = await window.nekosta.backup.restore(b.dataset.f); if (r.ok && r.data) { msg($('#bmsg'), 'ok', 'Sicherung wiederhergestellt.'); load(); } else if (!r.ok) msg($('#bmsg'), 'err', r.error); });
+    $('#auto').checked = !!s.autostart;
+  } else {
+    $('#title').textContent = 'Verbindung'; $('#sub').textContent = 'Dieser PC ist ein Arbeitsplatz.';
+    $('#client').classList.remove('hidden'); $('#surl').textContent = s.serverUrl || '–';
+    try { const r = await api(window.nekosta.testServer, s.serverUrl); $('#sstat').innerHTML = '<span class="pill">● verbunden mit ' + esc(r.name || '') + '</span>'; }
+    catch (e) { $('#sstat').innerHTML = '<span class="pill off">● nicht erreichbar</span>'; }
+  }
+}
+async function backupNow() {
+  const b = $('#bnow'); b.disabled = true; b.textContent = 'Sichert …';
+  try { const r = await api(window.nekosta.backup.now); msg($('#bmsg'), 'ok', 'Gesichert: ' + fmtSize(r.size) + (r.documentsCopied ? ', ' + r.documentsCopied + ' neue Dokumente' : '')); }
+  catch (e) { msg($('#bmsg'), 'err', e.message); }
+  b.disabled = false; b.textContent = 'Jetzt sichern'; load();
+}
+load();
+</script>
+</body></html>

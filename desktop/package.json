@@ -1,0 +1,22 @@
+{
+  "name": "nekosta-desktop",
+  "version": "1.0.0",
+  "description": "NEKOSTA als Windows-Programm mit lokaler Datenbank",
+  "main": "main.js",
+  "private": true,
+  "author": "NEKOSTA",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@electric-sql/pglite": "^0.5.11",
+    "@supabase/supabase-js": "^2.118.0",
+    "bcryptjs": "^2.4.3",
+    "busboy": "^1.6.0",
+    "jspdf": "^2.5.1",
+    "jszip": "^3.10.1",
+    "pdfjs-dist": "^3.11.174"
+  },
+  "scripts": {
+    "prepare-web": "node tools/prepare-web.js",
+    "test": "node test/api.test.js && node test/schema-roundtrip.test.js"
+  }
+}

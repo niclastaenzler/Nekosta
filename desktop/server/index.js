@@ -33,9 +33,9 @@ function loadConfig(dataDir) {
   const f = path.join(dataDir, 'config.json');
   let cfg = {};
   try { cfg = JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) {}
-  if (!cfg.jwtSecret) {
-    cfg.jwtSecret = crypto.randomBytes(48).toString('base64');
-    cfg.createdAt = new Date().toISOString();
+  if (!cfg.jwtSecret || !cfg.instanceId) {
+    if (!cfg.jwtSecret) { cfg.jwtSecret = crypto.randomBytes(48).toString('base64'); cfg.createdAt = new Date().toISOString(); }
+    if (!cfg.instanceId) cfg.instanceId = crypto.randomUUID();
     fs.mkdirSync(dataDir, { recursive: true });
     fs.writeFileSync(f, JSON.stringify(cfg, null, 2));
   }
@@ -120,7 +120,7 @@ async function startServer(opts) {
         if (r && r.streamed) return;
         return send(res, r.status, r.body);
       }
-      if (p === '/__nekosta/info') return send(res, 200, { app: 'NEKOSTA', mode: 'server', name: opts.serverName || '', version: opts.version || 'dev' });
+      if (p === '/__nekosta/info') return send(res, 200, { app: 'NEKOSTA', mode: 'server', id: cfg.instanceId, name: opts.serverName || '', version: opts.version || 'dev' });
       if (p === '/' || p === '/index.html') return send(res, 200, indexHtml(), { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache' });
       if (p.startsWith('/vendor/') || p.startsWith('/assets/')) {
         const f = path.join(webRoot, path.normalize(p).replace(/^(\.\.[\/\\])+/, ''));
@@ -141,7 +141,7 @@ async function startServer(opts) {
   await new Promise((resolve, reject) => { server.once('error', reject); server.listen(opts.port || 0, opts.host || '0.0.0.0', resolve); });
   const port = server.address().port;
   return {
-    server, db, port, anonKey, auth,
+    server, db, port, anonKey, auth, instanceId: cfg.instanceId,
     reloadCatalog: async () => { catalog = await loadCatalog(db); indexCache = null; },
     async close() { await new Promise((r) => server.close(r)); await db.close(); },
   };

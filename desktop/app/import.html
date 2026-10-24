@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><title>NEKOSTA – Daten aus der Cloud übernehmen</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'">
+<link rel="stylesheet" href="ui.css"></head>
+<body><div class="wrap">
+  <div class="brand">NEKOSTA<span>.</span></div>
+  <h1>Daten aus der Cloud übernehmen</h1>
+  <p class="sub">Kopiert alle Daten und Dokumente deines bisherigen NEKOSTA-Kontos einmalig auf diesen Server-PC. Die Cloud bleibt dabei unverändert.</p>
+
+  <div class="card" id="form">
+    <h2>Bisheriger NEKOSTA-Zugang</h2>
+    <label class="f">E-Mail</label><input type="email" id="mail" autocomplete="username">
+    <label class="f">Passwort</label><input type="password" id="pw" autocomplete="current-password">
+    <p class="small muted" style="margin:10px 0 0">Mit derselben E-Mail und demselben Passwort meldest du dich danach auch lokal an. Arbeiten mehrere Personen mit eigenen Konten, führt jede den Import einmal mit ihrem Zugang durch. Vorher wird automatisch eine Datensicherung erstellt.</p>
+    <div class="actions"><button class="b" id="go" onclick="run()">Übernahme starten</button></div>
+  </div>
+
+  <div class="card hidden" id="prog">
+    <h2>Übernahme läuft</h2>
+    <div class="bar"><i id="bar"></i></div>
+    <p id="now" class="small" style="margin:10px 0 8px"></p>
+    <div class="log" id="log"></div>
+  </div>
+
+  <div class="card hidden" id="done">
+    <h2>Ergebnis</h2>
+    <div id="summary"></div>
+    <table style="margin-top:10px"><thead><tr><th>Bereich</th><th style="text-align:right">Cloud</th><th style="text-align:right">lokal vorhanden</th></tr></thead><tbody id="tbl"></tbody></table>
+    <div class="actions"><button class="b sec" onclick="location.reload()">Weiteres Konto übernehmen</button><button class="b" onclick="window.nekosta.openMain();window.close()">NEKOSTA öffnen</button></div>
+  </div>
+  <div id="err" class="msg err hidden"></div>
+</div>
+<script src="common.js"></script>
+<script>
+let tables = 0, seen = new Set();
+window.nekosta.onProgress((p) => {
+  if (p.table && !seen.has(p.table)) { seen.add(p.table); }
+  $('#now').textContent = p.text;
+  const l = $('#log'); l.textContent += p.text + '\n'; l.scrollTop = l.scrollHeight;
+  $('#bar').style.width = Math.min(95, 5 + seen.size * 1.7 + (p.step === 'files' ? 10 : 0)) + '%';
+});
+async function run() {
+  $('#err').classList.add('hidden');
+  const email = $('#mail').value.trim(), password = $('#pw').value;
+  if (!email || !password) { msg($('#err'), 'err', 'Bitte E-Mail und Passwort eingeben.'); return; }
+  $('#go').disabled = true; $('#prog').classList.remove('hidden'); $('#form').classList.add('hidden');
+  try {
+    const r = await api(window.nekosta.importCloud, { email, password });
+    $('#bar').style.width = '100%'; $('#prog').classList.add('hidden'); $('#done').classList.remove('hidden');
+    const rows = r.tables.filter((t) => t.cloud);
+    const total = rows.reduce((s, t) => s + t.cloud, 0);
+    const issues = r.mismatch.length + r.files.failed.length;
+    $('#summary').innerHTML = '<div class="msg ' + (issues ? 'warn' : 'ok') + '">' + (issues ? '⚠️ Übernahme mit Hinweisen abgeschlossen.' : '✅ Alles übernommen.')
+      + ' ' + total.toLocaleString('de-DE') + ' Datensätze in ' + rows.length + ' Bereichen, ' + r.files.copied + ' Dokumente' + (r.files.skipped ? ' (' + r.files.skipped + ' waren schon vorhanden)' : '') + '.</div>'
+      + (r.placeholders ? '<div class="msg warn">' + r.placeholders + ' weitere Benutzer wurden als Platzhalter angelegt (z. B. Kunden). Unter „Benutzer verwalten" kannst du ihnen E-Mail und Passwort geben.</div>' : '')
+      + (r.warnings.length ? '<div class="msg warn">' + r.warnings.map(esc).join('<br>') + '</div>' : '')
+      + (r.files.failed.length ? '<div class="msg err">Nicht übernommen: ' + r.files.failed.map(esc).join('<br>') + '</div>' : '');
+    $('#tbl').innerHTML = rows.map((t) => '<tr><td>' + esc(t.table) + '</td><td style="text-align:right">' + t.cloud.toLocaleString('de-DE') + '</td><td style="text-align:right;' + (t.present < t.cloud ? 'color:#b91c1c;font-weight:700' : '') + '">' + t.present.toLocaleString('de-DE') + '</td></tr>').join('');
+  } catch (e) {
+    $('#prog').classList.add('hidden'); $('#form').classList.remove('hidden'); $('#go').disabled = false;
+    msg($('#err'), 'err', e.message.replace('Invalid login credentials', 'E-Mail oder Passwort falsch'));
+  }
+}
+</script>
+</body></html>

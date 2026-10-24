@@ -18,5 +18,9 @@
   "scripts": {
     "prepare-web": "node tools/prepare-web.js",
     "test": "node test/api.test.js && node test/schema-roundtrip.test.js"
+  },
+  "devDependencies": {
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8"
   }
 }

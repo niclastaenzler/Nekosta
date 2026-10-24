@@ -17,6 +17,26 @@ app.setName('NEKOSTA');
 if (process.env.NEKOSTA_USERDATA) app.setPath('userData', process.env.NEKOSTA_USERDATA);
 const SETTINGS_FILE = () => path.join(app.getPath('userData'), 'einstellungen.json');
 
+// Protokoll für die Fehlersuche: userData/protokoll.log (ab 2 MB wird auf protokoll.alt.log umgeschaltet).
+const LOG_FILE = path.join(app.getPath('userData'), 'protokoll.log');
+function log(level, ...a) {
+  const line = new Date().toISOString() + ' ' + level + ' ' + a.map((x) => (x instanceof Error ? x.stack : typeof x === 'string' ? x : JSON.stringify(x))).join(' ') + '\n';
+  try {
+    fs.mkdirSync(path.dirname(LOG_FILE), { recursive: true });
+    if (fs.existsSync(LOG_FILE) && fs.statSync(LOG_FILE).size > 2e6) fs.renameSync(LOG_FILE, LOG_FILE.replace(/\.log$/, '.alt.log'));
+    fs.appendFileSync(LOG_FILE, line);
+  } catch (e) {}
+}
+for (const [k, lvl] of [['log', 'INFO'], ['warn', 'WARN'], ['error', 'FEHLER']]) {
+  const orig = console[k].bind(console);
+  console[k] = (...a) => { log(lvl, ...a); orig(...a); };
+}
+process.on('uncaughtException', (e) => log('ABSTURZ', e));
+process.on('unhandledRejection', (e) => log('ABSTURZ', e));
+app.on('child-process-gone', (_e, d) => log('WARN', 'Hilfsprozess beendet', d));
+app.on('render-process-gone', (_e, _w, d) => log('WARN', 'Fenster-Prozess beendet', d));
+log('INFO', 'Start', app.getVersion(), process.platform, process.versions.electron);
+
 let settings = {};
 let srv = null;          // laufender Server (Server-Modus)
 let responder = null;    // Antwort auf Server-Suche
@@ -40,6 +60,7 @@ async function startLocalServer() {
     if (e.code === 'EADDRINUSE') throw new Error(`Port ${settings.port || DEFAULT_PORT} ist bereits belegt. Läuft NEKOSTA schon (Symbol unten rechts in der Taskleiste)?`);
     throw e;
   }
+  log('INFO', 'Server läuft auf Port', srv.port, 'Daten:', dataDir());
   responder = startResponder({ port: srv.port, name: require('os').hostname(), id: srv.instanceId });
   scheduleBackups();
   return srv;
@@ -242,8 +263,8 @@ else {
   app.whenReady().then(async () => {
     loadSettings(); registerIpc(); buildMenu();
     if (settings.mode === 'server') {
-      try { await startLocalServer(); buildTray(); openMain(); }
-      catch (e) { dialog.showErrorBox('NEKOSTA-Server konnte nicht starten', e.message); toolWindow('status'); }
+      try { await startLocalServer(); buildTray(); log('INFO', 'Symbol in der Taskleiste bereit'); openMain(); log('INFO', 'Hauptfenster geöffnet'); }
+      catch (e) { log('FEHLER', 'Serverstart', e); dialog.showErrorBox('NEKOSTA-Server konnte nicht starten', e.message); toolWindow('status'); }
     } else if (settings.mode === 'client') { openMain(); }
     else toolWindow('setup', { width: 820, height: 680 });
   });

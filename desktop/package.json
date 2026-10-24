@@ -8,19 +8,85 @@
   "license": "UNLICENSED",
   "dependencies": {
     "@electric-sql/pglite": "^0.5.11",
-    "@supabase/supabase-js": "^2.118.0",
+    "@supabase/supabase-js": "2.118.0",
     "bcryptjs": "^2.4.3",
-    "busboy": "^1.6.0",
+    "busboy": "^1.6.0"
+  },
+  "scripts": {
+    "prepare-web": "node tools/prepare-web.js",
+    "start": "npm run prepare-web && electron .",
+    "test": "node test/api.test.js && node test/schema-roundtrip.test.js && node test/import.test.js",
+    "dist": "node build/check-schema.js && npm run prepare-web && electron-builder --win nsis --x64 --publish never"
+  },
+  "devDependencies": {
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8",
+    "pe-library": "^1.0.1",
+    "png-to-ico": "^2.1.8",
+    "resedit": "^2.0.3",
     "jspdf": "^2.5.1",
     "jszip": "^3.10.1",
     "pdfjs-dist": "^3.11.174"
   },
-  "scripts": {
-    "prepare-web": "node tools/prepare-web.js",
-    "test": "node test/api.test.js && node test/schema-roundtrip.test.js"
-  },
-  "devDependencies": {
-    "electron": "^33.4.11",
-    "electron-builder": "^25.1.8"
+  "productName": "NEKOSTA",
+  "build": {
+    "appId": "de.nekosta.desktop",
+    "productName": "NEKOSTA",
+    "copyright": "© NEKOSTA",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "preload-main.js",
+      "app/**",
+      "server/**",
+      "web/**",
+      "schema/**",
+      "assets/**",
+      "package.json",
+      "!**/*.map"
+    ],
+    "asar": true,
+    "afterPack": "build/after-pack.js",
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.ico",
+      "signAndEditExecutable": false,
+      "executableName": "NEKOSTA"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "NEKOSTA",
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "installerHeaderIcon": "assets/icon.ico",
+      "include": "build/installer.nsh",
+      "installerLanguages": [
+        "de_DE"
+      ],
+      "language": "1031",
+      "artifactName": "NEKOSTA-Setup-${version}.exe",
+      "deleteAppDataOnUninstall": false,
+      "runAfterFinish": true
+    },
+    "asarUnpack": [
+      "node_modules/@electric-sql/pglite/**"
+    ],
+    "publish": null
   }
 }
